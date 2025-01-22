@@ -3,6 +3,8 @@
 
 #include "Config.h"
 
+extern std::string typename2classname(const std::string& str) noexcept;
+
 class type_class
 {
 private:
@@ -14,7 +16,7 @@ public:
 	}
 	virtual std::string ToString() const noexcept
 	{
-		return this->GetType().name();
+		return typename2classname(this->GetType().name());
 	}
 	virtual std::string SymbolName() const noexcept
 	{
@@ -74,6 +76,13 @@ private:
 	size_t __internal_flag = any_class_head_flag;
 public:
 };
+
+template <class _Elem, class _Traits, class _Ty>
+std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& _Out, const type_class& tc)
+{
+	_Out << tc.ToString();
+	return _Out;
+}
 
 extern "C"
 {

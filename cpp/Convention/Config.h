@@ -2,6 +2,7 @@
 #define __FILE_CONFIG
 #pragma warning(disable : 4267)
 #pragma warning(disable : 4244)
+#pragma warning(disable : 4996)
 #ifndef abstract
 #define abstract =0
 #endif
@@ -347,6 +348,9 @@ struct platform_indicator
 	constexpr static bool is_platform_linux = constexpr_strcmp(__PLATFORM_NAME, "Windows");
 	constexpr static bool is_platform_x64 = constexpr_strcmp(__PLATFORM_VERSION, "x64");
 	constexpr static bool is_platform_x86 = constexpr_strcmp(__PLATFORM_VERSION, "x86");
+	constexpr static bool is_platform_x86_x64 = constexpr_strcmp(__PLATFORM_VERSION, "x86_x64");
+	constexpr static bool is_platform_i386 = constexpr_strcmp(__PLATFORM_VERSION, "i386");
+	constexpr static bool is_platform_AMD64 = constexpr_strcmp(__PLATFORM_VERSION, "AMD64");
 #ifdef _MSC_VER
 	constexpr static bool is_mscv = true;
 #else

@@ -3,7 +3,7 @@
 
 #include "Config.h"
 #include "Internal.h"
-#include "instance/instance.h"
+#include "Instance.h"
 
 
 #endif // !__FILE_CONVENTION
