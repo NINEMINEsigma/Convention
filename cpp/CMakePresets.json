@@ -1,0 +1,212 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "virtual-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "PLATFORM_EXTENSION": "no"
+      }
+    },
+
+    {
+      "name": "virtual-debug",
+      "hidden": true,
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+    },
+    {
+      "name": "virtual-release",
+      "hidden": true,
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" }
+    },
+    {
+      "name": "virtual-reldbg",
+      "hidden": true,
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "RelWithDebInfo" }
+    },
+    {
+      "name": "virtual-static",
+      "hidden": true,
+      "cacheVariables": { "GGML_STATIC": "ON" }
+    },
+    {
+      "name": "virtual-sycl_f16",
+      "hidden": true,
+      "cacheVariables": { "GGML_SYCL_F16": "ON" }
+    },
+
+    {
+      "name": "virtual-windows",
+      "hidden": true,
+      "cacheVariables": {
+        "PLATFORM_NAME": "Windows",
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "Windows",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "virtual-linux",
+      "hidden": true,
+      "cacheVariables": {
+        "PLATFORM_NAME": "Linux",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "_USE_DEFINED_CALL_": "true"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "Linux",
+        "rhs": "Linux"
+      }
+    },
+
+    {
+      "name": "virtual-x64",
+      "hidden": true,
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "PLATFORM_VERSION": "x64"
+      }
+    },
+    {
+      "name": "virtual-x86",
+      "hidden": true,
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "PLATFORM_VERSION": "x86"
+      }
+    },
+
+
+
+    {
+      "name": "windows-x64-debug",
+      "inherits": [
+        "virtual-base",
+        "virtual-windows",
+        "virtual-x64",
+        "virtual-debug"
+      ]
+    },
+    {
+      "name": "windows-x64-release",
+      "inherits": [
+        "virtual-base",
+        "virtual-windows",
+        "virtual-x64",
+        "virtual-release"
+      ]
+    },
+    {
+      "name": "windows-x86-debug",
+      "inherits": [
+        "virtual-base",
+        "virtual-windows",
+        "virtual-x86",
+        "virtual-debug"
+      ]
+    },
+    {
+      "name": "windows-x86-release",
+      "inherits": [
+        "virtual-base",
+        "virtual-windows",
+        "virtual-x86",
+        "virtual-release"
+      ]
+    },
+    {
+      "name": "windows-x64-static-release",
+      "inherits": [
+        "virtual-base",
+        "virtual-windows",
+        "virtual-x64",
+        "virtual-release",
+        "virtual-static"
+      ]
+    },
+    {
+      "name": "windows-x86-static-release",
+      "inherits": [
+        "virtual-base",
+        "virtual-windows",
+        "virtual-x86",
+        "virtual-release",
+        "virtual-static"
+      ]
+    },
+
+
+    {
+      "name": "linux-x64-debug",
+      "inherits": [
+        "virtual-base",
+        "virtual-linux",
+        "virtual-x64",
+        "virtual-debug"
+      ]
+    },
+    {
+      "name": "linux-x64-release",
+      "inherits": [
+        "virtual-base",
+        "virtual-linux",
+        "virtual-x64",
+        "virtual-release"
+      ]
+    },
+    {
+      "name": "linux-x86-debug",
+      "inherits": [
+        "virtual-base",
+        "virtual-linux",
+        "virtual-x86",
+        "virtual-debug"
+      ]
+    },
+    {
+      "name": "linux-x86-release",
+      "inherits": [
+        "virtual-base",
+        "virtual-linux",
+        "virtual-x86",
+        "virtual-release"
+      ]
+    },
+    {
+      "name": "linux-x64-static-release",
+      "inherits": [
+        "virtual-base",
+        "virtual-linux",
+        "virtual-x64",
+        "virtual-release",
+        "virtual-static"
+      ]
+    },
+    {
+      "name": "linux-x86-static-release",
+      "inherits": [
+        "virtual-base",
+        "virtual-linux",
+        "virtual-x86",
+        "virtual-release",
+        "virtual-static"
+      ]
+    }
+  ]
+}
