@@ -1,10 +1,56 @@
 #include "Convention.h"
+#ifdef _WINDOWS
+#include <conio.h>
+#include<Windows.h>
+#else
+#include <stdio.h>
+#include <stdlib.h>
+#endif
+
 
 using namespace std;
 
 std::string platform_indicator::generate_platform_message() noexcept
 {
 	return std::string("Platform: ") + __PLATFORM_NAME + "-" + __PLATFORM_VERSION + "-" + __PLATFORM_EXTENSION;
+}
+bool platform_indicator::keyboard_input(size_t key) noexcept
+{
+#ifdef _WINDOWS
+	if (_kbhit())
+		return _getch() == key || key == 0;
+#else
+	fd_set rfds;
+	struct timeval tv;
+
+	FD_ZERO(&rfds);
+	FD_SET(0, &rfds);
+	tv.tv_sec = 0;
+	tv.tv_usec = 1; //设置等待超时时间
+	if (select(1, &rfds, NULL, NULL, &tv) > 0)
+		return key == getchar() || key == 0;
+#endif // _WINDOWS
+	return false;
+}
+
+size_t string_indicator::strlen(const char_indicator::tag* str)
+{
+#ifdef UNICODE
+	return ::wcslen(str);
+#else
+	return ::strlen(str);
+#endif // UNICODE
+}
+char_indicator::tag* string_indicator::strcpy(
+	char_indicator::tag* dest,
+	const char_indicator::tag* source
+)
+{
+#ifdef UNICODE
+	return ::wcscpy(dest, source);
+#else
+	return ::strcpy(dest, source);
+#endif // UNICODE
 }
 
 std::string typename2classname(const std::string& str) noexcept

@@ -311,6 +311,8 @@ using namespace boost::placeholders;
 #include <unordered_map>
 #include <unordered_set>
 
+#include <filesystem>
+
 #define NOMINMAX
 constexpr size_t constexpr_strlen(const char* source)
 {
@@ -358,6 +360,7 @@ struct platform_indicator
 #endif
 
 	static std::string generate_platform_message() noexcept;
+	static bool keyboard_input(size_t key) noexcept;
 };
 
 #pragma endregion
@@ -1349,7 +1352,47 @@ namespace std
 	}
 }
 
-// convert memory to string 
+struct char_indicator
+{
+#if defined(UNICODE)
+	using tag = wchar_t;
+	static constexpr bool value = true;
+#else
+	using tag = char;
+	static constexpr bool value = false;
+#endif // _UNICODE
+};
+struct string_indicator
+{
+	using tag = std::basic_string<char_indicator::tag>;
+	static constexpr bool value = char_indicator::value;
+	static size_t strlen(const char_indicator::tag* str);
+	static char_indicator::tag* string_indicator::strcpy(
+		char_indicator::tag* dest,
+		const char_indicator::tag* source
+	);
+	template<typename T>
+	static tag to_string(const T& value);
+};
+template<typename T>
+string_indicator::tag string_indicator::to_string(const T& value)
+{
+#ifdef UNICODE
+	return std::to_wstring(value);
+#else
+	return std::to_string(value);
+#endif // UNICODE
+
+}
+#define make_string(str) string_indicator::tag(TEXT(str))
+#ifdef UNICODE
+#define COUT std::wcout
+#else
+#define COUT std::cout
+#endif
+
+// convert memory to string, if unit_size set 0,
+// will compress source data to result string
 template<
 	typename result_char_type,
 	typename memory_type,
@@ -1379,7 +1422,7 @@ std::basic_string<result_char_type> convert_xstring(
 		result.reserve((end - start) * unit_size / sizeof(result_char_type)
 			+ (unit_size % sizeof(result_char_type) ? 1 : 0));
 		for (const result_char_type* head = reinterpret_cast<const result_char_type*>(start),
-			tail = reinterpret_cast<const result_char_type*>(end); head + 1 <= tail; head++)
+			*tail = reinterpret_cast<const result_char_type*>(end); head + 1 <= tail; head++)
 		{
 			result.push_back(*head);
 		}
@@ -1390,7 +1433,7 @@ std::basic_string<result_char_type> convert_xstring(
 		{
 			result.reserve(end - start);
 			result_char_type buffer = 0;
-			for (const memory_type* head = start, tail = end; head != tail; head++)
+			for (const memory_type* head = start, *tail = end; head != tail; head++)
 			{
 				memmove(&buffer, head, sizeof(result_char_type));
 				result.push_back(buffer);
@@ -1401,24 +1444,30 @@ std::basic_string<result_char_type> convert_xstring(
 		{
 			result.reserve((end - start) * unit_size / sizeof(result_char_type)
 				+ (unit_size % sizeof(result_char_type) ? 1 : 0));
-			char buffer[sizeof(result_char_type)] = { 0 };
+			char buffer[sizeof(result_char_type)+1];
+			buffer[sizeof(result_char_type)] = 0;
+			memset(buffer, 0, sizeof(result_char_type));
 			size_t offset = 0;
-			for (const memory_type* head = start, tail = end; head != tail; head++)
+			for (const memory_type* head = start, *tail = end; head != tail; head++)
 			{
-				for (const void* curhead = head, curend = head + 1; curhead != curend; curhead++)
+				for (const void* curhead = head, *curend = head + 1; curhead != curend;
+					curhead = reinterpret_cast<const void*>(reinterpret_cast<size_t>(curhead) + 1))
 				{
-					memmove(&buffer[offset++], head, 1);
+					memmove(&buffer[offset], head, 1);
+					offset++;
 					if (offset == sizeof(result_char_type))
 					{
 						result.push_back(*reinterpret_cast<result_char_type*>(&buffer));
-						buffer = 0;
+						memset(buffer, 0, sizeof(result_char_type));
+						offset = 0;
 					}
 				}
-				if (offset)
-				{
-					result.push_back(*reinterpret_cast<result_char_type*>(&buffer));
-					offset = 0;
-				}
+			}
+			if (offset)
+			{
+				result.push_back(*reinterpret_cast<result_char_type*>(&buffer));
+				memset(buffer, 0, sizeof(result_char_type));
+				offset = 0;
 			}
 		}
 	}
