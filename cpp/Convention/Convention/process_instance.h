@@ -36,7 +36,7 @@ public:
 	instance();
 	instance(const char_indicator::tag* commandline, const config_type & config = 0);
 	instance(const char_indicator::tag* executer, const char_indicator::tag* commandline_args, const config_type & config = 0);
-	instance(const instance&) = delete;
+	explicit instance(process_indicator);
 	virtual ~instance();
 	bool get_stats() const noexcept;
 
@@ -45,8 +45,6 @@ public:
 
 	virtual bool kill();
 	bool is_still_alive();
-
-	bool when_destructor_kill_but_not_wait = false;
 };
 
 #endif // !__FILE_CONVENTION_PROCESS_INSTANCER

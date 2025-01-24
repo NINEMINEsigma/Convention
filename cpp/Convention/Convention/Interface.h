@@ -26,6 +26,8 @@ public:
     constexpr instance() :_MyBase() {}
     constexpr instance(nullptr_t) : _MyBase(nullptr) {}
     explicit instance(_Type* ptr) : _MyBase(ptr) {}
+    explicit instance(_shared& rv) :_MyBase(rv) {}
+    explicit instance(_shared&& rv) :_MyBase(std::move(rv)) {}
     template<typename... _Args>
     instance(_Args&&... args) : _MyBase(std::forward<_Args>(args)...) {}
     virtual ~instance() {}
@@ -46,6 +48,7 @@ public:
         return typename2classname(this->GetType().name()) + "<" +
             typename2classname(typeid(_Type).name()) + ">";
     }
+
 };
 
 namespace internal
@@ -54,6 +57,8 @@ namespace internal
     constexpr bool is_number_v = 
         std::is_floating_point_v<_Type> ||
         std::is_integral_v<_Type>;
+    template<typename _Type>
+    constexpr bool is_stream_v = std::is_base_of_v<std::ios_base, _Type>;
     namespace
     {
         template<typename _Type>

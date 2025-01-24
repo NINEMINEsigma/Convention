@@ -1,3 +1,6 @@
 
 /cpp/.vs
 /cpp/out
+/python/Convention/__pycache__
+/python/Convention/include/__pycache__
+/python/Convention/Convention/__pycache__

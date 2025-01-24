@@ -4,8 +4,8 @@
 #include "Convention/Interface.h"
 
 template<typename _NumberType>
-class instance<_NumberType, true>: public std::enable_if_t<
-	internal::is_number_v<_NumberType>, 
+class instance<_NumberType, true> : public std::enable_if_t<
+	internal::is_number_v<_NumberType> && !internal::is_stream_v<_NumberType>,
 	instance<_NumberType, false>
 >
 {
@@ -16,6 +16,8 @@ public:
 	constexpr instance(nullptr_t) : _MyBase(nullptr) {}
 	explicit instance(_NumberType* ptr) :_MyBase(ptr) {}
 	explicit instance(_NumberType value) :_MyBase(new _NumberType(value)) {}
+	explicit instance(typename _MyBase::_shared& rv) :_MyBase(rv) {}
+	explicit instance(typename _MyBase::_shared&& rv) :_MyBase(std::move(rv)) {}
 	template<typename... _Args>
 	instance(_Args&&... args) :_MyBase(std::forward<_Args>(args)...) {}
 	virtual ~instance() {}

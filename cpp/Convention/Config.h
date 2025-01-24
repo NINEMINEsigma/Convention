@@ -3,6 +3,7 @@
 #pragma warning(disable : 4267)
 #pragma warning(disable : 4244)
 #pragma warning(disable : 4996)
+#pragma warning(disable : 26495)
 #ifndef abstract
 #define abstract =0
 #endif
@@ -1337,8 +1338,8 @@ public:
 
 #pragma region string wstring
 
-#include <locale>
-#include <codecvt>
+//#include <locale>
+//#include <codecvt>
 
 namespace std
 {
@@ -1532,36 +1533,6 @@ _Str trim(const _Str& str, _CharFirst ch)
 #pragma endregion
 
 #pragma region Kit
-
-#ifdef _WINDOW_
-
-#pragma pack (1)
-struct tagBITMAPFILEHEADER_OnLF 
-{
-	WORD    bfType;
-	DWORD   bfSize;
-	WORD    bfReserved1;
-	WORD    bfReserved2;
-	DWORD   bfOffBits;
-};
-_LF_C_API(OStruct) tagBITMAPFILE
-{
-	using Header = tagBITMAPFILEHEADER_OnLF;
-	Header BitmapHeader;
-	using Info = BITMAPINFOHEADER;
-	Info BitmapInfoHeader;
-	using Palette = PALETTEENTRY;
-	using PaletteBuffer = Palette*;
-	PaletteBuffer BitMapPalette;
-	size_t PaletteSize;
-	using Color = UCHAR;
-	using ColorBuffer = Color*;
-	ColorBuffer BitMapBuffer;
-};
-using BITMAP_FILE = tagBITMAPFILE;
-#pragma pack()
-
-#endif // _WINDOW_
 
 template<typename _T>
 _T Clamp01(const _T& t)

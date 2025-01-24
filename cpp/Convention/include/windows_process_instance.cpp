@@ -74,21 +74,14 @@ bool process_instance::exc(
 		this->stats = false;
 	return this->stats;
 }
-
+process_instance::instance(process_indicator) :instance() {}
 process_instance::~instance()
 {
 	if (this->stats)
 	{
-		if (when_destructor_kill_but_not_wait)
-		{
-			this->kill();
-		}
-		else
-		{
-			WaitForSingleObject(this->pinfo.hProcess, INFINITE);
-			CloseHandle(this->pinfo.hProcess);
-			CloseHandle(this->pinfo.hThread);
-		}
+		WaitForSingleObject(this->pinfo.hProcess, INFINITE);
+		CloseHandle(this->pinfo.hProcess);
+		CloseHandle(this->pinfo.hThread);
 	}
 }
 bool process_instance::get_stats() const noexcept

@@ -6,46 +6,38 @@
 
 struct ffmpeg_indicator
 {
-	using tag = void;
+	using tag = string_indicator::tag;
 	static constexpr bool value = true;
 };
 template<>
 class instance<ffmpeg_indicator, true> :public instance<process_indicator, true>
 {
+public:
+	string_indicator::tag commandline;
 private:
-	auto inject_get_quiet_command(int showmode)
-	{
-		return make_string("ffplay -autoexit -v quiet -showmode ") +
-			string_indicator::to_string(showmode) + make_string(" ");
-	}
-	auto inject_get_command(int showmode)
-	{
-		return make_string("ffplay -autoexit -showmode ") +
-			string_indicator::to_string(showmode) + make_string(" ");
-	}
 public:
 	using _MyBase = instance<process_indicator, true>;
-	template<typename... _Args>
-	instance(_Args&&... args) :_MyBase(std::forward<_Args>(args)...) {}
+	instance(const string_indicator::tag& commandline = make_string("")) :_MyBase(), __init(commandline) {}
+	explicit instance(ffmpeg_indicator) :instance() {}
+	instance(const instance& other) :instance(other.commandline) {}
 	virtual ~instance() {}
 
-	bool play(const string_indicator::tag& target, int showmode = 0)
+	bool ffplay(const string_indicator::tag& target)
 	{
-		auto command = this->inject_get_command(showmode) + make_string("\"") + target + make_string("\"");
-		return this->exc(command.c_str());
+		return this->exc((
+			make_string("ffplay ") + this->commandline + 
+			make_string(" \"") + target + make_string("\"")
+			).c_str());
 	}
-	bool play_quiet(const string_indicator::tag& target, int showmode = 0)
-	{
-		auto command = this->inject_get_quiet_command(showmode) + make_string("\"") + target + make_string("\"");
-		return this->exc(command.c_str());
-	}
-	bool transform(
+	bool ffmpeg(
 		const string_indicator::tag& input,
 		const string_indicator::tag& output
 	)
 	{
 		return this->exc((
-			make_string("ffmpeg -v quiet -i") + input + make_string(" ") + output
+			make_string("ffmpeg ") + this->commandline +
+			make_string(" \"") + input + make_string("\"") +
+			make_string(" \"") + output + make_string("\"")
 			).c_str());
 	}
 };
