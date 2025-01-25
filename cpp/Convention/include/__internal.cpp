@@ -135,4 +135,29 @@ std::map<std::string, std::string> make_config(int argv, char** argc)
 	return result;
 }
 
+// file_instance.h
+bool is_binary_file(const std::filesystem::path& path)
+{
+	std::ifstream fs(path, std::ios::in | std::ios::binary);
+	void* buffer = no_warning_6387(malloc(sizeof(char)));
+	void* checker = no_warning_6387(malloc(sizeof(char)));
+	memset(buffer, 0, sizeof(char));
+	memset(checker, 0, sizeof(char));
+	for (int i = 1024; i != 0 && fs; i--)
+	{
+		fs.read((char*)buffer, sizeof(char));
+		if (memcmp(buffer, checker, sizeof(char)))
+			return true;
+	}
+	return false;
+}
+std::filesystem::path get_extension_name(const std::filesystem::path& path)
+{
+	return path.extension();
+}
+std::filesystem::path get_base_filename(const std::filesystem::path& path)
+{
+	return path.filename();
+}
+
 

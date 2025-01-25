@@ -1,5 +1,8 @@
 #ifndef __FILE_CONVENTION_VOID_INSTANCE
 #define __FILE_CONVENTION_VOID_INSTANCE
+
+#include "Convention/Interface.h"
+
 template<>
 class instance<any_class, true> :public instance<any_class, false>
 {

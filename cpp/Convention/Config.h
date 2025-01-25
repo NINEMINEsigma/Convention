@@ -322,7 +322,7 @@ constexpr size_t constexpr_strlen(const char* source)
 		length++;
 	return length;
 }
-constexpr bool constexpr_strcmp(
+constexpr bool constexpr_streql(
 	const char* source,
 	const char* target
 )
@@ -338,6 +338,35 @@ constexpr bool constexpr_strcmp(
 	}
 	return false;
 }
+constexpr int constexpr_strcmp(
+	const char* source,
+	const char* target
+)
+{
+	int length = constexpr_strlen(source);
+	int tlength = constexpr_strlen(target);
+	if (length == tlength)
+	{
+		for (auto i = 0; i != length; i++)
+			if (source[i] != target[i])
+				return source[i] - target[i];
+		return 0;
+	}
+	else return length - tlength;
+}
+
+#ifndef __PLATFORM_NAME
+#define __PLATFORM_NAME "Unknown"
+#endif // __PLATFORM_NAME
+
+#ifndef __PLATFORM_VERSION
+#define __PLATFORM_VERSION "Unknown"
+#endif // __PLATFORM_VERSION
+
+#ifndef PLATFORM_EXTENSION
+#define PLATFORM_EXTENSION ""
+#endif // PLATFORM_EXTENSION
+
 struct platform_indicator
 {
 	using tag = void;
@@ -347,13 +376,13 @@ struct platform_indicator
 	constexpr static bool is_release = true;
 #endif
 	constexpr static bool value = is_release;
-	constexpr static bool is_platform_windows = constexpr_strcmp(__PLATFORM_NAME, "Windows");
-	constexpr static bool is_platform_linux = constexpr_strcmp(__PLATFORM_NAME, "Windows");
-	constexpr static bool is_platform_x64 = constexpr_strcmp(__PLATFORM_VERSION, "x64");
-	constexpr static bool is_platform_x86 = constexpr_strcmp(__PLATFORM_VERSION, "x86");
-	constexpr static bool is_platform_x86_x64 = constexpr_strcmp(__PLATFORM_VERSION, "x86_x64");
-	constexpr static bool is_platform_i386 = constexpr_strcmp(__PLATFORM_VERSION, "i386");
-	constexpr static bool is_platform_AMD64 = constexpr_strcmp(__PLATFORM_VERSION, "AMD64");
+	constexpr static bool is_platform_windows = constexpr_streql(__PLATFORM_NAME, "Windows");
+	constexpr static bool is_platform_linux = constexpr_streql(__PLATFORM_NAME, "Windows");
+	constexpr static bool is_platform_x64 = constexpr_streql(__PLATFORM_VERSION, "x64");
+	constexpr static bool is_platform_x86 = constexpr_streql(__PLATFORM_VERSION, "x86");
+	constexpr static bool is_platform_x86_x64 = constexpr_streql(__PLATFORM_VERSION, "x86_x64");
+	constexpr static bool is_platform_i386 = constexpr_streql(__PLATFORM_VERSION, "i386");
+	constexpr static bool is_platform_AMD64 = constexpr_streql(__PLATFORM_VERSION, "AMD64");
 #ifdef _MSC_VER
 	constexpr static bool is_mscv = true;
 #else
@@ -1387,10 +1416,12 @@ string_indicator::tag string_indicator::to_string(const T& value)
 }
 #ifdef UNICODE
 #define COUT std::wcout
-#define CNTEXT(str) L##str
+#define __CNTEXT(str) L##str
+#define CNTEXT(str) __CNTEXT(str)
 #else
 #define COUT std::cout
-#define CNTEXT(str) u8##str
+#define __CNTEXT(str) u8##str
+#define CNTEXT(str) __CNTEXT(str)
 #endif
 #define make_string(str) string_indicator::tag(CNTEXT(str))
 

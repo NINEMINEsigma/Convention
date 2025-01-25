@@ -5,6 +5,5 @@ using namespace std;
 
 int main(int argv, char** argc)
 {
-	for (auto i : filesystem::directory_iterator("."))
-		cout << i.path().string() << endl;
+	cout << instance<platform_indicator>().persistent_path();
 }

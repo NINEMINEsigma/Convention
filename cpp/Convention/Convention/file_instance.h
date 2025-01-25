@@ -5,29 +5,9 @@
 #include "filesystem"
 #include "Convention/stream_instance.h"
 
-bool is_binary_file(const std::filesystem::path& path)
-{
-	std::ifstream fs(path, std::ios::in | std::ios::binary);
-	void* buffer = malloc(sizeof(char));
-	void* checker = malloc(sizeof(char));
-	memset(buffer, 0, sizeof(char));
-	memset(checker, 0, sizeof(char));
-	for (int i = 1024; i != 0 && fs; i--)
-	{
-		fs.read((char*)buffer, sizeof(char));
-		if (memcmp(buffer, checker, sizeof(char)))
-			return true;
-	}
-	return false;
-}
-decltype(auto) get_extension_name(const std::filesystem::path& path)
-{
-	return path.extension();
-}
-decltype(auto) get_base_filename(const std::filesystem::path& path)
-{
-	return path.filename();
-}
+extern bool is_binary_file(const std::filesystem::path& path);
+extern std::filesystem::path get_extension_name(const std::filesystem::path& path);
+extern std::filesystem::path get_base_filename(const std::filesystem::path& path);
 
 template<>
 class instance<std::filesystem::path, true> :public instance<std::filesystem::path, false>

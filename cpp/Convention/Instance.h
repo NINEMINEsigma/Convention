@@ -1,12 +1,13 @@
 #ifndef __FILE_INSTANCE
 #define __FILE_INSTANCE
 
-#include "Convention/number_instance.h"
 #include "Convention/any_class_instance.h"
-#include "Convention/process_instance.h"
+#include "Convention/app_instance.h"
 #include "Convention/ffmpeg_instance.h"
-#include "Convention/music_instance.h"
 #include "Convention/file_instance.h"
+#include "Convention/music_instance.h"
+#include "Convention/number_instance.h"
+#include "Convention/process_instance.h"
 #include "Convention/stream_instance.h"
 
 template<typename _Type, typename... _Args>

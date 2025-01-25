@@ -43,5 +43,15 @@ public:
 			).c_str());
 	}
 };
+#else
+
+#ifndef __DEFINED_FFMPEG_INDICATOR
+#define __DEFINED_FFMPEG_INDICATOR
+struct ffmpeg_indicator
+{
+	using tag = string_indicator::tag;
+	static constexpr bool value = false;
+};
+#endif
 
 #endif // !__FILE_CONVENTION_FFMPEG_INSTANCE

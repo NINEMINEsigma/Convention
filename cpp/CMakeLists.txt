@@ -1,5 +1,14 @@
+option(disable_FFMPEG "disable ffmpeg_instance" OFF)
+
+function(disable_instance instance_name)
+	if(disable_${instance_name})
+		add_compile_definitions(__FILE_CONVENTION_${instance_name}_INSTANCE)
+	endif()
+endfunction()
+
 message("Root: --- ----- ----- ----- ----- --")
 
+disable_instance(FFMPEG)
 
 add_compile_definitions(__PLATFORM_NAME="${PLATFORM_NAME}")
 add_compile_definitions(__PLATFORM_VERSION="${PLATFORM_VERSION}")
