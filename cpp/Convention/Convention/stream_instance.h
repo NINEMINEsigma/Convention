@@ -12,7 +12,25 @@ public:
 	explicit instance(_shared&& rv) :_MyBase(std::move(rv)) {}
 	template<typename... _Args>
 	instance(_Args&&... args) :_MyBase(std::forward<_Args>(args)...) {}
-	virtual ~instance() {}
+	instance_move_operator(public)
+	{
+
+	}
+	virtual ~instance()
+	{
+		auto ofptr = dynamic_cast<std::ofstream*>(this->get());
+		if (ofptr != nullptr)
+		{
+			ofptr->close();
+			return;
+		}
+		auto ifptr = dynamic_cast<std::ifstream*>(this->get());
+		if (ifptr != nullptr)
+		{
+			ifptr->close();
+			return;
+		}
+	}
 
 	template<typename _Right>
 	decltype(auto) operator<<(_Right&& value)
@@ -27,39 +45,50 @@ public:
 		return **this;
 	}
 };
-/*
-template<class _Stream>
-class instance<_Stream, true> :public std::enable_if_t <
-	internal::is_stream_v<_Stream> && !internal::is_number_v<_Stream>,
-	instance< _Stream, false>
->
+template<template<typename,typename> class _ST, typename _Elem>
+class instance<_ST<_Elem, std::char_traits<_Elem>>, true> :public instance< _ST<_Elem, std::char_traits<_Elem>>, false>
 {
 public:
+	using _Stream = _ST<_Elem, std::char_traits<_Elem>>;
+
 	using _MyBase = instance< _Stream, false>;
-	explicit instance(_Stream* ptr) :_MyBase(ptr) {}
-	explicit instance(_shared& rv) :_MyBase(rv) {}
-	explicit instance(_shared&& rv) :_MyBase(std::move(rv)) {}
 	template<typename _Str>
 	instance(_Str&& path, std::ios::openmode mode) : _MyBase(new _Stream(std::forward<_Str>(path), mode)) {}
 	template<typename _Ins>
 	instance(std::enable_if_t<std::is_same_v<instance, _Ins>, _Ins>&& other) : _MyBase(std::forward<_Ins>(other)) {}
-	virtuao ~instance() {}
+	virtual ~instance() {}
 
-	template<typename _Right>
-	decltype(auto) operator<<(std::enable_if_t<std::is_base_of_v<std::basic_ostream, _Stream>, _Right>&& value)
+	decltype(auto) operator<<(const _Elem* str) const noexcept
 	{
+		if constexpr (std::is_base_of_v<std::basic_ostream<_Elem, std::char_traits<_Elem>>, _Stream>)
+			**this << str;
+		else
+			assert("no matched operator<<()");
+		return **this;
+	}
+	decltype(auto) operator>>(_Elem* str) const noexcept
+	{
+		if constexpr (std::is_base_of_v<std::basic_istream<_Elem, std::char_traits<_Elem>>, _Stream>)
+			**this >> str;
+		else
+			assert("no matched operator>>()");
+		return **this;
+	}
+	template<typename _Right>
+	decltype(auto) operator<<(const _Right& value) const noexcept
+	{
+		static_assert(std::is_base_of_v<std::basic_ostream<_Elem, std::char_traits<_Elem>>, _Stream>, "no matched operator<<()");
 		**this << value;
 		return **this;
 	}
 	template<typename _Right>
-	decltype(auto) operator>>(std::enable_if_t<std::is_base_of_v<std::basic_istream, _Stream>, _Right>& value)
+	decltype(auto) operator>>(_Right& value) const noexcept
 	{
+		static_assert(std::is_base_of_v<std::basic_istream<_Elem, std::char_traits<_Elem>>, _Stream>, "no matched operator>>()");
 		**this >> value;
 		return **this;
 	}
 };
-*/
-
 template<typename _Elem>
 class istream_line_range :public any_class
 {

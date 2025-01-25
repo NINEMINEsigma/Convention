@@ -27,7 +27,7 @@ public:
 		return this->GetType() == typen;
 	}
 	template<typename _T>
-	_T As() const noexcept
+	decltype(auto) As() noexcept
 	{
 		if constexpr (std::is_pointer_v<_T>)
 			return dynamic_cast<_T>(this);

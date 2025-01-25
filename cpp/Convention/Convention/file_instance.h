@@ -3,7 +3,31 @@
 
 #include "Convention/Interface.h"
 #include "filesystem"
-#include "Convention/iostream_instance.h"
+#include "Convention/stream_instance.h"
+
+bool is_binary_file(const std::filesystem::path& path)
+{
+	std::ifstream fs(path, std::ios::in | std::ios::binary);
+	void* buffer = malloc(sizeof(char));
+	void* checker = malloc(sizeof(char));
+	memset(buffer, 0, sizeof(char));
+	memset(checker, 0, sizeof(char));
+	for (int i = 1024; i != 0 && fs; i--)
+	{
+		fs.read((char*)buffer, sizeof(char));
+		if (memcmp(buffer, checker, sizeof(char)))
+			return true;
+	}
+	return false;
+}
+decltype(auto) get_extension_name(const std::filesystem::path& path)
+{
+	return path.extension();
+}
+decltype(auto) get_base_filename(const std::filesystem::path& path)
+{
+	return path.filename();
+}
 
 template<>
 class instance<std::filesystem::path, true> :public instance<std::filesystem::path, false>
@@ -26,16 +50,34 @@ public:
 	explicit instance(const char* path_) : _MyBase(new path(path_)) {}
 	explicit instance(const wchar_t* path_) : _MyBase(new path(path_)) {}
 	instance(const std::wstring& path_) :_MyBase(new path(path_)) {}
-	explicit instance(instance&& move_) noexcept:
-		_MyBase(std::move(move_)),
-		stream(std::move(move_.stream)),
-		stream_mode(move_.stream_mode) {}
-	virtual ~instance() {}
 
-	// get stats
+	instance_move_operator(public)
+	{
+		this->stream = std::move(other.stream);
+		this->stream_mode = other.stream_mode;
+	}
+
+	virtual ~instance() {}
+	path get_filename(bool is_without_extension = false) const
+	{
+		std::string cur = this->get()->filename().string();
+		if (is_without_extension && this->get()->has_extension())
+		{
+			return cur.substr(0, cur.find_last_of('.'));
+		}
+		else if (cur.back() == '\\' || cur.back() == '/')
+			return cur.substr(0, cur.size() - 1);
+		else
+			return cur;
+	}
+
+	// get target path's stats
 
 	bool is_dir() const noexcept
 	{
+		auto endchar = this->get()->string().back();
+		if (endchar == '/' || endchar == '\\')
+			return true;
 		return std::filesystem::is_directory(**this);
 	}
 	bool is_file() const noexcept
@@ -54,15 +96,19 @@ public:
 	{
 		return std::filesystem::is_empty(**this);
 	}
+	bool is_binary_file() const
+	{
+		return ::is_binary_file(**this);
+	}
 
 	// operators
 
-	auto& open(path path_)
+	instance& open(path path_)
 	{
 		**this = std::move(path_);
 		return *this;
 	}
-	auto& open(std::ios::openmode mode)
+	instance& open(std::ios::openmode mode)
 	{
 		if (this->stream_mode = mode)
 		{
@@ -92,20 +138,56 @@ public:
 			std::ofstream of(**this, std::ios::out);
 		}
 	}
-	void must_exist_path_c() const noexcept
+	bool is_path_empty() const noexcept
 	{
-		if (this->exist())
-			return;
-		if (this->is_dir())
-			std::filesystem::create_directories(**this);
+		return this->get()->empty();
+	}
+	instance& rename(path new_name)
+	{
+		std::filesystem::rename(**this, new_name);
+		**this = new_name;
+		return *this;
+	}
+	void copy_c(const path& target) const
+	{
+		if (target.has_root_directory())
+		{
+			std::filesystem::copy(**this, target);
+		}
 		else
 		{
-			std::ofstream of(**this, std::ios::out);
+			path cur = this->get()->parent_path() / target;
+			std::filesystem::copy(**this, cur);
 		}
 	}
-	auto& must_exist_path() noexcept
+	instance& copy(const path& target)
 	{
-		this->must_exist_path_c();
+		this->copy_c(target);
+		return *this;
+	}
+	instance& move(const path& target)
+	{
+		if (target.has_root_directory())
+		{
+			std::filesystem::copy(**this, target);
+			std::filesystem::remove(**this);
+			**this = target;
+		}
+		else
+		{
+			path cur = this->get()->parent_path() / target;
+			std::filesystem::copy(**this, cur);
+			std::filesystem::remove(**this);
+			**this = cur;
+		}
+		return *this;
+	}
+	instance& must_exist_path() noexcept
+	{
+		this->stream = nullptr;
+		this->stream_mode = 0;
+		this->try_create_parent_path_c();
+		this->create();
 		return *this;
 	}
 	auto get_stream(std::ios::openmode mode) const
@@ -116,6 +198,127 @@ public:
 	{
 		return std::wfstream(**this, mode);
 	}
+
+	void try_create_parent_path_c() const
+	{
+		path dir = **this;
+		if (dir.has_parent_path())
+		{
+			dir = dir.parent_path();
+			std::filesystem::create_directories(dir);
+		}
+	}
+	instance& try_create_parent_path()
+	{
+		this->try_create_parent_path_c();
+		return *this;
+	}
+	auto dir_iter() const
+	{
+		return std::filesystem::directory_iterator(**this);
+	}
+	std::vector<instance> dir_instance_iter() const
+	{
+		std::vector<instance> result;
+		for (auto&& index : this->dir_iter())
+		{
+			result.push_back(instance(index.path()));
+		}
+		return result;
+	}
+	instance& back_to_parent_dir()
+	{
+		**this = this->get()->parent_path();
+		return *this;
+	}
+	size_t dir_count() const
+	{
+		size_t result = 0;
+		for (auto&& _ : this->dir_iter())
+			result++;
+		return result;
+	}
+	void dir_clear_c() const
+	{
+		for (auto&& index : this->dir_iter())
+			std::filesystem::remove(index);
+	}
+	instance& dir_clear()
+	{
+		this->dir_clear_c();
+		return *this;
+	}
+	// if found return it, otherwise return myself
+	instance first_file_with_extension(const std::string& extension) const
+	{
+		for (auto&& index : this->dir_iter())
+			if (index.path().extension() == extension)
+				return instance(index.path());
+		return instance(static_cast<_shared>(*this));
+	}
+	// if found return it, otherwise return myself
+	instance first_file_with_name(const std::string& name) const
+	{
+		for (auto&& index : this->dir_iter())
+		{
+			auto cur = index.path();
+			if (cur.has_filename() == false)continue;
+			auto sv = cur.filename().string();
+			if (name.size() <= sv.size() && 0 == decltype(sv)::traits_type::compare(sv.data(), name.data(), name.size()))
+				return instance(cur);
+		}
+		return instance(static_cast<_shared>(*this));
+	}
+	// if found return it, otherwise return myself
+	instance first_file(std::function<bool(const path&)> pr) const
+	{
+		for (auto&& index : this->dir_iter())
+			if (pr(index))
+				return instance(index.path());
+		return instance(static_cast<_shared>(*this));
+	}
+	// if found return it, otherwise return myself
+	instance first_file(std::function<bool(const instance&)> pr) const
+	{
+		for (auto&& index : this->dir_instance_iter())
+			if (pr(index))
+				return instance(std::move(index));
+		return instance(static_cast<_shared>(*this));
+	}
+	instance& make_file_inside(instance& data, bool is_delete_source = false)
+	{
+		if (this->is_dir())
+			throw std::filesystem::filesystem_error(
+				"Cannot make file inside a file, because this object target is not a directory",
+				**this,
+				std::make_error_code(std::errc::is_a_directory)
+			);
+		auto result = *this | data.get_filename();
+		if (is_delete_source)
+			data.move(result.get_filename());
+		else
+			data.copy(result.get_filename());
+		return *this;
+	}
+
+	// operators
+
+	instance operator|(const path& next) const noexcept
+	{
+		return instance(**this / next);
+	}
+	instance operator|(nullptr_t) const
+	{
+		if (this->is_dir())
+			return instance(static_cast<_shared>(*this));
+		return instance(this->get()->string() + "/");
+	}
+	instance operator|(_shared ptr) const
+	{
+		return instance(**this / (*ptr));
+	}
+
+	// stream operators
 
 	template<typename _Type>
 	decltype(auto) operator<<(const _Type& value)
@@ -129,6 +332,25 @@ public:
 		this->stream >> value;
 		return this->stream;
 	}
+	template<typename _StreamType>
+	decltype(auto) get_stream() const
+	{
+		if constexpr (std::is_pointer_v<_StreamType>)
+			return dynamic_cast<_StreamType>(this->stream.get());
+		else if constexpr (std::is_lvalue_reference_v<_StreamType>)
+			return dynamic_cast<_StreamType>(*this->stream);
+		else if constexpr (std::is_rvalue_reference_v<_StreamType>)
+			return dynamic_cast<_StreamType>(std::move(*this->stream));
+		else
+			return dynamic_cast<_StreamType&>(*this->stream);
+	}
+	template<typename... _Args>
+	decltype(auto) set_stream(_Args... args)
+	{
+		this->stream = _Stream(std::forward<_Args>(args)...);
+		return *this;
+	}
+	
 
 private:
 

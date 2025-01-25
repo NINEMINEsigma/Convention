@@ -94,3 +94,45 @@ extern "C"
 		return nullptr;
 	}
 }
+
+std::map<std::string, std::string> make_config(int argv, char** argc)
+{
+	std::map<std::string, std::string> result;
+	std::string key;
+	std::string value;
+	bool is_key = true;
+	for (int i = 1; i < argv; i++)
+	{
+		if (argc[i][0] == '-')
+		{
+			if (is_key)
+				key = argc[i];
+			else
+				result[key] = std::move(value);
+			is_key = false;
+			key = argc[i];
+			while (key.front() == '-')
+			{
+				key.erase(key.begin());
+				if (key.size() == 0)
+				{
+					is_key = true;
+					break;
+				}
+			}
+		}
+		else if (is_key==false)
+		{
+			result[std::move(key)] = argc[i];
+			is_key = true;
+		}
+		else
+		{
+			result[argc[i]] = "";
+			is_key = true;
+		}
+	}
+	return result;
+}
+
+

@@ -21,13 +21,13 @@ public:
 private:
     void* operator new(size_t t) {}
     void operator delete(void* ptr) {}
-    using _Mybase = _shared;
 public:
     constexpr instance() :_MyBase() {}
     constexpr instance(nullptr_t) : _MyBase(nullptr) {}
     explicit instance(_Type* ptr) : _MyBase(ptr) {}
-    explicit instance(_shared& rv) :_MyBase(rv) {}
-    explicit instance(_shared&& rv) :_MyBase(std::move(rv)) {}
+    explicit instance(_shared& rv) noexcept :_MyBase(rv) {}
+    explicit instance(_shared&& rv) noexcept :_MyBase(std::move(rv)) {}
+    explicit instance(instance&& other) noexcept :_MyBase(std::move(other)) {}
     template<typename... _Args>
     instance(_Args&&... args) : _MyBase(std::forward<_Args>(args)...) {}
     virtual ~instance() {}
@@ -35,6 +35,18 @@ public:
     bool is_empty() const noexcept
     {
         return this->get() != nullptr;
+    }
+
+    instance& operator=(const instance& other) noexcept
+    {
+        _MyBase::operator=(other);
+        return *this;
+    }
+    template<typename... _Args>
+    instance& operator=(_Args&&... args)
+    {
+        _MyBase::operator=(std::forward<_Args>(args)...);
+        return *this;
     }
 
     virtual std::string ToString() const noexcept override
@@ -48,8 +60,21 @@ public:
         return typename2classname(this->GetType().name()) + "<" +
             typename2classname(typeid(_Type).name()) + ">";
     }
-
 };
+
+#define instance_move_operator(internal) public:\
+explicit instance(instance&& other) noexcept:_MyBase(std::move(other))\
+{\
+    this->move(std::move(other));\
+}\
+instance& operator=(instance&& other) noexcept\
+{\
+    _MyBase::operator=(std::move(other));\
+    this->move(std::move(other));\
+    return *this;\
+}\
+internal:\
+void move(instance&& other) noexcept
 
 namespace internal
 {

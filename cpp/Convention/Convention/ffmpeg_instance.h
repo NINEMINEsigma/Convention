@@ -14,12 +14,14 @@ class instance<ffmpeg_indicator, true> :public instance<process_indicator, true>
 {
 public:
 	string_indicator::tag commandline;
-private:
 public:
 	using _MyBase = instance<process_indicator, true>;
 	instance(const string_indicator::tag& commandline = make_string("")) :_MyBase(), __init(commandline) {}
 	explicit instance(ffmpeg_indicator) :instance() {}
-	instance(const instance& other) :instance(other.commandline) {}
+	instance_move_operator(public)
+	{
+		this->commandline = std::move(other.commandline);
+	}
 	virtual ~instance() {}
 
 	bool ffplay(const string_indicator::tag& target)

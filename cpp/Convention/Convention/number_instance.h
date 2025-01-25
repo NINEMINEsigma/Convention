@@ -3,11 +3,16 @@
 
 #include "Convention/Interface.h"
 
+template<typename _Number>
+struct number_ex_indicator
+{
+	static constexpr bool value = 
+		!internal::is_stream_v<_Number> &&
+		internal::is_number_v<_Number>;
+	using tag = std::enable_if_t<value, _Number>;
+};
 template<typename _NumberType>
-class instance<_NumberType, true> : public std::enable_if_t<
-	internal::is_number_v<_NumberType> && !internal::is_stream_v<_NumberType>,
-	instance<_NumberType, false>
->
+class instance<number_ex_indicator<_NumberType>, true> : public instance<_NumberType, false>
 {
 private:
 	using _MyBase = instance<_NumberType, false>;
@@ -19,7 +24,7 @@ public:
 	explicit instance(typename _MyBase::_shared& rv) :_MyBase(rv) {}
 	explicit instance(typename _MyBase::_shared&& rv) :_MyBase(std::move(rv)) {}
 	template<typename... _Args>
-	instance(_Args&&... args) :_MyBase(std::forward<_Args>(args)...) {}
+	instance(_Args&&... args) : _MyBase(std::forward<_Args>(args)...) {}
 	virtual ~instance() {}
 
 	_NumberType get_cvalue() const noexcept
@@ -47,14 +52,14 @@ public:
 
 	operator_core(+);
 	operator_core(-);
-	operator_core(/);
-	operator_core(==);
-	operator_core(!=);
-	operator_core(=);
-	operator_core(>);
-	operator_core(<);
-	operator_core(>=);
-	operator_core(<=);
+	operator_core(/ );
+	operator_core(== );
+	operator_core(!= );
+	operator_core(= );
+	operator_core(> );
+	operator_core(< );
+	operator_core(>= );
+	operator_core(<= );
 
 #undef operator_core
 	template<typename _R>
@@ -81,10 +86,10 @@ public:
 	}\
 
 
-	operator_core(+=);
-	operator_core(-=);
-	operator_core(*=);
-	operator_core(/=);
+	operator_core(+= );
+	operator_core(-= );
+	operator_core(*= );
+	operator_core(/= );
 
 #undef operator_core
 

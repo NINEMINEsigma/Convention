@@ -74,7 +74,6 @@ bool process_instance::exc(
 		this->stats = false;
 	return this->stats;
 }
-process_instance::instance(process_indicator) :instance() {}
 process_instance::~instance()
 {
 	if (this->stats)
@@ -83,10 +82,6 @@ process_instance::~instance()
 		CloseHandle(this->pinfo.hProcess);
 		CloseHandle(this->pinfo.hThread);
 	}
-}
-bool process_instance::get_stats() const noexcept
-{
-	return stats;
 }
 
 bool process_instance::kill()

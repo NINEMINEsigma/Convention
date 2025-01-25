@@ -130,7 +130,7 @@ public:
 		DWORD end_time = this->get_end_time();
 
 		if (start_time > end_time)
-			return this->is_succeed = false;
+			return (this->is_succeed = false);
 
 		MCI_PLAY_PARMS mciPlay{};
 		mciPlay.dwFrom = static_cast<DWORD>(start_time);

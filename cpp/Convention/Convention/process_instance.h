@@ -36,9 +36,29 @@ public:
 	instance();
 	instance(const char_indicator::tag* commandline, const config_type & config = 0);
 	instance(const char_indicator::tag* executer, const char_indicator::tag* commandline_args, const config_type & config = 0);
-	explicit instance(process_indicator);
+public:
+	explicit instance(instance&& other) noexcept
+	{
+		this->move(std::move(other));
+	}
+	instance& operator=(instance&& other) noexcept
+	{
+		this->move(std::move(other)); 
+		return *this;
+	}
+private:
+	void move(instance&& other) noexcept
+	{
+		other.stats = false;
+		this->start_info = std::move(other.start_info);
+		this->pinfo = std::move(other.pinfo);
+	}
+public:
 	virtual ~instance();
-	bool get_stats() const noexcept;
+	bool get_stats() const noexcept
+	{
+		return stats;
+	}
 
 	virtual bool exc(const char_indicator::tag* commandline, const config_type& config = 0);
 	virtual bool exc(const char_indicator::tag* executer, const char_indicator::tag* commandline_args, const config_type& config = 0);

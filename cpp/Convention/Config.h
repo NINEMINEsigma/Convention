@@ -1385,12 +1385,14 @@ string_indicator::tag string_indicator::to_string(const T& value)
 #endif // UNICODE
 
 }
-#define make_string(str) string_indicator::tag(TEXT(str))
 #ifdef UNICODE
 #define COUT std::wcout
+#define CNTEXT(str) L##str
 #else
 #define COUT std::cout
+#define CNTEXT(str) u8##str
 #endif
+#define make_string(str) string_indicator::tag(CNTEXT(str))
 
 // convert memory to string, if unit_size set 0,
 // will compress source data to result string
@@ -1635,5 +1637,7 @@ _Notnull_ _T* no_warning_6387(_T* from)
 	}
 	return from;
 }
+
+extern std::map<std::string, std::string> make_config(int argv, char** argc);
 
 #endif // !__FILE_CONFIG
