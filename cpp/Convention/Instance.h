@@ -21,4 +21,16 @@ return instance<target_type##_ex_indicator<_Type>>(std::forward<_Args>(args)...)
 	return instance<_Type>(std::forward<_Args>(args)...);
 #undef oper
 }
+template<typename _Arg, typename _Type = std::decay_t<_Arg>>
+auto make_instance(_Arg&& arg)
+{
+#define oper(target_type)\
+if constexpr (internal::is_##target_type##_v<_Type>)\
+return instance<target_type##_ex_indicator<_Type>>(std::forward<_Arg>(arg))
+
+	oper(number);
+	return instance<_Type>(std::forward<_Arg>(arg));
+#undef oper
+}
+
 #endif // !__FILE_INSTANCE

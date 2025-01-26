@@ -1,3 +1,4 @@
+# Make Setting
 option(disable_FFMPEG "disable ffmpeg_instance" OFF)
 
 function(disable_instance instance_name)
@@ -14,7 +15,7 @@ add_compile_definitions(__PLATFORM_NAME="${PLATFORM_NAME}")
 add_compile_definitions(__PLATFORM_VERSION="${PLATFORM_VERSION}")
 add_compile_definitions(__PLATFORM_EXTENSION="${PLATFORM_EXTENSION}")
 
-# Make Setting
+
 # All Configs
 cmake_minimum_required (VERSION 3.14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

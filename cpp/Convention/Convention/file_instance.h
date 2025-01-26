@@ -24,20 +24,19 @@ public:
 
 	instance() = delete;
 	instance(nullptr_t) = delete;
-	explicit instance(_shared& rv) :_MyBase(rv) {}
-	explicit instance(_shared&& rv) :_MyBase(std::move(rv)) {}
-	explicit instance(path path_) :_MyBase(new path(path_)) {}
-	explicit instance(const char* path_) : _MyBase(new path(path_)) {}
-	explicit instance(const wchar_t* path_) : _MyBase(new path(path_)) {}
-	instance(const std::wstring& path_) :_MyBase(new path(path_)) {}
-
+	instance(const _shared& shared_path, bool is_must_exist=true) :_MyBase(shared_path)
+	{
+		if (is_must_exist)
+			this->must_exist_path();
+	}
+	instance(path path_) :_MyBase(new path(path_)) {}
 	instance_move_operator(public)
 	{
 		this->stream = std::move(other.stream);
 		this->stream_mode = other.stream_mode;
 	}
-
 	virtual ~instance() {}
+
 	path get_filename(bool is_without_extension = false) const
 	{
 		std::string cur = this->get()->filename().string();
@@ -49,6 +48,19 @@ public:
 			return cur.substr(0, cur.size() - 1);
 		else
 			return cur;
+	}
+	virtual std::string ToString() const noexcept override
+	{
+		return this->get_filename().string();
+	}
+	virtual std::string SymbolName() const noexcept override
+	{
+		return Combine(
+			"file<",
+			this->exist()?"e":"-",
+			this->is_dir() ? "d" : "-",
+			">"
+		);
 	}
 
 	// get target path's stats
