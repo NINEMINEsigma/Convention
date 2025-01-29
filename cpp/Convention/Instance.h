@@ -3,6 +3,8 @@
 
 #include "Convention/any_class_instance.h"
 #include "Convention/app_instance.h"
+#include "Convention/config_instance.h"
+#include "Convention/console_instance.h"
 #include "Convention/ffmpeg_instance.h"
 #include "Convention/file_instance.h"
 #include "Convention/music_instance.h"

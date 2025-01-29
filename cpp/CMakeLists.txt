@@ -1,15 +1,7 @@
 # Make Setting
-option(disable_FFMPEG "disable ffmpeg_instance" OFF)
-
-function(disable_instance instance_name)
-	if(disable_${instance_name})
-		add_compile_definitions(__FILE_CONVENTION_${instance_name}_INSTANCE)
-	endif()
-endfunction()
+option(__FILE_CONVENTION_FFMPEG_INSTANCE "disable ffmpeg_instance" OFF)
 
 message("Root: --- ----- ----- ----- ----- --")
-
-disable_instance(FFMPEG)
 
 add_compile_definitions(__PLATFORM_NAME="${PLATFORM_NAME}")
 add_compile_definitions(__PLATFORM_VERSION="${PLATFORM_VERSION}")
@@ -57,6 +49,8 @@ project("Convention")
 add_subdirectory("Convention")
 # Test Demo
 add_subdirectory("Test")
+# Visual Algorithm with Convention-Build
+add_subdirectory("Visual-Algorithm")
 
 message("Root: CMAKE_CXX_STANDARD = ${CMAKE_CXX_STANDARD}" )
 message("Root: CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS}")

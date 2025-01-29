@@ -6,12 +6,12 @@
 template<>
 class instance<std::ios_base, true> :public instance<std::ios_base, false>
 {
+	using _Mybase = instance< std::ios_base, false>;
 public:
-	using _MyBase = instance< std::ios_base, false>;
-	explicit instance(_shared& rv) :_MyBase(rv) {}
-	explicit instance(_shared&& rv) :_MyBase(std::move(rv)) {}
+	explicit instance(_shared& rv) :_Mybase(rv) {}
+	explicit instance(_shared&& rv) :_Mybase(std::move(rv)) {}
 	template<typename... _Args>
-	instance(_Args&&... args) :_MyBase(std::forward<_Args>(args)...) {}
+	instance(_Args&&... args) :_Mybase(std::forward<_Args>(args)...) {}
 	instance_move_operator(public)
 	{
 
@@ -51,11 +51,11 @@ class instance<_ST<_Elem, std::char_traits<_Elem>>, true> :public instance< _ST<
 public:
 	using _Stream = _ST<_Elem, std::char_traits<_Elem>>;
 
-	using _MyBase = instance< _Stream, false>;
+	using _Mybase = instance< _Stream, false>;
 	template<typename _Str>
-	instance(_Str&& path, std::ios::openmode mode) : _MyBase(new _Stream(std::forward<_Str>(path), mode)) {}
+	instance(_Str&& path, std::ios::openmode mode) : _Mybase(new _Stream(std::forward<_Str>(path), mode)) {}
 	template<typename _Ins>
-	instance(std::enable_if_t<std::is_same_v<instance, _Ins>, _Ins>&& other) : _MyBase(std::forward<_Ins>(other)) {}
+	instance(std::enable_if_t<std::is_same_v<instance, _Ins>, _Ins>&& other) : _Mybase(std::forward<_Ins>(other)) {}
 	virtual ~instance() {}
 
 	decltype(auto) operator<<(const _Elem* str) const noexcept
@@ -90,20 +90,20 @@ public:
 	}
 };
 template<typename _Elem>
-class istream_line_range :public any_class
+class unpack_lines_from_file :public any_class
 {
 public:
 	std::basic_ifstream< _Elem> stream;
 	_Elem* buffer;
 	size_t size;
-	istream_line_range(const _Elem* path_, std::ios::openmode mode, _Elem* buffer, size_t size) :
+	unpack_lines_from_file(const _Elem* path_, std::ios::openmode mode, _Elem* buffer, size_t size) :
 		stream(path_, mode), __init(buffer), __init(size) {}
-	virtual ~istream_line_range() {}
+	virtual ~unpack_lines_from_file() {}
 
 	struct iter
 	{
-		istream_line_range* parent;
-		iter(istream_line_range* parent) :__init(parent) {}
+		unpack_lines_from_file* parent;
+		iter(unpack_lines_from_file* parent) :__init(parent) {}
 
 		auto& operator++(void)
 		{

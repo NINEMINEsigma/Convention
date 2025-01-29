@@ -390,7 +390,8 @@ struct platform_indicator
 #endif
 
 	static std::string generate_platform_message() noexcept;
-	static bool keyboard_input(size_t key) noexcept;
+	// not lock current thread, if input is exist will return it otherwise return -1
+	static int keyboard_input() noexcept;
 };
 
 #pragma endregion
@@ -1380,6 +1381,30 @@ namespace std
 	{
 		return str;
 	}
+	inline std::string to_string(const std::filesystem::path& path)
+	{
+		return path.string();
+	}
+	inline std::wstring to_wstring(const std::filesystem::path& path)
+	{
+		return path.wstring();
+	}
+	inline std::string to_string(const std::wstring& str)
+	{
+		return to_string(std::filesystem::path(str));
+	}
+	inline std::wstring to_wstring(const std::string& str)
+	{
+		return to_wstring(std::filesystem::path(str));
+	}
+	inline std::string to_string(const char* str)
+	{
+		return std::string(str);
+	}
+	inline std::wstring to_wstring(const wchar_t* str)
+	{
+		return std::wstring(str);
+	}
 }
 
 struct char_indicator
@@ -1478,7 +1503,7 @@ std::basic_string<result_char_type> convert_xstring(
 		{
 			result.reserve((end - start) * unit_size / sizeof(result_char_type)
 				+ (unit_size % sizeof(result_char_type) ? 1 : 0));
-			char buffer[sizeof(result_char_type)+1];
+			char buffer[sizeof(result_char_type) + 1] = { 0 };
 			buffer[sizeof(result_char_type)] = 0;
 			memset(buffer, 0, sizeof(result_char_type));
 			size_t offset = 0;
@@ -1525,7 +1550,7 @@ inline decltype(auto) Combine(const _RetT& first, const Args&...args)
 }
 
 template<typename _ReTy>
-inline auto convert_xvalue(const std::string& str)
+inline decltype(auto) convert_xvalue(const std::string& str)
 {
 	if constexpr (std::is_floating_point_v<_ReTy>)
 		return static_cast<_ReTy>(std::atof(str.c_str()));
@@ -1535,10 +1560,21 @@ inline auto convert_xvalue(const std::string& str)
 		return str.c_str();
 	else if constexpr (std::is_same_v<std::string, _ReTy>)
 		return str;
+	else if constexpr (std::is_same_v<std::filesystem::path, _ReTy>)
+		return std::filesystem::path(str);
+	else if constexpr (std::is_same_v<bool, _ReTy>)
+	{
+		if (str == "true")
+			return true;
+		else if (str == "false")
+			return false;
+		else
+			throw std::bad_cast();
+	}
 	else
 	{
 		static_assert(std::is_same_v<_ReTy, void > == true, "not support for this type");
-		return;
+		return _ReTy{};
 	}
 }
 
@@ -1669,6 +1705,37 @@ _Notnull_ _T* no_warning_6387(_T* from)
 	return from;
 }
 
-extern std::map<std::string, std::string> make_config(int argv, char** argc);
+// first module name will in pair: "execute":path
+// other key will remove front '-' charactor
+// if a string that is not prefixed with the character '-' does not follow a key, it becomes a key
+extern std::tuple <
+	std::map<std::string, std::string>,
+	std::vector<std::pair<std::string, std::string>>
+> make_config(int argv, char** argc);
+
+template<typename _Type>
+struct descriptive_indicator
+{
+	using tag = _Type;
+	constexpr static bool value = true;
+	const char* description;
+	_Type value;
+};
+template<>
+struct descriptive_indicator<void>
+{
+	using tag = void;
+	constexpr static bool value = false;
+	const char* description;
+};
+template<typename _Type>
+auto make_descriptive(_Type val, const char* description)
+{
+	using result_type = descriptive_indicator<_Type>;
+	if constexpr (result_type::value)
+		return result_type{ description, val };
+	else
+		return result_type{ description };
+}
 
 #endif // !__FILE_CONFIG

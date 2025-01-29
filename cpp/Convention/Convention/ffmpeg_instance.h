@@ -12,11 +12,12 @@ struct ffmpeg_indicator
 template<>
 class instance<ffmpeg_indicator, true> :public instance<process_indicator, true>
 {
+private:
+	using _Mybase = instance<process_indicator, true>;
 public:
 	string_indicator::tag commandline;
 public:
-	using _MyBase = instance<process_indicator, true>;
-	instance(const string_indicator::tag& commandline = make_string("")) :_MyBase(), __init(commandline) {}
+	instance(const string_indicator::tag& commandline = make_string("")) :_Mybase(), __init(commandline) {}
 	explicit instance(ffmpeg_indicator) :instance() {}
 	instance_move_operator(public)
 	{

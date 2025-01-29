@@ -13,23 +13,24 @@ template<
 >
 class instance : public any_class, public _shared_ptr<_Type>
 {
+private:
+    using _Mybase = _shared_ptr<_Type>;
 public:
     using _shared = _shared_ptr<_Type>;
-    using _MyBase = _shared_ptr<_Type>;
     using _MyType = _Type;
     static constexpr bool _is_extension = _Extension;
 private:
     void* operator new(size_t t) {}
     void operator delete(void* ptr) {}
 public:
-    constexpr instance() :_MyBase() {}
-    constexpr instance(nullptr_t) : _MyBase(nullptr) {}
-    explicit instance(_Type* ptr) : _MyBase(ptr) {}
-    explicit instance(_shared& rv) noexcept :_MyBase(rv) {}
-    explicit instance(_shared&& rv) noexcept :_MyBase(std::move(rv)) {}
-    explicit instance(instance&& other) noexcept :_MyBase(std::move(other)) {}
+    constexpr instance() :_Mybase() {}
+    constexpr instance(nullptr_t) : _Mybase(nullptr) {}
+    explicit instance(_Type* ptr) : _Mybase(ptr) {}
+    explicit instance(_shared& rv) noexcept :_Mybase(rv) {}
+    explicit instance(_shared&& rv) noexcept :_Mybase(std::move(rv)) {}
+    explicit instance(instance&& other) noexcept :_Mybase(std::move(other)) {}
     template<typename... _Args>
-    instance(_Args&&... args) : _MyBase(std::forward<_Args>(args)...) {}
+    instance(_Args&&... args) : _Mybase(std::forward<_Args>(args)...) {}
     virtual ~instance() {}
 
     bool is_empty() const noexcept
@@ -39,13 +40,13 @@ public:
 
     instance& operator=(const instance& other) noexcept
     {
-        _MyBase::operator=(other);
+        _Mybase::operator=(other);
         return *this;
     }
     template<typename... _Args>
     instance& operator=(_Args&&... args)
     {
-        _MyBase::operator=(std::forward<_Args>(args)...);
+        _Mybase::operator=(std::forward<_Args>(args)...);
         return *this;
     }
 
@@ -63,13 +64,13 @@ public:
 };
 
 #define instance_move_operator(internal) public:\
-explicit instance(instance&& other) noexcept:_MyBase(std::move(other))\
+explicit instance(instance&& other) noexcept:_Mybase(std::move(other))\
 {\
     this->move(std::move(other));\
 }\
 instance& operator=(instance&& other) noexcept\
 {\
-    _MyBase::operator=(std::move(other));\
+    _Mybase::operator=(std::move(other));\
     this->move(std::move(other));\
     return *this;\
 }\

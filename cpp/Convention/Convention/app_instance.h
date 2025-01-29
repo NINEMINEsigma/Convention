@@ -9,10 +9,15 @@
 #include <shlobj.h>
 #endif // _WINDOWS
 
+#ifndef CURRENT_COM_NAME
+// set current-com-name to control platform paths
+#define CURRENT_COM_NAME "com.default"
+#endif // !CURRENT_COM_NAME
 
-#ifndef CURRENT_PROJECT_NAME
-// set current-project-name to control platform paths
-#define CURRENT_PROJECT_NAME "com.default"
+
+#ifndef CURRENT_APP_NAME
+// set current-app-name to control platform paths
+#define CURRENT_APP_NAME "unname"
 #endif // CURRENT_PROJECT_NAME
 
 template<>
@@ -34,11 +39,11 @@ private:
 			if (get_folder_path_ret != S_OK)
 			{
 				CoTaskMemFree(path_tmp);
-				return CNTEXT(CURRENT_PROJECT_NAME);
+				return std::filesystem::path(CNTEXT(CURRENT_COM_NAME)) / CNTEXT(CURRENT_APP_NAME);
 			}
 			std::filesystem::path path = path_tmp;
 			CoTaskMemFree(path_tmp);
-			result = path / CNTEXT(CURRENT_PROJECT_NAME);
+			result = path / CNTEXT(CURRENT_COM_NAME) / CNTEXT(CURRENT_APP_NAME);
 		}
 #else
 		result = p;

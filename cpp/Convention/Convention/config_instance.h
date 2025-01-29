@@ -1,0 +1,167 @@
+#ifndef __FILE_CONVENTION_CONFIG_INSTANCE
+#define __FILE_CONVENTION_CONFIG_INSTANCE
+
+#include "Convention/Interface.h"
+
+struct config_indicator
+{
+	using tag = std::decay_t<decltype(make_config(0, nullptr))>;
+	constexpr static bool value = true;
+};
+template<>
+class instance<config_indicator::tag, true> :public instance<config_indicator::tag, false>
+{
+private:
+	using _Mybase = instance<config_indicator::tag, false>;
+public:
+	explicit instance(int argc, char** argv) :_Mybase(
+		new config_indicator::tag(make_config(argc, argv))
+	) {}
+	instance(const _shared& data) noexcept :_Mybase(data) {}
+	instance& operator=(const _shared& data) noexcept
+	{
+		_Mybase::operator=(data);
+	}
+	virtual ~instance() {}
+
+	constexpr const auto& dict() const
+	{
+		return std::get<0>(**this);
+	}
+	constexpr const auto& vec() const
+	{
+		return std::get<1>(**this);
+	}
+
+	std::filesystem::path execute_path() const
+	{
+		auto iter = this->dict().find("execute");
+		if (iter != this->dict().end())
+			return iter->second;
+		throw std::filesystem::filesystem_error(
+			"commandline is not setting",
+			std::make_error_code(std::errc::not_supported)
+		);
+	}
+	auto contains(const std::string& key) const
+	{
+		return this->dict().count(key);
+	}
+	template<typename _Val>
+	_Val value(const std::string& key) const
+	{
+		return convert_xvalue<_Val>(this->dict().find(key)->second);
+	}
+	int int_value(const std::string& key) const
+	{
+		return value<int>(key);
+	}
+	double float_value(const std::string& key) const
+	{
+		return value<double>(key);
+	}
+	std::string string_value(const std::string& key) const
+	{
+		return value<std::string>(key);
+	}
+	bool bool_value(const std::string& key) const
+	{
+		return value<bool>(key);
+	}
+	std::vector<std::string> list(const std::string& key) const
+	{
+		auto&& vec = this->vec();
+		std::vector<std::string> result;
+
+		auto iter = std::find_if(vec.begin(), vec.end(), [&key](const auto& pair)
+			{
+				std::string str = pair.first;
+				while (str.size() && str.front() == '-')
+					str.erase(str.begin());
+				return str == key;
+			});
+		if (iter == vec.end())
+			return {};
+		if (iter->second.size() != 0)
+			result.push_back(iter->second);
+		while (++iter != vec.end())
+		{
+			if (iter->first.front() == '-')
+				break;
+			result.push_back(iter->first);
+		}
+		return result;
+	}
+
+	bool is_contains_helper_command() const
+	{
+		return this->contains("h") || this->contains("help") || this->contains("?");
+	}
+	bool is_contains_version_command() const
+	{
+		return this->contains("v") || this->contains("version");
+	}
+	std::string version() const
+	{
+		std::string result;
+		result.reserve(1024);
+		result += Combine("build in platform: ", platform_indicator::generate_platform_message(), "\n");
+		result += Combine("where: <", __LINE__, "> at ", __FILE__, "\n");
+		result += Combine("when: ", __DATE__, " ", __TIME__, "\n");
+#ifdef CURRENT_COM_NAME
+		result += Combine("who: ", CNTEXT(CURRENT_COM_NAME), "\n");
+#endif // CURRENT_COM_NAME
+#ifdef CURRENT_APP_NAME
+		result += Combine("app: ", CNTEXT(CURRENT_APP_NAME), "\n");
+#endif // CURRENT_APP_NAME
+		return result;
+	}
+private:
+	std::string internal_make_manual(const descriptive_indicator<std::string>& key) const
+	{
+		return Combine("\t\t[", key.value, "] \t", key.description, "\n");
+	}
+	std::string internal_make_manual(const descriptive_indicator<int>& layer) const
+	{
+		return Combine("\t", layer.description, ":\n");
+	}
+public:
+	template<typename _First,typename... _Args>
+	std::string make_manual(const std::enable_if_t <
+		std::is_same_v<decltype(_First{}.description), const char* >,
+		_First
+	> & key, const _Args&... args)
+	{
+		return internal_make_manual(key) + internal_make_manual(args...);
+	}
+
+	template<typename _Val>
+	bool operator()(
+		const std::string& find_key,
+		std::function<void(_Val)> action,
+		bool necessary = false,
+		const std::string& not_found_message_format = "the necessary argument has not given: %s is not found") const
+	{
+		if (this->contains(find_key))
+		{
+			action(convert_xvalue<_Val>(this->string_value(find_key)));
+			return true;
+		}
+		else if (necessary)
+		{
+			char buffer[1024];
+			sprintf(buffer, not_found_message_format, find_key.c_str());
+			std::cerr << "\n";
+			throw std::bad_exception();
+		}
+		else
+		{
+			char buffer[1024];
+			sprintf(buffer, not_found_message_format, find_key.c_str());
+			std::cout << "\n";
+			return false;
+		}
+	}
+};
+
+#endif // !__FILE_CONVENTION_CONFIG_INSTANCE

@@ -4,6 +4,6 @@
 #include "Config.h"
 #include "Internal.h"
 #include "Instance.h"
-
+#include "Algorithm.h"
 
 #endif // !__FILE_CONVENTION

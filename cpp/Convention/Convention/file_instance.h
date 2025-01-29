@@ -16,20 +16,21 @@ public:
 	using buffer_type = std::basic_string<size_t>;
 
 	using path = std::filesystem::path;
-	using _MyBase = instance<path, false>;
 	using _Stream = instance<std::ios_base, true>;
-
+private:
+	using _Mybase = instance<path, false>;
+public:
 	_Stream stream = nullptr;
 	std::ios::openmode stream_mode = 0;
 
 	instance() = delete;
 	instance(nullptr_t) = delete;
-	instance(const _shared& shared_path, bool is_must_exist=true) :_MyBase(shared_path)
+	instance(const _shared& shared_path, bool is_must_exist=true) :_Mybase(shared_path)
 	{
 		if (is_must_exist)
 			this->must_exist_path();
 	}
-	instance(path path_) :_MyBase(new path(path_)) {}
+	instance(path path_) :_Mybase(new path(path_)) {}
 	instance_move_operator(public)
 	{
 		this->stream = std::move(other.stream);

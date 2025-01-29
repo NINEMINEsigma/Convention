@@ -1,12 +1,13 @@
 #include"Convention.h"
+#include <Windows.h>
+
 
 using namespace std;
+using namespace internal;
 
-
-int main(int argv, char** argc)
+int main() 
 {
-	cout << instance<platform_indicator>().persistent_path() << endl;
-	auto assets = make_instance(instance<platform_indicator>().persistent_path());
-	assets.must_exist_path();
-	cout << assets.SymbolName() << ": " << assets.ToString();
+	instance<console_indicator> console;
+	cout << console.ToString() << endl;
+	cout << console.ToString() << endl;
 }

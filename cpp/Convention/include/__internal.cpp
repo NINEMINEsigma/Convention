@@ -14,11 +14,11 @@ std::string platform_indicator::generate_platform_message() noexcept
 {
 	return std::string("Platform: ") + __PLATFORM_NAME + "-" + __PLATFORM_VERSION + "-" + __PLATFORM_EXTENSION;
 }
-bool platform_indicator::keyboard_input(size_t key) noexcept
+int platform_indicator::keyboard_input() noexcept
 {
 #ifdef _WINDOWS
 	if (_kbhit())
-		return _getch() == key || key == 0;
+		return _getch();
 #else
 	fd_set rfds;
 	struct timeval tv;
@@ -28,9 +28,9 @@ bool platform_indicator::keyboard_input(size_t key) noexcept
 	tv.tv_sec = 0;
 	tv.tv_usec = 1; //设置等待超时时间
 	if (select(1, &rfds, NULL, NULL, &tv) > 0)
-		return key == getchar() || key == 0;
+		return getchar();
 #endif // _WINDOWS
-	return false;
+	return -1;
 }
 
 size_t string_indicator::strlen(const char_indicator::tag* str)
@@ -95,20 +95,38 @@ extern "C"
 	}
 }
 
-std::map<std::string, std::string> make_config(int argv, char** argc)
+std::tuple<
+	std::map<std::string, std::string>,
+	std::vector<std::pair<std::string, std::string>>
+> make_config(int argv, char** argc)
 {
-	std::map<std::string, std::string> result;
+	std::map<std::string, std::string> first;
+	std::vector<std::pair<std::string, std::string>> second;
 	std::string key;
 	std::string value;
 	bool is_key = true;
+	if (argv > 0)
+	{
+		first["execute"] = argc[0];
+		second.push_back({ argc[0],"" });
+	}
 	for (int i = 1; i < argv; i++)
 	{
+		if (second.size() != 0 &&
+			second.back().first.front() == '-' &&
+			second.back().second.size() == 0 &&
+			argc[i][0] != '-'
+			)
+			second.back().second = argc[i];
+		else
+			second.push_back({ argc[i],"" });
+
 		if (argc[i][0] == '-')
 		{
 			if (is_key)
 				key = argc[i];
 			else
-				result[key] = std::move(value);
+				first[key] = value;
 			is_key = false;
 			key = argc[i];
 			while (key.front() == '-')
@@ -123,16 +141,24 @@ std::map<std::string, std::string> make_config(int argv, char** argc)
 		}
 		else if (is_key==false)
 		{
-			result[std::move(key)] = argc[i];
+			first[key] = argc[i];
 			is_key = true;
 		}
 		else
 		{
-			result[argc[i]] = "";
+			first[argc[i]] = "";
 			is_key = true;
 		}
 	}
-	return result;
+	if (is_key == false)
+	{
+		first[key] = "";
+		second.push_back({ key,"" });
+	}
+	return make_tuple<
+		std::map<std::string, std::string>,
+		std::vector<std::pair<std::string, std::string>>
+	>(std::move(first),std::move(second));
 }
 
 // file_instance.h

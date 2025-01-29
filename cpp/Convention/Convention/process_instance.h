@@ -34,8 +34,8 @@ public:
 	constexpr static bool value = true;
 
 	instance();
-	instance(const char_indicator::tag* commandline, const config_type & config = 0);
-	instance(const char_indicator::tag* executer, const char_indicator::tag* commandline_args, const config_type & config = 0);
+	instance(const char_indicator::tag* commandline, const config_type& config = 0);
+	instance(const char_indicator::tag* executer, const char_indicator::tag* commandline_args, const config_type& config = 0);
 public:
 	explicit instance(instance&& other) noexcept
 	{
@@ -43,7 +43,7 @@ public:
 	}
 	instance& operator=(instance&& other) noexcept
 	{
-		this->move(std::move(other)); 
+		this->move(std::move(other));
 		return *this;
 	}
 private:
@@ -65,6 +65,36 @@ public:
 
 	virtual bool kill();
 	bool is_still_alive();
+
+	void until(std::function<bool(void)> pr)
+	{
+		while (this->is_still_alive())
+			if (pr() == false)
+				this->kill();
+	}
+	void until(std::function<bool(void)> pr, std::function<void(void)> sleeper)
+	{
+		while (this->is_still_alive())
+		{
+			sleeper();
+			if (pr() == false)
+				this->kill();
+		}
+	}
+	void until(_Inout_ std::thread& th, std::function<bool(void)> pr)
+	{
+		th.operator=(std::thread([this, pr]()
+			{
+				this->until(pr);
+			}));
+	}
+	void until(_Inout_ std::thread& th, std::function<bool(void)> pr, std::function<void(void)> sleeper)
+	{
+		th.operator=(std::thread([this, pr, sleeper]()
+			{
+				this->until(pr, sleeper);
+			}));
+	}
 };
 
 #endif // !__FILE_CONVENTION_PROCESS_INSTANCER

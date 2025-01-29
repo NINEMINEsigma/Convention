@@ -20,6 +20,7 @@ template<>
 class instance<mci_music_indicator, true> :public instance<mci_music_indicator::tag, false>
 {
 private:
+	using _Mybase = instance<mci_music_indicator::tag, false>;
 	void nDeviceID(const mci_music_indicator::tag& id) noexcept
 	{
 		**this = id;
@@ -31,14 +32,13 @@ public:
 	{
 		return **this;
 	}
-	using _MyBase = instance<mci_music_indicator::tag, false>;
 
-	instance()noexcept :_MyBase(new mci_music_indicator::tag(-1)) {}
-	instance(nullptr_t)noexcept :_MyBase(nullptr) {}
-	explicit instance(mci_music_indicator::tag* ptr)noexcept :_MyBase(ptr) {}
-	explicit instance(mci_music_indicator::tag tag)noexcept :_MyBase(new mci_music_indicator::tag(tag)) {}
+	instance()noexcept :_Mybase(new mci_music_indicator::tag(-1)) {}
+	instance(nullptr_t)noexcept :_Mybase(nullptr) {}
+	explicit instance(mci_music_indicator::tag* ptr)noexcept :_Mybase(ptr) {}
+	explicit instance(mci_music_indicator::tag tag)noexcept :_Mybase(new mci_music_indicator::tag(tag)) {}
 	template<typename... _Args>
-	instance(_Args&&... args) : _MyBase(std::forward<_Args>(args)...) {}
+	instance(_Args&&... args) : _Mybase(std::forward<_Args>(args)...) {}
 	virtual ~instance()
 	{
 		if (this->nDeviceID() != -1)

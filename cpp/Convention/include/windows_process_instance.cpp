@@ -88,9 +88,12 @@ bool process_instance::kill()
 {
 	if (this->stats)
 	{
-		TerminateProcess(this->pinfo.hProcess, 0);
-		CloseHandle(this->pinfo.hProcess);
-		CloseHandle(this->pinfo.hThread);
+		if (this->is_still_alive())
+		{
+			TerminateProcess(this->pinfo.hProcess, 0);
+			CloseHandle(this->pinfo.hProcess);
+			CloseHandle(this->pinfo.hThread);
+		}
 		this->stats = false;
 		return true;
 	}
