@@ -109,30 +109,50 @@ public:
 		result += Combine("where: <", __LINE__, "> at ", __FILE__, "\n");
 		result += Combine("when: ", __DATE__, " ", __TIME__, "\n");
 #ifdef CURRENT_COM_NAME
-		result += Combine("who: ", CNTEXT(CURRENT_COM_NAME), "\n");
+		result += Combine("who: ", CURRENT_COM_NAME, "\n");
 #endif // CURRENT_COM_NAME
 #ifdef CURRENT_APP_NAME
-		result += Combine("app: ", CNTEXT(CURRENT_APP_NAME), "\n");
+		result += Combine("app: ", CURRENT_APP_NAME, "\n");
 #endif // CURRENT_APP_NAME
 		return result;
 	}
 private:
-	std::string internal_make_manual(const descriptive_indicator<std::string>& key) const
+	template<typename _Val>
+	std::string internal_make_manual_text(const descriptive_indicator<_Val>& key) const
 	{
-		return Combine("\t\t[", key.value, "] \t", key.description, "\n");
+		return Combine("\t\t[", key.target, "] \t", key.description, "\n");
 	}
-	std::string internal_make_manual(const descriptive_indicator<int>& layer) const
+	std::string internal_make_manual_text(const descriptive_indicator<void>& layer) const
 	{
 		return Combine("\t", layer.description, ":\n");
 	}
+	std::string internal_make_manual_summary(bool is_necessary, const std::string& key) const
+	{
+		if (is_necessary)
+			return key;
+		else
+		{
+			if (key.front() == '[')
+				return key;
+			else
+				return Combine("[", key, "]");
+		}
+	}
+	template<typename... _Args>
+	std::string internal_make_manual_summary(bool is_necessary, const std::string& key, const _Args&... args) const
+	{
+		return internal_make_manual_summary(is_necessary, key) +" " + internal_make_manual_summary(args...);
+	}
 public:
 	template<typename _First,typename... _Args>
-	std::string make_manual(const std::enable_if_t <
-		std::is_same_v<decltype(_First{}.description), const char* >,
-		_First
-	> & key, const _Args&... args)
+	std::string make_manual(const std::string& top,const _First& key, const _Args&... args)
 	{
-		return internal_make_manual(key) + internal_make_manual(args...);
+		return top + "\n" + internal_make_manual_text(key) + internal_make_manual_text(args...);
+	}
+	template<typename... _Args>
+	std::string make_manual_summary(bool is_necessary, const std::string& key, const _Args&... args) const
+	{
+		return this->execute_path().string() + " " + internal_make_manual_summary(is_necessary, key, args...);
 	}
 
 	template<typename _Val>

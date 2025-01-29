@@ -8,6 +8,12 @@
 #define abstract =0
 #endif
 
+struct decltype_any_unit
+{
+	template<typename value_type>
+	constexpr operator value_type() const noexcept;
+};
+
 #pragma region easyx
 
 #if defined(__REF_EASYX)
@@ -1534,19 +1540,19 @@ std::basic_string<result_char_type> convert_xstring(
 }
 
 template<typename _T>
-inline decltype(auto) Combine(const _T& first)
+inline std::string Combine(const _T& first)
 {
 	return std::to_string(first);
 }
-template<typename _RetT,typename _LeftT>
-inline decltype(auto) Combine(const _RetT& first, const _LeftT& arg)
+template<typename _First,typename _LeftT>
+inline std::string Combine(const _First& first, const _LeftT& arg)
 {
 	return std::to_string(first) + std::to_string(arg);
 }
-template<typename _RetT, typename... Args>
-inline decltype(auto) Combine(const _RetT& first, const Args&...args)
+template<typename _First, typename... Args>
+inline std::string Combine(const _First& first, const Args&...args)
 {
-	return std::to_string(first) + Combine<std::string>(args...);
+	return std::to_string(first) + Combine(args...);
 }
 
 template<typename _ReTy>
@@ -1719,7 +1725,7 @@ struct descriptive_indicator
 	using tag = _Type;
 	constexpr static bool value = true;
 	const char* description;
-	_Type value;
+	tag target;
 };
 template<>
 struct descriptive_indicator<void>
@@ -1731,11 +1737,18 @@ struct descriptive_indicator<void>
 template<typename _Type>
 auto make_descriptive(_Type val, const char* description)
 {
-	using result_type = descriptive_indicator<_Type>;
-	if constexpr (result_type::value)
-		return result_type{ description, val };
-	else
-		return result_type{ description };
+	return descriptive_indicator<_Type>{ description, val };
+}
+inline auto make_descriptive(const char* val, const char* description)
+{
+	descriptive_indicator<const char*> result;
+	result.target = val;
+	result.description = description;
+	return result;
+}
+inline auto make_descriptive(const char* description)
+{
+	return descriptive_indicator<void>{ description };
 }
 
 #endif // !__FILE_CONFIG
