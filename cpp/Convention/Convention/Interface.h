@@ -53,13 +53,16 @@ public:
     virtual std::string ToString() const noexcept override
     {
         std::string result(64, 0);
-        sprintf(result.data(), "%p", this->get());
+        sprintf(result.data(), "instance<%p>", this->get());
         return result;
     }
     virtual std::string SymbolName() const noexcept override
     {
-        return typename2classname(this->GetType().name()) + "<" +
-            typename2classname(typeid(_Type).name()) + ">";
+        auto front = typename2classname(this->GetType().name());
+        front = front.substr(0,
+            std::distance(front.begin(), std::find(front.begin(), front.end(), '<'))
+        );
+        return front + "<" + typename2classname(typeid(_Type).name()) + ">";
     }
 };
 

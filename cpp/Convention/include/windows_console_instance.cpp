@@ -16,6 +16,9 @@ console::instance() noexcept:_Mybase(new console_indicator::tag())
 	);
 	SetConsoleActiveScreenBuffer(this->get()->hBuffer);
 	SetConsoleCursorInfo(this->get()->hBuffer, &this->get()->cci);
+	SetConsoleMode(this->get()->hBuffer,
+		ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING
+	);
 }
 console::~instance()
 {
