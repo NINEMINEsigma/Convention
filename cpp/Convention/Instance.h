@@ -11,6 +11,7 @@
 #include "Convention/number_instance.h"
 #include "Convention/process_instance.h"
 #include "Convention/stream_instance.h"
+#include "Convention/time_instance.h"
 
 template<typename _Type, typename... _Args>
 auto make_instance(_Args&&... args)

@@ -93,6 +93,31 @@ public:
 		return result;
 	}
 
+	template<typename _Val>
+	_Val try_value(const std::string& key, _Val default_val) const
+	{
+		auto iter = this->dict().find(key);
+		if (iter != this->dict().end())
+			return convert_xvalue<_Val>(iter->second);
+		return default_val;
+	}
+	int try_int_value(const std::string& key, int default_val) const
+	{
+		return try_value<int>(key, default_val);
+	}
+	double try_float_value(const std::string& key, double default_val) const
+	{
+		return try_value<double>(key, default_val);
+	}
+	std::string try_string_value(const std::string& key, const std::string& default_val) const
+	{
+		return try_value<std::string>(key, default_val);
+	}
+	bool try_bool_value(const std::string& key, bool default_val) const
+	{
+		return try_value<bool>(key, default_val);
+	}
+
 	bool is_contains_helper_command() const
 	{
 		return this->contains("h") || this->contains("help") || this->contains("?");
@@ -126,6 +151,16 @@ private:
 	{
 		return Combine("\t", layer.description, ":\n");
 	}
+	template<typename _First, typename... _Args>
+	std::string inertnal_make_manual(const _First& key)
+	{
+		return internal_make_manual_text(key);
+	}
+	template<typename _First, typename... _Args>
+	std::string inertnal_make_manual(const _First& key, const _Args&... args)
+	{
+		return internal_make_manual_text(key) + inertnal_make_manual(args...);
+	}
 	std::string internal_make_manual_summary(bool is_necessary, const std::string& key) const
 	{
 		if (is_necessary)
@@ -147,7 +182,7 @@ public:
 	template<typename _First,typename... _Args>
 	std::string make_manual(const std::string& top,const _First& key, const _Args&... args)
 	{
-		return top + "\n" + internal_make_manual_text(key) + internal_make_manual_text(args...);
+		return top + "\n" + internal_make_manual_text(key) + inertnal_make_manual(args...);
 	}
 	template<typename... _Args>
 	std::string make_manual_summary(bool is_necessary, const std::string& key, const _Args&... args) const
@@ -170,14 +205,41 @@ public:
 		else if (necessary)
 		{
 			char buffer[1024];
-			sprintf(buffer, not_found_message_format, find_key.c_str());
+			sprintf(buffer, not_found_message_format.c_str(), find_key.c_str());
 			std::cerr << "\n";
 			throw std::bad_exception();
 		}
 		else
 		{
 			char buffer[1024];
-			sprintf(buffer, not_found_message_format, find_key.c_str());
+			sprintf(buffer, not_found_message_format.c_str(), find_key.c_str());
+			std::cout << "\n";
+			return false;
+		}
+	}
+	template<typename _Val>
+	bool operator()(
+		const std::string& find_key,
+		_Val& target,
+		bool necessary = false,
+		const std::string& not_found_message_format = "the necessary argument has not given: %s is not found") const
+	{
+		if (this->contains(find_key))
+		{
+			target = convert_xvalue<_Val>(this->string_value(find_key));
+			return true;
+		}
+		else if (necessary)
+		{
+			char buffer[1024];
+			sprintf(buffer, not_found_message_format.c_str(), find_key.c_str());
+			std::cerr << "\n";
+			throw std::bad_exception();
+		}
+		else
+		{
+			char buffer[1024];
+			sprintf(buffer, not_found_message_format.c_str(), find_key.c_str());
 			std::cout << "\n";
 			return false;
 		}

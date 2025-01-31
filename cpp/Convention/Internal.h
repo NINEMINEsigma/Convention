@@ -84,6 +84,23 @@ std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits
 	return _Out;
 }
 
+namespace std
+{
+	namespace convention_kit
+	{
+		template<typename _Ret,typename... _Args>
+		std::function<_Ret(_Args...)> make_function(_Ret(*func)(_Args...))
+		{
+			return func;
+		}
+		template<typename _Ret, typename... _Args, typename _Func>
+		std::function<_Ret(_Args...)> make_function(_Func func)
+		{
+			return func;
+		}
+	}
+}
+
 extern "C"
 {
 	extern _Ret_maybenull_ void* find_target_flag_class_ptr(
