@@ -7,10 +7,25 @@ wchar_t buffer[256] = { 0 };
 void add_to_music_list(vector<path>& ml, wstring path_);
 auto make_list(instance<config_indicator::tag>& config)
 {
-	if (
-		config.vec().size()<2||
-		config.contains("l") + config.contains("s") != 1 ||
-		config.contains("h"))
+	vector<path> result;
+	if (config.vec().size() == 2)
+	{
+		if (filesystem::exists(config.vec()[1].first))
+		{
+			auto file = make_instance<path>(config.vec()[1].first);
+			if (file.get_filename().extension() == ".txt")
+			{
+				for (auto&& path_ : unpack_lines_from_file(file->c_str(), ios::in, buffer, 256))
+					add_to_music_list(result, path_);
+				return result;
+			}
+			else
+			{
+				return vector<path>{ *file };
+			}
+		}
+	}
+	if (config.is_contains_helper_command()|| config.contains("l") + config.contains("s") != 1)
 	{
 		cout << "player argument" << endl;
 		cout << "\tmust specify one and only one" << endl;
@@ -25,7 +40,6 @@ auto make_list(instance<config_indicator::tag>& config)
 		cout << "player [-rl/-ll/sl] [-ff:\"...\"] -l \"musiclist.txt\"(or -s song [songs...])";
 		exit(0);
 	}
-	vector<path> result;
 	if (config.contains("l"))
 	{
 		auto file = make_instance<path>(config.string_value("l"));
@@ -89,6 +103,9 @@ int main(int argv, char** argc)
 				try { cout << "\tnext(-n)\t\tTo song<" << musiclist[(index + 1) % musiclist.size()].filename(); }
 				catch (...) {} cout << ">" << endl;
 				cout << "\t{song name}\t\tenter song name and prefix matching it" << endl;
+				cout << "\trandom-mode(-rl)\t\tenter song name and prefix matching it" << endl;
+				cout << "\tlist-mode(-ll)\t\tenter song name and prefix matching it" << endl;
+				cout << "\tsingle-mode(-sl)\t\tenter song name and prefix matching it" << endl;
 				string mode;
 				cin >> mode;
 				if (mode == "previous" || mode == "-p")
@@ -105,6 +122,18 @@ int main(int argv, char** argc)
 				{
 					last_index = index;
 					index = (index + 1) % musiclist.size();
+				}
+				else if (mode == "random-mode" || mode == "-rl")
+				{
+					next_song = 0;
+				}
+				else if (mode == "list-mode" || mode == "-ll")
+				{
+					next_song = 1;
+				}
+				else if (mode == "single-mode" || mode == "-sl")
+				{
+					next_song = 2;
 				}
 				else
 				{

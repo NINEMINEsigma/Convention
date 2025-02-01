@@ -28,7 +28,7 @@ public:
 		localized_clocker(instance<_TimePoint, true>& parent)
 			: m_begin(_Clock::now()),
 			parent(parent) {}
-		localized_clocker(localized_clocker&& other)
+		localized_clocker(localized_clocker&& other) noexcept
 			:m_begin(_Clock::now()),
 			parent(other.parent) {}
 		virtual ~localized_clocker()

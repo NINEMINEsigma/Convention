@@ -121,6 +121,11 @@ enum class ConsoleBackgroundColor
 	Green, Red, Blue, White, Black, Yellow, Purple, Gray, Cyan, None
 };
 
+extern std::string GetColorCodeA(ConsoleColor color);
+extern std::string GetBackgroundColorCodeA(ConsoleBackgroundColor color);
+extern std::wstring GetColorCodeW(ConsoleColor color);
+extern std::wstring GetBackgroundColorCodeW(ConsoleBackgroundColor color);
+
 extern std::ostream& operator<<    (std::ostream& os, const ConsoleColor& data);
 extern std::ostream& operator<<    (std::ostream& os, const ConsoleBackgroundColor& data);
 extern std::wostream& operator<<   (std::wostream& os, const ConsoleColor& data);

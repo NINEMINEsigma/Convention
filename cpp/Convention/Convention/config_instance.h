@@ -1,6 +1,5 @@
 #ifndef __FILE_CONVENTION_CONFIG_INSTANCE
 #define __FILE_CONVENTION_CONFIG_INSTANCE
-
 #include "Convention/Interface.h"
 
 struct config_indicator
@@ -33,6 +32,8 @@ public:
 		return std::get<1>(**this);
 	}
 
+	std::map<std::string, std::string> try_get_histroy;
+
 	std::filesystem::path execute_path() const
 	{
 		auto iter = this->dict().find("execute");
@@ -51,6 +52,14 @@ public:
 	_Val value(const std::string& key) const
 	{
 		return convert_xvalue<_Val>(this->dict().find(key)->second);
+	}
+	unsigned int uint_value(const std::string& key) const
+	{
+		return value<unsigned int>(key);
+	}
+	size_t size_value(const std::string& key) const
+	{
+		return value<size_t>(key);
 	}
 	int int_value(const std::string& key) const
 	{
@@ -94,26 +103,35 @@ public:
 	}
 
 	template<typename _Val>
-	_Val try_value(const std::string& key, _Val default_val) const
+	_Val try_value(const std::string& key, _Val default_val)
 	{
+		try_get_histroy[key] = typename2classname(typeid(_Val).name());
 		auto iter = this->dict().find(key);
 		if (iter != this->dict().end())
 			return convert_xvalue<_Val>(iter->second);
 		return default_val;
 	}
-	int try_int_value(const std::string& key, int default_val) const
+	unsigned int try_uint_value(const std::string& key, unsigned int default_val)
+	{
+		return try_value<unsigned int>(key, default_val);
+	}
+	size_t try_size_value(const std::string& key, size_t default_val)
+	{
+		return try_value<size_t>(key, default_val);
+	}
+	int try_int_value(const std::string& key, int default_val)
 	{
 		return try_value<int>(key, default_val);
 	}
-	double try_float_value(const std::string& key, double default_val) const
+	double try_float_value(const std::string& key, double default_val)
 	{
 		return try_value<double>(key, default_val);
 	}
-	std::string try_string_value(const std::string& key, const std::string& default_val) const
+	std::string try_string_value(const std::string& key, const std::string& default_val)
 	{
 		return try_value<std::string>(key, default_val);
 	}
-	bool try_bool_value(const std::string& key, bool default_val) const
+	bool try_bool_value(const std::string& key, bool default_val)
 	{
 		return try_value<bool>(key, default_val);
 	}
@@ -151,7 +169,11 @@ private:
 	{
 		return Combine("\t", layer.description, ":\n");
 	}
-	template<typename _First, typename... _Args>
+	std::string inertnal_make_manual()
+	{
+		return "";
+	}
+	template<typename _First>
 	std::string inertnal_make_manual(const _First& key)
 	{
 		return internal_make_manual_text(key);

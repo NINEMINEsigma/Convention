@@ -16,16 +16,7 @@ std::string GetColorCodeA(ConsoleColor color)
 	case ConsoleColor::Cyan: return "\033[36m";
 	case ConsoleColor::Yellow: return "\033[33m";
 	case ConsoleColor::None: return "\033[0m";
-	case ConsoleColor::GreenIntensity: return "\033[32m;1m";
-	case ConsoleColor::BlackIntensity: return "\033[30m;1m";
-	case ConsoleColor::BlueIntensity: return "\033[34m;1m";
-	case ConsoleColor::GrayIntensity: return "\033[37m;1m";
-	case ConsoleColor::PurpleIntensity: return "\033[35m;1m";
-	case ConsoleColor::RedIntensity: return "\033[31m;1m";
-	case ConsoleColor::WhiteIntensity: return "\033[37m;1m";
-	case ConsoleColor::YellowIntensity: return "\033[33m;1m";
-	case ConsoleColor::CyanIntensity: return "\033[36m;1m";
-	default: return 0;
+	default: return "\033[0m";
 	}
 }
 
@@ -44,7 +35,7 @@ std::string GetBackgroundColorCodeA(ConsoleBackgroundColor color)
 	case ConsoleBackgroundColor::Cyan: return "\033[46m";
 	case ConsoleBackgroundColor::Yellow: return "\033[43m";
 	case ConsoleBackgroundColor::None: return "\033[40m";
-	default: return 0;
+	default: return "\033[40m";
 	}
 }
 
@@ -63,16 +54,7 @@ std::wstring GetColorCodeW(ConsoleColor color)
 	case ConsoleColor::Cyan: return L"\033[36m";
 	case ConsoleColor::Yellow: return L"\033[33m";
 	case ConsoleColor::None: return L"\033[0m";
-	case ConsoleColor::GreenIntensity: return L"\033[32m;1m";
-	case ConsoleColor::BlackIntensity: return L"\033[30m;1m";
-	case ConsoleColor::BlueIntensity: return L"\033[34m;1m";
-	case ConsoleColor::GrayIntensity: return L"\033[37m;1m";
-	case ConsoleColor::PurpleIntensity: return L"\033[35m;1m";
-	case ConsoleColor::RedIntensity: return L"\033[31m;1m";
-	case ConsoleColor::WhiteIntensity: return L"\033[37m;1m";
-	case ConsoleColor::YellowIntensity: return L"\033[33m;1m";
-	case ConsoleColor::CyanIntensity: return L"\033[36m;1m";
-	default: return 0;
+	default: return L"\033[0m";
 	}
 }
 
@@ -91,7 +73,7 @@ std::wstring GetBackgroundColorCodeW(ConsoleBackgroundColor color)
 	case ConsoleBackgroundColor::Cyan: return L"\033[46m";
 	case ConsoleBackgroundColor::Yellow: return L"\033[43m";
 	case ConsoleBackgroundColor::None: return L"\033[40m";
-	default: return 0;
+	default: return L"\033[40m";
 	}
 }
 
