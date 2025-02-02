@@ -20,14 +20,15 @@ public:
 	instance& operator=(const _shared& data) noexcept
 	{
 		_Mybase::operator=(data);
+		return *this;
 	}
 	virtual ~instance() {}
 
-	constexpr const auto& dict() const
+	const auto& dict() const
 	{
 		return std::get<0>(**this);
 	}
-	constexpr const auto& vec() const
+	const auto& vec() const
 	{
 		return std::get<1>(**this);
 	}

@@ -1321,6 +1321,9 @@ public:
 #ifndef _In_reads_opt_
 #define _In_reads_opt_( x )
 #endif
+#ifndef _In_reads_bytes_
+#define _In_reads_bytes_( x )
+#endif
 #ifndef _In_reads_bytes_opt_
 #define _In_reads_bytes_opt_( x )
 #endif
@@ -1369,6 +1372,13 @@ public:
 #ifndef _Post_equal_to_
 #define _Post_equal_to_( x )
 #endif
+#ifndef _Notnull_
+#define _Notnull_
+#endif // !_Notnull_
+#ifndef _Ret_maybenull_
+#define _Ret_maybenull_
+#endif // !_Ret_maybenull_
+
 
 #pragma endregion
 
@@ -1428,7 +1438,7 @@ struct string_indicator
 	using tag = std::basic_string<char_indicator::tag>;
 	static constexpr bool value = char_indicator::value;
 	static size_t strlen(const char_indicator::tag* str);
-	static char_indicator::tag* string_indicator::strcpy(
+	static char_indicator::tag* strcpy(
 		char_indicator::tag* dest,
 		const char_indicator::tag* source
 	);

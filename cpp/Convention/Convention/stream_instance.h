@@ -1,7 +1,7 @@
 #ifndef __FILE_CONVENTION_IOSTREAM_INSTANCE
 #define __FILE_CONVENTION_IOSTREAM_INSTANCE
 
-#include "Convention\Interface.h"
+#include "Convention/Interface.h"
 
 template<>
 class instance<std::ios_base, true> :public instance<std::ios_base, false>

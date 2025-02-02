@@ -142,6 +142,6 @@ public:
 };
 #endif //__NOT_REF_MCI_MUSIC
 
-#endif _WINDOWS
+#endif //_WINDOWS
 
 #endif // !__FILE_CONVENTION_MUSIC_INSTANCE

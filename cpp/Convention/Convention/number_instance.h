@@ -41,7 +41,7 @@ public:
 
 #define operator_core(name)\
 	template<typename _R>\
-	auto operator##name##(_R&& value) const\
+	auto operator name (_R&& value) const\
 	{\
 		if constexpr (internal::is_instance_v<_R>)\
 			return **this name static_cast<_NumberType>(*std::forward<_R>(value).get());\
@@ -76,7 +76,7 @@ public:
 	}
 #define operator_core(name)\
 	template<typename _R>\
-	auto operator##name##(_R&& value)\
+	auto operator name (_R&& value)\
 	{\
 		if constexpr (internal::is_instance_v<_R>)\
 			**this name static_cast<_NumberType>(*std::forward<_R>(value).get());\

@@ -2,7 +2,7 @@
 #define __FILE_CONVENTION_FILE_INSTANCE
 
 #include "Convention/Interface.h"
-#include "filesystem"
+#include <filesystem>
 #include "Convention/stream_instance.h"
 
 extern bool is_binary_file(const std::filesystem::path& path);
@@ -21,7 +21,6 @@ private:
 	using _Mybase = instance<path, false>;
 public:
 	_Stream stream = nullptr;
-	std::ios::openmode stream_mode = 0;
 
 	instance() = delete;
 	instance(nullptr_t) = delete;
@@ -34,7 +33,6 @@ public:
 	instance_move_operator(public)
 	{
 		this->stream = std::move(other.stream);
-		this->stream_mode = other.stream_mode;
 	}
 	virtual ~instance() {}
 
@@ -103,17 +101,8 @@ public:
 	}
 	instance& open(std::ios::openmode mode)
 	{
-		if (this->stream_mode = mode)
-		{
-			this->stream->setstate(std::ios::beg);
-			this->stream->clear();
-		}
-		else
-		{
-			stream_mode = mode;
-			auto* ptr = new std::fstream(**this, mode);
-			this->stream = ptr;
-		}
+		auto* ptr = new std::fstream(**this, mode);
+		this->stream = ptr;
 		return *this;
 	}
 	bool exist() const noexcept
@@ -178,7 +167,6 @@ public:
 	instance& must_exist_path() noexcept
 	{
 		this->stream = nullptr;
-		this->stream_mode = 0;
 		this->try_create_parent_path_c();
 		this->create();
 		return *this;

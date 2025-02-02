@@ -45,9 +45,9 @@ public:
 			if constexpr (std::is_same_v<_Arg, void>)
 				call();
 			else if constexpr (std::is_same_v<std::decay_t<_Arg>, type_class&>)
-				call(*this)
+				call(*this);
 			else if constexpr (std::is_same_v<_Arg, type_class*>)
-				call(this)
+				call(this);
 			else
 				call(this->As<_Arg>());
 		}
@@ -63,7 +63,7 @@ public:
 	decltype(auto) Share(_Out_ _T& obj)
 	{
 		obj = this->As<_T>();
-		return *this
+		return *this;
 	}
 protected:
 

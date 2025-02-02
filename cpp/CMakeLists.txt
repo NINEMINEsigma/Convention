@@ -16,11 +16,7 @@ set(ENABLE_TEST ON)
 set(CMAKE_CXX_STANDARD 17)
 # Enable C11
 set(C_STANDARD 11)
-if(DEFINED _WINDOWS OR DEFINED _LINUX_ON_WINDOWS)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive- /std:c++17 /Zc:__cplusplus") 
-elseif(DEFINED _LINUX)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") 
-endif()
+# Enable UNICODE
 add_compile_definitions(UNICODE)
 message("Root: PROJECT_BINARY_DIR = ${PROJECT_BINARY_DIR}")
 
