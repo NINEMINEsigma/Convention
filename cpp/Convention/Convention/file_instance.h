@@ -45,8 +45,7 @@ public:
 		}
 		else if (cur.back() == '\\' || cur.back() == '/')
 			return cur.substr(0, cur.size() - 1);
-		else
-			return cur;
+		return cur;
 	}
 	virtual std::string ToString() const noexcept override
 	{
@@ -103,6 +102,14 @@ public:
 	{
 		auto* ptr = new std::fstream(**this, mode);
 		this->stream = ptr;
+		return *this;
+	}
+	instance& close()
+	{
+		if (this->stream.is_empty() == false)
+		{
+			this->stream = nullptr;
+		}
 		return *this;
 	}
 	bool exist() const noexcept
@@ -162,6 +169,23 @@ public:
 			std::filesystem::remove(**this);
 			**this = cur;
 		}
+		return *this;
+	}
+	void delete_c() const
+	{
+		if (this->is_dir())
+			std::filesystem::remove_all(**this);
+		else
+			std::filesystem::remove(**this);
+	}
+	instance& remove()
+	{
+		std::filesystem::remove(**this);
+		return *this;
+	}
+	instance& remove_all()
+	{
+		std::filesystem::remove_all(**this);
 		return *this;
 	}
 	instance& must_exist_path() noexcept
@@ -268,7 +292,7 @@ public:
 	}
 	instance& make_file_inside(instance& data, bool is_delete_source = false)
 	{
-		if (this->is_dir())
+		if (this->is_dir() == false)
 			throw std::filesystem::filesystem_error(
 				"Cannot make file inside a file, because this object target is not a directory",
 				**this,

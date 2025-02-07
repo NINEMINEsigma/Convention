@@ -13,6 +13,15 @@ struct decltype_any_unit
 	template<typename value_type>
 	constexpr operator value_type() const noexcept;
 };
+namespace convention_kit
+{
+	template<typename _Test>
+	struct void_t
+	{
+		using tag = void;
+		constexpr static bool value = true;
+	};
+}
 
 #pragma region easyx
 
@@ -382,18 +391,50 @@ struct platform_indicator
 	constexpr static bool is_release = true;
 #endif
 	constexpr static bool value = is_release;
-	constexpr static bool is_platform_windows = constexpr_streql(__PLATFORM_NAME, "Windows");
-	constexpr static bool is_platform_linux = constexpr_streql(__PLATFORM_NAME, "Windows");
-	constexpr static bool is_platform_x64 = constexpr_streql(__PLATFORM_VERSION, "x64");
-	constexpr static bool is_platform_x86 = constexpr_streql(__PLATFORM_VERSION, "x86");
-	constexpr static bool is_platform_x86_x64 = constexpr_streql(__PLATFORM_VERSION, "x86_x64");
-	constexpr static bool is_platform_i386 = constexpr_streql(__PLATFORM_VERSION, "i386");
-	constexpr static bool is_platform_AMD64 = constexpr_streql(__PLATFORM_VERSION, "AMD64");
+#if defined(_WIN64)||defined(_WIN32)
+	constexpr static bool is_platform_windows = true;
+#else
+	constexpr static bool is_platform_windows = false;
+#endif
+#if defined(__linux__)
+	constexpr static bool is_platform_linux = true;
+#else
+	constexpr static bool is_platform_linux = false;
+#endif
+#if defined(__unix__)
+	constexpr static bool is_platform_unix = true;
+#else
+	constexpr static bool is_platform_unix = false;
+#endif
+#if defined(__APPLE__)||defined(__MACH__)
+	constexpr static bool is_platform_apple = true;
+#else
+	constexpr static bool is_platform_apple = false;
+#endif
+#if defined(__ANDROID__)
+	constexpr static bool is_platform_android = true;
+#else
+	constexpr static bool is_platform_android = false;
+#endif
+#if defined(_POSIX_VERSION)
+	constexpr static bool is_platform_posix = true;
+#else
+	constexpr static bool is_platform_posix = false;
+#endif
+#if defined(_WIN64)||(__WORDSIZE==64)
+	constexpr static bool is_platform_x64 = true;
+#endif
 #ifdef _MSC_VER
 	constexpr static bool is_mscv = true;
 #else
 	constexpr static bool is_mscv = false;
 #endif
+#ifdef __GNUC__
+	constexpr static bool is_gnuc = true;
+#else
+	constexpr static bool is_gnuc = false;
+#endif // __GNUC__
+
 
 	static std::string generate_platform_message() noexcept;
 	// not lock current thread, if input is exist will return it otherwise return -1
