@@ -1,0 +1,16 @@
+{
+    "name": "Convention.Editor",
+    "rootNamespace": "Convention",
+    "references": [
+        "GUID:3ca876791979b704e9092bdb9da47c68"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
