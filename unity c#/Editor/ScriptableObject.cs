@@ -66,16 +66,6 @@ namespace Convention
     [CustomEditor(typeof(Convention.ScriptableObject))]
     public class ScriptableObjectEditor : AbstractCustomEditor
     {
-        protected override void Field(FieldInfo field)
-        {
-            if (field.FieldType == typeof(bool))
-                this.Toggle(field.Name);
-            else
-            {
-                var p = serializedObject.FindProperty(field.Name);
-                if (p != null)
-                    EditorGUILayout.PropertyField(p);
-            }
-        }
+
     }
 }

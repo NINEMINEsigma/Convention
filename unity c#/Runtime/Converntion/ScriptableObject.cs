@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Convention
 {
     [System.Serializable]
-    public class SerializableDataDictionary : Dictionary<string, DataEntry>, ISerializationCallbackReceiver 
+    public class SerializableDataDictionary : Dictionary<string, DataEntry>, ISerializationCallbackReceiver
     {
         [Serializable]
         class Entry
@@ -57,7 +57,7 @@ namespace Convention
             Data = null;
         }
     }
-    [Serializable]
+    [Serializable, ArgPackage]
     public class DataEntry
 #if UNITY_EDITOR
         : ISerializationCallbackReceiver
@@ -225,7 +225,7 @@ namespace Convention
 
         public void OnAfterDeserialize()
         {
-            if (CurrentObject != null) 
+            if (CurrentObject != null)
             {
                 RealData = CurrentObject;
                 return;
@@ -241,7 +241,7 @@ namespace Convention
                 return;
             }
             var pr = RealData.GetType().GetMethod("Parse", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
-            if(pr!=null)
+            if (pr != null)
             {
                 try
                 {
@@ -266,7 +266,7 @@ namespace Convention
     }
 
     [CreateAssetMenu(fileName = "new Convention", menuName = "Convention/Convention", order = -1)]
-    [Serializable]
+    [Serializable, ArgPackage]
     public class ScriptableObject : UnityEngine.ScriptableObject, IAnyClass
     {
         [return: ReturnNotNull]

@@ -4,7 +4,8 @@
     "references": [
         "Unity.InputSystem",
         "Unity.RenderPipelines.Universal.Runtime",
-        "Convention.Plugin"
+        "Convention.Plugin",
+        "Convention.Windows"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -35,6 +35,7 @@ MonoBehaviour:
     - Cinemachine
     - Convention.Plugin
     - Convention.Runtime
+    - Convention.Windows
     - CW.Common
     - EasySave3
     - LeanCommon

@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Convention.Internal;
 using UnityEngine;
 
 namespace Convention
@@ -57,7 +58,7 @@ namespace Convention
     public class AnyClass : TypeClass, IAnyClass { }
     public class BasicValueReference<T> : AnyClass
     {
-        protected T _ref_value;
+        [SerializeField][Content] protected T _ref_value;
         public static implicit operator T(BasicValueReference<T> data) => data._ref_value;
 
         public override string ToString()
@@ -73,9 +74,10 @@ namespace Convention
             return $"ref<{typeof(T)}>";
         }
     }
+    [Serializable]
     public class LeftValueReference<T> : BasicValueReference<T>
     {
-        public LeftValueReference(T ref_value)
+        public LeftValueReference([In][Opt] T ref_value)
         {
             this.ref_value = ref_value;
         }
@@ -113,4 +115,8 @@ namespace Convention
         }
     }
 
+    public class MonoAnyBehaviour : MonoBehaviour, IAnyClass, ConventionEditorInspectorGUI
+    {
+        [return: ReturnNotNull] public string SymbolName() => this.GetType().Name;
+    }
 }

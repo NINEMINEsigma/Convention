@@ -2,6 +2,11 @@ using System;
 using System.Runtime.InteropServices;
 using Convention.Internal;
 
+namespace UnityEditor
+{
+
+}
+
 namespace Convention
 {
     public class PlatformIndicator : Indicator
@@ -29,6 +34,7 @@ namespace Convention
             public static Type tag { get; protected set; }
             public static bool value { get; protected set; }
         }
+        public interface ConventionEditorInspectorGUI { }
     }
 
     public static partial class ConventionUtility
@@ -209,6 +215,8 @@ namespace Convention
         public static void InitExtensionEnv()
         {
             UnityExtension.InitExtensionEnv();
+
+            ES3Plugin.InitExtensionEnv();
         }
 
         public static bool IsNumber<T>(T data)

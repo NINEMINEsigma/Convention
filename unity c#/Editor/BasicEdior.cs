@@ -2,13 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Convention.Internal;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace Convention
 {
-    public abstract class AbstractCustomEditor : Editor
+    [CustomEditor(typeof(ConventionEditorInspectorGUI), true)]
+    public class AbstractCustomEditor : Editor
     {
         protected int currentTab;
 
@@ -52,77 +54,90 @@ namespace Convention
             GUILayout.EndVertical();
         }
 
-        protected virtual void Field(FieldInfo field)
-        {
-            if (field.FieldType == typeof(bool))
-                this.Toggle(field.Name);
-            else
-            {
-                var p = serializedObject.FindProperty(field.Name);
-                if (p != null)
-                    EditorGUILayout.PropertyField(p);
-            }
-        }
         protected void IgnoreField(FieldInfo field)
         {
-            this.OnNotChangeGUI(() => Field(field));
+            this.OnNotChangeGUI(() => Field(field, false));
         }
         protected virtual void PlayModeField(FieldInfo field)
         {
             HelpBox($"{field.Name}<{field.FieldType}> only play mode", MessageType.Info);
         }
+        protected virtual void Field(FieldInfo field, bool isCheckIgnore = true)
+        {
+            if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute),true).Length != 0 && Application.isPlaying == false)
+            {
+                PlayModeField(field);
+            }
+            else if (isCheckIgnore && (
+                field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length != 0 ||
+                field.IsPublic == false
+                ))
+                IgnoreField(field);
+            else if (field.FieldType == typeof(bool))
+                this.Toggle(field.Name);
+            else
+            {
+                var p = serializedObject.FindProperty(field.Name);
+                var tfattr = field.GetCustomAttribute<ToolFile.FileAttribute>(true);
+                if (tfattr != null)
+                    GUILayout.BeginVertical(EditorStyles.helpBox);
+                if (p == null)
+                {
+                    HelpBox($"{field.Name}<{field.FieldType}> cannt draw", MessageType.Warning);
+                }
+                else
+                {
+                    EditorGUILayout.PropertyField(p);
+                    if (tfattr != null && field.FieldType == typeof(string))
+                    {
+                        if (GUILayout.Button("Browse"))
+                            p.stringValue = ToolFile.BrowseFile("*");
+                    }
+                }
+                if (tfattr != null)
+                    GUILayout.EndHorizontal();
+            }
+        }
         public virtual void OnContentGUI()
         {
-            var fields = this.target.GetType().GetFields();
+            var fields = this.target.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic|BindingFlags.Instance);
             foreach (var field in fields)
             {
-                if (field.FieldType.IsSubclassOf(typeof(MonoBehaviour))&& field.GetCustomAttributes(typeof(ResourceAttributes)).Count() == 0)
+                bool isContent = field.GetCustomAttributes(typeof(ContentAttribute), true).Length != 0;
+                bool isResources = field.GetCustomAttributes(typeof(ResourcesAttribute), true).Length != 0;
+                bool isSetting = field.GetCustomAttributes(typeof(SettingAttribute), true).Length != 0;
+                if (!isContent && (isResources || isSetting))
                     continue;
-                if (field.GetCustomAttributes(typeof(SettingAttribute), true).Length > 0)
-                    continue;
-                if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute)).Count() != 0 && Application.isPlaying == false)
+                if (!field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)) || isContent)
                 {
-                    PlayModeField(field);
-                    continue;
-                }
-                if (field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length == 0)
                     Field(field);
-                else
-                    IgnoreField(field);
+                }
             }
         }
         public virtual void OnResourcesGUI()
         {
-            var fields = this.target.GetType().GetFields();
+            var fields = this.target.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             foreach (var field in fields)
             {
-                if (field.FieldType.IsSubclassOf(typeof(MonoBehaviour)) || field.GetCustomAttributes(typeof(ResourcesAttribute)).Count() > 0)
+                bool isContent = field.GetCustomAttributes(typeof(ContentAttribute), true).Length != 0;
+                bool isResources = field.GetCustomAttributes(typeof(ResourcesAttribute), true).Length != 0;
+                bool isSetting = field.GetCustomAttributes(typeof(SettingAttribute), true).Length != 0;
+                if (!isResources && (isContent || isSetting))
+                    continue;
+                if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)) || isResources)
                 {
-                    if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute)).Count() != 0 && Application.isPlaying == false)
-                    {
-                        PlayModeField(field);
-                        continue;
-                    }
-                    EditorGUILayout.PropertyField(serializedObject.FindProperty(field.Name));
+                    Field(field);
                 }
             }
         }
         public virtual void OnSettingsGUI()
         {
-            var fields = this.target.GetType().GetFields();
+            var fields = this.target.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             foreach (var field in fields)
             {
-                if (field.GetCustomAttributes(typeof(SettingAttribute), true).Length > 0)
+                if (field.GetCustomAttributes(typeof(SettingAttribute), true).Length != 0)
                 {
-                    if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute)).Count() != 0 && Application.isPlaying == false)
-                    {
-                        PlayModeField(field);
-                        continue;
-                    }
-                    if (field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length == 0)
-                        Field(field);
-                    else
-                        IgnoreField(field);
+                    Field(field);
                 }
             }
         }
@@ -238,6 +253,9 @@ namespace Convention
             });
         }
     }
+
+    [CustomEditor(typeof(MonoAnyBehaviour), true)]
+    public class AnyBehaviourEditor : AbstractCustomEditor { }
 
     public abstract class EditorWindow : UnityEditor.EditorWindow
     {

@@ -11,8 +11,8 @@ namespace Convention
         [Serializable]
         public class ToolFileSO : ScriptableObject
         {
-            [Setting] public string FilePath;
-            [OnlyPlayMode, Content] public ToolFile File;
+            [Setting, ToolFile.File] public string FilePath;
+            [OnlyPlayMode, Content, Ignore] public ToolFile File;
             public void Refresh()
             {
                 if (Application.isPlaying == false)
@@ -29,8 +29,12 @@ namespace Convention
                     var data = this.Datas["data"].RealData = File.Load();
                     this.Datas.TryAdd("audio", new());
                     this.Datas["audio"].RealData = data.GetType() == typeof(AudioClip) ? data : null;
+                    this.Datas.TryAdd("clip", new());
+                    this.Datas["clip"].RealData = data.GetType() == typeof(AudioClip) ? data : null;
                     this.Datas.TryAdd("image", new());
                     this.Datas["image"].RealData = data.GetType() == typeof(Texture2D) ? data : null;
+                    this.Datas.TryAdd("texture", new());
+                    this.Datas["texture"].RealData = data.GetType() == typeof(Texture2D) ? data : null;
                     this.Datas.TryAdd("text", new());
                     this.Datas["text"].RealData = data.GetType() == typeof(string) ? data : null;
                 }
@@ -39,7 +43,7 @@ namespace Convention
                     this.Datas.Clear();
                 }
             }
-            
+
         }
     }
 }

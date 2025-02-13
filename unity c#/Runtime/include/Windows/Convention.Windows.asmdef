@@ -1,13 +1,11 @@
 {
-    "name": "Convention.Editor",
-    "rootNamespace": "Convention",
-    "references": [
-        "Convention.Runtime",
-        "Convention.Plugin",
-        "Convention.Windows"
-    ],
+    "name": "Convention.Windows",
+    "rootNamespace": "",
+    "references": [],
     "includePlatforms": [
-        "Editor"
+        "Editor",
+        "WindowsStandalone32",
+        "WindowsStandalone64"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
@@ -16,5 +14,5 @@
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
-    "noEngineReferences": false
+    "noEngineReferences": true
 }
