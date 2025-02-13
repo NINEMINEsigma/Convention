@@ -146,7 +146,7 @@ namespace Convention
         }
         public object LoadAsJson()
         {
-            this.data = ES3.Load("ES3", FullPath);
+            this.data = ES3Plugin.Load(FullPath);
             return this.data;
         }
         public string LoadAsText()
@@ -247,7 +247,7 @@ namespace Convention
         }
         public void SaveAsJson([In][Opt] string newpath = null)
         {
-            ES3.Save("ES3", this.data);
+            ES3Plugin.Save(newpath ?? FullPath,this.data);
         }
         public void SaveAsText([In][Opt] string newpath = null)
         {
@@ -259,7 +259,7 @@ namespace Convention
             }
             else
             {
-                using var fs = new FileStream(newpath == null ? FullPath : newpath, FileMode.CreateNew, FileAccess.Write);
+                using var fs = new FileStream(newpath ?? FullPath, FileMode.CreateNew, FileAccess.Write);
                 using var sw = new StreamWriter(fs);
                 sw.Write((string)this.data);
                 sw.Flush();
@@ -283,7 +283,7 @@ namespace Convention
         {
             Texture2D texture = (Texture2D)this.data;
             byte[] bytes = texture.EncodeToPNG();
-            SaveDataAsBinary(newpath == null ? FullPath : newpath, bytes, Stream);
+            SaveDataAsBinary(newpath ?? FullPath, bytes, Stream);
         }
         public void SaveAsAudio([In][Opt]string newpath = null)
         {
@@ -293,7 +293,7 @@ namespace Convention
         {
             using MemoryStream ms = new();
             new BinaryFormatter().Serialize(ms, this.data);
-            SaveDataAsBinary(newpath == null ? FullPath : newpath, ms.GetBuffer(), Stream);
+            SaveDataAsBinary(newpath ?? FullPath, ms.GetBuffer(), Stream);
         }
         #endregion
 

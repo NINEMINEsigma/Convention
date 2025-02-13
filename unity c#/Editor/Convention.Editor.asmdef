@@ -2,9 +2,12 @@
     "name": "Convention.Editor",
     "rootNamespace": "Convention",
     "references": [
-        "GUID:3ca876791979b704e9092bdb9da47c68"
+        "Convention.Runtime",
+        "Convention.Plugin"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,

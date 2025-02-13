@@ -2,8 +2,8 @@
     "name": "Convention.Plugin",
     "rootNamespace": "",
     "references": [
-        "GUID:c3436a6e4619d5846a2970323abd5f6f",
-        "GUID:174bc9f391f1b7f4292b3824c5019a21"
+        "LeanPool",
+        "EasySave3"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

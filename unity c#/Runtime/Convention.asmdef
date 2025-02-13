@@ -2,11 +2,9 @@
     "name": "Convention.Runtime",
     "rootNamespace": "Convention",
     "references": [
-        "GUID:75469ad4d38634e559750d17036d5f7c",
-        "GUID:15fc0a57446b3144c949da3e2b9737a9",
-        "GUID:12d4841f3c01e604ab5ca8165f49540c",
-        "GUID:c3436a6e4619d5846a2970323abd5f6f",
-        "GUID:174bc9f391f1b7f4292b3824c5019a21"
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Convention.Plugin"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
