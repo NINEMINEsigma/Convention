@@ -10,23 +10,23 @@ namespace Convention
         [CreateAssetMenu(fileName = "new ToolFile", menuName = "Convention/ToolFile", order = 100)]
         [Serializable]
         public class ToolFileSO : ScriptableObject
-#if UNITY_EDITOR
-        , ISerializationCallbackReceiver
-#endif
         {
             [Setting] public string FilePath;
+            [OnlyPlayMode, Content] public ToolFile File;
             public void Refresh()
             {
-                if(FilePath==null|| FilePath.Length==0)
+                if (Application.isPlaying == false)
+                    throw new Exception("Just refresh on play mode");
+                if (FilePath == null || FilePath.Length == 0)
                 {
                     this.Datas.Clear();
                     return;
                 }
-                var file = new ToolFile(FilePath);
-                if (file.Exists())
+                File = new ToolFile(FilePath);
+                if (File.Exists())
                 {
                     this.Datas.TryAdd("data", new());
-                    var data = this.Datas["data"].RealData = file.Load();
+                    var data = this.Datas["data"].RealData = File.Load();
                     this.Datas.TryAdd("audio", new());
                     this.Datas["audio"].RealData = data.GetType() == typeof(AudioClip) ? data : null;
                     this.Datas.TryAdd("image", new());
@@ -39,23 +39,7 @@ namespace Convention
                     this.Datas.Clear();
                 }
             }
-
-#if UNITY_EDITOR
-            public bool is_refresh = true;
-            public void OnAfterDeserialize()
-            {
-
-            }
-
-            public void OnBeforeSerialize()
-            {
-                if (is_refresh)
-                {
-                    Refresh();
-                    is_refresh = false;
-                }
-            }
-#endif
+            
         }
     }
 }

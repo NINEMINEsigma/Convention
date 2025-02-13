@@ -67,15 +67,24 @@ namespace Convention
         {
             this.OnNotChangeGUI(() => Field(field));
         }
+        protected virtual void PlayModeField(FieldInfo field)
+        {
+            HelpBox($"{field.Name}<{field.FieldType}> only play mode", MessageType.Info);
+        }
         public virtual void OnContentGUI()
         {
             var fields = this.target.GetType().GetFields();
             foreach (var field in fields)
             {
-                if (field.FieldType.IsSubclassOf(typeof(MonoBehaviour)))
+                if (field.FieldType.IsSubclassOf(typeof(MonoBehaviour))&& field.GetCustomAttributes(typeof(ResourceAttributes)).Count() == 0)
                     continue;
                 if (field.GetCustomAttributes(typeof(SettingAttribute), true).Length > 0)
                     continue;
+                if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute)).Count() != 0 && Application.isPlaying == false)
+                {
+                    PlayModeField(field);
+                    continue;
+                }
                 if (field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length == 0)
                     Field(field);
                 else
@@ -87,8 +96,15 @@ namespace Convention
             var fields = this.target.GetType().GetFields();
             foreach (var field in fields)
             {
-                if (field.FieldType.IsSubclassOf(typeof(MonoBehaviour)))
+                if (field.FieldType.IsSubclassOf(typeof(MonoBehaviour)) || field.GetCustomAttributes(typeof(ResourcesAttribute)).Count() > 0)
+                {
+                    if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute)).Count() != 0 && Application.isPlaying == false)
+                    {
+                        PlayModeField(field);
+                        continue;
+                    }
                     EditorGUILayout.PropertyField(serializedObject.FindProperty(field.Name));
+                }
             }
         }
         public virtual void OnSettingsGUI()
@@ -98,6 +114,11 @@ namespace Convention
             {
                 if (field.GetCustomAttributes(typeof(SettingAttribute), true).Length > 0)
                 {
+                    if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute)).Count() != 0 && Application.isPlaying == false)
+                    {
+                        PlayModeField(field);
+                        continue;
+                    }
                     if (field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length == 0)
                         Field(field);
                     else
