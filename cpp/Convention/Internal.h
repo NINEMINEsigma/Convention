@@ -110,4 +110,59 @@ extern "C"
 	);
 }
 
+#pragma region Constepxr/Runtime Choose
+
+template<size_t index,typename _First,typename... Args>
+constexpr decltype(auto) constexpr_get_value(_First&& first, Args&&... args)
+{
+	if (index == 0)
+		return std::forward<_First>(first);
+	return constexpr_get<index - 1>(std::forward<Args>(args)...);
+}
+template<size_t index, typename _First, typename... Args>
+constexpr decltype(auto) constexpr_get_ref(_First& first, Args&... args)
+{
+	if (index == 0)
+		return first;
+	return constexpr_get_ref<index - 1>(args...);
+}
+template<size_t index, typename _First, typename... Args>
+struct constexpr_get_type_indicator
+{
+	using tag = typename constexpr_get_type_indicator<index - 1, Args...>::tag;
+	constexpr static bool value = false;
+};
+template<typename _First, typename... Args>
+struct constexpr_get_type_indicator<0, _First, Args...>
+{
+	using tag = _First;
+	constexpr static bool value = true;
+};
+template<size_t index, typename _First, typename... Args>
+using constexpr_get_type = typename constexpr_get_type_indicator<index, _First, Args...>::tag;
+
+#pragma endregion
+
+namespace convention_kit
+{
+	inline int vectorial_direction(bool pr)
+	{
+		return pr ? 1 : -1;
+	}
+	inline int vectorial_direction(int pr)
+	{
+		if (pr > 0)
+			return 1;
+		else if (pr < 0)
+			return -1;
+		else
+			return 0;
+	}
+	template<typename _Pr,typename _Val>
+	auto vectorial_value(const _Pr& pr, const _Val& value)
+	{
+		return value * vectorial_direction(pr);
+	}
+}
+
 #endif // !__FILE_INTERNAL

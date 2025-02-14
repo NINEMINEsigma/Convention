@@ -11,7 +11,7 @@ namespace Convention
         [Serializable]
         public class ToolFileSO : ScriptableObject
         {
-            [Setting, ToolFile.File] public string FilePath;
+            [Setting, ToolFile.File, TextArea(2, 5)] public string FilePath;
             [OnlyPlayMode, Content, Ignore] public ToolFile File;
             public void Refresh()
             {
