@@ -1,0 +1,17 @@
+{
+    "name": "Convention.Plugin",
+    "rootNamespace": "",
+    "references": [
+        "LeanPool",
+        "EasySave3"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

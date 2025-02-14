@@ -1,0 +1,20 @@
+{
+    "name": "Convention.Editor",
+    "rootNamespace": "Convention",
+    "references": [
+        "Convention.Runtime",
+        "Convention.Plugin",
+        "Convention.Windows"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
