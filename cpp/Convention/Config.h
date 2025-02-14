@@ -1478,10 +1478,18 @@ struct string_indicator
 {
 	using tag = std::basic_string<char_indicator::tag>;
 	static constexpr bool value = char_indicator::value;
+
+	using Traits = std::char_traits<char_indicator::tag>;
+
 	static size_t strlen(const char_indicator::tag* str);
 	static char_indicator::tag* strcpy(
 		char_indicator::tag* dest,
 		const char_indicator::tag* source
+	);
+	static char_indicator::tag* strcpy_s(
+		char_indicator::tag* dest,
+		const char_indicator::tag* source,
+		const size_t size
 	);
 	template<typename T>
 	static tag to_string(const T& value);

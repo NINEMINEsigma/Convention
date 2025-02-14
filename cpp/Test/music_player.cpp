@@ -1,58 +1,12 @@
 #include "Convention.h"
 
 using namespace std;
+using namespace convention_kit;
 using std::filesystem::path;
 wchar_t buffer[256] = { 0 };
 
 void add_to_music_list(vector<path>& ml, wstring path_);
-auto make_list(instance<config_indicator::tag>& config)
-{
-	vector<path> result;
-	if (config.vec().size() == 2)
-	{
-		if (filesystem::exists(config.vec()[1].first))
-		{
-			auto file = make_instance<path>(config.vec()[1].first);
-			if (file.get_filename().extension() == ".txt")
-			{
-				for (auto&& path_ : unpack_lines_from_file(file->c_str(), ios::in, buffer, 256))
-					add_to_music_list(result, path_);
-				return result;
-			}
-			else
-			{
-				return vector<path>{ *file };
-			}
-		}
-	}
-	if (config.is_contains_helper_command()|| config.contains("l") + config.contains("s") != 1)
-	{
-		cout << "player argument" << endl;
-		cout << "\tmust specify one and only one" << endl;
-		cout << "\t\t-l\tmusic list name like \"musiclist.txt\"" << endl;
-		cout << "\t\t-s\tsong [song2[song...]]" << endl;
-		cout << "\tthe way the playlist is played" << endl;
-		cout << "\t\t-rl\trandom, this mode is default" << endl;
-		cout << "\t\t-ll\tlist loops" << endl;
-		cout << "\t\t-sl\tsingle loop" << endl;
-		cout << "\toptional" << endl;
-		cout << "\t\t-ff\targument to ffplay, default is \"-v info -vn -showmode 0\"(-autoexit is setup inside)" << endl;
-		cout << "player [-rl/-ll/sl] [-ff:\"...\"] -l \"musiclist.txt\"(or -s song [songs...])";
-		exit(0);
-	}
-	if (config.contains("l"))
-	{
-		auto file = make_instance<path>(config.string_value("l"));
-		for (auto&& path_ : unpack_lines_from_file(file->c_str(), ios::in, buffer, 256))
-			add_to_music_list(result, path_);
-	}
-	else
-	{
-		for (auto&& i : config.list("s"))
-			result.push_back(i);
-	}
-	return result;
-}
+vector<path> make_list(instance<config_indicator::tag>& config);
 
 int main(int argv, char** argc)
 {
@@ -63,7 +17,6 @@ int main(int argv, char** argc)
 
 	try
 	{
-
 		// main loop
 		int next_song = config.contains("sl") ? 2 : (config.contains("ll") ? 1 : 0);
 		vector<function<size_t(size_t)>> next_song_funcs = {
@@ -106,69 +59,78 @@ int main(int argv, char** argc)
 				cout << "\trandom-mode(-rl)\t\tenter song name and prefix matching it" << endl;
 				cout << "\tlist-mode(-ll)\t\tenter song name and prefix matching it" << endl;
 				cout << "\tsingle-mode(-sl)\t\tenter song name and prefix matching it" << endl;
-				string mode;
-				cin >> mode;
-				if (mode == "previous" || mode == "-p")
+				while (wcin.peek() == '\n')
+					wcin.get();
+				wcin.getline(buffer, 256, '\n');
+				wstring mode(buffer);
+				if (mode == L"previous" || mode == L"-p")
 				{
 					std::swap(index, last_index);
 					continue;
 				}
-				else if (mode == "back" || mode == "-b")
+				else if (mode == L"back" || mode == L"-b")
 				{
 					last_index = index;
 					index = (index - 1) % musiclist.size();
 				}
-				else if (mode == "next" || mode == "-n")
+				else if (mode == L"next" || mode == L"-n")
 				{
 					last_index = index;
 					index = (index + 1) % musiclist.size();
 				}
-				else if (mode == "random-mode" || mode == "-rl")
+				else if (mode == L"random-mode" || mode == L"-rl")
 				{
 					next_song = 0;
 				}
-				else if (mode == "list-mode" || mode == "-ll")
+				else if (mode == L"list-mode" || mode == L"-ll")
 				{
 					next_song = 1;
 				}
-				else if (mode == "single-mode" || mode == "-sl")
+				else if (mode == L"single-mode" || mode == L"-sl")
 				{
 					next_song = 2;
 				}
 				else
 				{
-					auto iter = std::find_if(
-						musiclist.begin(), musiclist.end(),
-						[&mode](const path& path)->bool
-						{
-							try
-							{
-								return path.filename().string()._Starts_with(mode);
-							}
-							catch (...)
-							{
-								return false;
-							}
-						});
-					for (; iter == musiclist.end(); iter = std::find_if(
-						musiclist.begin(), musiclist.end(),
-						[&mode](const path& path)->bool
-						{
-							try
-							{
-								return path.filename().string()._Starts_with(mode);
-							}
-							catch (...)
-							{
-								return false;
-							}
-						}))
+					map<int, vector<decltype(musiclist.begin())>> edit_distances;
+					for (auto i = musiclist.begin(), e = musiclist.end();
+						i != e; i++)
 					{
-						cout << "not found target, input song name:";
-						cin >> mode;
+						try
+						{
+							auto filename = make_instance(i->filename().wstring());
+							int dis = filename.contains(mode) ? 0 : filename.edit_distance(mode);
+							edit_distances[dis].push_back(i);
+						}
+						catch (...) {}
 					}
 					last_index = index;
-					index = distance(musiclist.begin(), iter);
+					size_t size = 0;
+					bool stats = true;
+					for (auto&& [dis, list] : edit_distances)
+					{
+						if (stats == false)break;
+						for (auto&& iter : list)
+						{
+							cout << "\n";
+							try
+							{
+								cout << "is select[y/others(no)]<rank " << dis << ">: " << iter->filename();
+								string ch;
+								cin >> ch;
+								if (ch.empty() == false && (ch[0] == 'y' || ch[0] == 'Y'))
+								{
+									stats = false;
+									index = distance(musiclist.begin(), iter);
+									break;
+								}
+							}
+							catch (...)
+							{
+								continue;
+							}
+						}
+					}
 				}
 			}
 			break;
@@ -204,4 +166,63 @@ void add_to_music_list(vector<path>& ml, wstring path_)
 	else for (auto&& file : filesystem::directory_iterator(path_))
 		if (filesystem::is_directory(file) == false)
 			ml.push_back(file.path());
+}
+
+vector<path> make_list(instance<config_indicator::tag>& config)
+{
+	vector<path> result;
+	if (config.vec().size() == 1)
+	{
+		auto file = make_instance<path>("musiclist.txt");
+		if (file.exist())
+		{
+			for (auto&& path_ : unpack_lines_from_file(file->c_str(), ios::in, buffer, 256))
+				add_to_music_list(result, path_);
+			return result;
+		}
+	}
+	else if (config.vec().size() == 2)
+	{
+		if (filesystem::exists(config.vec()[1].first))
+		{
+			auto file = make_instance<path>(config.vec()[1].first);
+			if (file.get_filename().extension() == ".txt")
+			{
+				for (auto&& path_ : unpack_lines_from_file(file->c_str(), ios::in, buffer, 256))
+					add_to_music_list(result, path_);
+				return result;
+			}
+			else
+			{
+				return vector<path>{ *file };
+			}
+		}
+	}
+	if (config.is_contains_helper_command())
+	{
+		cout << "player argument\n" << config.make_manual(
+			"must specify one and only one",
+			make_descriptive("-l", "music list name like \"musiclist.txt\""),
+			make_descriptive("-s", "song [song2[song...]]"),
+			"the way the playlist is played",
+			make_descriptive("-rl", "random, this mode is default"),
+			make_descriptive("-ll", "list loops"),
+			make_descriptive("-sl", "single loop"),
+			"toptional",
+			make_descriptive("-ff", "argument to ffplay, default is \"-v info -vn -showmode 0\"(-autoexit is setup inside)")
+		);
+		exit(0);
+	}
+	if (config.contains("l"))
+	{
+		auto file = make_instance<path>(config.string_value("l"));
+		for (auto&& path_ : unpack_lines_from_file(file->c_str(), ios::in, buffer, 256))
+			add_to_music_list(result, path_);
+	}
+	else
+	{
+		for (auto&& i : config.list("s"))
+			result.push_back(i);
+	}
+	return result;
 }

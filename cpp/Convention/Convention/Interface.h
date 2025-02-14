@@ -65,6 +65,13 @@ public:
     }
 };
 
+template<typename _OS,typename _Type>
+_OS& operator<<(_OS& os, const instance<_Type, false>& ins)
+{
+    os << *ins;
+    return os;
+}
+
 #define instance_move_operator(internal) public:\
 explicit instance(instance&& other) noexcept:_Mybase(std::move(other))\
 {\

@@ -161,29 +161,6 @@ public:
 		return result;
 	}
 private:
-	template<typename _Val>
-	std::string internal_make_manual_text(const descriptive_indicator<_Val>& key) const
-	{
-		return Combine("\t\t[", key.target, "] \t", key.description, "\n");
-	}
-	std::string internal_make_manual_text(const descriptive_indicator<void>& layer) const
-	{
-		return Combine("\t", layer.description, ":\n");
-	}
-	std::string inertnal_make_manual()
-	{
-		return "";
-	}
-	template<typename _First>
-	std::string inertnal_make_manual(const _First& key)
-	{
-		return internal_make_manual_text(key);
-	}
-	template<typename _First, typename... _Args>
-	std::string inertnal_make_manual(const _First& key, const _Args&... args)
-	{
-		return internal_make_manual_text(key) + inertnal_make_manual(args...);
-	}
 	std::string internal_make_manual_summary(bool is_necessary, const std::string& key) const
 	{
 		if (is_necessary)
@@ -202,10 +179,27 @@ private:
 		return internal_make_manual_summary(is_necessary, key) +" " + internal_make_manual_summary(args...);
 	}
 public:
-	template<typename _First,typename... _Args>
-	std::string make_manual(const std::string& top,const _First& key, const _Args&... args)
+	std::string make_manual()
 	{
-		return top + "\n" + internal_make_manual_text(key) + inertnal_make_manual(args...);
+		return "";
+	}
+	template<typename _Val>
+	std::string make_manual(const descriptive_indicator<_Val>& key) const
+	{
+		return Combine("\t\t[", key.target, "] \t", key.description, "\n");
+	}
+	std::string make_manual(const descriptive_indicator<void>& layer) const
+	{
+		return Combine("\t", layer.description, ":\n");
+	}
+	std::string make_manual(const std::string& top)
+	{
+		return top + "\n";
+	}
+	template<typename _First, typename... _Args>
+	std::string make_manual(const _First& key, const _Args&... args)
+	{
+		return make_manual(key) + make_manual(args...);
 	}
 	template<typename... _Args>
 	std::string make_manual_summary(bool is_necessary, const std::string& key, const _Args&... args) const
