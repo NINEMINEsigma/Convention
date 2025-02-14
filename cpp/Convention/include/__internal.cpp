@@ -35,22 +35,22 @@ int platform_indicator::keyboard_input() noexcept
 
 size_t string_indicator::strlen(const char_indicator::tag* str)
 {
-#ifdef UNICODE
-	return ::wcslen(str);
-#else
-	return ::strlen(str);
-#endif // UNICODE
+	return string_indicator::Traits::length(str);
 }
 char_indicator::tag* string_indicator::strcpy(
 	char_indicator::tag* dest,
 	const char_indicator::tag* source
 )
 {
-#ifdef UNICODE
-	return ::wcscpy(dest, source);
-#else
-	return ::strcpy(dest, source);
-#endif // UNICODE
+	return string_indicator::Traits::copy(dest, source, strlen(source));
+}
+char_indicator::tag* string_indicator::strcpy_s(
+	char_indicator::tag* dest,
+	const char_indicator::tag* source,
+	const size_t size
+)
+{
+	return string_indicator::Traits::copy(dest, source, std::min(size, strlen(source)));
 }
 
 std::string typename2classname(const std::string& str) noexcept
