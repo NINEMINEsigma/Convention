@@ -64,43 +64,70 @@ namespace Convention
         }
         protected virtual void Field(FieldInfo field, bool isCheckIgnore = true)
         {
-            if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute),true).Length != 0 && Application.isPlaying == false)
+            try
             {
-                PlayModeField(field);
-            }
-            else if (isCheckIgnore && (
-                field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length != 0 ||
-                field.IsPublic == false
-                ))
-                IgnoreField(field);
-            else if (field.FieldType == typeof(bool))
-                this.Toggle(field.Name);
-            else
-            {
-                var p = serializedObject.FindProperty(field.Name);
-                var tfattr = field.GetCustomAttribute<ToolFile.FileAttribute>(true);
-                if (tfattr != null)
-                    GUILayout.BeginVertical(EditorStyles.helpBox);
-                if (p == null)
+                if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0 && Application.isPlaying == false)
                 {
-                    HelpBox($"{field.Name}<{field.FieldType}> cannt draw", MessageType.Warning);
+                    PlayModeField(field);
+                }
+                else if (isCheckIgnore && (
+                    field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length != 0 ||
+                    (field.IsPublic == false && field.GetCustomAttribute(typeof(SerializeField), true) == null)
+                    ))
+                    IgnoreField(field);
+                else if (field.FieldType == typeof(bool))
+                {
+                    if (isCheckIgnore)
+                        this.Toggle(field.Name);
+                    else
+                        field.SetValue(target, this.Toggle((bool)field.GetValue(target), field.Name));
                 }
                 else
                 {
-                    EditorGUILayout.PropertyField(p);
-                    if (tfattr != null && field.FieldType == typeof(string))
+                    var p = serializedObject.FindProperty(field.Name);
+                    var tfattr = field.GetCustomAttribute<ToolFile.FileAttribute>(true);
+                    if (tfattr != null)
+                        GUILayout.BeginVertical(EditorStyles.helpBox);
+                    if (p == null)
                     {
-                        if (GUILayout.Button("Browse"))
-                            p.stringValue = ToolFile.BrowseFile("*");
+                        var parser = field.FieldType.GetMethod("Parse", new Type[] { typeof(string) });
+                        if (parser != null)
+                        {
+                            GUILayout.BeginHorizontal();
+                            GUILayout.Label(field.Name);
+                            EditorGUI.BeginChangeCheck();
+                            string str = GUILayout.TextField(field.GetValue(target).ToString());
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                field.SetValue(target, parser.Invoke(null, new object[] { str }));
+                            }
+                            GUILayout.EndHorizontal();
+                        }
+                        else
+                            HelpBox($"{field.Name}<{field.FieldType}> cannt draw", MessageType.Warning);
                     }
+                    else
+                    {
+                        EditorGUILayout.PropertyField(p);
+                        if (tfattr != null && field.FieldType == typeof(string))
+                        {
+                            if (GUILayout.Button("Browse"))
+                                p.stringValue = ToolFile.BrowseFile("*");
+                        }
+                    }
+                    if (tfattr != null)
+                        GUILayout.EndHorizontal();
                 }
-                if (tfattr != null)
-                    GUILayout.EndHorizontal();
+            }
+            catch (Exception ex)
+            {
+                HelpBox($"{field.Name}<{field.FieldType}> cannt draw", MessageType.Error);
+                Debug.LogException(ex);
             }
         }
         public virtual void OnContentGUI()
         {
-            var fields = this.target.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic|BindingFlags.Instance);
+            var fields = this.target.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             foreach (var field in fields)
             {
                 bool isContent = field.GetCustomAttributes(typeof(ContentAttribute), true).Length != 0;
@@ -157,12 +184,18 @@ namespace Convention
         public void Toggle(string name)
         {
             var enableTrigger = serializedObject.FindProperty(name);
+            Toggle(enableTrigger, name);
+        }
+        public bool Toggle(bool value,string label)
+        {
+            bool result;
             GUILayout.BeginHorizontal(EditorStyles.helpBox);
 
-            enableTrigger.boolValue = GUILayout.Toggle(enableTrigger.boolValue, new GUIContent(name), customSkin.FindStyle("Toggle"));
-            enableTrigger.boolValue = GUILayout.Toggle(enableTrigger.boolValue, new GUIContent(""), customSkin.FindStyle("Toggle Helper"));
+            result = GUILayout.Toggle(value, new GUIContent(label), customSkin.FindStyle("Toggle"));
+            result = GUILayout.Toggle(value, new GUIContent(""), customSkin.FindStyle("Toggle Helper"));
 
             GUILayout.EndHorizontal();
+            return result;
         }
 
         public override void OnInspectorGUI()
@@ -188,6 +221,7 @@ namespace Convention
             toolbarTabs[0] = new GUIContent("Content");
             toolbarTabs[1] = new GUIContent("Resources");
             toolbarTabs[2] = new GUIContent("Settings");
+            toolbarTabs[2] = new GUIContent("Base");
 
             GUILayout.BeginHorizontal();
             GUILayout.Space(17);
@@ -205,6 +239,8 @@ namespace Convention
                 currentTab = 1;
             if (GUILayout.Button(new GUIContent("Settings", "Settings"), customSkin.FindStyle("Tab Settings")))
                 currentTab = 2;
+            if (GUILayout.Button(new GUIContent("Origin", "Origin"), customSkin.FindStyle("Tab Data")))
+                currentTab = 3;
 
             GUILayout.EndHorizontal();
 
@@ -228,6 +264,13 @@ namespace Convention
                     {
                         HorizontalBlockWithBox(() => HelpBox("Setting", MessageType.Info));
                         OnSettingsGUI();
+                    }
+                    break;
+
+                case 3:
+                    {
+                        HorizontalBlockWithBox(() => HelpBox("Origin", MessageType.Info));
+                        OnDefaultInspectorGUI();
                     }
                     break;
             }

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 12001, guid: 0000000000000000e000000000000000, type: 0}
   m_Name: ADUI Skin Dark
   m_EditorClassIdentifier: 
-  m_Font: {fileID: 12800000, guid: 74af95cf562bfe249acc45e24c712da5, type: 3}
+  m_Font: {fileID: 12800000, guid: 7146047bdd45aa44d9d7e6268cac7d6b, type: 3}
   m_box:
     m_Name: box
     m_Normal:
@@ -150,15 +150,15 @@ MonoBehaviour:
   m_toggle:
     m_Name: toggle
     m_Normal:
-      m_Background: {fileID: 2800000, guid: e605f9035fd0c15488973f10e0a5533d, type: 3}
+      m_Background: {fileID: 2800000, guid: 3f249af59ad422b48976d274738ca6cc, type: 3}
       m_ScaledBackgrounds: []
       m_TextColor: {r: 1, g: 1, b: 1, a: 1}
     m_Hover:
-      m_Background: {fileID: 2800000, guid: e605f9035fd0c15488973f10e0a5533d, type: 3}
+      m_Background: {fileID: 2800000, guid: 3f249af59ad422b48976d274738ca6cc, type: 3}
       m_ScaledBackgrounds: []
       m_TextColor: {r: 1, g: 1, b: 1, a: 1}
     m_Active:
-      m_Background: {fileID: 2800000, guid: e605f9035fd0c15488973f10e0a5533d, type: 3}
+      m_Background: {fileID: 2800000, guid: 3f249af59ad422b48976d274738ca6cc, type: 3}
       m_ScaledBackgrounds: []
       m_TextColor: {r: 1, g: 1, b: 1, a: 1}
     m_Focused:
@@ -166,15 +166,15 @@ MonoBehaviour:
       m_ScaledBackgrounds: []
       m_TextColor: {r: 1, g: 1, b: 1, a: 1}
     m_OnNormal:
-      m_Background: {fileID: 2800000, guid: 1c603c68b59c9424bb4b3176aecc9417, type: 3}
+      m_Background: {fileID: 2800000, guid: 99253b0ead03d0145bb42e3a129ba13e, type: 3}
       m_ScaledBackgrounds: []
       m_TextColor: {r: 1, g: 0.49019608, b: 0.54754716, a: 1}
     m_OnHover:
-      m_Background: {fileID: 2800000, guid: 1c603c68b59c9424bb4b3176aecc9417, type: 3}
+      m_Background: {fileID: 2800000, guid: 99253b0ead03d0145bb42e3a129ba13e, type: 3}
       m_ScaledBackgrounds: []
       m_TextColor: {r: 1, g: 0.4901961, b: 0.54901963, a: 1}
     m_OnActive:
-      m_Background: {fileID: 2800000, guid: 1c603c68b59c9424bb4b3176aecc9417, type: 3}
+      m_Background: {fileID: 2800000, guid: 99253b0ead03d0145bb42e3a129ba13e, type: 3}
       m_ScaledBackgrounds: []
       m_TextColor: {r: 1, g: 0.4901961, b: 0.54901963, a: 1}
     m_OnFocused:
