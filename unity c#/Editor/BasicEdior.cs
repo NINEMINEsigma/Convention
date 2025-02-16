@@ -12,13 +12,54 @@ namespace Convention
     [CustomEditor(typeof(ConventionEditorInspectorGUI), true)]
     public class AbstractCustomEditor : Editor
     {
-        protected int currentTab;
+        protected int currentTab = 0;
+        protected IEnumerable<FieldInfo> ContentFields;
+        protected IEnumerable<FieldInfo> ResourcesFields;
+        protected IEnumerable<FieldInfo> SettingFields;
 
         protected virtual string TopHeader => "CM Top Header";
 
         protected void OnEnable()
         {
-
+            Type _CurType = target.GetType();
+            List<FieldInfo> fields = new();
+            while (_CurType != null && _CurType != typeof(UnityEngine.Object) && _CurType != typeof(object))
+            {
+                fields.AddRange(_CurType.GetFields(BindingFlags.Public | BindingFlags.NonPublic |
+                    BindingFlags.Instance | BindingFlags.Static));
+                _CurType = _CurType.BaseType;
+            }
+            static bool ContentCheck(FieldInfo field)
+            {
+                bool isContent = field.GetCustomAttributes(typeof(ContentAttribute), true).Length != 0;
+                bool isResources = field.GetCustomAttributes(typeof(ResourcesAttribute), true).Length != 0;
+                bool isSetting = field.GetCustomAttributes(typeof(SettingAttribute), true).Length != 0;
+                return
+                    isContent ||
+                    (!isResources && !isSetting && !field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)));
+            }
+            ContentFields = from field in fields
+                            where ContentCheck(field)
+                            select field;
+            static bool ResourcesCheck(FieldInfo field)
+            {
+                bool isContent = field.GetCustomAttributes(typeof(ContentAttribute), true).Length != 0;
+                bool isResources = field.GetCustomAttributes(typeof(ResourcesAttribute), true).Length != 0;
+                bool isSetting = field.GetCustomAttributes(typeof(SettingAttribute), true).Length != 0;
+                return
+                    isResources ||
+                    (!isContent && !isSetting && field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)));
+            }
+            ResourcesFields = from field in fields
+                              where ResourcesCheck(field)
+                              select field;
+            static bool SettingCheck(FieldInfo field)
+            {
+                return field.GetCustomAttributes(typeof(SettingAttribute), true).Length != 0;
+            }
+            SettingFields = from field in fields
+                            where SettingCheck(field)
+                            select field;
         }
 
         public void OnNotChangeGUI(UnityAction action)
@@ -64,108 +105,78 @@ namespace Convention
         }
         protected virtual void Field(FieldInfo field, bool isCheckIgnore = true)
         {
-            try
+            if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0 && Application.isPlaying == false)
             {
-                if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0 && Application.isPlaying == false)
+                PlayModeField(field);
+            }
+            else if (isCheckIgnore && (
+                field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length != 0 ||
+                (field.IsPublic == false && field.GetCustomAttribute(typeof(SerializeField), true) == null)
+                ))
+                IgnoreField(field);
+            else if (field.FieldType == typeof(bool))
+            {
+                if (isCheckIgnore)
+                    this.Toggle(field.Name);
+                else
+                    field.SetValue(target, this.Toggle((bool)field.GetValue(target), field.Name));
+            }
+            else
+            {
+                var p = serializedObject.FindProperty(field.Name);
+                var tfattr = field.GetCustomAttribute<ToolFile.FileAttribute>(true);
+                if (tfattr != null)
+                    GUILayout.BeginVertical(EditorStyles.helpBox);
+                if (p == null)
                 {
-                    PlayModeField(field);
-                }
-                else if (isCheckIgnore && (
-                    field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length != 0 ||
-                    (field.IsPublic == false && field.GetCustomAttribute(typeof(SerializeField), true) == null)
-                    ))
-                    IgnoreField(field);
-                else if (field.FieldType == typeof(bool))
-                {
-                    if (isCheckIgnore)
-                        this.Toggle(field.Name);
-                    else
-                        field.SetValue(target, this.Toggle((bool)field.GetValue(target), field.Name));
+                    var parser = field.FieldType.GetMethod("Parse", new Type[] { typeof(string) });
+                    if (parser != null)
+                    {
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label(field.Name);
+                        EditorGUI.BeginChangeCheck();
+                        string str = GUILayout.TextField(field.GetValue(target).ToString());
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            field.SetValue(target, parser.Invoke(null, new object[] { str }));
+                        }
+                        GUILayout.EndHorizontal();
+                    }
+                    else if (field.FieldType.FullName.StartsWith("System.") == false && isCheckIgnore)
+                        HelpBox($"{field.Name}<{field.FieldType}> cannt draw", MessageType.Warning);
                 }
                 else
                 {
-                    var p = serializedObject.FindProperty(field.Name);
-                    var tfattr = field.GetCustomAttribute<ToolFile.FileAttribute>(true);
-                    if (tfattr != null)
-                        GUILayout.BeginVertical(EditorStyles.helpBox);
-                    if (p == null)
+                    EditorGUILayout.PropertyField(p);
+                    if (tfattr != null && field.FieldType == typeof(string))
                     {
-                        var parser = field.FieldType.GetMethod("Parse", new Type[] { typeof(string) });
-                        if (parser != null)
-                        {
-                            GUILayout.BeginHorizontal();
-                            GUILayout.Label(field.Name);
-                            EditorGUI.BeginChangeCheck();
-                            string str = GUILayout.TextField(field.GetValue(target).ToString());
-                            if (EditorGUI.EndChangeCheck())
-                            {
-                                field.SetValue(target, parser.Invoke(null, new object[] { str }));
-                            }
-                            GUILayout.EndHorizontal();
-                        }
-                        else
-                            HelpBox($"{field.Name}<{field.FieldType}> cannt draw", MessageType.Warning);
+                        if (GUILayout.Button("Browse"))
+                            p.stringValue = ToolFile.BrowseFile("*");
                     }
-                    else
-                    {
-                        EditorGUILayout.PropertyField(p);
-                        if (tfattr != null && field.FieldType == typeof(string))
-                        {
-                            if (GUILayout.Button("Browse"))
-                                p.stringValue = ToolFile.BrowseFile("*");
-                        }
-                    }
-                    if (tfattr != null)
-                        GUILayout.EndHorizontal();
                 }
-            }
-            catch (Exception ex)
-            {
-                HelpBox($"{field.Name}<{field.FieldType}> cannt draw", MessageType.Error);
-                Debug.LogException(ex);
+                if (tfattr != null)
+                    GUILayout.EndHorizontal();
             }
         }
         public virtual void OnContentGUI()
         {
-            var fields = this.target.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var field in fields)
+            foreach (var field in ContentFields)
             {
-                bool isContent = field.GetCustomAttributes(typeof(ContentAttribute), true).Length != 0;
-                bool isResources = field.GetCustomAttributes(typeof(ResourcesAttribute), true).Length != 0;
-                bool isSetting = field.GetCustomAttributes(typeof(SettingAttribute), true).Length != 0;
-                if (!isContent && (isResources || isSetting))
-                    continue;
-                if (!field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)) || isContent)
-                {
-                    Field(field);
-                }
+                Field(field);
             }
         }
         public virtual void OnResourcesGUI()
         {
-            var fields = this.target.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var field in fields)
+            foreach (var field in ResourcesFields)
             {
-                bool isContent = field.GetCustomAttributes(typeof(ContentAttribute), true).Length != 0;
-                bool isResources = field.GetCustomAttributes(typeof(ResourcesAttribute), true).Length != 0;
-                bool isSetting = field.GetCustomAttributes(typeof(SettingAttribute), true).Length != 0;
-                if (!isResources && (isContent || isSetting))
-                    continue;
-                if (field.FieldType.IsSubclassOf(typeof(UnityEngine.Object)) || isResources)
-                {
-                    Field(field);
-                }
+                Field(field);
             }
         }
         public virtual void OnSettingsGUI()
         {
-            var fields = this.target.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            foreach (var field in fields)
+            foreach (var field in SettingFields)
             {
-                if (field.GetCustomAttributes(typeof(SettingAttribute), true).Length != 0)
-                {
-                    Field(field);
-                }
+                Field(field);
             }
         }
 
@@ -186,7 +197,7 @@ namespace Convention
             var enableTrigger = serializedObject.FindProperty(name);
             Toggle(enableTrigger, name);
         }
-        public bool Toggle(bool value,string label)
+        public bool Toggle(bool value, string label)
         {
             bool result;
             GUILayout.BeginHorizontal(EditorStyles.helpBox);
@@ -217,62 +228,57 @@ namespace Convention
             GUILayout.EndHorizontal();
             GUILayout.Space(-42);
 
-            GUIContent[] toolbarTabs = new GUIContent[3];
-            toolbarTabs[0] = new GUIContent("Content");
-            toolbarTabs[1] = new GUIContent("Resources");
-            toolbarTabs[2] = new GUIContent("Settings");
-            toolbarTabs[2] = new GUIContent("Base");
+            List<GUIContent> toolbarTabs = new()
+            {
+                new GUIContent("Origin")
+            };
+            if (ContentFields.Count() != 0)
+                toolbarTabs.Add(new GUIContent("Content"));
+            if (ResourcesFields.Count() != 0)
+                toolbarTabs.Add(new GUIContent("Resources"));
+            if (SettingFields.Count() != 0)
+                toolbarTabs.Add(new GUIContent("Settings"));
 
             GUILayout.BeginHorizontal();
             GUILayout.Space(17);
 
-            currentTab = GUILayout.Toolbar(currentTab, toolbarTabs, customSkin.FindStyle("Tab Indicator"));
+            currentTab = GUILayout.Toolbar(currentTab, toolbarTabs.ToArray(), customSkin.FindStyle("Tab Indicator"));
 
             GUILayout.EndHorizontal();
             GUILayout.Space(-40);
             GUILayout.BeginHorizontal();
             GUILayout.Space(17);
 
-            if (GUILayout.Button(new GUIContent("Content", "Content"), customSkin.FindStyle("Tab Content")))
-                currentTab = 0;
-            if (GUILayout.Button(new GUIContent("Resources", "Resources"), customSkin.FindStyle("Tab Resources")))
-                currentTab = 1;
-            if (GUILayout.Button(new GUIContent("Settings", "Settings"), customSkin.FindStyle("Tab Settings")))
-                currentTab = 2;
-            if (GUILayout.Button(new GUIContent("Origin", "Origin"), customSkin.FindStyle("Tab Data")))
-                currentTab = 3;
+            GUILayout.Button(new GUIContent("Origin", "Origin"), customSkin.FindStyle("Tab Data"));
+            if (ContentFields.Count() != 0)
+                GUILayout.Button(new GUIContent("Content", "Content"), customSkin.FindStyle("Tab Content"));
+            if (ResourcesFields.Count() != 0)
+                GUILayout.Button(new GUIContent("Resources", "Resources"), customSkin.FindStyle("Tab Resources"));
+            if (SettingFields.Count() != 0)
+                GUILayout.Button(new GUIContent("Settings", "Settings"), customSkin.FindStyle("Tab Settings"));
 
             GUILayout.EndHorizontal();
 
-            switch (currentTab)
+            string currentTabStr = toolbarTabs[currentTab].text;
+            if (currentTabStr == "Content")
             {
-                case 0:
-                    {
-                        HorizontalBlockWithBox(() => HelpBox("Content", MessageType.Info));
-                        OnContentGUI();
-                    }
-                    break;
-
-                case 1:
-                    {
-                        HorizontalBlockWithBox(() => HelpBox("Resources", MessageType.Info));
-                        OnResourcesGUI();
-                    }
-                    break;
-
-                case 2:
-                    {
-                        HorizontalBlockWithBox(() => HelpBox("Setting", MessageType.Info));
-                        OnSettingsGUI();
-                    }
-                    break;
-
-                case 3:
-                    {
-                        HorizontalBlockWithBox(() => HelpBox("Origin", MessageType.Info));
-                        OnDefaultInspectorGUI();
-                    }
-                    break;
+                HorizontalBlockWithBox(() => HelpBox("Content", MessageType.Info));
+                OnContentGUI();
+            }
+            else if (currentTabStr == "Resources")
+            {
+                HorizontalBlockWithBox(() => HelpBox("Resources", MessageType.Info));
+                OnResourcesGUI();
+            }
+            else if (currentTabStr == "Settings")
+            {
+                HorizontalBlockWithBox(() => HelpBox("Settings", MessageType.Info));
+                OnSettingsGUI();
+            }
+            else
+            {
+                HorizontalBlockWithBox(() => HelpBox("Origin", MessageType.Info));
+                OnDefaultInspectorGUI();
             }
 
             serializedObject.ApplyModifiedProperties();

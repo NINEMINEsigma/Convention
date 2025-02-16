@@ -1,0 +1,79 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Rendering;
+
+namespace Convention
+{
+    namespace VFX
+    {
+        public class FullscreenDissolve : FullscreenEffect
+        {
+            [Setting, SerializeField] private List<string> IgnoreCameraTag = new();
+            [Setting, SerializeField, Tooltip("PassMaterial.TransitionAmount")]
+            private string TransitionAmount_Float = "_TransitionAmount";
+            [Content, Setting] private bool DissolveNeeded = false;
+
+            [Setting,Header("Dissolve Setting")] public AnimationCurve DissolveZoomInCurve = AnimationCurve.Linear(0, 0, 1, 1);
+            [Setting] public AnimationCurve DissolveZoomOutCurve = AnimationCurve.Linear(0, 0, -1, 1);
+            [Setting] public float ZommInDuration = 0.5f;
+            [Setting] public float ZommOutDuration = 0.5f;
+
+            private IEnumerator Dissolving(Action midCallback, Action endCallback)
+            {
+                DissolveNeeded = true;
+                float ticks = ZommInDuration;
+                while (ticks > 0)
+                {
+                    this.PassMaterial.SetFloat(TransitionAmount_Float, DissolveZoomInCurve.Evaluate(1.0f - ticks / ZommInDuration));
+                    ticks -= Time.deltaTime;
+                    yield return null;
+                }
+                midCallback();
+                while (ticks < ZommOutDuration)
+                {
+                    this.PassMaterial.SetFloat(TransitionAmount_Float, DissolveZoomOutCurve.Evaluate(1.0f - ticks / ZommOutDuration));
+                    ticks += Time.deltaTime;
+                    yield return null;
+                }
+                endCallback();
+                DissolveNeeded = false;
+            }
+
+            public void StartDissolve()
+            {
+                StopCoroutine("Dissolving");
+                StartCoroutine(Dissolving(() => { }, () => { }));
+            }
+            public void StartDissolve(Action callback, bool isMid)
+            {
+                StopCoroutine("Dissolving");
+                if (isMid)
+                    StartCoroutine(Dissolving(callback, () => { }));
+                else
+                    StartCoroutine(Dissolving(() => { }, callback));
+            }
+            public void StartDissolve(Action midCallback, Action endCallback)
+            {
+                StopCoroutine("Dissolving");
+                StartCoroutine(Dissolving(midCallback, endCallback));
+            }
+
+            public override void OnBeginCamera(ScriptableRenderContext ctx, Camera cam)
+            {
+                foreach(var tag in IgnoreCameraTag)
+                {
+                    if(cam.CompareTag(tag))
+                        return;
+                }
+                if (!DissolveNeeded)
+                {
+                    return;
+                }
+
+                base.OnBeginCamera(ctx, cam);
+            }
+        }
+    }
+}

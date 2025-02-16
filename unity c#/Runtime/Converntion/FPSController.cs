@@ -7,6 +7,8 @@ namespace Convention
 {
     public class FPSController : MonoAnyBehaviour
     {
+        [Setting,Header("Need \"Horizontal\" and \"Vertical\" for movement")] 
+        public InputActionAsset inputAction;
         [Setting] public bool useCharacterForward = false;
         [Setting] public bool lockToCameraForward = false;
         [Setting] public float turnSpeed = 10f;
@@ -36,14 +38,20 @@ namespace Convention
                 anim = GetComponent<Animator>();
             if (!mainCamera)
                 mainCamera = Camera.main;
+            if (!inputAction)
+                inputAction = Resources.Load<InputActionAsset>("FPS");
+        }
+
+        protected virtual void RefreshInput()
+        {
+            input.x = inputAction.actionMaps[0]["Horizontal"].ReadValue<float>();
+            input.y = inputAction.actionMaps[0]["Vertical"].ReadValue<float>();
         }
 
         // Update is called once per frame
         void FixedUpdate()
         {
-            input.x = Input.GetAxis("Horizontal");
-            input.y = Input.GetAxis("Vertical");
-
+            RefreshInput();
             // set speed to both vertical and horizontal inputs
             if (useCharacterForward)
                 speed = Mathf.Abs(input.x) + input.y;
