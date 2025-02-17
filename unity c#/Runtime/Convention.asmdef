@@ -6,7 +6,10 @@
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.RenderPipelines.Core.Runtime",
         "Convention.Plugin",
-        "Convention.Windows"
+        "Convention.Windows",
+        "Cinemachine",
+        "Unity.Mathematics",
+        "Unity.Timeline"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

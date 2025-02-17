@@ -119,4 +119,18 @@ namespace Convention
     {
         [return: ReturnNotNull] public string SymbolName() => this.GetType().Name;
     }
+
+    public class Singleton<T> : MonoAnyBehaviour where T : Singleton<T>
+    {
+        public static T instance { get; protected set; }
+
+        protected virtual void OnEnable()
+        {
+            instance = (T)this;
+        }
+        protected virtual void OnDisable()
+        {
+            instance = null;
+        }
+    }
 }

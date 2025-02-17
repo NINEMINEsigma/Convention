@@ -19,6 +19,7 @@ namespace Convention
             [Setting] public AnimationCurve DissolveZoomOutCurve = AnimationCurve.Linear(0, 0, -1, 1);
             [Setting] public float ZommInDuration = 0.5f;
             [Setting] public float ZommOutDuration = 0.5f;
+            [Setting] public float StayDuration = 0.5f;
 
             private IEnumerator Dissolving(Action midCallback, Action endCallback)
             {
@@ -30,13 +31,21 @@ namespace Convention
                     ticks -= Time.deltaTime;
                     yield return null;
                 }
+                this.PassMaterial.SetFloat(TransitionAmount_Float, 1);
                 midCallback();
+                ticks = StayDuration;
+                while (ticks > 0)
+                {
+                    ticks -= Time.deltaTime;
+                    yield return null;
+                }
                 while (ticks < ZommOutDuration)
                 {
                     this.PassMaterial.SetFloat(TransitionAmount_Float, DissolveZoomOutCurve.Evaluate(1.0f - ticks / ZommOutDuration));
                     ticks += Time.deltaTime;
                     yield return null;
                 }
+                this.PassMaterial.SetFloat(TransitionAmount_Float, 0);
                 endCallback();
                 DissolveNeeded = false;
             }

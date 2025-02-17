@@ -158,6 +158,10 @@ namespace Convention
                     GUILayout.EndHorizontal();
             }
         }
+        public virtual void OnOriginGUI()
+        {
+            DrawDefaultInspector();
+        }
         public virtual void OnContentGUI()
         {
             foreach (var field in ContentFields)
@@ -278,15 +282,10 @@ namespace Convention
             else
             {
                 HorizontalBlockWithBox(() => HelpBox("Origin", MessageType.Info));
-                OnDefaultInspectorGUI();
+                OnOriginGUI();
             }
 
             serializedObject.ApplyModifiedProperties();
-        }
-
-        public void OnDefaultInspectorGUI()
-        {
-            base.OnInspectorGUI();
         }
 
         public void MakeUpNumericManager(string thatNumericManagerName)

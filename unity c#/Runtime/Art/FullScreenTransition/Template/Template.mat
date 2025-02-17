@@ -42,7 +42,7 @@ Material:
     m_Ints: []
     m_Floats:
     - _GridScale: 4.9
-    - _TransitionAmount: 0.0000013113022
+    - _TransitionAmount: 0.0031937957
     m_Colors:
     - _TransitionColor: {r: 44.72705, g: 43.99656, b: 24.684265, a: 1}
   m_BuildTextureStacks: []
