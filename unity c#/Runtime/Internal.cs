@@ -56,6 +56,22 @@ namespace Convention
     }
     public interface IAnyClass : ITypeClass { }
     public class AnyClass : TypeClass, IAnyClass { }
+    [Serializable]
+    public class AnyException : Exception, IAnyClass
+    {
+        public AnyException() { }
+        public AnyException(string message) : base(message) { }
+        public AnyException(string message, Exception inner) : base(message, inner) { }
+        protected AnyException(
+          System.Runtime.Serialization.SerializationInfo info,
+          System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
+
+        [return: ReturnNotNull]
+        public string SymbolName()
+        {
+            return $"{this.GetType()}<{base.Message}>";
+        }
+    }
     public class BasicValueReference<T> : AnyClass
     {
         [SerializeField][Content] protected T _ref_value;
@@ -120,17 +136,48 @@ namespace Convention
         [return: ReturnNotNull] public string SymbolName() => this.GetType().Name;
     }
 
-    public class Singleton<T> : MonoAnyBehaviour where T : Singleton<T>
+    public abstract class Singleton<T> : AnyClass where T : Singleton<T>
     {
-        public static T instance { get; protected set; }
-
-        protected virtual void OnEnable()
+        [Setting, Ignore] private static T m_instance;
+        public static T instance { get=> m_instance; protected set=> m_instance = value; }
+        public Singleton()
         {
+            if (instance != this)
+                throw new AnyException("instance is exist");
             instance = (T)this;
         }
-        protected virtual void OnDisable()
+        ~Singleton()
         {
             instance = null;
+        }
+
+        public static bool IsAvailable()
+        {
+            return instance != null;
+        }
+    }
+    public abstract class MonoSingleton<T> : MonoAnyBehaviour where T : MonoSingleton<T>
+    {
+
+        [Setting, Ignore] private static T m_instance;
+        public static T instance { get => m_instance; protected set => m_instance = value; }
+        public virtual bool IsDontDestroyOnLoad { get => false; }
+
+        protected virtual void Awake()
+        {
+            if(instance!= null)
+            {
+                this.gameObject.SetActive(false);
+                return;
+            }
+            if (IsDontDestroyOnLoad && this.transform.parent == null)
+                DontDestroyOnLoad(this);
+            instance = (T)this;
+        }
+
+        public static bool IsAvailable()
+        {
+            return instance != null;
         }
     }
 }

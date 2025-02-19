@@ -29,6 +29,13 @@ namespace Convention
                     BindingFlags.Instance | BindingFlags.Static));
                 _CurType = _CurType.BaseType;
             }
+            fields.RemoveAll((field) =>
+            {
+                bool NotContent = field.GetCustomAttributes(typeof(ContentAttribute), true).Length == 0;
+                bool NotResources = field.GetCustomAttributes(typeof(ResourcesAttribute), true).Length == 0;
+                bool NotSetting = field.GetCustomAttributes(typeof(SettingAttribute), true).Length == 0;
+                return field.IsPrivate && NotContent && NotResources && NotSetting;
+            });
             static bool ContentCheck(FieldInfo field)
             {
                 bool isContent = field.GetCustomAttributes(typeof(ContentAttribute), true).Length != 0;
@@ -105,57 +112,105 @@ namespace Convention
         }
         protected virtual void Field(FieldInfo field, bool isCheckIgnore = true)
         {
-            if (field.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0 && Application.isPlaying == false)
+            bool HasOnlyPlayMode = field.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0;
+            bool HasWhen = field.GetCustomAttributes(typeof(WhenAttribute), true).Length != 0;
+            bool HasOnlyNotNullMode = field.GetCustomAttributes(typeof(OnlyNotNullModeAttribute), true).Length != 0;
+            bool HasIgnore = field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length != 0;
+            bool HasSerializeField = field.GetCustomAttributes(typeof(SerializeField), true).Length != 0;
+            bool HasOpt = field.GetCustomAttributes(typeof(OptAttribute), true).Length != 0;
+            bool HasArgPackage = field.GetCustomAttributes(typeof(ArgPackageAttribute), true).Length != 0;
+
+            if (HasOnlyPlayMode && Application.isPlaying == false)
+                OnlyDisplayOnPlayMode(field, isCheckIgnore);
+            else if (HasWhen && field.GetCustomAttribute<WhenAttribute>().CheckAnyValue(target) == false)
+                return;
+            else if (HasOnlyNotNullMode)
+                DisplayOnlyNotNull(field, isCheckIgnore);
+            else if (isCheckIgnore && (HasIgnore || (field.IsPublic == false && HasSerializeField)))
+                IgnoreField(field);
+            else
+                DisplayDefaultField(field, isCheckIgnore);
+
+            void OnlyDisplayOnPlayMode(FieldInfo field, bool isCheckIgnore)
             {
                 PlayModeField(field);
             }
-            else if (isCheckIgnore && (
-                field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length != 0 ||
-                (field.IsPublic == false && field.GetCustomAttribute(typeof(SerializeField), true) == null)
-                ))
-                IgnoreField(field);
-            else if (field.FieldType == typeof(bool))
+
+            void DisplayBoolValue(FieldInfo field, bool isCheckIgnore)
             {
                 if (isCheckIgnore)
                     this.Toggle(field.Name);
                 else
                     field.SetValue(target, this.Toggle((bool)field.GetValue(target), field.Name));
             }
-            else
+
+            void DisplayDefaultField(FieldInfo field, bool isCheckIgnore)
             {
-                var p = serializedObject.FindProperty(field.Name);
-                var tfattr = field.GetCustomAttribute<ToolFile.FileAttribute>(true);
-                if (tfattr != null)
-                    GUILayout.BeginVertical(EditorStyles.helpBox);
-                if (p == null)
+                if (field.FieldType == typeof(bool))
+                    DisplayBoolValue(field, isCheckIgnore);
+                else
                 {
-                    var parser = field.FieldType.GetMethod("Parse", new Type[] { typeof(string) });
-                    if (parser != null)
+                    var p = serializedObject.FindProperty(field.Name);
+                    var tfattr = field.GetCustomAttribute<ToolFile.FileAttribute>(true);
+                    if (tfattr != null)
+                        GUILayout.BeginVertical(EditorStyles.helpBox);
+                    if (p == null)
                     {
-                        GUILayout.BeginHorizontal();
-                        GUILayout.Label(field.Name);
-                        EditorGUI.BeginChangeCheck();
-                        string str = GUILayout.TextField(field.GetValue(target).ToString());
-                        if (EditorGUI.EndChangeCheck())
+                        var parser = field.FieldType.GetMethod("Parse", new Type[] { typeof(string) });
+                        if (parser != null)
                         {
-                            field.SetValue(target, parser.Invoke(null, new object[] { str }));
+                            GUILayout.BeginHorizontal();
+                            GUILayout.Label(field.Name);
+                            EditorGUI.BeginChangeCheck();
+                            string str = GUILayout.TextField(field.GetValue(target).ToString());
+                            if (EditorGUI.EndChangeCheck())
+                            {
+                                field.SetValue(target, parser.Invoke(null, new object[] { str }));
+                            }
+                            GUILayout.EndHorizontal();
                         }
-                        GUILayout.EndHorizontal();
+                        else if (field.FieldType.FullName.StartsWith("System.") == false && isCheckIgnore)
+                            HelpBox($"{field.Name}<{field.FieldType}> cannt draw", MessageType.Warning);
                     }
-                    else if (field.FieldType.FullName.StartsWith("System.") == false && isCheckIgnore)
-                        HelpBox($"{field.Name}<{field.FieldType}> cannt draw", MessageType.Warning);
+                    else
+                    {
+                        EditorGUILayout.PropertyField(p);
+                        if (tfattr != null && field.FieldType == typeof(string))
+                        {
+                            if (GUILayout.Button("Browse"))
+                                p.stringValue = ToolFile.BrowseFile("*");
+                        }
+                    }
+                    if (tfattr != null)
+                        GUILayout.EndHorizontal();
+                }
+            }
+
+            void DisplayOnlyNotNull(FieldInfo field, bool isCheckIgnore)
+            {
+                var attr = field.GetCustomAttribute<OnlyNotNullModeAttribute>(true);
+                if (attr.IsSelf())
+                {
+                    if (attr.Check(field.GetValue(target)))
+                    {
+                        DisplayDefaultField(field, isCheckIgnore);
+                    }
+                    else
+                    {
+                        VerticalBlockWithBox(() =>
+                        {
+                            HelpBox($"{field.Name} is null", MessageType.Error);
+                            DisplayDefaultField(field, isCheckIgnore);
+                        });
+                    }
                 }
                 else
                 {
-                    EditorGUILayout.PropertyField(p);
-                    if (tfattr != null && field.FieldType == typeof(string))
+                    if (attr.Check(target))
                     {
-                        if (GUILayout.Button("Browse"))
-                            p.stringValue = ToolFile.BrowseFile("*");
+                        DisplayDefaultField(field, isCheckIgnore);
                     }
                 }
-                if (tfattr != null)
-                    GUILayout.EndHorizontal();
             }
         }
         public virtual void OnOriginGUI()

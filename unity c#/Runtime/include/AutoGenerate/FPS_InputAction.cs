@@ -55,6 +55,15 @@ public partial class @FPS: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
+                    ""name"": ""Sprint"",
+                    ""type"": ""Button"",
+                    ""id"": ""1f18ebda-4507-45e3-9f43-5034cce56bdc"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
                     ""name"": ""Squat"",
                     ""type"": ""Button"",
                     ""id"": ""dcd6ab8f-58ae-4ef4-809d-8059bc0e859c"",
@@ -76,6 +85,15 @@ public partial class @FPS: IInputActionCollection2, IDisposable
                     ""name"": ""ToolRefresh"",
                     ""type"": ""Button"",
                     ""id"": ""10ffc808-1ecc-4911-9625-e882a108ad80"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""ToolSkill"",
+                    ""type"": ""Button"",
+                    ""id"": ""5cbf5dbe-a5f3-454e-b581-d1550922b0d1"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -258,6 +276,28 @@ public partial class @FPS: IInputActionCollection2, IDisposable
                     ""action"": ""Horizontal"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""8a240caa-0e2e-4dd3-b778-0c2e08305f19"",
+                    ""path"": ""<Keyboard>/capsLock"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Sprint"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b14ef0b5-727a-4301-ae83-27da24787dbf"",
+                    ""path"": ""<Keyboard>/leftCtrl"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ToolSkill"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         }
@@ -269,9 +309,11 @@ public partial class @FPS: IInputActionCollection2, IDisposable
         m_Main_Vertical = m_Main.FindAction("Vertical", throwIfNotFound: true);
         m_Main_Horizontal = m_Main.FindAction("Horizontal", throwIfNotFound: true);
         m_Main_Jump = m_Main.FindAction("Jump", throwIfNotFound: true);
+        m_Main_Sprint = m_Main.FindAction("Sprint", throwIfNotFound: true);
         m_Main_Squat = m_Main.FindAction("Squat", throwIfNotFound: true);
         m_Main_ToolUse = m_Main.FindAction("ToolUse", throwIfNotFound: true);
         m_Main_ToolRefresh = m_Main.FindAction("ToolRefresh", throwIfNotFound: true);
+        m_Main_ToolSkill = m_Main.FindAction("ToolSkill", throwIfNotFound: true);
     }
 
     ~@FPS()
@@ -341,9 +383,11 @@ public partial class @FPS: IInputActionCollection2, IDisposable
     private readonly InputAction m_Main_Vertical;
     private readonly InputAction m_Main_Horizontal;
     private readonly InputAction m_Main_Jump;
+    private readonly InputAction m_Main_Sprint;
     private readonly InputAction m_Main_Squat;
     private readonly InputAction m_Main_ToolUse;
     private readonly InputAction m_Main_ToolRefresh;
+    private readonly InputAction m_Main_ToolSkill;
     public struct MainActions
     {
         private @FPS m_Wrapper;
@@ -351,9 +395,11 @@ public partial class @FPS: IInputActionCollection2, IDisposable
         public InputAction @Vertical => m_Wrapper.m_Main_Vertical;
         public InputAction @Horizontal => m_Wrapper.m_Main_Horizontal;
         public InputAction @Jump => m_Wrapper.m_Main_Jump;
+        public InputAction @Sprint => m_Wrapper.m_Main_Sprint;
         public InputAction @Squat => m_Wrapper.m_Main_Squat;
         public InputAction @ToolUse => m_Wrapper.m_Main_ToolUse;
         public InputAction @ToolRefresh => m_Wrapper.m_Main_ToolRefresh;
+        public InputAction @ToolSkill => m_Wrapper.m_Main_ToolSkill;
         public InputActionMap Get() { return m_Wrapper.m_Main; }
         public void Enable() { Get().Enable(); }
         public void Disable() { Get().Disable(); }
@@ -372,6 +418,9 @@ public partial class @FPS: IInputActionCollection2, IDisposable
             @Jump.started += instance.OnJump;
             @Jump.performed += instance.OnJump;
             @Jump.canceled += instance.OnJump;
+            @Sprint.started += instance.OnSprint;
+            @Sprint.performed += instance.OnSprint;
+            @Sprint.canceled += instance.OnSprint;
             @Squat.started += instance.OnSquat;
             @Squat.performed += instance.OnSquat;
             @Squat.canceled += instance.OnSquat;
@@ -381,6 +430,9 @@ public partial class @FPS: IInputActionCollection2, IDisposable
             @ToolRefresh.started += instance.OnToolRefresh;
             @ToolRefresh.performed += instance.OnToolRefresh;
             @ToolRefresh.canceled += instance.OnToolRefresh;
+            @ToolSkill.started += instance.OnToolSkill;
+            @ToolSkill.performed += instance.OnToolSkill;
+            @ToolSkill.canceled += instance.OnToolSkill;
         }
 
         private void UnregisterCallbacks(IMainActions instance)
@@ -394,6 +446,9 @@ public partial class @FPS: IInputActionCollection2, IDisposable
             @Jump.started -= instance.OnJump;
             @Jump.performed -= instance.OnJump;
             @Jump.canceled -= instance.OnJump;
+            @Sprint.started -= instance.OnSprint;
+            @Sprint.performed -= instance.OnSprint;
+            @Sprint.canceled -= instance.OnSprint;
             @Squat.started -= instance.OnSquat;
             @Squat.performed -= instance.OnSquat;
             @Squat.canceled -= instance.OnSquat;
@@ -403,6 +458,9 @@ public partial class @FPS: IInputActionCollection2, IDisposable
             @ToolRefresh.started -= instance.OnToolRefresh;
             @ToolRefresh.performed -= instance.OnToolRefresh;
             @ToolRefresh.canceled -= instance.OnToolRefresh;
+            @ToolSkill.started -= instance.OnToolSkill;
+            @ToolSkill.performed -= instance.OnToolSkill;
+            @ToolSkill.canceled -= instance.OnToolSkill;
         }
 
         public void RemoveCallbacks(IMainActions instance)
@@ -425,8 +483,10 @@ public partial class @FPS: IInputActionCollection2, IDisposable
         void OnVertical(InputAction.CallbackContext context);
         void OnHorizontal(InputAction.CallbackContext context);
         void OnJump(InputAction.CallbackContext context);
+        void OnSprint(InputAction.CallbackContext context);
         void OnSquat(InputAction.CallbackContext context);
         void OnToolUse(InputAction.CallbackContext context);
         void OnToolRefresh(InputAction.CallbackContext context);
+        void OnToolSkill(InputAction.CallbackContext context);
     }
 }

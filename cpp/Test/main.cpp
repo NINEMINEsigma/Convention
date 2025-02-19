@@ -25,5 +25,9 @@ public:
 };
 int main()
 {
-
+    auto file = make_instance(filesystem::path("F:"));
+    for (auto&& i : file.dir_iter())
+    {
+        cout << i << "\n";
+    }
 }

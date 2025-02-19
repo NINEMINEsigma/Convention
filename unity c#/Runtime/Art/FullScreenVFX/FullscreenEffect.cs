@@ -10,7 +10,10 @@ namespace Convention
     namespace VFX
     {
         // Empty class to be used in scenes and doesn't implement any additional overrides
-        public class FullscreenEffect : FullscreenEffectBase<FullscreenPassBase> { }
+        public abstract class FullscreenEffect : FullscreenEffectBase<FullscreenPassBase>
+        {
+            public abstract void SetEffectWeight([Percentage(0f, 1f)] float value);
+        }
 
         [ExecuteAlways]
         public class FullscreenEffectBase<T> : MonoAnyBehaviour where T : FullscreenPassBase, new()

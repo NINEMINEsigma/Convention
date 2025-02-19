@@ -26,20 +26,8 @@ namespace Convention
             Count,
         }
 
-        public class PerformanceTest : MonoAnyBehaviour
+        public class PerformanceTest : MonoSingleton<PerformanceTest>
         {
-            private static PerformanceTest _instance;
-            public static PerformanceTest instance
-            {
-                get
-                {
-                    if (_instance == null)
-                        _instance = FindAnyObjectByType<PerformanceTest>();
-
-                    return _instance;
-                }
-            }
-
             public bool _autoStart = true;
             [FormerlySerializedAs("m_Stages")]
             public List<PerformanceTestStage> _stages;
@@ -115,8 +103,7 @@ namespace Convention
                 _currentTimingRefreshCounter++;
             }
 
-            public static bool RunningBenchmark =>
-                _instance != null;
+            public static bool RunningBenchmark => instance != null;
 
             const float
                 k_frameLineMul = 1000f,
@@ -179,18 +166,9 @@ namespace Convention
                 return c;
             }
 
-            private void Awake()
+            protected override void Awake()
             {
-                //Destroy if assigned
-                if (_instance != null)
-                {
-                    Destroy(this);
-                    return;
-                }
-
-                _instance = this;
-                DontDestroyOnLoad(this);
-
+                base.Awake();
                 var playerManager = FindObjectOfType<PlayerManager>();
                 if (playerManager != null)
                 {

@@ -1,24 +1,22 @@
 using Cinemachine;
-using UnityEngine;
-using UnityEngine.Playables;
-using UnityEngine.Timeline;
 using Convention.Benchmarking;
-using UnityEngine.EventSystems;
+using UnityEngine;
 
 namespace Convention
 {
-    /// <summary>
-    /// This class will enable the touch input canvas on handheld devices and will trigger the camera flythrough if the player is idle
-    /// </summary>
     public class PlayerManager : MonoAnyBehaviour
     {
         [SerializeField, Resources] private GameObject m_CrosshairCanvas;
-        [SerializeField,Resources] private GameObject m_TouchInputCanvas;
+        [SerializeField, Resources] private GameObject m_TouchInputCanvas;
 
-        [SerializeField,Resources]private CinemachineVirtualCamera m_VirtualCamera;
+        [SerializeField, Resources] private CinemachineVirtualCamera m_VirtualCamera;
+
+        private RegisterWrapper<PlayerManager> m_register;
 
         void Start()
         {
+            m_register = new(() => { });
+
             if (PerformanceTest.RunningBenchmark)
             {
                 Destroy(gameObject);
@@ -35,6 +33,10 @@ namespace Convention
                 m_VirtualCamera = GetComponentInChildren<CinemachineVirtualCamera>();
             }
         }
+        private void OnDestroy()
+        {
+            m_register = null;
+        }
 
         public void EnableFirstPersonController()
         {
@@ -48,18 +50,5 @@ namespace Convention
             m_CrosshairCanvas.SetActive(true);
 
         }
-
-        //public void NotifyPlayerMoved()
-        //{
-        //    m_TimeIdle = 0;
-        //    if (m_InFlythrough)
-        //    {
-        //        EnableFirstPersonController();
-        //        if (SystemInfo.deviceType == DeviceType.Handheld)
-        //        {
-        //            m_TouchInputCanvas.SetActive(true);
-        //        }
-        //    }
-        //}
     }
 }

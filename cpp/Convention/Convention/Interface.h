@@ -20,7 +20,7 @@ public:
     using _MyType = _Type;
     static constexpr bool _is_extension = _Extension;
 private:
-    void* operator new(size_t t) { }
+    void* operator new(size_t t) {}
 public:
     constexpr instance() :_Mybase() {}
     constexpr instance(nullptr_t) : _Mybase(nullptr) {}
@@ -31,6 +31,15 @@ public:
     template<typename... _Args>
     instance(_Args&&... args) : _Mybase(std::forward<_Args>(args)...) {}
     virtual ~instance() {}
+
+    operator _Type& () const
+    {
+        return *this->get();
+    }
+    operator _Type* () const noexcept
+    {
+        return this->get();
+    }
 
     bool is_empty() const noexcept
     {

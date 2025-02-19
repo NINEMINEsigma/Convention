@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Convention
 {
@@ -63,6 +64,8 @@ namespace Convention
         : ISerializationCallbackReceiver
 #endif
     {
+        public DataEntry() { }
+        public DataEntry(object data) { RealData = data; }
         [SerializeField] public object RealData;
 
         public int intValue

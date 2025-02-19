@@ -553,7 +553,6 @@ public:
 	instance(instance& data) :_Mybase(data) {}
 	instance_move_operator(public) {}
 
-
 	copy_func_return_auto_with_noexcept(begin);
 	copy_func_return_auto_with_noexcept(end);
 	copy_func_return_auto_with_noexcept(cbegin);
@@ -740,14 +739,108 @@ public:
 	{
 		return levenshtein_distance(this->begin(), this->end(), &target[0], &target[length - 1]);
 	}
-	size_t edit_distance(const _Elem* target) const
+	size_t edit_distance(_In_ const _Elem* target) const
 	{
 		return edit_distance(tag(target));
 	}
+	template<typename _Right>
+	int first(const _Right& str) const noexcept
+	{
+		if (this->size() < str.size())
+			return -1;
+		for (int offset = 0, end = this->size() - str.size(); offset < end; offset++)
+		{
+			if (_Traits::compare(this->data() + offset, str.data(), str.size()) == 0)
+				return offset;
+		}
+		return -1;
+	}
+	int first(const _Elem& ch) const noexcept
+	{
+		if (this->size() != 0)
+			for (int offset = 0, end = this->size(); offset < end; offset++)
+				if (this->at(offset) == ch)
+					return offset;
+		return -1;
+	}
+	int first(_In_ const _Elem* ptr) const noexcept
+	{
+		return first(tag(ptr));
+	}
+	template<typename _Right>
+	int last(const _Right& str) const noexcept
+	{
+		if (this->size() < str.size())
+			return -1;
+		for (int offset = this->size() - str.size() - 1, end = 0; offset >= end; offset--)
+		{
+			if (_Traits::compare(this->data() + offset, str.data(), str.size()) == 0)
+				return offset;
+		}
+		return -1;
+	}
+	int last(const _Elem& ch) const noexcept
+	{
+		if (this->size() != 0)
+			for (int offset = this->size() - 1, end = 0; offset >= end; offset--)
+				if (this->at(offset) == ch)
+					return offset;
+		return -1;
+	}
+	int last(_In_ const _Elem* ptr) const noexcept
+	{
+		return last(tag(ptr));
+	}
+	template<typename _Param>
+	tag join(_Param&& arg)
+	{
+		return tag(std::forward(arg));
+	}
+	template<typename _First, typename... _Params>
+	tag join(_First&& first, _Params&&... args)
+	{
+		return tag(std::forward<_First>(first)) + join(std::forward<_Params>(args)...);
+	}
+	template<typename... Args>
+	auto format_s(void* buffer, size_t buffer_size, Args&&... args)
+	{
+		if constexpr (std::is_same_v<_Elem, char>)
+		{
+			sprintf_s((char*)buffer, buffer_size, **this, std::forward<Args>(args)...);
+		}
+		else if constexpr (std::is_same_v<_Elem, wchar_t>)
+		{
+			swprintf_s((wchar_t*)buffer, buffer_size, **this, std::forward<Args>(args)...);
+		}
+	}
+	template<typename... Args>
+	auto format(Args&&... args)
+	{
+		if constexpr (std::is_same_v<_Elem, char>)
+		{
+			std::string result(1024, 0);
+			sprintf_s(result.data(), 1024, **this, std::forward<Args>(args)...);
+			return result;
+		}
+		else if constexpr (std::is_same_v<_Elem, wchar_t>)
+		{
+			std::wstring result(1024, 0);
+			swprintf_s(result.data(), 1024, **this, std::forward<Args>(args)...);
+			return result;
+		}
+	}
+
+
+	virtual std::string ToString() const noexcept override
+	{
+		std::string str(sizeof(char) * this->size(), 0);
+		::memmove(str.data(), this->data(), this->size());
+		return str;
+	}
+
 };
 
 #pragma endregion
-
 
 // return:
 //		返回指向原对象的view(如果传入的是一个view, 那么不继承其属性)

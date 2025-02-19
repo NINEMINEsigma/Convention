@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+using Convention.Benchmarking;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,31 +6,32 @@ namespace Convention
 {
     public class FPSController : MonoAnyBehaviour
     {
-        [Setting,Header("Need \"Horizontal\" and \"Vertical\" for movement")] 
-        public InputActionAsset inputAction;
+        [Header("Need \"Horizontal\" and \"Vertical\" for movement, \"Sprint\" and \"Jump\" for behaviour")]
+        [Setting, OnlyNotNullMode()] public InputActionAsset inputAction;
         [Setting] public bool useCharacterForward = false;
         [Setting] public bool lockToCameraForward = false;
         [Setting] public float turnSpeed = 10f;
-        [Setting] public KeyCode sprintJoystick = KeyCode.JoystickButton2;
-        [Setting] public KeyCode sprintKeyboard = KeyCode.Space;
+        [Setting] public Vector2 turnSpeedMultiplierBoundary = new(0.2f, 0.4f);
 
         [Content, Ignore] private float turnSpeedMultiplier;
-        [Setting] public Vector2 turnSpeedMultiplierBoundary = new(0.2f, 1f);
         [Content, Ignore] private float speed = 0f;
+        [Content, Ignore] private float lastSpeed = 0f;
         [Content, Ignore] private float direction = 0f;
-        [Setting, Ignore] private bool isSprinting = false;
-        [Content, Ignore, SerializeField] private Vector3 targetDirection;
+        [Header("Input Infomation")]
+        [Setting, OnlyNotNullMode(nameof(inputAction))] public int InputSelectIndex = 0;
         [Content, Ignore, SerializeField] private Vector2 input;
+        [Content, Ignore] private bool isInputSprinting = false;
+        [Content, Ignore] private bool IsInputJumping = false;
+        [Content, Ignore, SerializeField] private Vector3 targetDirection;
         [Content, Ignore, SerializeField] private Quaternion freeRotation;
         [Resources, SerializeField] private Camera mainCamera;
-        [Content] private float velocity;
+        [Content, Ignore, SerializeField] private float velocity;
 
-        [Resources, SerializeField] private Animator anim;
-        [Resources, Setting, Header("Animation Property Name")] public string Speed_float = "Speed";
-        [Resources, Setting] public string Direction_float = "Direction";
-        [Resources, Setting] public string isSprinting_bool = "isSprinting";
+        [Resources, SerializeField, OnlyNotNullMode()] private Animator anim;
+        [Resources, Setting, Header("Animation Property Name"), OnlyNotNullMode(nameof(anim))] public string Speed_float = "Speed";
+        [Resources, Setting, OnlyNotNullMode(nameof(anim))] public string Direction_float = "Direction";
+        [Resources, Setting, OnlyNotNullMode(nameof(anim))] public string isSprinting_bool = "isSprinting";
 
-        // Use this for initialization
         void Start()
         {
             if (!anim)
@@ -44,11 +44,14 @@ namespace Convention
 
         protected virtual void RefreshInput()
         {
-            input.x = inputAction.actionMaps[0]["Horizontal"].ReadValue<float>();
-            input.y = inputAction.actionMaps[0]["Vertical"].ReadValue<float>();
+            input.x = inputAction.actionMaps[InputSelectIndex]["Horizontal"].ReadValue<float>();
+            input.y = inputAction.actionMaps[InputSelectIndex]["Vertical"].ReadValue<float>();
+            isInputSprinting = !Mathf.Approximately(inputAction.actionMaps[InputSelectIndex]["Sprint"].ReadValue<float>(), 0) &&
+                input != Vector2.zero &&
+                direction >= 0f;
+            IsInputJumping = !Mathf.Approximately(inputAction.actionMaps[InputSelectIndex]["Jump"].ReadValue<float>(), 0);
         }
 
-        // Update is called once per frame
         void FixedUpdate()
         {
             RefreshInput();
@@ -58,20 +61,41 @@ namespace Convention
             else
                 speed = Mathf.Abs(input.x) + Mathf.Abs(input.y);
 
-            speed = Mathf.Clamp(speed, 0f, 1f);
-            speed = Mathf.SmoothDamp(anim.GetFloat(Speed_float), speed, ref velocity, 0.1f);
-            anim.SetFloat(Speed_float, speed);
+            speed = Mathf.Clamp(speed, 0f, 1f); if (anim == null || anim.applyRootMotion == false)
+            {
+                lastSpeed = speed = Mathf.SmoothDamp(lastSpeed, speed, ref velocity, 0.1f);
+                Movement();
+            }
+            else if (anim)
+            {
+                lastSpeed = speed = Mathf.SmoothDamp(anim.GetFloat(Speed_float), speed, ref velocity, 0.1f);
+                anim.SetFloat(Speed_float, speed);
+                if (anim.applyRootMotion == false)
+                {
+                    Movement();
+                }
+            }
+            void Movement()
+            {
+                if (Mathf.Approximately(speed, 0) == false)
+                    transform.Translate(new(0, 0, speed * Time.deltaTime * 10), Space.Self);
+            }
 
             if (input.y < 0f && useCharacterForward)
                 direction = input.y;
             else
                 direction = 0f;
 
-            anim.SetFloat(Direction_float, direction);
+            if (anim)
+            {
+                anim.SetFloat(Direction_float, direction);
+            }
 
             // set sprinting
-            isSprinting = ((Input.GetKey(sprintJoystick) || Input.GetKey(sprintKeyboard)) && input != Vector2.zero && direction >= 0f);
-            anim.SetBool(isSprinting_bool, isSprinting);
+            if (anim)
+            {
+                anim.SetBool(isSprinting_bool, isInputSprinting);
+            }
 
             // Update target direction relative to the camera view (or not if the Keep Direction option is checked)
             UpdateTargetDirection();
@@ -87,6 +111,11 @@ namespace Convention
 
                 transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.Euler(euler), turnSpeed * turnSpeedMultiplier * Time.deltaTime);
             }
+        }
+
+        private void OnApplicationFocus(bool focus)
+        {
+            SetCursorState(focus);
         }
 
         public virtual void UpdateTargetDirection()
@@ -114,5 +143,14 @@ namespace Convention
                 targetDirection = input.x * right + Mathf.Abs(input.y) * forward;
             }
         }
+
+        private void SetCursorState(bool newState)
+        {
+            if (PerformanceTest.RunningBenchmark)
+                return;
+
+            Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
+        }
     }
 }
+

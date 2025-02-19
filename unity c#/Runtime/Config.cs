@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Convention.Internal;
 
@@ -152,26 +153,63 @@ namespace Convention
     {
         private SALCheckException.Predicate pr = null;
         public readonly Type TypenAttribute = null;
-        public WhenAttribute([In] object return_value_is_equal_this_value_or_pr_is_return_true, [In] Type typenAttribute)
+        /// <summary>
+        /// <list type="bullet">bool predicate(object)+typenAttribute</list>
+        /// <list type="bullet">value+typenAttribute</list>
+        /// </summary>
+        /// <param name="control_value_or_predicate">The value will been checked or predicate</param>
+        /// <param name="typenAttribute">Target Checker</param>
+        public WhenAttribute([In] object control_value_or_predicate, [In] Type typenAttribute)
         {
             this.TypenAttribute = typenAttribute;
-            var prm = return_value_is_equal_this_value_or_pr_is_return_true.GetType().GetMethod("Invoke");
-            if (prm != null &&
-                prm.GetParameters().Length == 1 &&
-                prm.ReturnType == typeof(bool))
-                this.pr = (SALCheckException.Predicate)return_value_is_equal_this_value_or_pr_is_return_true;
-            else
-                this.pr = (object obj) => obj == return_value_is_equal_this_value_or_pr_is_return_true;
+            if (typenAttribute == typeof(OnlyNotNullModeAttribute))
+            {
+                if (ConventionUtility.IsString(control_value_or_predicate))
+                {
+                    this.pr = (object obj) => obj.GetType().GetField((string)control_value_or_predicate).GetValue(obj) != null;
+                    return;
+                }
+            }
+            do
+            {
+                var prm = control_value_or_predicate.GetType().GetMethod("Invoke");
+                if (prm != null &&
+                    prm.GetParameters().Length == 1 &&
+                    prm.ReturnType == typeof(bool))
+                    this.pr = (SALCheckException.Predicate)control_value_or_predicate;
+                else
+                    this.pr = (object obj) => obj == control_value_or_predicate;
+            } while (false);
         }
+        /// <summary>
+        /// do nothing
+        /// </summary>
+        /// <param name="description"></param>
         public WhenAttribute([In] string description) { }
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// The value is <see cref="UnityEditor.Editor.target"/>
+        /// <list type="bullet"><b><see cref="TypenAttribute"/> is <see cref="OnlyNotNullModeAttribute"/>:</b>member value is not null</list>
+        /// <list type="bullet"><b>Default:</b>predicate(target)</list>
+        /// </summary>
+        /// <param name="value"><see cref="UnityEditor.Editor.target"/></param>
+        /// <returns></returns>
+#endif
         public bool CheckAnyValue([In][Opt] object value)
         {
-            if (pr == null)
-                return true;
-            if (this.pr(value))
-                return true;
-            return false;
+            if (TypenAttribute == typeof(OnlyNotNullModeAttribute))
+            {
+                return pr(value);
+            }
+            else
+            {
+                if (pr == null)
+                    return true;
+                if (this.pr(value))
+                    return true;
+                return false;
+            }
         }
     }
     [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
@@ -184,6 +222,43 @@ namespace Convention
     public class ContentAttribute : Attribute { }
     [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
     public class OnlyPlayModeAttribute : Attribute { }
+    [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
+    public class OnlyNotNullModeAttribute : Attribute
+    {
+        public string fieldName;
+        public bool Check(object target)
+        {
+            if (IsSelf())
+            {
+#if UNITY_2017_1_OR_NEWER
+                if (target is UnityEngine.Object && (target as UnityEngine.Object) == null)
+                    return false;
+#endif
+                return target != null;
+            }
+            var field = target.GetType().GetField(fieldName, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (field == null)
+                return false;
+            object value = field.GetValue(target);
+            if (value == null)
+                return false;
+#if UNITY_2017_1_OR_NEWER
+            if (value is UnityEngine.Object && (value as UnityEngine.Object) == null)
+                return false;
+#endif
+            return true;
+        }
+        public bool IsSelf() => fieldName == null || fieldName.Length == 0;
+        /// <summary>
+        /// binding to target field
+        /// </summary>
+        /// <param name="fieldName"></param>
+        public OnlyNotNullModeAttribute(string fieldName) { this.fieldName = fieldName; }
+        /// <summary>
+        /// binding to self
+        /// </summary>
+        public OnlyNotNullModeAttribute() { this.fieldName = null; }
+    }
     [System.AttributeUsage(AttributeTargets.Field | AttributeTargets.Property |
         AttributeTargets.Parameter | AttributeTargets.ReturnValue,
         Inherited = false, AllowMultiple = false)]
@@ -214,6 +289,8 @@ namespace Convention
     {
         public static void InitExtensionEnv()
         {
+            RegisterBaseWrapperExtension.InitExtensionEnv();
+
             UnityExtension.InitExtensionEnv();
 
             ES3Plugin.InitExtensionEnv();
