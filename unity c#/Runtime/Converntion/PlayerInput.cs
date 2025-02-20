@@ -4,10 +4,10 @@ using UnityEngine.InputSystem;
 
 namespace Convention
 {
-    public class FPSController : MonoAnyBehaviour
+    public class PlayerInput : MonoAnyBehaviour
     {
         [Header("Need \"Horizontal\" and \"Vertical\" for movement, \"Sprint\" and \"Jump\" for behaviour")]
-        [Setting, OnlyNotNullMode()] public InputActionAsset inputAction;
+        [Setting, HopeNotNull] public InputActionAsset inputAction;
         [Setting] public bool useCharacterForward = false;
         [Setting] public bool lockToCameraForward = false;
         [Setting] public float turnSpeed = 10f;
@@ -24,10 +24,10 @@ namespace Convention
         [Content, Ignore] private bool IsInputJumping = false;
         [Content, Ignore, SerializeField] private Vector3 targetDirection;
         [Content, Ignore, SerializeField] private Quaternion freeRotation;
-        [Resources, SerializeField] private Camera mainCamera;
+        [Resources, SerializeField, HopeNotNull] private Camera mainCamera;
         [Content, Ignore, SerializeField] private float velocity;
 
-        [Resources, SerializeField, OnlyNotNullMode()] private Animator anim;
+        [Resources, SerializeField, HopeNotNull] private Animator anim;
         [Resources, Setting, Header("Animation Property Name"), OnlyNotNullMode(nameof(anim))] public string Speed_float = "Speed";
         [Resources, Setting, OnlyNotNullMode(nameof(anim))] public string Direction_float = "Direction";
         [Resources, Setting, OnlyNotNullMode(nameof(anim))] public string isSprinting_bool = "isSprinting";
@@ -61,7 +61,8 @@ namespace Convention
             else
                 speed = Mathf.Abs(input.x) + Mathf.Abs(input.y);
 
-            speed = Mathf.Clamp(speed, 0f, 1f); if (anim == null || anim.applyRootMotion == false)
+            speed = Mathf.Clamp(speed, 0f, 1f);
+            if (anim == null || anim.applyRootMotion == false)
             {
                 lastSpeed = speed = Mathf.SmoothDamp(lastSpeed, speed, ref velocity, 0.1f);
                 Movement();
@@ -78,7 +79,18 @@ namespace Convention
             void Movement()
             {
                 if (Mathf.Approximately(speed, 0) == false)
-                    transform.Translate(new(0, 0, speed * Time.deltaTime * 10), Space.Self);
+                {
+                    if (useCharacterForward)
+                        transform.Translate(new(Time.deltaTime * input.x, 0, Time.deltaTime * input.y), Space.Self);
+                    else
+                    {
+                        var move =
+                           Time.deltaTime * input.x * mainCamera.transform.right +
+                           Time.deltaTime * input.y * mainCamera.transform.forward;
+                        move.y = 0;
+                        transform.Translate(move, Space.Self);
+                    }
+                }
             }
 
             if (input.y < 0f && useCharacterForward)
@@ -146,10 +158,10 @@ namespace Convention
 
         private void SetCursorState(bool newState)
         {
-            if (PerformanceTest.RunningBenchmark)
+            if (PerformanceTestManager.RunningBenchmark)
                 return;
 
-            Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
+            //Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
         }
     }
 }

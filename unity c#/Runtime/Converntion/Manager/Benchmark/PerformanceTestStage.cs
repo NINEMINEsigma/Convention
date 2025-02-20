@@ -14,7 +14,7 @@ namespace Convention
     namespace Benchmarking
     {
         [Serializable]
-        public class PerformanceTestStage
+        public class PerformanceTestStage : AnyClass
         {
             public bool enabled = true;
 
@@ -32,7 +32,7 @@ namespace Convention
 
             private int _recordingIndex = 0;
 
-            private Camera _testCamera => PerformanceTest.instance.testCamera;
+            private Camera _testCamera => PerformanceTestManager.instance.testCamera;
             private Action _finishedAction;
             private PlayableDirector _playableDirector;
             private float _intermediateCaptureTime;
@@ -77,7 +77,7 @@ namespace Convention
             }
 
 
-            private DataType _displayedDataType => PerformanceTest.displayedDataType;
+            private DataType _displayedDataType => PerformanceTestManager.displayedDataType;
 
             private Dictionary<FrameData, VisualElement> _timingLines = new();
 
@@ -134,7 +134,7 @@ namespace Convention
                 _timingsGraphVE = new StatsGraphVE();
                 _timingsGraphContainerVE.Add(_timingsGraphVE);
 
-                if (!PerformanceTest.instance.liveRefreshGraph)
+                if (!PerformanceTestManager.instance.liveRefreshGraph)
                 {
                     _timingsGraphVE.style.display = DisplayStyle.None;
                     _timingVisible = false;
@@ -156,9 +156,9 @@ namespace Convention
                 var refLine = _visualElementRoot.Q(name: "StatLine");
                 refLine.parent.Remove(refLine);
 
-                var offset = 100f / (PerformanceTest.timingThresholds.Count + 2);
+                var offset = 100f / (PerformanceTestManager.timingThresholds.Count + 2);
                 var lengthValue = new Length(offset, LengthUnit.Percent);
-                foreach (var kvp in PerformanceTest.timingThresholds)
+                foreach (var kvp in PerformanceTestManager.timingThresholds)
                 {
                     var ve = new VisualElement();
                     ve.style.backgroundColor = kvp.Value;
@@ -227,7 +227,7 @@ namespace Convention
 
                 // Debug.Log("Called start for : " + sceneName);
 
-                PerformanceTest.instance.StartCoroutine(ProcessTest());
+                PerformanceTestManager.instance.StartCoroutine(ProcessTest());
             }
             public void SetFinishedAction(Action finishedAction) { _finishedAction = finishedAction; }
 
@@ -236,7 +236,7 @@ namespace Convention
                 if (status == TestStageStatus.Waiting)
                 {
                     yield return LoadAndInit();
-                    yield return new WaitForSeconds(PerformanceTest.instance._waitTime);
+                    yield return new WaitForSeconds(PerformanceTestManager.instance.WaitTime);
                     yield return RunTest();
                     yield return End();
                 }
@@ -267,13 +267,13 @@ namespace Convention
                 yield return new WaitUntil(HasSceneLoaded);
 
                 yield return null;
-                PerformanceTest.instance.RefreshEventSystem();
+                PerformanceTestManager.instance.RefreshEventSystem();
 
                 DisableCamerasInScene();
 
                 var directors = Resources.FindObjectsOfTypeAll<PlayableDirector>();
 
-                // Debug.Log($"Found {directors.Length} playable director(s) in the scene {SceneManager.GetActiveScene().name}");
+                Debug.Log($"Found {directors.Length} playable director(s) in the scene {SceneManager.GetActiveScene().name}");
 
                 if (directors.Length > 1 && directors.Any(d => (d.gameObject.name == "CinematicTimeline") || d.gameObject.CompareTag("BenchmarkTimeline")))
                     _playableDirector = directors.First(d => (d.gameObject.name == "CinematicTimeline") || d.gameObject.CompareTag("BenchmarkTimeline"));
@@ -291,16 +291,16 @@ namespace Convention
                     }
 
                     var duration = (float)_playableDirector.duration;
-                    _intermediateCaptureTime = duration / (PerformanceTest.instance._framesToCapture + 1);
+                    _intermediateCaptureTime = duration / (PerformanceTestManager.instance.FramesToCapture + 1);
 
                     _playableDirector.Play();
                     _playableDirector.extrapolationMode = DirectorWrapMode.None;
 
-                    // Debug.Log($"Will use timeline: {_playableDirector.name} of duration: {_playableDirector.duration}");
+                    Debug.Log($"Will use timeline: {_playableDirector.name} of duration: {_playableDirector.duration}");
                 }
 
                 // Init
-                var initialListSize = PerformanceTest.instance._framesToCapture;
+                var initialListSize = PerformanceTestManager.instance.FramesToCapture;
                 if (_playableDirector != null && useFullTimeline)
                     initialListSize = (int)_playableDirector.duration * 120;
                 _recordingIndex = 0;
@@ -365,7 +365,7 @@ namespace Convention
                     currentFrameData.CaptureFrameTimings();
                     currentFrameData.timeLineTime = _playableDirector.time;
 
-                    PerformanceTest.instance.SetCurrentTiming(currentFrameData);
+                    PerformanceTestManager.instance.SetCurrentTiming(currentFrameData);
                     RecordTiming(currentFrameData);
                     UpdateGraph();
 
@@ -456,7 +456,7 @@ namespace Convention
                 )
                     return;
 
-                _timingsUnitLabel.text = (PerformanceTest.displayedDataType == DataType.FPS) ? "" : "ms";
+                _timingsUnitLabel.text = (PerformanceTestManager.displayedDataType == DataType.FPS) ? "" : "ms";
 
                 _minLabel.Set(_minFrameData);
                 _maxLabel.Set(_maxFrameData);
@@ -510,10 +510,10 @@ namespace Convention
 
             public void WriteCSV()
             {
-                PerformanceTest.CSVWrinteLine();
-                PerformanceTest.CSVWrinteLine("Scene", sceneName);
-                PerformanceTest.CSVWrinteLine();
-                PerformanceTest.CSVWrinteLine("", "Frame Time", "FPS", "CPU time", "CPU Render Thread Time", "GPU Time");
+                PerformanceTestManager.CSVWrinteLine();
+                PerformanceTestManager.CSVWrinteLine("Scene", sceneName);
+                PerformanceTestManager.CSVWrinteLine();
+                PerformanceTestManager.CSVWrinteLine("", "Frame Time", "FPS", "CPU time", "CPU Render Thread Time", "GPU Time");
                 _minFrameData.WriteCSV("Minimum");
                 _maxFrameData.WriteCSV("Maximum");
                 _avgFrameData.WriteCSV("Average");
@@ -521,10 +521,10 @@ namespace Convention
                 _medianFrameData.WriteCSV("Median");
                 _upperQuartileFrameData.WriteCSV("Upper Quartile");
 
-                PerformanceTest.CSVWrinteLine();
+                PerformanceTestManager.CSVWrinteLine();
 
-                PerformanceTest.CSVWrinteLine("Captured frames", _frameDatas.Count().ToString());
-                PerformanceTest.CSVWrinteLine("", "Frame Time", "FPS", "CPU time", "CPU Render Thread Time", "GPU Time");
+                PerformanceTestManager.CSVWrinteLine("Captured frames", _frameDatas.Count().ToString());
+                PerformanceTestManager.CSVWrinteLine("", "Frame Time", "FPS", "CPU time", "CPU Render Thread Time", "GPU Time");
                 for (int i = 0; i < _frameDatas.Count(); i++)
                     _frameDatas[i].WriteCSV(writeTimeLineTime: true);
             }

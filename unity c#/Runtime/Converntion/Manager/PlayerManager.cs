@@ -17,7 +17,7 @@ namespace Convention
         {
             m_register = new(() => { });
 
-            if (PerformanceTest.RunningBenchmark)
+            if (PerformanceTestManager.RunningBenchmark)
             {
                 Destroy(gameObject);
                 return;

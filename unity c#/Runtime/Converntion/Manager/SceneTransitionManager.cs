@@ -43,7 +43,7 @@ namespace Convention
 
         protected override void Awake()
         {
-            if (PerformanceTest.RunningBenchmark)
+            if (PerformanceTestManager.RunningBenchmark)
             {
                 Destroy(gameObject);
                 return;

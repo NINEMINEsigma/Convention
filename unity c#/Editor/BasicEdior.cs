@@ -115,6 +115,7 @@ namespace Convention
             bool HasOnlyPlayMode = field.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0;
             bool HasWhen = field.GetCustomAttributes(typeof(WhenAttribute), true).Length != 0;
             bool HasOnlyNotNullMode = field.GetCustomAttributes(typeof(OnlyNotNullModeAttribute), true).Length != 0;
+            bool HasHopeNotNullMode = field.GetCustomAttributes(typeof(HopeNotNullAttribute), true).Length != 0;
             bool HasIgnore = field.GetCustomAttributes(typeof(IgnoreAttribute), true).Length != 0;
             bool HasSerializeField = field.GetCustomAttributes(typeof(SerializeField), true).Length != 0;
             bool HasOpt = field.GetCustomAttributes(typeof(OptAttribute), true).Length != 0;
@@ -122,9 +123,15 @@ namespace Convention
 
             if (HasOnlyPlayMode && Application.isPlaying == false)
                 OnlyDisplayOnPlayMode(field, isCheckIgnore);
-            else if (HasWhen && field.GetCustomAttribute<WhenAttribute>().CheckAnyValue(target) == false)
-                return;
-            else if (HasOnlyNotNullMode)
+            else if (HasWhen)
+            {
+                foreach (var attr in field.GetCustomAttributes<WhenAttribute>(true))
+                {
+                    if (attr.Check(target) == false)
+                        return;
+                }
+            }
+            if (HasOnlyNotNullMode|| HasHopeNotNullMode)
                 DisplayOnlyNotNull(field, isCheckIgnore);
             else if (isCheckIgnore && (HasIgnore || (field.IsPublic == false && HasSerializeField)))
                 IgnoreField(field);
@@ -188,29 +195,54 @@ namespace Convention
 
             void DisplayOnlyNotNull(FieldInfo field, bool isCheckIgnore)
             {
-                var attr = field.GetCustomAttribute<OnlyNotNullModeAttribute>(true);
-                if (attr.IsSelf())
+                bool isWarning = false;
+                bool isError = false;
+                bool isNotDisplay = true;
+
+                foreach (var attr in field.GetCustomAttributes<OnlyNotNullModeAttribute>(true))
                 {
-                    if (attr.Check(field.GetValue(target)))
+                    if (attr.IsSelf())
                     {
-                        DisplayDefaultField(field, isCheckIgnore);
+                        isNotDisplay = false;
+                        if (!attr.Check(field.GetValue(target)))
+                        {
+                            isError = true;
+                            break;
+                        }
                     }
                     else
                     {
-                        VerticalBlockWithBox(() =>
-                        {
-                            HelpBox($"{field.Name} is null", MessageType.Error);
-                            DisplayDefaultField(field, isCheckIgnore);
-                        });
+                        isNotDisplay = isNotDisplay && attr.Check(target);
                     }
                 }
-                else
+                if (isError == false)
                 {
-                    if (attr.Check(target))
+                    foreach (var attr in field.GetCustomAttributes<HopeNotNullAttribute>(true))
                     {
-                        DisplayDefaultField(field, isCheckIgnore);
+                        isNotDisplay = false;
+                        if (!attr.Check(field.GetValue(target)))
+                        {
+                            isWarning = true;
+                            break;
+                        }
                     }
                 }
+                if (isNotDisplay)
+                    return;
+                else if (isError)
+                    VerticalBlockWithBox(() =>
+                    {
+                        HelpBox($"{field.Name} is null", MessageType.Error);
+                        DisplayDefaultField(field, isCheckIgnore);
+                    });
+                else if (isWarning)
+                    VerticalBlockWithBox(() =>
+                    {
+                        HelpBox($"{field.Name} is null", MessageType.Warning);
+                        DisplayDefaultField(field, isCheckIgnore);
+                    });
+                else
+                    DisplayDefaultField(field, isCheckIgnore);
             }
         }
         public virtual void OnOriginGUI()

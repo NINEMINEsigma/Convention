@@ -283,7 +283,7 @@ namespace Convention
                 i++;
                 strings[i] = gpuTime.ToString();
 
-                PerformanceTest.CSVWrinteLine(strings);
+                PerformanceTestManager.CSVWrinteLine(strings);
             }
         }
     }

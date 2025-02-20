@@ -31,7 +31,7 @@ namespace Convention
 
         void Start()
         {
-            if (SceneTransitionManager.IsAvailable() && !PerformanceTest.RunningBenchmark)
+            if (SceneTransitionManager.IsAvailable() && !PerformanceTestManager.RunningBenchmark)
             {
                 SetUp();
             }

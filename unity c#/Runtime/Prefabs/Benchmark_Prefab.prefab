@@ -9,10 +9,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8132712973314222637}
-  - component: {fileID: 3871017663001273271}
   - component: {fileID: 2682277743158303610}
   - component: {fileID: 3402880044481262717}
   - component: {fileID: 8920008805867454334}
+  - component: {fileID: 6506369038458274189}
   m_Layer: 0
   m_Name: Benchmark_Prefab
   m_TagString: Untagged
@@ -36,47 +36,6 @@ Transform:
   - {fileID: 3033895151238867298}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3871017663001273271
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1194520623583548762}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9386aff2e8a5dbb4394416a683f1fb85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _autoStart: 1
-  _stages:
-  - enabled: 1
-    sceneName: TerminalScene
-    cameraPosition: {x: 0, y: 0, z: 0}
-    cameraRotation: {x: 0, y: 0, z: 0, w: 0}
-    useFullTimeline: 1
-  - enabled: 1
-    sceneName: Garden
-    cameraPosition: {x: 0, y: 0, z: 0}
-    cameraRotation: {x: 0, y: 0, z: 0, w: 0}
-    useFullTimeline: 1
-  - enabled: 1
-    sceneName: OasisScene
-    cameraPosition: {x: 0, y: 0, z: 0}
-    cameraRotation: {x: 0, y: 0, z: 0, w: 0}
-    useFullTimeline: 1
-  - enabled: 1
-    sceneName: Cockpit_Ride
-    cameraPosition: {x: 0, y: 0, z: 0}
-    cameraRotation: {x: 0, y: 0, z: 0, w: 0}
-    useFullTimeline: 1
-  _waitTime: 5
-  _framesToCapture: 500
-  _testDataVisualTreeReference: {fileID: 9197481963319205126, guid: 55b23197e3bc1df4c84c22c909c70d26, type: 3}
-  _currentTimingRefreshCount: 10
-  _liveRefreshGraph: 0
-  _cameraPrefab: {fileID: 1184572588443782738, guid: cb5acae8f598448fb9a77de3f3f3ec37, type: 3}
-  _eventSystem: {fileID: 3402880044481262717}
 --- !u!114 &2682277743158303610
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -89,9 +48,9 @@ MonoBehaviour:
   m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_PanelSettings: {fileID: 11400000, guid: 7923546beae955540a6279f11eb5c41b, type: 2}
+  m_PanelSettings: {fileID: 11400000, guid: ba33de63d1649ba42b55b8beea949f5a, type: 2}
   m_ParentUI: {fileID: 0}
-  sourceAsset: {fileID: 9197481963319205126, guid: 13df3b6894d9013438db11005082cc52, type: 3}
+  sourceAsset: {fileID: 9197481963319205126, guid: e7dea75f7919436408a29190292ad5c5, type: 3}
   m_SortingOrder: 0
 --- !u!114 &3402880044481262717
 MonoBehaviour:
@@ -138,6 +97,48 @@ MonoBehaviour:
   m_DeselectOnBackgroundClick: 1
   m_PointerBehavior: 0
   m_CursorLockBehavior: 0
+  m_ScrollDeltaPerTick: 6
+--- !u!114 &6506369038458274189
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1194520623583548762}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3a26a4bb71ca7646b87c6f72d82f1e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  StageScenes:
+  - enabled: 1
+    sceneName: TerminalScene
+    cameraPosition: {x: 0, y: 0, z: 0}
+    cameraRotation: {x: 0, y: 0, z: 0, w: 0}
+    useFullTimeline: 1
+  - enabled: 1
+    sceneName: GardenScene
+    cameraPosition: {x: 0, y: 0, z: 0}
+    cameraRotation: {x: 0, y: 0, z: 0, w: 0}
+    useFullTimeline: 1
+  - enabled: 1
+    sceneName: OasisScene
+    cameraPosition: {x: 0, y: 0, z: 0}
+    cameraRotation: {x: 0, y: 0, z: 0, w: 0}
+    useFullTimeline: 1
+  - enabled: 1
+    sceneName: CockpitScene
+    cameraPosition: {x: 0, y: 0, z: 0}
+    cameraRotation: {x: 0, y: 0, z: 0, w: 0}
+    useFullTimeline: 1
+  WaitTime: 5
+  FramesToCapture: 500
+  _testDataVisualTreeReference: {fileID: 9197481963319205126, guid: 32701d82a368f1644aed274f6e67367b, type: 3}
+  currentTimingRefreshCount: 10
+  CurrentTimingRefreshCounter: 11
+  liveRefreshGraph: 0
+  CameraPrefab: {fileID: 1184572588443782738, guid: f576361f019670b4a86271169e51522a, type: 3}
+  _eventSystem: {fileID: 3402880044481262717}
 --- !u!1 &2347660263666688036
 GameObject:
   m_ObjectHideFlags: 0

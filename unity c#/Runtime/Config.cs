@@ -75,6 +75,22 @@ namespace Convention
                 result = result.TrimEnd();
             return result;
         }
+
+        public static object SeekValue([In] object obj, [In] string name, BindingFlags flags)
+        {
+            Type type = obj.GetType();
+            var field = type.GetField(name, flags);
+            if (field != null)
+            {
+                return field.GetValue(obj);
+            }
+            var property = type.GetProperty(name, flags);
+            if (property != null)
+            {
+                return property.GetValue(obj);
+            }
+            throw new Exception("Member is not found");
+        }
     }
 
     [Serializable]
@@ -166,7 +182,10 @@ namespace Convention
             {
                 if (ConventionUtility.IsString(control_value_or_predicate))
                 {
-                    this.pr = (object obj) => obj.GetType().GetField((string)control_value_or_predicate).GetValue(obj) != null;
+                    this.pr = (object obj) =>
+                    {
+                        return new OnlyNotNullModeAttribute((string)control_value_or_predicate).Check(obj);
+                    };
                     return;
                 }
             }
@@ -186,6 +205,7 @@ namespace Convention
         /// </summary>
         /// <param name="description"></param>
         public WhenAttribute([In] string description) { }
+        protected WhenAttribute() { }
 
 #if UNITY_EDITOR
         /// <summary>
@@ -196,7 +216,7 @@ namespace Convention
         /// <param name="value"><see cref="UnityEditor.Editor.target"/></param>
         /// <returns></returns>
 #endif
-        public bool CheckAnyValue([In][Opt] object value)
+        public virtual bool Check([In][Opt] object value)
         {
             if (TypenAttribute == typeof(OnlyNotNullModeAttribute))
             {
@@ -210,6 +230,50 @@ namespace Convention
                     return true;
                 return false;
             }
+        }
+
+        [System.AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = true)]
+        public abstract class WhenMemberValueAttribute : WhenAttribute
+        {
+            public readonly string Name;
+            public readonly object Value;
+            protected object InjectGetValue(object target)
+            {
+                var field = target.GetType().GetField(Name, BindingFlags.NonPublic | BindingFlags.Public |
+                    BindingFlags.Instance | BindingFlags.Static);
+                if (field != null)
+                {
+                    return field.GetValue(target);
+                }
+                var property = target.GetType().GetProperty(Name, BindingFlags.NonPublic | BindingFlags.Public |
+                    BindingFlags.Instance | BindingFlags.Static);
+                if (property != null)
+                {
+                    return property.GetValue(target);
+                }
+                return null;
+            }
+            public override bool Check(object target)
+            {
+                throw new NotImplementedException();
+            }
+            public WhenMemberValueAttribute(string Name,object value)
+            {
+                this.Name = Name;
+                this.Value = value;
+            }
+        }
+        [System.AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = true)]
+        public class IsAttribute : WhenMemberValueAttribute
+        {
+            public override bool Check(object target) => this.Value.Equals(this.InjectGetValue(target));
+            public IsAttribute(string Name, object value) : base(Name, value) { }
+        }
+        [System.AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = true)]
+        public class NotAttribute : WhenMemberValueAttribute
+        {
+            public override bool Check(object target) => !this.Value.Equals(this.InjectGetValue(target));
+            public NotAttribute(string Name, object value) : base(Name, value) { }
         }
     }
     [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
@@ -225,7 +289,7 @@ namespace Convention
     [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
     public class OnlyNotNullModeAttribute : Attribute
     {
-        public string fieldName;
+        public string Name;
         public bool Check(object target)
         {
             if (IsSelf())
@@ -236,28 +300,51 @@ namespace Convention
 #endif
                 return target != null;
             }
-            var field = target.GetType().GetField(fieldName, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            if (field == null)
-                return false;
-            object value = field.GetValue(target);
-            if (value == null)
-                return false;
+            var field = target.GetType().GetField(Name, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if (field != null)
+            {
+                object value = field.GetValue(target);
+                if (value == null)
+                    return false;
 #if UNITY_2017_1_OR_NEWER
-            if (value is UnityEngine.Object && (value as UnityEngine.Object) == null)
-                return false;
+                if (value is UnityEngine.Object && (value as UnityEngine.Object) == null)
+                    return false;
 #endif
-            return true;
+                return true;
+            }
+            var property = target.GetType().GetProperty(Name, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            if(property != null)
+            {
+                object value = property.GetValue(target);
+                if (value == null)
+                    return false;
+#if UNITY_2017_1_OR_NEWER
+                if (value is UnityEngine.Object && (value as UnityEngine.Object) == null)
+                    return false;
+#endif
+                return true;
+            }
+            return false;
         }
-        public bool IsSelf() => fieldName == null || fieldName.Length == 0;
+        public bool IsSelf() => Name == null || Name.Length == 0;
         /// <summary>
         /// binding to target field
         /// </summary>
         /// <param name="fieldName"></param>
-        public OnlyNotNullModeAttribute(string fieldName) { this.fieldName = fieldName; }
+        public OnlyNotNullModeAttribute(string fieldName) { this.Name = fieldName; }
         /// <summary>
         /// binding to self
         /// </summary>
-        public OnlyNotNullModeAttribute() { this.fieldName = null; }
+        public OnlyNotNullModeAttribute() { this.Name = null; }
+    }
+    [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
+    public class HopeNotNullAttribute : Attribute
+    {
+        public bool Check(object target)
+        {
+            return target != null;
+        }
+        public HopeNotNullAttribute() {}
     }
     [System.AttributeUsage(AttributeTargets.Field | AttributeTargets.Property |
         AttributeTargets.Parameter | AttributeTargets.ReturnValue,

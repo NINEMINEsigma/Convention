@@ -67,6 +67,10 @@ namespace Convention
                 $"{(IsExist ? "e" : "-")}" +
                 $">";
         }
+        public override string ToString()
+        {
+            return this.ref_value.FullName;
+        }
 
         #region Path
         public string FullPath => this.ref_value == null ? "" : this.ref_value.FullName;

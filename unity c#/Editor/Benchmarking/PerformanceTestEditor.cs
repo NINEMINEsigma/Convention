@@ -6,12 +6,12 @@ namespace Convention
 {
     namespace Benchmarking
     {
-        [CustomEditor(typeof(PerformanceTest))]
+        [CustomEditor(typeof(PerformanceTestManager))]
         public class PerformanceTestEditor : AbstractCustomEditor
         {
             private void OnAddition()
             {
-                PerformanceTest performnceTest = (PerformanceTest)target;
+                PerformanceTestManager performnceTest = (PerformanceTestManager)target;
 
                 //Add current
                 if (GUILayout.Button("Add current"))
@@ -21,7 +21,7 @@ namespace Convention
                     Transform sceneCamTransform = SceneView.lastActiveSceneView.camera.transform;
                     stage.cameraPosition = sceneCamTransform.position;
                     stage.cameraRotation = sceneCamTransform.rotation;
-                    performnceTest._stages.Add(stage);
+                    performnceTest.StageScenes.Add(stage);
                 }
             }
 

@@ -91,7 +91,7 @@ namespace Convention
             private bool availableToStart = true;
             void StartBenchmark()
             {
-                if (!PerformanceTest.RunningBenchmark && availableToStart)
+                if (!PerformanceTestManager.RunningBenchmark && availableToStart)
                 {
                     StartCoroutine(WaitingTime());
                     SceneManager.LoadScene("BenchmarkScene");

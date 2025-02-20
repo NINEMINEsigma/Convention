@@ -11,8 +11,8 @@ namespace Convention
         {
             public static void Set(this Label label, FrameData frameData)
             {
-                label.text = frameData.GetValueString(PerformanceTest.displayedDataType);
-                label.style.color = PerformanceTest.GetColorForFrameData(frameData);
+                label.text = frameData.GetValueString(PerformanceTestManager.displayedDataType);
+                label.style.color = PerformanceTestManager.GetColorForFrameData(frameData);
             }
         }
     }

@@ -3,13 +3,13 @@
 namespace Convention
 {
 #if UNITY_EDITOR
-    public class ExampleHelpWindow : MonoAnyBehaviour
+    public class ExampleHelpWindow : MonoBehaviour
     {
-        [Content] public string m_Title;
-        [Content, TextArea(minLines: 10, maxLines: 50)] public string m_Description;
+        public string m_Title;
+        [TextArea(minLines: 10, maxLines: 50)] public string m_Description;
 
-        [SerializeField, Setting] private bool mShowingHelpWindow = true;
-        [SerializeField, Setting] private float kPadding = 40f;
+        [SerializeField] private bool mShowingHelpWindow = true;
+        [SerializeField] private float kPadding = 40f;
 
         private void OnGUI()
         {

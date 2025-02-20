@@ -26,43 +26,33 @@ namespace Convention
             Count,
         }
 
-        public class PerformanceTest : MonoSingleton<PerformanceTest>
+        public class PerformanceTestManager : MonoSingleton<PerformanceTestManager>
         {
-            public bool _autoStart = true;
-            [FormerlySerializedAs("m_Stages")]
-            public List<PerformanceTestStage> _stages;
+            //public bool _autoStart = true;
+            [Setting] public List<PerformanceTestStage> StageScenes;
 
-            [SerializeField]
-            public float _waitTime = 5f;
+            [Setting] public float WaitTime = 5f;
             // TODO: Remove _framesToCapture
-            [SerializeField]
-            public int _framesToCapture = 500;
+            [Setting] public int FramesToCapture = 500;
 
-            [SerializeField]
-            [FormerlySerializedAs("m_TestDataVisualTreeReference")]
-            private VisualTreeAsset _testDataVisualTreeReference;
+            [Setting] public VisualTreeAsset _testDataVisualTreeReference;
 
-            [SerializeField]
-            private int _currentTimingRefreshCount = 10;
-            private int _currentTimingRefreshCounter = 11;
+            [Setting] public int currentTimingRefreshCount = 10;
+            [Setting] public int CurrentTimingRefreshCounter = 11;
             private FrameData _maxCurrentTiming = new FrameData(0);
 
-            [SerializeField]
-            private bool _liveRefreshGraph = true;
+            [Setting] public bool liveRefreshGraph = true;
 
-            [SerializeField] private GameObject _cameraPrefab;
+            [Resources, OnlyNotNullMode] public GameObject CameraPrefab;
 
-            [SerializeField]
-            private EventSystem _eventSystem;
+            [Resources, OnlyNotNullMode] public EventSystem _eventSystem;
             public void RefreshEventSystem()
             {
                 EventSystem.SetUITookitEventSystemOverride(_eventSystem);
             }
 
-            public bool liveRefreshGraph => _liveRefreshGraph;
-
             private int _currentStageIndex;
-            private PerformanceTestStage _currentStage => _stages[_currentStageIndex];
+            public PerformanceTestStage CurrentStage => StageScenes[_currentStageIndex];
 
 
 
@@ -92,15 +82,15 @@ namespace Convention
             public void SetCurrentTiming(FrameData currentFrameData)
             {
                 _maxCurrentTiming.MaxWith(currentFrameData);
-                if (_currentTimingRefreshCounter > _currentTimingRefreshCount)
+                if (CurrentTimingRefreshCounter > currentTimingRefreshCount)
                 {
                     _currentTimingLabel.text = _maxCurrentTiming.GetValueString(_displayedDataType);
                     _currentTimingLabel.style.color = GetColorForFrameData(_maxCurrentTiming);
 
-                    _currentTimingRefreshCounter = 0;
+                    CurrentTimingRefreshCounter = 0;
                     _maxCurrentTiming = new FrameData(0);
                 }
-                _currentTimingRefreshCounter++;
+                CurrentTimingRefreshCounter++;
             }
 
             public static bool RunningBenchmark => instance != null;
@@ -200,7 +190,7 @@ namespace Convention
 
                 var testList = rootVE.Q<VisualElement>(name: "TestsList");
 
-                var cleanedUpStages = _stages.Where(s => SceneExists(s.sceneName) && s.enabled).ToList();
+                var cleanedUpStages = StageScenes.Where(s => SceneExists(s.sceneName) && s.enabled).ToList();
 
                 for (int i = 0; i < cleanedUpStages.Count; i++)
                 {
@@ -242,7 +232,7 @@ namespace Convention
 
             private void CreateCamera()
             {
-                GameObject go = Instantiate(_cameraPrefab);
+                GameObject go = Instantiate(CameraPrefab);
                 _testCamera = go.GetComponent<Camera>();
                 //GameObject go = new GameObject("TestCamera");
                 //_testCamera = go.AddComponent<Camera>();
@@ -273,7 +263,7 @@ namespace Convention
                 _currentDataTypeLabel.text = dataType.ToString();
                 _currentTimingUnitLabel.text = (dataType == DataType.FPS) ? "" : "ms";
 
-                foreach (var stage in _stages)
+                foreach (var stage in StageScenes)
                     stage.RefreshDisplayedData();
             }
 
