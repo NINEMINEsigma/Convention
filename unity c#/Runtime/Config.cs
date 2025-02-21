@@ -78,6 +78,23 @@ namespace Convention
             return result;
         }
 
+        public static object SeekValue([In] object obj, [In] string name, BindingFlags flags, [Out][Opt] out bool isSucceed)
+        {
+            Type type = obj.GetType();
+            var field = type.GetField(name, flags);
+            isSucceed = true;
+            if (field != null)
+            {
+                return field.GetValue(obj);
+            }
+            var property = type.GetProperty(name, flags);
+            if (property != null)
+            {
+                return property.GetValue(obj);
+            }
+            isSucceed = false;
+            return null;
+        }
         public static object SeekValue([In] object obj, [In] string name, BindingFlags flags)
         {
             Type type = obj.GetType();
@@ -91,7 +108,7 @@ namespace Convention
             {
                 return property.GetValue(obj);
             }
-            throw new Exception("Member is not found");
+            return null;
         }
     }
 
@@ -191,6 +208,13 @@ namespace Convention
                     return;
                 }
             }
+            else if (
+                typenAttribute.Name.EndsWith("SucceedAttribute") ||
+                typenAttribute.Name.StartsWith("Return")
+                )
+            {
+                return;
+            }
             do
             {
                 var prm = control_value_or_predicate.GetType().GetMethod("Invoke");
@@ -227,6 +251,7 @@ namespace Convention
             else
             {
                 if (pr == null)
+                    //throw new SALCheckException(this, "you should not check at this");
                     return true;
                 if (this.pr(value))
                     return true;
@@ -259,7 +284,7 @@ namespace Convention
             {
                 throw new NotImplementedException();
             }
-            public WhenMemberValueAttribute(string Name,object value)
+            public WhenMemberValueAttribute(string Name, object value)
             {
                 this.Name = Name;
                 this.Value = value;

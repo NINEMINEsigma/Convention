@@ -215,7 +215,7 @@ namespace Convention
                     }
                     else
                     {
-                        isNotDisplay = isNotDisplay && attr.Check(target);
+                        isNotDisplay = isNotDisplay && !attr.Check(target);
                     }
                 }
                 if (isError == false)

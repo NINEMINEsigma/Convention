@@ -8,35 +8,6 @@ namespace Convention
 {
     namespace WindowsUI
     {
-        [ArgPackage, Serializable]
-        public class RectTransformInfo : AnyClass
-        {
-            [Setting] public Vector2 position;
-            [Setting] public Vector2 anchoredPosition;
-            [Setting] public Quaternion rotation;
-            [Setting] public Vector2 sizeDelta;
-            [Setting] public Vector2 anchorMax;
-            [Setting] public Vector2 anchorMin;
-
-            public RectTransformInfo(RectTransform rect)
-            {
-                position = rect.position;
-                rotation = rect.rotation;
-                anchoredPosition = rect.anchoredPosition;
-                sizeDelta = rect.sizeDelta;
-                anchorMax = rect.anchorMax;
-                anchorMin = rect.anchorMin;
-            }
-            public void Setup(RectTransform rect)
-            {
-                rect.position = position;
-                rect.rotation = rotation;
-                rect.anchoredPosition = anchoredPosition;
-                rect.sizeDelta = sizeDelta;
-                rect.anchorMax = anchorMax;
-                rect.anchorMin = anchorMin;
-            }
-        }
         public class BaseWindowPlane : WindowsComponent
         {
             private void Reset()
@@ -46,7 +17,13 @@ namespace Convention
             }
 
             [Resources, SerializeField, HopeNotNull] private Image m_Plane;
-            [Resources, SerializeField, HopeNotNull] private Image m_AnimationPlane;
+            [Resources, SerializeField, HopeNotNull, Tooltip("This animational plane should has the same parent transform")]
+            private Image m_AnimationPlane;
+            [Setting, OnlyNotNullMode(nameof(m_AnimationPlane)), SerializeField, Header("Animation Setting")]
+            private bool IsEnableAnimation = true;
+            [Setting, OnlyNotNullMode(nameof(m_AnimationPlane)), Percentage(0, 1), Range(0, 1), WhenAttribute.Is(nameof(IsEnableAnimation), true)]
+            public float AnimationSpeed = 0.5f;
+
             public Image Plane
             {
                 get
@@ -58,38 +35,44 @@ namespace Convention
                     return m_Plane;
                 }
             }
-            public Image AnimationPlane => m_AnimationPlane;
 
             [Content, OnlyPlayMode, Ignore] public RectTransformInfo BeforeMaximizeWindow = null;
-            [Content, OnlyPlayMode, Ignore] public RectTransformInfo AfterMaximizeWindow = null;
-            public void MaximizeWindow(bool isMax = true)
+            private bool IsMaximizeWindowMode = false;
+            public void MaximizeWindow()
             {
-                if (isMax == false)
-                {
-                    ExitMaximizeWindowMode();
+                if (IsMaximizeWindowMode)
                     return;
-                }
                 BeforeMaximizeWindow = new(this.rectTransform);
-                if (AfterMaximizeWindow == null)
-                {
-                    //this.rectTransform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-                    //this.rectTransform.anchoredPosition = Vector3.zero;
-                    //this.rectTransform.anchorMax = new(0.5f, 0.5f);
-                    //this.rectTransform.anchorMin = new(0.5f, 0.5f);
-                    //this.rectTransform.sizeDelta = this.transform.parent.GetComponent<RectTransform>().sizeDelta;
-                    var prect = this.transform.parent.GetComponent<RectTransform>();
-                    this.rectTransform.SetPositionAndRotation(prect.position, prect.rotation);
-                    this.rectTransform.anchoredPosition = Vector3.zero;
-                    this.rectTransform.anchorMax = Vector2.one;
-                    this.rectTransform.anchorMin = Vector2.zero;
-                    this.rectTransform.sizeDelta = Vector2.zero;
-                }
-                AfterMaximizeWindow.Setup(this.rectTransform);
+                var prect = this.transform.parent.GetComponent<RectTransform>();
+                this.rectTransform.SetPositionAndRotation(prect.position, prect.rotation);
+                this.rectTransform.anchoredPosition = Vector3.zero;
+                this.rectTransform.anchorMax = Vector2.one;
+                this.rectTransform.anchorMin = Vector2.zero;
+                this.rectTransform.sizeDelta = Vector2.zero;
+                IsMaximizeWindowMode = true;
             }
             public void ExitMaximizeWindowMode()
             {
+                if (!IsMaximizeWindowMode)
+                    return;
                 BeforeMaximizeWindow.Setup(this.rectTransform);
-                BeforeMaximizeWindow = null;
+                IsMaximizeWindowMode = false;
+            }
+
+            private void OnEnable()
+            {
+                if (m_AnimationPlane != null)
+                {
+                    new RectTransformInfo(this.rectTransform).Setup(m_AnimationPlane.rectTransform);
+                }
+            }
+            private void FixedUpdate()
+            {
+                if (IsEnableAnimation && m_AnimationPlane != null)
+                {
+                    RectTransformInfo.UpdateAnimationPlane(rectTransform, m_AnimationPlane.GetComponent<RectTransform>(),
+                        AnimationSpeed, IsMaximizeWindowMode ? 1 : -1);
+                }
             }
         }
     }
