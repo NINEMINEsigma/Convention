@@ -122,7 +122,10 @@ namespace Convention
             bool HasArgPackage = field.GetCustomAttributes(typeof(ArgPackageAttribute), true).Length != 0;
 
             if (HasOnlyPlayMode && Application.isPlaying == false)
+            {
                 OnlyDisplayOnPlayMode(field, isCheckIgnore);
+                return;
+            }
             else if (HasWhen)
             {
                 foreach (var attr in field.GetCustomAttributes<WhenAttribute>(true))

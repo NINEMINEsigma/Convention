@@ -131,10 +131,12 @@ namespace Convention
         }
     }
 
+#if UNITY_2017_1_OR_NEWER
     public class MonoAnyBehaviour : MonoBehaviour, IAnyClass, ConventionEditorInspectorGUI
     {
         [return: ReturnNotNull] public string SymbolName() => this.GetType().Name;
     }
+#endif
 
     public abstract class Singleton<T> : AnyClass where T : Singleton<T>
     {
@@ -156,6 +158,7 @@ namespace Convention
             return instance != null;
         }
     }
+#if UNITY_2017_1_OR_NEWER
     public abstract class MonoSingleton<T> : MonoAnyBehaviour where T : MonoSingleton<T>
     {
 
@@ -180,4 +183,5 @@ namespace Convention
             return instance != null;
         }
     }
+#endif
 }

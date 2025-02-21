@@ -3,13 +3,25 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using Convention.Internal;
 
+#if UNITY_2017_1_OR_NEWER
 namespace UnityEditor
 {
 
 }
+#endif
 
 namespace Convention
 {
+    namespace Internal
+    {
+        public class Indicator
+        {
+            public static Type tag { get; protected set; }
+            public static bool value { get; protected set; }
+        }
+        public interface ConventionEditorInspectorGUI { }
+    }
+
     public class PlatformIndicator : Indicator
     {
         static PlatformIndicator()
@@ -26,16 +38,6 @@ namespace Convention
         public static bool is_platform_linux => RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
         public static bool is_platform_osx => RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
         public static bool is_platform_x64 => System.Environment.Is64BitOperatingSystem;
-    }
-
-    namespace Internal
-    {
-        public class Indicator
-        {
-            public static Type tag { get; protected set; }
-            public static bool value { get; protected set; }
-        }
-        public interface ConventionEditorInspectorGUI { }
     }
 
     public static partial class ConventionUtility
@@ -383,7 +385,7 @@ namespace Convention
             ES3Plugin.InitExtensionEnv();
         }
 
-        public static bool IsNumber<T>(T data)
+        public static bool IsNumber(object data)
         {
             if (data == null) return false;
             var type = data.GetType();
@@ -399,13 +401,13 @@ namespace Convention
                 type == typeof(ulong) ||
                 type == typeof(char);
         }
-        public static bool IsString<T>(T data)
+        public static bool IsString(object data)
         {
             if (data == null) return false;
             var type = data.GetType();
             return type == typeof(string) || type == typeof(char[]);
         }
-        public static bool IsBinary<T>(T data)
+        public static bool IsBinary(object data)
         {
             if (data == null) return false;
             var type = data.GetType();
@@ -415,16 +417,26 @@ namespace Convention
                 type == typeof(byte[]) ||
                 type == typeof(sbyte[]);
         }
-        public static bool IsArray<T>(T data)
+        public static bool IsArray(object data)
         {
             if (data == null) return false;
             var type = data.GetType();
             return type.IsArray;
         }
-        public static bool IsBool<T>(T data)
+        public static bool IsBool(object data)
         {
             if (data == null) return false;
             return data.GetType() == typeof(bool);
         }
     }
+
+#if UNITY_2017_1_OR_NEWER
+    namespace Internal
+    {
+        public interface IRectTransform
+        {
+            UnityEngine.RectTransform rectTransform { get; } 
+        }
+    }
+#endif
 }

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Convention.WindowsUI;
 
 namespace Convention
 {
@@ -8,7 +9,22 @@ namespace Convention
     {
         public class WindowsComponent : MonoAnyBehaviour
         {
-
+            [Resources, Ignore] private RectTransform m_rectTransform;
+            public RectTransform rectTransform
+            {
+                get
+                {
+                    if (m_rectTransform == null)
+                    {
+                        m_rectTransform = GetComponent<RectTransform>();
+                    }
+                    return m_rectTransform;
+                }
+                protected set
+                {
+                    m_rectTransform = value;
+                }
+            }
         }
     }
 
