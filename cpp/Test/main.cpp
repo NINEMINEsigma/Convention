@@ -25,9 +25,7 @@ public:
 };
 int main()
 {
-    auto file = make_instance(filesystem::path("F:"));
-    for (auto&& i : file.dir_iter())
-    {
-        cout << i << "\n";
-    }
+    auto str = make_instance(string("123456789"));
+    cout << str << "\n";
+    cout << str.at(-0);
 }

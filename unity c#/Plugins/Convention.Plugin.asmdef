@@ -3,7 +3,8 @@
     "rootNamespace": "",
     "references": [
         "LeanPool",
-        "EasySave3"
+        "EasySave3",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

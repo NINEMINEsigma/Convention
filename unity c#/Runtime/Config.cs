@@ -1,7 +1,9 @@
 using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Convention.Internal;
+using UnityEngine;
 
 #if UNITY_2017_1_OR_NEWER
 namespace UnityEditor
@@ -42,6 +44,7 @@ namespace Convention
 
     public static partial class ConventionUtility
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string convert_xstring([In] object obj)
         {
             return Convert.ToString(obj);
@@ -109,6 +112,25 @@ namespace Convention
                 return property.GetValue(obj);
             }
             return null;
+        }
+
+        public static T GetOrAddComponent<T>(this MonoAnyBehaviour self) where T : Component
+        {
+            if (self.GetComponents<T>().Length == 0)
+            {
+                return self.gameObject.AddComponent<T>();
+            }
+            else
+            {
+                return self.gameObject.GetComponents<T>()[0];
+            }
+        }
+        public static T SeekComponent<T>(this MonoAnyBehaviour self) where T:class
+        {
+            var results = self.gameObject.GetComponents<T>();
+            if (results.Length == 0)
+                return null;
+            return results[0];
         }
     }
 
@@ -266,19 +288,21 @@ namespace Convention
             public readonly object Value;
             protected object InjectGetValue(object target)
             {
-                var field = target.GetType().GetField(Name, BindingFlags.NonPublic | BindingFlags.Public |
-                    BindingFlags.Instance | BindingFlags.Static);
-                if (field != null)
-                {
-                    return field.GetValue(target);
-                }
-                var property = target.GetType().GetProperty(Name, BindingFlags.NonPublic | BindingFlags.Public |
-                    BindingFlags.Instance | BindingFlags.Static);
-                if (property != null)
-                {
-                    return property.GetValue(target);
-                }
-                return null;
+                //var field = target.GetType().GetField(Name, BindingFlags.NonPublic | BindingFlags.Public |
+                //    BindingFlags.Instance | BindingFlags.Static);
+                //if (field != null)
+                //{
+                //    return field.GetValue(target);
+                //}
+                //var property = target.GetType().GetProperty(Name, BindingFlags.NonPublic | BindingFlags.Public |
+                //    BindingFlags.Instance | BindingFlags.Static);
+                //if (property != null)
+                //{
+                //    return property.GetValue(target);
+                //}
+                //return null;
+                return ConventionUtility.SeekValue(target, Name, BindingFlags.NonPublic | BindingFlags.Public |
+                   BindingFlags.Instance | BindingFlags.Static);
             }
             public override bool Check(object target)
             {
@@ -340,7 +364,7 @@ namespace Convention
                 return true;
             }
             var property = target.GetType().GetProperty(Name, BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            if(property != null)
+            if (property != null)
             {
                 object value = property.GetValue(target);
                 if (value == null)
@@ -371,7 +395,7 @@ namespace Convention
         {
             return target != null;
         }
-        public HopeNotNullAttribute() {}
+        public HopeNotNullAttribute() { }
     }
     [System.AttributeUsage(AttributeTargets.Field | AttributeTargets.Property |
         AttributeTargets.Parameter | AttributeTargets.ReturnValue,
@@ -460,7 +484,7 @@ namespace Convention
     {
         public interface IRectTransform
         {
-            UnityEngine.RectTransform rectTransform { get; } 
+            UnityEngine.RectTransform rectTransform { get; }
         }
     }
 #endif

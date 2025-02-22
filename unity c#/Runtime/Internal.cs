@@ -72,9 +72,20 @@ namespace Convention
             return $"{this.GetType()}<{base.Message}>";
         }
     }
-    public class BasicValueReference<T> : AnyClass
+    public interface ISetRefValue<T>
+    {
+        T ref_value { get; }
+    }
+    public interface IGetRefalue<T>
+    {
+        T ref_value { set; }
+    }
+    public abstract class BasicValueReference<T> : AnyClass, ISetRefValue<T>, IGetRefalue<T>
     {
         [SerializeField][Content] protected T _ref_value;
+
+        public abstract T ref_value { get; set; }
+
         public static implicit operator T(BasicValueReference<T> data) => data._ref_value;
 
         public override string ToString()
@@ -98,7 +109,7 @@ namespace Convention
             this.ref_value = ref_value;
         }
 
-        public T ref_value { get => _ref_value; set => _ref_value = value; }
+        public override T ref_value { get => _ref_value; set => _ref_value = value; }
         public override string SymbolName()
         {
             return $"{typeof(T)}&";
@@ -112,7 +123,7 @@ namespace Convention
         }
         public static implicit operator T(RightValueReference<T> data) => data.ref_value;
 
-        public T ref_value
+        public override T ref_value
         {
             get
             {

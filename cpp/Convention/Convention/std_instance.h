@@ -98,8 +98,8 @@ public:
 			index = this->size() + index;
 		return this->get()->at(index);
 	}
-	copy_func_return_auto_with_noexcept(front);
-	copy_func_return_auto_with_noexcept(back);
+	copy_func_return_declauto_with_noexcept(front);
+	copy_func_return_declauto_with_noexcept(back);
 	copy_func_return_auto_with_noexcept(capacity);
 	auto data() const
 	{
@@ -180,7 +180,7 @@ public:
 	instance(typename _Mybase::_shared& data, int head, int tail)
 		:_Mybase(data),
 		_Myhead(head < 0 ? std::max<size_t>(0, data->size() - head) : std::max<size_t>(0, head)),
-		_Mytail(tail < 0 ? std::max<size_t>(0, data->size() - tail) : std::min<size_t>(data->size(), tail))
+		_Mytail(tail < 0 ? std::max<size_t>(0, data->size() + tail) : std::min<size_t>(data->size(), tail))
 	{
 		_Myhead = std::min(_Myhead, data->size());
 		_Mytail = std::min(_Mytail, data->size());
@@ -597,18 +597,9 @@ public:
 			index = this->size() + index;
 		return this->get()->at(index);
 	}
-	copy_func_return_auto_with_noexcept(front);
-	copy_func_return_auto_with_noexcept(back);
+	copy_func_return_declauto_with_noexcept(front);
+	copy_func_return_declauto_with_noexcept(back);
 	copy_func_return_auto_with_noexcept(capacity);
-	template<typename _Right>
-	int compare(const _Right& right)
-	{
-		return this->get()->compare(right);
-	}
-	int compare(const typename _Mybase::_shared& right)
-	{
-		return this->get()->compare(*right);
-	}
 	auto data() const
 	{
 		return this->get()->data();
@@ -727,6 +718,10 @@ public:
 	{
 		return contains_compare(tag(ptr));
 	}
+	int compare(const typename _Mybase::_shared& right)
+	{
+		return this->get()->compare(*right);
+	}
 	copy_func_return_auto_with_noexcept(length);
 	copy_func(shrink_to_fit);
 	template<typename _Target>
@@ -839,6 +834,351 @@ public:
 	}
 
 };
+template<typename _Elem, typename _Traits, typename _Alloc>
+class instance<view_indicator<std::basic_string<_Elem, _Traits, _Alloc>>, true> :public instance<std::basic_string<_Elem, _Traits, _Alloc>, false>
+{
+	size_t _Myhead, _Mytail;
+public:
+	using tag = std::basic_string<_Elem, _Traits, _Alloc>;
+	using _Mybase = instance<tag, false>;
+	using _Element = _Elem;
+	using _My_Traits = _Traits;
+	using _Allocator = _Alloc;
+	using iterator = typename tag::iterator;
+	using const_iterator = typename tag::const_iterator;
+	using shared_from_instance = instance<tag, true>;
+	instance() :_Mybase(nullptr) {}
+	instance(typename _Mybase::_shared& data, int head, int tail)
+		:_Mybase(data),
+		_Myhead(head < 0 ? std::max<size_t>(0, data->size() - head) : std::max<size_t>(0, head)),
+		_Mytail(tail < 0 ? std::max<size_t>(0, data->size() + tail) : std::min<size_t>(data->size(), tail))
+	{
+		_Myhead = std::min(_Myhead, data->size());
+		_Mytail = std::min(_Mytail, data->size());
+		if (_Myhead > _Mytail)
+			std::swap(_Myhead, _Mytail);
+	}
+	instance(const instance& data) :_Mybase(data), _Myhead(data._Myhead), _Mytail(data._Mytail) {}
+	instance_move_operator(public)
+	{
+		this->_Myhead = other._Myhead;
+		this->_Mytail = other._Mytail;
+	}
+
+	void rebind(typename _Mybase::_shared& data, int head, int tail)
+	{
+		_Mybase::operator=(data);
+		_Myhead = (head < 0 ? std::max<size_t>(0, data->size() - head) : std::max<size_t>(0, head));
+		_Mytail = (tail < 0 ? std::max<size_t>(0, data->size() - tail) : std::min<size_t>(data->size(), tail));
+		_Myhead = std::min(_Myhead, data->size());
+		_Mytail = std::min(_Mytail, data->size());
+		if (_Myhead > _Mytail)
+			std::swap(_Myhead, _Mytail);
+	}
+	constexpr auto get_head() const noexcept
+	{
+		return _Myhead;
+	}
+	constexpr auto get_tail() const noexcept
+	{
+		return _Mytail;
+	}
+
+	auto begin() const noexcept 
+	{
+		return this->get()->begin() + _Myhead;
+	}
+	auto end() const noexcept 
+	{
+		return this->get()->begin() + _Mytail;
+	}
+	auto cbegin() const noexcept 
+	{
+		return this->get()->cbegin() + _Myhead;
+	}
+	auto cend() const noexcept 
+	{
+		return this->get()->cbegin() + _Mytail;
+	}
+	auto rbegin() const noexcept
+	{
+		return this->get()->rbegin() + _Myhead;
+	}
+	auto rend() const noexcept
+	{
+		return this->get()->rbegin() + _Myhead;
+	}
+	auto crbegin() const noexcept
+	{
+		return this->get()->crbegin() + _Myhead;
+	}
+	auto crend() const noexcept
+	{
+		return this->get()->crbegin() + _Myhead;
+	}
+	auto size() const noexcept 
+	{
+		return _Mytail - _Myhead;
+	};
+	decltype(auto) at(int index) const
+	{
+		if (index < 0)
+			index = this->size() + index;
+		return this->get()->at(index + _Myhead);
+	}
+	const auto& front() const noexcept 
+	{
+		return *(this->begin() + _Myhead);
+	};
+	const auto& back() const noexcept 
+	{
+		return *(this->begin() + _Mytail);
+	};
+	auto data() const noexcept
+	{
+		return this->get()->data() + _Myhead;
+	}
+	const auto* cdata() const noexcept
+	{
+		return this->get()->data() + _Myhead;
+	}
+	bool data_empty() const noexcept
+	{
+		return this->get()->empty();
+	}
+	auto erase(const_iterator iter) const
+	{
+		return this->get()->erase(iter);
+	}
+	auto erase(const_iterator head, const_iterator end) const
+	{
+		return this->get()->erase(head, end);
+	}
+	size_t erase(const _Elem& value, size_t ignore = 0, size_t countdown = static_cast<size_t>(-1)) const
+	{
+		int counter = ignore;
+		counter = -counter;
+		auto start = this->begin();
+		while (counter < countdown)
+		{
+			auto iter = std::find(start, this->end(), value);
+			if (iter != this->end())
+			{
+				if (counter >= 0)
+				{
+					this->erase(iter);
+				}
+				else
+				{
+					start = ++iter;
+				}
+				counter++;
+			}
+			else break;
+		}
+		return counter;
+	}
+	template<typename... _Args>
+	auto insert(const_iterator front_iter, _Args&&... args)
+	{
+		return this->get()->insert(front_iter, std::forward<_Args>(args)...);
+	}
+	template<typename... _Args>
+	auto insert(size_t front_pos, _Args&&... args)
+	{
+		return this->get()->insert(this->begin() + front_pos, std::forward<_Args>(args)...);
+	}
+	decltype(auto) operator[](int index) const
+	{
+		return this->at(index);
+	}
+	auto deep_copy() const
+	{
+		return instance(**this);
+	}
+	auto shallow_copy() const noexcept
+	{
+		return instance(*this);
+	}
+	copy_func_return_auto_with_noexcept(c_str);
+	auto substr(int offset = 0, int Count = static_cast<size_t>(-1))
+	{
+		if (offset < 0)
+			offset = this->size() - offset;
+		if (Count < 0)
+			Count = this->size() - Count;
+		return this->get()->substr(offset + _Myhead, Count);
+	}
+	template<typename _Right>
+	bool start_with(const _Right& str) const noexcept
+	{
+		return this->size() >= str.size() && _Traits::compare(this->data(), str.data(), str.size()) == 0;
+	}
+	bool start_with(const _Elem* ptr) const noexcept
+	{
+		return start_with(tag(ptr));
+	}
+	template<typename _Right>
+	bool end_with(const _Right& str) const noexcept
+	{
+		return this->size() >= str.size() && _Traits::compare(this->data() + this->size() - str.size(), str.data(), str.size()) == 0;
+	}
+	bool end_with(const _Elem* ptr) const noexcept
+	{
+		return end_with(tag(ptr));
+	}
+	template<typename _Right>
+	bool contains(const _Right& str) const noexcept
+	{
+		if (this->size() < str.size())
+			return false;
+		for (int offset = 0, end = this->size() - str.size(); offset < end; offset++)
+		{
+			if (_Traits::compare(this->data() + offset, str.data(), str.size()) == 0)
+				return true;
+		}
+		return false;
+	}
+	bool contains(const _Elem* ptr) const noexcept
+	{
+		return contains(tag(ptr));
+	}
+	template<typename _Right>
+	int compare(const _Right& str) const noexcept
+	{
+		return _Traits::compare(this->data() + _Myhead, str.data(), std::min(this->size(), str.size()));
+	}
+	auto compare(const _Elem* ptr) const noexcept
+	{
+		return contains_compare(tag(ptr));
+	}
+	int compare(const typename _Mybase::_shared& right)
+	{
+		return this->get()->compare(*right);
+	}
+	auto length() const noexcept 
+	{
+		return _Mytail - _Myhead;
+	}
+	template<typename _Target>
+	size_t edit_distance(const _Target& target) const
+	{
+		return levenshtein_distance(this->begin(), this->end(), target.cbegin(), target.cend());
+	}
+	template<size_t length>
+	size_t edit_distance(const _Elem target[length]) const
+	{
+		return levenshtein_distance(this->begin(), this->end(), &target[0], &target[length - 1]);
+	}
+	size_t edit_distance(_In_ const _Elem* target) const
+	{
+		return edit_distance(tag(target));
+	}
+	template<typename _Right>
+	int first(const _Right& str) const noexcept
+	{
+		if (this->size() < str.size())
+			return -1;
+		for (int offset = 0, end = this->size() - str.size(); offset < end; offset++)
+		{
+			if (_Traits::compare(this->data() + offset, str.data(), str.size()) == 0)
+				return offset;
+		}
+		return -1;
+	}
+	int first(const _Elem& ch) const noexcept
+	{
+		if (this->size() != 0)
+			for (int offset = 0, end = this->size(); offset < end; offset++)
+				if (this->at(offset) == ch)
+					return offset;
+		return -1;
+	}
+	int first(_In_ const _Elem* ptr) const noexcept
+	{
+		return first(tag(ptr));
+	}
+	template<typename _Right>
+	int last(const _Right& str) const noexcept
+	{
+		if (this->size() < str.size())
+			return -1;
+		for (int offset = this->size() - str.size() - 1, end = 0; offset >= end; offset--)
+		{
+			if (_Traits::compare(this->data() + offset, str.data(), str.size()) == 0)
+				return offset;
+		}
+		return -1;
+	}
+	int last(const _Elem& ch) const noexcept
+	{
+		if (this->size() != 0)
+			for (int offset = this->size() - 1, end = 0; offset >= end; offset--)
+				if (this->at(offset) == ch)
+					return offset;
+		return -1;
+	}
+	int last(_In_ const _Elem* ptr) const noexcept
+	{
+		return last(tag(ptr));
+	}
+	template<typename _Param>
+	tag join(_Param&& arg)
+	{
+		return tag(std::forward(arg));
+	}
+	template<typename _First, typename... _Params>
+	tag join(_First&& first, _Params&&... args)
+	{
+		return tag(std::forward<_First>(first)) + join(std::forward<_Params>(args)...);
+	}
+	template<typename... Args>
+	auto format_s(void* buffer, size_t buffer_size, Args&&... args)
+	{
+		if constexpr (std::is_same_v<_Elem, char>)
+		{
+			sprintf_s((char*)buffer, buffer_size, **this, std::forward<Args>(args)...);
+		}
+		else if constexpr (std::is_same_v<_Elem, wchar_t>)
+		{
+			swprintf_s((wchar_t*)buffer, buffer_size, **this, std::forward<Args>(args)...);
+		}
+	}
+	template<typename... Args>
+	auto format(Args&&... args)
+	{
+		if constexpr (std::is_same_v<_Elem, char>)
+		{
+			std::string result(1024, 0);
+			sprintf_s(result.data(), 1024, **this, std::forward<Args>(args)...);
+			return result;
+		}
+		else if constexpr (std::is_same_v<_Elem, wchar_t>)
+		{
+			std::wstring result(1024, 0);
+			swprintf_s(result.data(), 1024, **this, std::forward<Args>(args)...);
+			return result;
+		}
+	}
+	auto get_view() const
+	{
+		return std::basic_string_view(this->get()->data() + _Myhead, this->size());
+	}
+
+	virtual std::string ToString() const noexcept override
+	{
+		std::string str(sizeof(char) * this->size(), 0);
+		::memmove(str.data(), this->data(), this->size());
+		return str;
+	}
+
+};
+template<typename _Elem, typename _Traits, typename _Alloc, typename _OS>
+decltype(auto) operator<<(_OS& os, const instance<view_indicator<std::basic_string<_Elem, _Traits, _Alloc>>, true>& str)
+{
+	os << str.get_view();
+	return os;
+}
 
 #pragma endregion
 

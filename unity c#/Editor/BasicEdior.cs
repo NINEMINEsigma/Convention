@@ -136,7 +136,7 @@ namespace Convention
             }
             if (HasOnlyNotNullMode|| HasHopeNotNullMode)
                 DisplayOnlyNotNull(field, isCheckIgnore);
-            else if (isCheckIgnore && (HasIgnore || (field.IsPublic == false && HasSerializeField)))
+            else if (isCheckIgnore && (HasIgnore || (field.IsPublic == false && !HasSerializeField)))
                 IgnoreField(field);
             else
                 DisplayDefaultField(field, isCheckIgnore);

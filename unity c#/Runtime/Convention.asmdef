@@ -9,7 +9,8 @@
         "Convention.Windows",
         "Cinemachine",
         "Unity.Mathematics",
-        "Unity.Timeline"
+        "Unity.Timeline",
+        "Unity.TextMeshPro"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
