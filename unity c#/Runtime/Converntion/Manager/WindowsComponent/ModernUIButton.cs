@@ -60,7 +60,7 @@ namespace Convention.WindowsUI
         }
     }
 
-    public class ModernUIButton : MonoAnyBehaviour, IButton, ITitle
+    public partial class ModernUIButton : WindowUIModule, IButton, ITitle
     {
         // ---------------------------------------------------------------- stats
 

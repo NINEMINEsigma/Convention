@@ -278,7 +278,7 @@ namespace Convention
             return "Convention." + nameof(ScriptableObject);
         }
 #if UNITY_EDITOR
-        public SerializableDataDictionary Datas;
+        public SerializableDataDictionary Datas = new();
 #else
         public Dictionary<string, DataEntry> Datas;
 #endif

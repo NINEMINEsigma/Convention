@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Convention.Internal;
 using UnityEngine;
+using static UnityEngine.Rendering.DebugUI;
 
 #if UNITY_2017_1_OR_NEWER
 namespace UnityEditor
@@ -157,6 +158,10 @@ namespace Convention
     public class ReturnSelfAttribute : Attribute { }
     [System.AttributeUsage(AttributeTargets.ReturnValue, Inherited = true, AllowMultiple = false)]
     public class ReturnNotSelfAttribute : Attribute { }
+#if UNITY_2017_1_OR_NEWER
+    [System.AttributeUsage(AttributeTargets.ReturnValue, Inherited = true, AllowMultiple = false)]
+    public class ReturnNotInstantiatedAttribute : Attribute { }
+#endif
     [System.AttributeUsage(AttributeTargets.ReturnValue, Inherited = true, AllowMultiple = false)]
     public class SucceedAttribute : Attribute
     {
@@ -317,13 +322,27 @@ namespace Convention
         [System.AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = true)]
         public class IsAttribute : WhenMemberValueAttribute
         {
-            public override bool Check(object target) => this.Value.Equals(this.InjectGetValue(target));
+            public override bool Check(object target)
+            {
+                if (this.Value is Type)
+                {
+                    var targetValue = this.InjectGetValue(target);
+                    if (targetValue == null)
+                        return false;
+                    else
+                        return targetValue.GetType().IsSubclassOf(this.Value as Type);
+                }
+                return this.Value.Equals(this.InjectGetValue(target));
+            }
             public IsAttribute(string Name, object value) : base(Name, value) { }
         }
         [System.AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = true)]
-        public class NotAttribute : WhenMemberValueAttribute
+        public class NotAttribute : IsAttribute
         {
-            public override bool Check(object target) => !this.Value.Equals(this.InjectGetValue(target));
+            public override bool Check(object target)
+            {
+                return !base.Check(target);
+            }
             public NotAttribute(string Name, object value) : base(Name, value) { }
         }
     }
@@ -425,9 +444,11 @@ namespace Convention
 
     public static partial class ConventionUtility
     {
+        [UnityEditor.MenuItem("Convention/InitExtensionEnv", priority = 100000)]
         public static void InitExtensionEnv()
         {
             RegisterBaseWrapperExtension.InitExtensionEnv();
+            SO.Windows.InitExtensionEnv();
 
             UnityExtension.InitExtensionEnv();
 

@@ -141,6 +141,16 @@ namespace Convention
             str = WindowPlane?.ToString();
         }
 
+        public static WindowManager GenerateWindow()
+        {
+            throw new NotImplementedException();    
+        }
+        public void CloseWindow()
+        {
+            throw new NotImplementedException();
+        }
+
         [Resources, SerializeField, OnlyNotNullMode] public BaseWindowPlane WindowPlane;
+        [Resources, SerializeField] public BaseWindowBar WindowBar;
     }
 }
