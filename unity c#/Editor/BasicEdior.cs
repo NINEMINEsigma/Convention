@@ -55,8 +55,8 @@ namespace Convention
                             where ContentCheck(field)
                             select field;
             ContentMethods = from method in methods
-                             where method.GetParameters().Length == 0
                              where method.GetCustomAttributes(typeof(ContentAttribute), true).Length != 0
+                             where method.GetParameters().Length == 0
                              select method;
             static bool ResourcesCheck(FieldInfo field)
             {
@@ -71,8 +71,8 @@ namespace Convention
                               where ResourcesCheck(field)
                               select field;
             ResourcesMethods = from method in methods
-                               where method.GetParameters().Length == 0
                                where method.GetCustomAttributes(typeof(ResourcesAttribute), true).Length != 0
+                               where method.GetParameters().Length == 0
                                select method;
             static bool SettingCheck(FieldInfo field)
             {
@@ -82,8 +82,8 @@ namespace Convention
                             where SettingCheck(field)
                             select field;
             SettingMethods = from method in methods
-                             where method.GetParameters().Length == 0
                              where method.GetCustomAttributes(typeof(SettingAttribute), true).Length != 0
+                             where method.GetParameters().Length == 0
                              select method;
         }
 
@@ -269,7 +269,9 @@ namespace Convention
 
         protected virtual void Method(MethodInfo method)
         {
-            method.Invoke(target, new object[0]);
+            if (method.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length == 0 || Application.isPlaying)
+                if (GUILayout.Button(method.Name))
+                    method.Invoke(target, new object[0]);
         }
 
         public virtual void OnOriginGUI()
@@ -280,9 +282,7 @@ namespace Convention
         {
             foreach (var method in ContentMethods)
             {
-                if (method.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0 && Application.isPlaying == false)
-                    continue;
-                if (method.IsStatic && GUILayout.Button(method.Name))
+                if (method.IsStatic)
                 {
                     Method(method);
                 }
@@ -293,9 +293,7 @@ namespace Convention
             }
             foreach (var method in ContentMethods)
             {
-                if (method.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0 && Application.isPlaying == false)
-                    continue;
-                if (!method.IsStatic && GUILayout.Button(method.Name))
+                if (!method.IsStatic)
                 {
                     Method(method);
                 }
@@ -305,9 +303,7 @@ namespace Convention
         {
             foreach (var method in ResourcesMethods)
             {
-                if (method.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0 && Application.isPlaying == false)
-                    continue;
-                if (method.IsStatic && GUILayout.Button(method.Name))
+                if (method.IsStatic)
                 {
                     Method(method);
                 }
@@ -318,9 +314,7 @@ namespace Convention
             }
             foreach (var method in ResourcesMethods)
             {
-                if (method.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0 && Application.isPlaying == false)
-                    continue;
-                if (!method.IsStatic && GUILayout.Button(method.Name))
+                if (!method.IsStatic)
                 {
                     Method(method);
                 }
@@ -330,9 +324,7 @@ namespace Convention
         {
             foreach (var method in SettingMethods)
             {
-                if (method.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0 && Application.isPlaying == false)
-                    continue;
-                if (method.IsStatic && GUILayout.Button(method.Name))
+                if (method.IsStatic)
                 {
                     Method(method);
                 }
@@ -343,9 +335,7 @@ namespace Convention
             }
             foreach (var method in SettingMethods)
             {
-                if (method.GetCustomAttributes(typeof(OnlyPlayModeAttribute), true).Length != 0 && Application.isPlaying == false)
-                    continue;
-                if (!method.IsStatic && GUILayout.Button(method.Name))
+                if (!method.IsStatic)
                 {
                     Method(method);
                 }

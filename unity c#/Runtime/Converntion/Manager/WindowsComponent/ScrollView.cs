@@ -1,13 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace Convention.WindowsUI
 {
-    public class ScrollView : WindowUIModule
+    public partial class ScrollView : WindowUIModule
     {
-        [Resources,HopeNotNull]public ScrollView scrollView;
-
+        [Resources, HopeNotNull] public UnityEngine.UI.ScrollRect scrollRect;
+        private void Reset()
+        {
+            scrollRect = GetComponent<UnityEngine.UI.ScrollRect>();
+        }
     }
 }

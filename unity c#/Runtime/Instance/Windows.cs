@@ -10,11 +10,14 @@ namespace Convention.SO
     public class Windows : ScriptableObject
     {
         public static string GlobalWindowsConfig = "WindowConfig";
+        public static Windows GlobalInstance => Resources.Load<Windows>(GlobalWindowsConfig);
 
         public static void InitExtensionEnv()
         {
             default_exist_names = GetDefaultNames();
+#if CONVENTION_DISABLE_WINDOWSO_GLOBAL_INIT
             GlobalWindowsConfig = "WindowConfig";
+#endif
         }
         public static string[] GetDefaultNames()
         {

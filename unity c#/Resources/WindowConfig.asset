@@ -24,10 +24,30 @@ MonoBehaviour:
         CurrentValue: BaseWindowPlane (UnityEngine.GameObject)
         CurrentObject: {fileID: 1260384558486969804, guid: 9f83398a7d855e44493acb9b240c01ca, type: 3}
         RealType: GameObject
+    - Key: InputField
+      Value:
+        CurrentValue: InputField (UnityEngine.GameObject)
+        CurrentObject: {fileID: 3227267844817493758, guid: 35ae13e2c699a194db0dc4b28d45db02, type: 3}
+        RealType: GameObject
     - Key: ModernUIButton
       Value:
         CurrentValue: ModernUIButton<Button> (UnityEngine.GameObject)
         CurrentObject: {fileID: 1700112589223663275, guid: 630e23319fe05f246a3b983540e4ebe6, type: 3}
+        RealType: GameObject
+    - Key: ModernUIInputField
+      Value:
+        CurrentValue: ModernUIInputField (UnityEngine.GameObject)
+        CurrentObject: {fileID: 3241788777981816896, guid: 37924db2d27cd6e49bf8002531a08095, type: 3}
+        RealType: GameObject
+    - Key: ScrollView
+      Value:
+        CurrentValue: ScrollView (UnityEngine.GameObject)
+        CurrentObject: {fileID: 1824149146582744509, guid: a16009d6f48e8d54f87555c221c917b3, type: 3}
+        RealType: GameObject
+    - Key: Text
+      Value:
+        CurrentValue: Text (UnityEngine.GameObject)
+        CurrentObject: {fileID: 1582623583193193453, guid: 4e6810693c07dfb4399ed0c7c7a3ce39, type: 3}
         RealType: GameObject
     - Key: WindowManager
       Value:
