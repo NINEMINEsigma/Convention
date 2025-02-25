@@ -151,6 +151,8 @@ namespace Convention
     [System.AttributeUsage(AttributeTargets.Parameter, Inherited = true, AllowMultiple = false)]
     public class OptAttribute : Attribute { }
     [System.AttributeUsage(AttributeTargets.ReturnValue, Inherited = true, AllowMultiple = false)]
+    public class ReturnVirtualAttribute : Attribute { }
+    [System.AttributeUsage(AttributeTargets.ReturnValue, Inherited = true, AllowMultiple = false)]
     public class ReturnMayNullAttribute : Attribute { }
     [System.AttributeUsage(AttributeTargets.ReturnValue, Inherited = true, AllowMultiple = false)]
     public class ReturnNotNullAttribute : Attribute { }
@@ -159,8 +161,16 @@ namespace Convention
     [System.AttributeUsage(AttributeTargets.ReturnValue, Inherited = true, AllowMultiple = false)]
     public class ReturnNotSelfAttribute : Attribute { }
 #if UNITY_2017_1_OR_NEWER
-    [System.AttributeUsage(AttributeTargets.ReturnValue, Inherited = true, AllowMultiple = false)]
-    public class ReturnNotInstantiatedAttribute : Attribute { }
+    [System.AttributeUsage(AttributeTargets.Parameter|AttributeTargets.ReturnValue|
+        AttributeTargets.Field|AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
+    public class IsInstantiatedAttribute : Attribute
+    {
+        public bool isInstantiated;
+        public IsInstantiatedAttribute(bool isInstantiated)
+        {
+            this.isInstantiated = isInstantiated;
+        }
+    }
 #endif
     [System.AttributeUsage(AttributeTargets.ReturnValue, Inherited = true, AllowMultiple = false)]
     public class SucceedAttribute : Attribute

@@ -15,11 +15,13 @@ namespace Convention.WindowsUI
         private bool use_GridLayoutGroup => layoutGroupType == LayoutGroupType.GridLayoutGroup && gridLayoutGroup;
 
         // -----------------
+        public bool hasLayoutGroup => layoutGroupType != LayoutGroupType.None;
 
         [Resources, Setting, HopeNotNull] public SO.Windows WindowConfig;
         [Resources, SerializeField, HopeNotNull] private RectTransform BarPlane;
         [Resources, SerializeField, HopeNotNull] private WindowManager m_WindowManager;
         [Resources, HopeNotNull] public WindowUIModule ButtonPrefab;
+        [Content, OnlyPlayMode]
         public void MinimizeWindow()
         {
             if (m_WindowManager)
@@ -27,6 +29,7 @@ namespace Convention.WindowsUI
                 m_WindowManager.WindowPlane.ExitMaximizeWindowMode();
             }
         }
+        [Content, OnlyPlayMode]
         public void MaximizeWindow()
         {
             if (m_WindowManager)
@@ -34,6 +37,7 @@ namespace Convention.WindowsUI
                 m_WindowManager.WindowPlane.MaximizeWindow();
             }
         }
+        [Content, OnlyPlayMode]
         public void CloseWindow()
         {
             if (m_WindowManager)
@@ -107,40 +111,138 @@ namespace Convention.WindowsUI
             ResetLayoutGroups(true);
         }
 
-        [Serializable]
-        public class RegisteredButtonWrapper : LeftValueReference<IButton>
+        private IButton InstantiateButton()
         {
-            public BaseWindowBar WindowBar;
-            public RegisteredButtonWrapper([In]BaseWindowBar parentBar, [In] IButton ref_value) : base(ref_value)
+            return Instantiate(ButtonPrefab, BarPlane.transform).GetComponents<IButton>()[0];
+        }
+
+        [Serializable]
+        public class RegisteredButtonWrapper
+        {
+            public readonly BaseWindowBar WindowBar;
+            public IButton button;
+            public WindowUIModule buttonModule;
+            public RegisteredButtonWrapper([In] BaseWindowBar parentBar, [In] IButton button)
             {
                 WindowBar = parentBar;
+                this.button = button;
+                buttonModule = button as WindowUIModule;
             }
             public virtual void Disable()
             {
-                (this.ref_value as WindowUIModule)?.gameObject.SetActive(false);
+                if (buttonModule)
+                {
+                    buttonModule.gameObject.SetActive(false);
+                    if (WindowBar.useGUILayout)
+                    {
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(WindowBar.BarPlane);
+                    }
+                }
             }
             public virtual void Enable()
             {
-                (this.ref_value as WindowUIModule)?.gameObject.SetActive(true);
+                if (buttonModule)
+                {
+                    buttonModule.gameObject.SetActive(true);
+                    if (WindowBar.useGUILayout)
+                    {
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(WindowBar.BarPlane);
+                    }
+                }
             }
             public virtual void Release()
             {
-                if(this.ref_value != null)
+                if (button == null)
+                {
+                    throw new InvalidOperationException("wrapper was released");
+                }
+                if (buttonModule)
                 {
                     Disable();
-                    GameObject.Destroy((this.ref_value as WindowUIModule)?.gameObject);
-                    this.ref_value = null;
+                    Destroy(buttonModule.gameObject);
+                    if (WindowBar.useGUILayout)
+                    {
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(WindowBar.BarPlane);
+                    }
                 }
+                button = null;
             }
             ~RegisteredButtonWrapper()
             {
                 Release();
             }
         }
-        [return :ReturnNotNull]
+        [return: ReturnNotNull, ReturnVirtual]
         public virtual RegisteredButtonWrapper RegisterButton()
         {
-            return new RegisteredButtonWrapper(this, Instantiate(ButtonPrefab, BarPlane.transform) as IButton);
+            return new RegisteredButtonWrapper(this, InstantiateButton());
+        }
+        [Serializable]
+        public class RegisteredPageWrapper : RegisteredButtonWrapper
+        {
+            [SerializeField]private int PageIndex = -1;
+            [SerializeField]private RectTransform plane, root;
+            public RegisteredPageWrapper(RectTransform plane, RectTransform root, [In] BaseWindowBar parentBar, [In] IButton button) : base(parentBar, button)
+            {
+                button.AddListener(() => WindowBar.m_WindowManager.SelectContextPlane(PageIndex));
+                PageIndex = parentBar.m_WindowManager.AddContextPlane(plane, root);
+                this.plane = plane;
+                this.root = root;
+            }
+            public RegisteredPageWrapper(RectTransform plane, [In] BaseWindowBar parentBar, [In] IButton button) : base(parentBar, button)
+            {
+                button.AddListener(() => WindowBar.m_WindowManager.SelectContextPlane(PageIndex));
+                PageIndex = parentBar.m_WindowManager.AddContextPlane(plane);
+                this.plane = plane;
+            }
+            public override void Disable()
+            {
+                if (PageIndex < 0)
+                {
+                    return;
+                }
+                WindowBar.m_WindowManager.RemoveContextPlane(PageIndex);
+                PageIndex = -1;
+                base.Disable();
+            }
+            public override void Enable()
+            {
+                if (PageIndex < 0)
+                {
+                    WindowBar.m_WindowManager.AddContextPlane(plane, root);
+                    base.Enable();
+                }
+            }
+            public override void Release()
+            {
+                if (plane == null)
+                {
+                    throw new InvalidOperationException("page was released");
+                }
+                if (root)
+                {
+                    root.gameObject.SetActive(false);
+                    Destroy(root);
+                }
+                else
+                {
+                    plane.gameObject.SetActive(false);
+                    Destroy(plane);
+                }
+                base.Release();
+                plane = null;
+                root = null;
+            }
+        }
+        [return: ReturnNotNull, ReturnVirtual]
+        public virtual RegisteredPageWrapper RegisterPage([In] RectTransform plane, [In] RectTransform root)
+        {
+            return new RegisteredPageWrapper(plane, root, this, InstantiateButton());
+        }
+        [return: ReturnNotNull, ReturnVirtual]
+        public virtual RegisteredPageWrapper RegisterPage([In] RectTransform plane)
+        {
+            return new RegisteredPageWrapper(plane, this, InstantiateButton());
         }
     }
 }

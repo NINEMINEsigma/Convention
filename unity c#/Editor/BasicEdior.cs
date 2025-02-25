@@ -56,7 +56,7 @@ namespace Convention
                             select field;
             ContentMethods = from method in methods
                              where method.GetCustomAttributes(typeof(ContentAttribute), true).Length != 0
-                             where method.GetParameters().Length == 0
+                             //where method.GetParameters().Length == 0
                              select method;
             static bool ResourcesCheck(FieldInfo field)
             {
@@ -72,7 +72,7 @@ namespace Convention
                               select field;
             ResourcesMethods = from method in methods
                                where method.GetCustomAttributes(typeof(ResourcesAttribute), true).Length != 0
-                               where method.GetParameters().Length == 0
+                               //where method.GetParameters().Length == 0
                                select method;
             static bool SettingCheck(FieldInfo field)
             {
@@ -83,7 +83,7 @@ namespace Convention
                             select field;
             SettingMethods = from method in methods
                              where method.GetCustomAttributes(typeof(SettingAttribute), true).Length != 0
-                             where method.GetParameters().Length == 0
+                             //where method.GetParameters().Length == 0
                              select method;
         }
 
@@ -357,6 +357,10 @@ namespace Convention
         public void Toggle(string name)
         {
             var enableTrigger = serializedObject.FindProperty(name);
+            if (name.StartsWith("m_"))
+            {
+                name = name[2..];
+            }
             Toggle(enableTrigger, name);
         }
         public bool Toggle(bool value, string label)

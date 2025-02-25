@@ -7,7 +7,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Convention.WindowsUI.Internal;
 
-namespace Convention.WindowsUI
+namespace Convention.WindowsUI.Variant
 {
     namespace Internal
     {
@@ -184,7 +184,7 @@ namespace Convention.WindowsUI
         {
             normalText.text = m_title;
             highlightedText.text = m_title;
-            if (m_IsAutoRename)
+            if(m_IsAutoRename)
             {
                 this.name = $"{this.GetType().Name}<{m_title}>";
             }
@@ -246,7 +246,8 @@ namespace Convention.WindowsUI
 
             clickEvent.Invoke();
 
-            OnPointerCreateRipple(eventData);
+            if (hoverCreateRipple)
+                OnPointerCreateRipple(eventData);
         }
 
         private void OnPointerEnter(PointerEventData eventData)
@@ -260,19 +261,18 @@ namespace Convention.WindowsUI
             if (animationSolution == AnimationSolution.SCRIPT)
                 StartCoroutine(nameof(FadeIn));
 
-            if (hoverCreateRipple)
+            if (exitCreateRipple)
                 OnPointerCreateRipple(eventData);
         }
 
         private void OnPointerExit(PointerEventData eventData)
         {
-            if (exitCreateRipple)
-                OnPointerCreateRipple(eventData);
-
             isPointerNotExit = false;
 
             if (animationSolution == AnimationSolution.SCRIPT)
                 StartCoroutine(nameof(FadeOut));
+
+            OnPointerCreateRipple(eventData);
         }
 
         IEnumerator FadeIn()

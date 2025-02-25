@@ -28,7 +28,8 @@ namespace Convention.SO
                     (item.IsInterface == false && item.GetInterface(nameof(IWindowUIModule)) != null)
                     )
                 {
-                    names.Add(item.Name);
+                    if (!item.Namespace.EndsWith("Variant"))
+                        names.Add(item.Name);
                 }
             }
             names.Add(nameof(WindowManager));
@@ -61,15 +62,15 @@ namespace Convention.SO
             }
             else return null;
         }
-        [return: When("Datas's keys contains [In]name"), ReturnNotInstantiated,ReturnMayNull]
+        [return: When("Datas's keys contains [In]name"), IsInstantiated(false), ReturnMayNull]
         public WindowsComponent GetWindowsComponent([In] string name)
         {
             var wc = GetWindowsComponents(name);
-            if(wc.Length == 0)
+            if (wc.Length == 0)
                 return null;
             return wc[0];
         }
-        [return: When("Datas's keys contains [In]name and instance is T"), ReturnNotInstantiated]
+        [return: When("Datas's keys contains [In]name and instance is T"), IsInstantiated(false)]
         public T GetWindowsComponent<T>([In] string name) where T : WindowsComponent
         {
             return GetWindowsComponents(name).FirstOrDefault(P => (P as T) != null) as T;
@@ -82,16 +83,16 @@ namespace Convention.SO
                 return (value.uobjectValue as GameObject).GetComponents<IWindowUIModule>();
             return null;
         }
-        [return: When("Datas's keys contains [In]name"), ReturnNotInstantiated,ReturnMayNull]
+        [return: When("Datas's keys contains [In]name"), IsInstantiated(false), ReturnMayNull]
         public IWindowUIModule GetWindowsUI([In] string name)
         {
-            var wm=GetWindowsUIs(name);
-            if(wm.Length == 0)
+            var wm = GetWindowsUIs(name);
+            if (wm.Length == 0)
                 return null;
             return wm[0];
         }
-        [return: When("Datas's keys contains [In]name and instance is T"), ReturnNotInstantiated]
-        public T GetWindowsUI<T>([In] string name) where T: class,IWindowUIModule
+        [return: When("Datas's keys contains [In]name and instance is T"), IsInstantiated(false)]
+        public T GetWindowsUI<T>([In] string name) where T : class, IWindowUIModule
         {
             return GetWindowsUIs(name).FirstOrDefault(P => (P as T) != null) as T;
         }

@@ -16,7 +16,7 @@ namespace Convention.WindowsUI
 
         [Content, OnlyPlayMode, Ignore] public RectTransformInfo BeforeMaximizeWindow = null;
         private bool IsMaximizeWindowMode = false;
-        [Content, OnlyNotNullMode]
+        [Content, OnlyPlayMode]
         public void MaximizeWindow()
         {
             if (IsMaximizeWindowMode)
@@ -30,7 +30,7 @@ namespace Convention.WindowsUI
             m_Plane.sizeDelta = Vector2.zero;
             IsMaximizeWindowMode = true;
         }
-        [Content, OnlyNotNullMode]
+        [Content, OnlyPlayMode]
         public void ExitMaximizeWindowMode()
         {
             if (!IsMaximizeWindowMode)
@@ -46,6 +46,12 @@ namespace Convention.WindowsUI
                 new RectTransformInfo(m_Plane).Setup(m_AnimationPlane);
             }
         }
+        [Content]
+        public void SynchronizedAnimationPlane()
+        {
+            new RectTransformInfo(m_Plane).Setup(m_AnimationPlane);
+        }
+
         private void FixedUpdate()
         {
             if (IsEnableAnimation && m_Plane && m_AnimationPlane)
@@ -56,15 +62,11 @@ namespace Convention.WindowsUI
 
         public void AddChild(RectTransform target, Rect rect, bool isAdjustSizeToContainsChilds = false)
         {
-            target.SetParent(rectTransform);
-            target.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, rect.x, rect.width);
-            target.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Top, rect.y, rect.height);
-            RectTransformInfo.AdjustSizeToContainsChilds(rectTransform);
+            RectTransformInfo.SetParentAndResize(rectTransform, target, rect, isAdjustSizeToContainsChilds);
         }
         public void AddChild(RectTransform target, bool isAdjustSizeToContainsChilds = false)
         {
-            target.SetParent(rectTransform);
-            RectTransformInfo.AdjustSizeToContainsChilds(rectTransform);
+            RectTransformInfo.SetParentAndResize(rectTransform, target, isAdjustSizeToContainsChilds);
         }
     }
 }
