@@ -394,11 +394,13 @@ namespace Convention
             GUILayout.EndHorizontal();
             GUILayout.Space(-42);
 
-            List<GUIContent> toolbarTabs = new()
-            {
-                new GUIContent("Origin")
-            };
-            if (ContentFields.Count() != 0)
+            bool ContentNotEmpty = ContentFields.Count() != 0;
+            bool ResourcesNotEmpty = ResourcesFields.Count() != 0;
+            bool SettingNotEmpty = SettingFields.Count() != 0;
+            List<GUIContent> toolbarTabs = new();
+            if ((ContentNotEmpty ? 1 : 0) + (ResourcesNotEmpty ? 1 : 0) + (SettingNotEmpty ? 1 : 0) != 1)
+                toolbarTabs.Add(new GUIContent("Origin"));
+            if (ContentNotEmpty)
                 toolbarTabs.Add(new GUIContent("Content"));
             if (ResourcesFields.Count() != 0)
                 toolbarTabs.Add(new GUIContent("Resources"));
@@ -415,7 +417,8 @@ namespace Convention
             GUILayout.BeginHorizontal();
             GUILayout.Space(17);
 
-            GUILayout.Button(new GUIContent("Origin", "Origin"), customSkin.FindStyle("Tab Data"));
+            if ((ContentNotEmpty ? 1 : 0) + (ResourcesNotEmpty ? 1 : 0) + (SettingNotEmpty ? 1 : 0) != 1)
+                GUILayout.Button(new GUIContent("Origin", "Origin"), customSkin.FindStyle("Tab Data"));
             if (ContentFields.Count() != 0)
                 GUILayout.Button(new GUIContent("Content", "Content"), customSkin.FindStyle("Tab Content"));
             if (ResourcesFields.Count() != 0)

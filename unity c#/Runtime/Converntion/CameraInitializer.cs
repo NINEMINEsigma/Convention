@@ -8,14 +8,28 @@ namespace Convention
     {
         [Setting, SerializeField] private List<SO.CameraInitializerConfig> Configs = new();
 
-        void Awake()
+        public void InitializeImmediate()
         {
             var camera = GetComponent<Camera>();
             foreach (var config in Configs)
             {
                 config.Invoke(camera);
             }
-            Destroy(this);
+            DestroyImmediate(this);
+        }
+
+        private void Awake()
+        {
+            InitializeImmediate();
+        }
+
+        public static void InitializeImmediate(GameObject target)
+        {
+            if (target.GetComponents<CameraInitializer>().Length != 0)
+            {
+                foreach(var initer in target.GetComponents<CameraInitializer>())
+                    initer.InitializeImmediate();
+            }
         }
     }
 

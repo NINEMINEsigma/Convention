@@ -233,6 +233,12 @@ namespace Convention.WindowsUI
                 plane = null;
                 root = null;
             }
+            public virtual void Select()
+            {
+                if (PageIndex < 0)
+                    return;
+                WindowBar.m_WindowManager.SelectContextPlane(PageIndex);
+            }
         }
         [return: ReturnNotNull, ReturnVirtual]
         public virtual RegisteredPageWrapper RegisterPage([In] RectTransform plane, [In] RectTransform root)
@@ -243,6 +249,16 @@ namespace Convention.WindowsUI
         public virtual RegisteredPageWrapper RegisterPage([In] RectTransform plane)
         {
             return new RegisteredPageWrapper(plane, this, InstantiateButton());
+        }
+
+        public virtual IEnumerable<IButton> GetAllButton()
+        {
+            List<IButton> result = new();
+            foreach(IButton button in BarPlane.transform)
+            {
+                result.Add(button);
+            }
+            return result;
         }
     }
 }

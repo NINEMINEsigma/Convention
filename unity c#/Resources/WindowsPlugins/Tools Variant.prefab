@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1001 &383451248258765988
+--- !u!1001 &6235435908738041496
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -32,9 +32,25 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2372686227554923149, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
+      propertyPath: m_Name
+      value: ModernUIButton<Tools>
+      objectReference: {fileID: 0}
+    - target: {fileID: 2372686228853117434, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
+      propertyPath: m_text
+      value: Tools
+      objectReference: {fileID: 0}
+    - target: {fileID: 2372686229198948587, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
+      propertyPath: m_text
+      value: Tools
+      objectReference: {fileID: 0}
     - target: {fileID: 2814737429463080094, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_Name
-      value: Hierarchy Variant
+      value: Tools Variant
+      objectReference: {fileID: 0}
+    - target: {fileID: 3921936172959517438, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
+      propertyPath: m_title
+      value: Tools
       objectReference: {fileID: 0}
     - target: {fileID: 5570125861570523906, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_AnchorMax.x
@@ -50,7 +66,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6908849769199176212, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_Pivot.y
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6908849769199176212, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_AnchorMax.x
@@ -58,7 +74,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6908849769199176212, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6908849769199176212, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_AnchorMin.x
@@ -74,7 +90,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6908849769199176212, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_SizeDelta.y
-      value: -200
+      value: 200
       objectReference: {fileID: 0}
     - target: {fileID: 6908849769199176212, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_LocalPosition.x
@@ -110,7 +126,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6908849769199176212, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 100
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6908849769199176212, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -170,7 +186,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8781068999274584588, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.000012397766
+      value: -0.0000027418137
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

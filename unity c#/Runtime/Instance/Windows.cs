@@ -28,8 +28,7 @@ namespace Convention.SO
                     (item.IsInterface == false && item.GetInterface(nameof(IWindowUIModule)) != null)
                     )
                 {
-                    if (!item.Namespace.EndsWith("Variant"))
-                        names.Add(item.Name);
+                    names.Add(item.Name);
                 }
             }
             names.Add(nameof(WindowManager));
@@ -47,8 +46,16 @@ namespace Convention.SO
         {
             foreach (string name in default_exist_names)
             {
-                var resources = Resources.Load(name);
-                this.Datas[name] = new(resources);
+                var resourcesArray = Resources.LoadAll(name);
+                foreach (var item in resourcesArray)
+                {
+                    if (item is not GameObject)
+                        continue;
+                    if((item as GameObject).GetComponents<IAnyClass>().Length == 0)
+                        continue;
+                    this.Datas[name] = new(item);
+                    break;
+                }
             }
         }
 

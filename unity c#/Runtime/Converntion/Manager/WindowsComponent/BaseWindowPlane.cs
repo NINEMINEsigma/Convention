@@ -14,6 +14,8 @@ namespace Convention.WindowsUI
         [Setting, OnlyNotNullMode(nameof(m_AnimationPlane)), Percentage(0, 1), Range(0, 1), WhenAttribute.Is(nameof(IsEnableAnimation), true)]
         public float AnimationSpeed = 0.5f;
 
+        public RectTransform Plane => m_Plane;
+
         [Content, OnlyPlayMode, Ignore] public RectTransformInfo BeforeMaximizeWindow = null;
         private bool IsMaximizeWindowMode = false;
         [Content, OnlyPlayMode]
@@ -60,13 +62,13 @@ namespace Convention.WindowsUI
             }
         }
 
-        public void AddChild(RectTransform target, Rect rect, bool isAdjustSizeToContainsChilds = false)
+        public virtual void AddChild(RectTransform target, Rect rect, bool isAdjustSizeToContainsChilds = false)
         {
-            RectTransformInfo.SetParentAndResize(rectTransform, target, rect, isAdjustSizeToContainsChilds);
+            RectTransformInfo.SetParentAndResizeWithoutNotifyBaseWindowPlane(m_Plane, target, rect, isAdjustSizeToContainsChilds);
         }
-        public void AddChild(RectTransform target, bool isAdjustSizeToContainsChilds = false)
+        public virtual void AddChild(RectTransform target, bool isAdjustSizeToContainsChilds = false)
         {
-            RectTransformInfo.SetParentAndResize(rectTransform, target, isAdjustSizeToContainsChilds);
+            RectTransformInfo.SetParentAndResizeWithoutNotifyBaseWindowPlane(m_Plane, target, isAdjustSizeToContainsChilds);
         }
     }
 }
