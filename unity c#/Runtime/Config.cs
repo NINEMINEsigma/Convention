@@ -126,7 +126,7 @@ namespace Convention
                 return self.gameObject.GetComponents<T>()[0];
             }
         }
-        public static T SeekComponent<T>(this MonoAnyBehaviour self) where T:class
+        public static T SeekComponent<T>(this MonoAnyBehaviour self) where T : class
         {
             var results = self.gameObject.GetComponents<T>();
             if (results.Length == 0)
@@ -161,8 +161,8 @@ namespace Convention
     [System.AttributeUsage(AttributeTargets.ReturnValue, Inherited = true, AllowMultiple = false)]
     public class ReturnNotSelfAttribute : Attribute { }
 #if UNITY_2017_1_OR_NEWER
-    [System.AttributeUsage(AttributeTargets.Parameter|AttributeTargets.ReturnValue|
-        AttributeTargets.Field|AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
+    [System.AttributeUsage(AttributeTargets.Parameter | AttributeTargets.ReturnValue |
+        AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
     public class IsInstantiatedAttribute : Attribute
     {
         public bool isInstantiated;
@@ -450,6 +450,15 @@ namespace Convention
             UsedFor = usedFor;
         }
     }
+    [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
+    public class TODOAttribute : Attribute
+    {
+        public bool Check(object any)
+        {
+            throw new InvalidOperationException("TODO");
+            throw new NotImplementedException();
+        }
+    }
 
 
     public static partial class ConventionUtility
@@ -519,4 +528,31 @@ namespace Convention
         }
     }
 #endif
+
+    public class PerformanceIndicator : Indicator
+    {
+        [Flags, Serializable]
+        public enum PerformanceMode
+        {
+            Speed = 0,
+            Quality = 0b11111111,
+            L1 = 1 << 0,
+            L2 = 1 << 1,
+            L3 = 1 << 2,
+            L4 = 1 << 3,
+            L5 = 1 << 4,
+            L6 = 1 << 5,
+            L7 = 1 << 6,
+            L8 = 1 << 7,
+        }
+        private static PerformanceMode m_mode = PerformanceMode.Quality;
+        public static PerformanceMode mode
+        {
+            get => m_mode;
+            set
+            {
+                PerformanceIndicator.value = value == PerformanceMode.Quality;
+            }
+        }
+    }
 }

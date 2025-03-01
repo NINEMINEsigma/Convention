@@ -15,9 +15,27 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "ExitFullWindow",
+                    "type": "Button",
+                    "id": "232e2893-c8ea-4bad-bec4-adbfa058ba13",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "MaximizeWindow",
                     "type": "Button",
                     "id": "5a8d46e2-d677-458a-9ff0-f6c3f3617562",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "FullWindow",
+                    "type": "Button",
+                    "id": "f5fc4030-90d0-4d71-baba-a1d93b407b76",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -116,6 +134,50 @@
                 },
                 {
                     "name": "Two Modifiers",
+                    "id": "f38d953b-8252-483b-9106-1592badced5a",
+                    "path": "TwoModifiers",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ExitFullWindow",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier1",
+                    "id": "7c6cb8de-b493-44c3-a305-3b635d4f3a91",
+                    "path": "<Keyboard>/ctrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ExitFullWindow",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "modifier2",
+                    "id": "09c23388-b6d5-47b0-89d8-b1e7f7e0cfc6",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ExitFullWindow",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "d897eb15-e97d-4862-b104-4c48607dad11",
+                    "path": "<Keyboard>/leftBracket",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ExitFullWindow",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Two Modifiers",
                     "id": "9fe60df4-ebaf-4b6d-a5f4-62f81dbc8db2",
                     "path": "TwoModifiers",
                     "interactions": "",
@@ -155,6 +217,50 @@
                     "processors": "",
                     "groups": "",
                     "action": "MaximizeWindow",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Two Modifiers",
+                    "id": "2f0bcd27-73df-4dbd-83b6-7d1e7bb9732d",
+                    "path": "TwoModifiers",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "FullWindow",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier1",
+                    "id": "e7e80d02-903a-445a-bdda-537d68a59502",
+                    "path": "<Keyboard>/ctrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "FullWindow",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "modifier2",
+                    "id": "f0b96b26-4eea-427e-aa2e-61a034821645",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "FullWindow",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "92edcaf0-38f3-40ad-b4a4-febd3aacac23",
+                    "path": "<Keyboard>/rightBracket",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "FullWindow",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },

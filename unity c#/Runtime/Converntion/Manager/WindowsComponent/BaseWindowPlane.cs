@@ -64,11 +64,23 @@ namespace Convention.WindowsUI
 
         public virtual void AddChild(RectTransform target, Rect rect, bool isAdjustSizeToContainsChilds = false)
         {
-            RectTransformInfo.SetParentAndResizeWithoutNotifyBaseWindowPlane(m_Plane, target, rect, isAdjustSizeToContainsChilds);
+            RectTransformExtension.SetParentAndResizeWithoutNotifyBaseWindowPlane(m_Plane, target, rect, isAdjustSizeToContainsChilds);
         }
         public virtual void AddChild(RectTransform target, bool isAdjustSizeToContainsChilds = false)
         {
-            RectTransformInfo.SetParentAndResizeWithoutNotifyBaseWindowPlane(m_Plane, target, isAdjustSizeToContainsChilds);
+            RectTransformExtension.SetParentAndResizeWithoutNotifyBaseWindowPlane(m_Plane, target, isAdjustSizeToContainsChilds);
+        }
+
+        [Content]
+
+        public void ForceRebuildLayoutImmediate()
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+        }
+        [Content]
+        public void AdjustSizeToContainsChilds()
+        {
+            RectTransformExtension.AdjustSizeToContainsChilds(rectTransform);
         }
     }
 }
