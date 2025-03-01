@@ -571,7 +571,7 @@ MonoBehaviour:
   m_WindowManager: {fileID: 1053894969927359569}
   m_TargetWindowContent: 0
   m_Entrys: []
-  PropertyListItemPrefab: {fileID: 2447206846939804910}
+  ItemPrefab: {fileID: 2447206846939804910}
   m_PerformanceMode: -1
 --- !u!224 &8975345697986449064 stripped
 RectTransform:

@@ -58,7 +58,7 @@ namespace Convention.WindowsUI
         {
             if (IsEnableAnimation && m_Plane && m_AnimationPlane)
             {
-                RectTransformInfo.UpdateAnimationPlane(m_Plane, m_AnimationPlane, AnimationSpeed, IsMaximizeWindowMode ? 1 : -1);
+                RectTransformInfo.UpdateAnimationPlane(m_Plane, m_AnimationPlane, AnimationSpeed, IsMaximizeWindowMode ? 1 : -1, false);
             }
         }
 

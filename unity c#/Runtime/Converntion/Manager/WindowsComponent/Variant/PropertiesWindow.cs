@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Numerics;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -257,6 +255,8 @@ namespace Convention.WindowsUI.Variant
             [Content] public readonly int layer;
             public readonly PropertiesWindow rootWindow;
 
+            public List<ItemEntry> GetChilds() => new(childs);
+
             public ItemEntry(PropertiesWindow parent) : base(null)
             {
                 childs = new();
@@ -284,8 +284,8 @@ namespace Convention.WindowsUI.Variant
                 }
                 if (parentWindow)
                 {
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(parentWindow.m_WindowManager[parentWindow.m_TargetWindowContent]);
-                    RectTransformExtension.AdjustSizeToContainsChilds(parentWindow.m_WindowManager[parentWindow.m_TargetWindowContent]);
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(parentWindow.TargetWindowContent);
+                    RectTransformExtension.AdjustSizeToContainsChilds(parentWindow.TargetWindowContent);
                 }
                 else
                 {
@@ -361,12 +361,18 @@ namespace Convention.WindowsUI.Variant
                 Release();
             }
         }
+        public interface IItemEntry
+        {
+            ItemEntry Entry { get; set; }
+        }
         [Resources, SerializeField, HopeNotNull] private SO.Windows m_WindowsConfig;
         [Resources, SerializeField, HopeNotNull] private WindowManager m_WindowManager;
         [Setting, SerializeField, OnlyNotNullMode(nameof(m_WindowManager))] private int m_TargetWindowContent = 0;
         [Content, SerializeField, OnlyPlayMode] private List<ItemEntry> m_Entrys = new();
-        [Resources, SerializeField, HopeNotNull] public PropertyListItem PropertyListItemPrefab;
+        [Resources, SerializeField, HopeNotNull] public WindowUIModule ItemPrefab;
         [Setting, Tooltip("RUNTIME MODE")] public PerformanceIndicator.PerformanceMode m_PerformanceMode = PerformanceIndicator.PerformanceMode.Quality;
+
+        public RectTransform TargetWindowContent => m_WindowManager[m_TargetWindowContent];
 
         private void Start()
         {
@@ -390,7 +396,7 @@ namespace Convention.WindowsUI.Variant
         private void FixedUpdate()
         {
             if ((m_PerformanceMode & PerformanceIndicator.PerformanceMode.L8) != 0)
-                RectTransformExtension.AdjustSizeToContainsChilds(m_WindowManager[m_TargetWindowContent]);
+                RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
         }
 
         public List<ItemEntry> CreateRootItemEntrysFromString(params string[] prefabs)
@@ -400,40 +406,47 @@ namespace Convention.WindowsUI.Variant
             {
                 var current = ItemEntry.MakeItemWithInstantiate(prefab, this);
                 result.Add(current);
+                if (current.ref_value.GetComponents<IItemEntry>().Length != 0)
+                {
+                    current.ref_value.GetComponents<IItemEntry>()[0].Entry = current;
+                }
                 current.ref_value.gameObject.SetActive(true);
             }
-            RectTransformExtension.AdjustSizeToContainsChilds(m_WindowManager[m_TargetWindowContent]);
+            RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
             return result;
         }
 
-        public List<ItemEntry> CreateRootPropertyItemEntrys(int count)
+        public List<ItemEntry> CreateRootItemEntrys(int count)
         {
             List<ItemEntry> result = new();
             while (count-- > 0)
             {
-                var current = ItemEntry.MakeItemWithInstantiate(PropertyListItemPrefab, this);
+                var current = ItemEntry.MakeItemWithInstantiate(ItemPrefab, this);
                 result.Add(current);
-                current.ref_value.GetComponent<PropertyListItem>().Entry = current;
+                if (current.ref_value.GetComponents<IItemEntry>().Length != 0)
+                {
+                    current.ref_value.GetComponents<IItemEntry>()[0].Entry = current;
+                }
                 current.ref_value.gameObject.SetActive(true);
             }
-            RectTransformExtension.AdjustSizeToContainsChilds(m_WindowManager[m_TargetWindowContent]);
+            RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
             return result;
         }
     }
 
-    public class PropertyListItem : WindowUIModule, ITitle, IText
+    public class PropertyListItem : WindowUIModule, ITitle, IText, IItemEntry
     {
-        [Resources, SerializeField, OnlyNotNullMode] private UnityEngine.UI.Button m_rawButton;
+        [Resources, SerializeField, OnlyNotNullMode] private Button m_rawButton;
         [Resources, SerializeField, OnlyNotNullMode(nameof(m_rawButton))] private float layerTab = 7.5f;
         [Resources, SerializeField, OnlyNotNullMode(nameof(m_rawButton))] private float layerHeight = 15f;
         [Resources, SerializeField, OnlyNotNullMode] private RectTransform dropdownImage;
         [Resources, SerializeField, OnlyNotNullMode] private Text m_buttonText;
         [Resources, SerializeField, OnlyNotNullMode, Header("Self Layer")] private RectTransform m_Layer;
 
-        [Content, SerializeField] private PropertiesWindow.ItemEntry m_entry;
+        [Content, SerializeField] private ItemEntry m_entry;
         [Content, Ignore, SerializeField] private bool m_folderStats = true;
 
-        public PropertiesWindow.ItemEntry Entry
+        public ItemEntry Entry
         {
             get => m_entry;
             set
@@ -510,7 +523,7 @@ namespace Convention.WindowsUI.Variant
             List<ItemEntry> result = new();
             while (count-- > 0)
             {
-                var item = ItemEntry.MakeItemWithInstantiate(propertyWindow.PropertyListItemPrefab, this.Entry);
+                var item = ItemEntry.MakeItemWithInstantiate(propertyWindow.ItemPrefab, this.Entry);
                 (item.ref_value as PropertyListItem).Entry = item;
                 result.Add(item);
             }

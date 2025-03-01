@@ -1,21 +1,90 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
-namespace Convention
+namespace Convention.WindowsUI.Variant
 {
-    public class AssetsWindow : MonoBehaviour
+    public class AssetsWindow : PropertiesWindow
     {
-        // Start is called before the first frame update
-        void Start()
+        [Content, OnlyPlayMode, SerializeField, Header("Assets Stack")] private Stack<List<ItemEntry>> m_EntriesStack = new();
+        [Resources, OnlyNotNullMode, SerializeField, Tooltip("Back Button")] private Button m_BackButton;
+        [Resources, OnlyNotNullMode, SerializeField, Tooltip("Path Text")] private Text m_PathTitle;
+        [Content, OnlyPlayMode, SerializeField] public List<string> pathContainer = new();
+
+#if UNITY_EDITOR
+        public List<List<ItemEntry>> rendererEntries = new();
+        private void Update()
         {
-        
+            rendererEntries = m_EntriesStack.ToList();
+        }
+#endif
+
+        public void UpdatePathText()
+        {
+            m_PathTitle.text = string.Join('/', pathContainer.ToArray());
         }
 
-        // Update is called once per frame
-        void Update()
+        protected virtual void Start()
         {
-        
+            m_BackButton.onClick.AddListener(() => Pop(true));
+            UpdatePathText();
+        }
+
+        protected virtual void Reset()
+        {
+            this.m_PerformanceMode = PerformanceIndicator.PerformanceMode.L1;
+        }
+
+        public void Push([In] string label, [In] List<ItemEntry> entries, bool isRefreshTop)
+        {
+            var top = Peek();
+            if (top != null)
+                foreach (var entry in top)
+                {
+                    entry.Disable(false);
+                }
+            m_EntriesStack.Push(entries);
+            foreach (var entry in entries)
+            {
+                entry.Enable(false);
+            }
+            if (isRefreshTop)
+                RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
+            pathContainer.Add(label);
+            UpdatePathText();
+        }
+        [return: ReturnMayNull, When("m_EntriesStack is empty")]
+        public List<ItemEntry> Peek()
+        {
+            if (m_EntriesStack.Count == 0)
+                return null;
+            return m_EntriesStack.Peek();
+        }
+        [return: ReturnMayNull, When("m_EntriesStack is empty")]
+        public List<ItemEntry> Pop(bool isRefreshTop)
+        {
+            if (m_EntriesStack.Count <= 1)
+                return null;
+            var top = m_EntriesStack.Pop();
+            if (top != null)
+                foreach (var entry in top)
+                {
+                    entry.Disable(false);
+                }
+            var entries = Peek();
+            if (entries != null)
+                foreach (var entry in entries)
+                {
+                    entry.Enable(false);
+                }
+            if (isRefreshTop)
+                RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
+            if (pathContainer.Count != 0)
+                pathContainer.RemoveAt(pathContainer.Count - 1);
+            UpdatePathText();
+            return top;
         }
     }
 }

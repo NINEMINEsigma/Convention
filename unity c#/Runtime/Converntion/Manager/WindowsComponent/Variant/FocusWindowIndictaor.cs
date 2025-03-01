@@ -8,6 +8,7 @@ namespace Convention.WindowsUI.Variant
     {
         [Setting, Range(0, 1), Percentage(0, 1)] public float Speed = 0.36f;
         [Resources, OnlyNotNullMode] public RectTransform RectBox;
+        [Resources, OnlyNotNullMode] public RectTransform RopParent;
         [Resources] public List<RectTransform> Targets = new();
         [Content] public int TargetIndex;
         [Content, OnlyPlayMode] public RectTransform Target;
@@ -24,10 +25,10 @@ namespace Convention.WindowsUI.Variant
 
         private void FixedUpdate()
         {
-            if (Target)
-                RectTransformInfo.UpdateAnimationPlane(Target, RectBox, Speed, 0);
+            if (Target != null)
+                RectTransformInfo.UpdateAnimationPlane(Target, RectBox, Speed, 0, true);
             else
-                RectTransformInfo.UpdateAnimationPlane(transform.parent as RectTransform, RectBox, Speed, 0);
+                RectTransformInfo.UpdateAnimationPlane(RopParent, RectBox, Speed, 0, true);
         }
     }
 }
