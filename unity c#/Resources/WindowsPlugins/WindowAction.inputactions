@@ -78,9 +78,45 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "ExitFocusInspector",
+                    "type": "Button",
+                    "id": "72e4bc9a-bf8d-4cf6-bcb4-635303b3dd91",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "FocusMain",
                     "type": "Button",
                     "id": "1e8842a8-dd79-4d95-87e5-1f7635d66606",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "CommandMode",
+                    "type": "Button",
+                    "id": "09e09383-f82c-482a-942b-c8eb0834e6a6",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "EscAnyMode",
+                    "type": "Button",
+                    "id": "59ef6b68-5b72-429d-b115-6351f9c596b4",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "RefreshMode",
+                    "type": "Button",
+                    "id": "6f11972a-292f-4ec8-a47a-c08a5255a3ec",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -432,11 +468,55 @@
                 {
                     "name": "binding",
                     "id": "ffd0e46f-d460-4439-9237-174f7a85582f",
-                    "path": "<Keyboard>/i",
+                    "path": "<Keyboard>/semicolon",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
                     "action": "FocusInspector",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "Two Modifiers",
+                    "id": "fa808656-d1a8-48d1-996f-f11556cf71f7",
+                    "path": "TwoModifiers",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ExitFocusInspector",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier1",
+                    "id": "dd6a0e85-c2b9-45fa-9f68-2c77fec4ce02",
+                    "path": "<Keyboard>/ctrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ExitFocusInspector",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "modifier2",
+                    "id": "2679492c-eb8d-4fab-9546-ca81678ffae0",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ExitFocusInspector",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "ca8c3d7e-9b4e-4124-bbe5-51ff004b1dd3",
+                    "path": "<Keyboard>/quote",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "ExitFocusInspector",
                     "isComposite": false,
                     "isPartOfComposite": true
                 },
@@ -481,6 +561,83 @@
                     "processors": "",
                     "groups": "",
                     "action": "FocusMain",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "One Modifier",
+                    "id": "556ce9d2-193d-4e18-b36f-a59ac6368f87",
+                    "path": "OneModifier",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CommandMode",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier",
+                    "id": "ce307127-3fce-471d-9895-f30226481c19",
+                    "path": "<Keyboard>/leftCtrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CommandMode",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "3bc817ef-5cde-4741-b026-07aa9ae70785",
+                    "path": "<Keyboard>/p",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "CommandMode",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "71874ed8-1b8b-4ae0-a442-1ca7f96a6ee2",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "EscAnyMode",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "One Modifier",
+                    "id": "1b30331b-a45a-4702-8305-60e24eb7ea1c",
+                    "path": "OneModifier",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RefreshMode",
+                    "isComposite": true,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "modifier",
+                    "id": "d300998e-920f-4153-a756-283d57d91936",
+                    "path": "<Keyboard>/ctrl",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RefreshMode",
+                    "isComposite": false,
+                    "isPartOfComposite": true
+                },
+                {
+                    "name": "binding",
+                    "id": "24654635-b386-44a5-862b-6777a5512b61",
+                    "path": "<Keyboard>/r",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "RefreshMode",
                     "isComposite": false,
                     "isPartOfComposite": true
                 }

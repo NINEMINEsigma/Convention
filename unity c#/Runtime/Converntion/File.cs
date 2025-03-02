@@ -32,10 +32,11 @@ namespace Convention
                     fileTypes = new string[] { };
             }
         }
-        public static string[] TextFileExtensions = new string[] { "txt", "ini" };
+        public static string[] TextFileExtensions = new string[] { "txt", "ini", "manifest" };
         public static string[] AudioFileExtension = new string[] { "ogg", "mp2", "mp3", "mod", "wav", "it" };
         public static string[] ImageFileExtension = new string[] { "png", "jpg", "jpeg", "bmp", "tif", "icon" };
         public static string[] AssetBundleExtension = new string[] { "AssetBundle", "AssetBundle".ToLower(), "ab" };
+        public static string[] JsonExtension = new string[] { "json" };
 
         public static AudioType GetAudioType(string path)
         {
@@ -101,15 +102,16 @@ namespace Convention
         public bool ExtensionIs(params string[] extensions)
         {
             string el = Extension.ToLower();
+            string eln = el.Length > 1 ? el[1..] : null;
             foreach (string extension in extensions)
-                if (el == extension.ToLower() || el[1..] == extension.ToLower())
+                if (el == extension || eln == extension)
                     return true;
             return false;
         }
         #endregion
         #region Exists
-        public bool IsExist => this.ref_value.Exists;
-        public bool Exists() => this.ref_value.Exists;
+        public bool IsExist => Exists();
+        public bool Exists() => File.Exists(FullPath) || Directory.Exists(FullPath);
         public static implicit operator bool(ToolFile file) => file.IsExist;
         #endregion
 
@@ -149,15 +151,15 @@ namespace Convention
         #region Load
         public object Load()
         {
-            if (this.ExtensionIs(TextFileExtensions))
+            if (IsText)
                 return this.LoadAsText();
-            else if (this.ExtensionIs("json"))
+            else if (IsJson)
                 return LoadAsJson();
-            else if (this.ExtensionIs(ImageFileExtension))
+            else if (IsImage)
                 return LoadAsImage();
-            else if (this.ExtensionIs(AudioFileExtension))
+            else if (IsAudio)
                 return LoadAsAudio();
-            else if (this.ExtensionIs(AssetBundleExtension))
+            else if (IsAssetBundle)
                 return LoadAsAssetBundle();
             else if (IsBinaryFile())
                 return LoadAsBinary();
@@ -187,7 +189,7 @@ namespace Convention
             long offset = 0;
             using (var fs = this.ref_value.OpenRead())
             {
-                fs.ReadAsync(result[(int)(offset)..(int)(offset + BlockSize)], 0, BlockSize);
+                fs.ReadAsync(result[(int)(offset)..(int)(offset + BlockSize)], 0, (int)(offset + BlockSize) - (int)(offset));
                 offset += BlockSize;
                 offset = System.Math.Min(offset, FileSize);
             }
@@ -252,6 +254,19 @@ namespace Convention
             this.data = result;
             return result;
         }
+        public IEnumerator LoadAsAssetBundle([In]Action callback)
+        {
+            AssetBundleCreateRequest result = AssetBundle.LoadFromFileAsync(FullPath);
+            result.completed += x =>
+            {
+                if (x.isDone)
+                {
+                    this.data = result.assetBundle;
+                    callback();
+                }
+            };
+            yield return result;
+        }
         public object LoadAsUnknown()
         {
             this.data = this.LoadAsBinary();
@@ -261,15 +276,15 @@ namespace Convention
         #region Save
         public void Save([In][Opt] string newpath = null)
         {
-            if (this.ExtensionIs(TextFileExtensions))
+            if (IsText)
                 SaveAsText(newpath);
-            else if (this.ExtensionIs("json"))
+            else if (IsJson)
                 SaveAsJson(newpath);
-            else if (this.ExtensionIs(ImageFileExtension))
+            else if (IsImage)
                 SaveAsImage(newpath);
-            else if (this.ExtensionIs(AudioFileExtension))
+            else if (IsAudio)
                 SaveAsAudio(newpath);
-            else if (this.ExtensionIs(AssetBundleExtension))
+            else if (IsAssetBundle)
                 SaveAsAssetBundle(newpath);
             else if (IsBinaryFile() == false)
                 SaveAsText(newpath);
@@ -384,6 +399,11 @@ namespace Convention
         {
             return IsBinaryFile(this.GetFullPath());
         }
+        public bool IsText => this.ExtensionIs(TextFileExtensions);
+        public bool IsJson => this.ExtensionIs(JsonExtension);
+        public bool IsImage => this.ExtensionIs(ImageFileExtension);
+        public bool IsAudio => this.ExtensionIs(AudioFileExtension);
+        public bool IsAssetBundle => this.ExtensionIs(AssetBundleExtension);
         #endregion
         #region Operator
         [return: ReturnNotNull, ReturnNotSelf]
@@ -483,11 +503,14 @@ namespace Convention
             return this;
         }
         [return: ReturnMayNull, When("this.IsDir()==false")]
-        public IEnumerable<FileInfo> DirIter()
+        public List<string> DirIter()
         {
             if (this.IsDir())
             {
-                return new DirectoryInfo(FullPath).EnumerateFiles();
+                var dir = new DirectoryInfo(FullPath);
+                var result = dir.GetDirectories().ToList().ConvertAll(x => x.FullName);
+                result.AddRange(dir.GetFiles().ToList().ConvertAll(x => x.FullName));
+                return result;
             }
             return null;
         }
@@ -496,7 +519,7 @@ namespace Convention
         {
             if (this.IsDir())
             {
-                return new DirectoryInfo(FullPath).EnumerateFiles().ToList().ConvertAll(x => new ToolFile(x));
+                return DirIter().ConvertAll(x => new ToolFile(x));
             }
             throw new DirectoryNotFoundException(FullPath);
         }
@@ -525,7 +548,7 @@ namespace Convention
             {
                 foreach (var file in DirIter())
                 {
-                    file.Delete();
+                    File.Delete(file);
                 }
             }
             throw new DirectoryNotFoundException();

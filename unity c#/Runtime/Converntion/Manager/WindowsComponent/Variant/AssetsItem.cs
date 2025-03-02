@@ -8,6 +8,7 @@ namespace Convention.WindowsUI.Variant
 {
     public class AssetsItem : WindowUIModule, IText, ITitle, IItemEntry
     {
+        public static int TextStringLimit = 16;
         public static AssetsItem FocusItem;
 
         public interface IAssetsItemInvoke
@@ -18,6 +19,7 @@ namespace Convention.WindowsUI.Variant
 
         [Resources, SerializeField, OnlyNotNullMode] private Button m_RawButton;
         [Resources, SerializeField, OnlyNotNullMode] private Text m_Text;
+        [Content, SerializeField] private string m_TextString;
         [Content, SerializeField] private List<ItemEntry> m_ChildEntries = new();
         [Content, SerializeField] private ItemEntry m_entry;
         [Setting] public bool HasChildLayer = true;
@@ -40,8 +42,55 @@ namespace Convention.WindowsUI.Variant
             set => m_RawButton.GetComponent<Image>().sprite = value;
         }
 
-        public string title { get => this.m_Text.title; set => this.m_Text.title = value; }
-        public string text { get => this.m_Text.text; set => this.m_Text.text = value; }
+        public List<ItemEntry> AddChilds(int count)
+        {
+            var entries = Entry.rootWindow.CreateRootItemEntrys(false, count);
+            m_ChildEntries.AddRange(entries);
+            return entries;
+        }
+        public ItemEntry AddChild()
+        {
+            var entry = Entry.rootWindow.CreateRootItemEntrys(false, 1)[0];
+            m_ChildEntries.Add(entry);
+            return entry;
+        }
+        public void RemoveChild([In] ItemEntry entry)
+        {
+            if (m_ChildEntries.Remove(entry))
+                entry.Disable(true);
+        }
+        public void RemoveAllChilds()
+        {
+            foreach (var entry in m_ChildEntries)
+            {
+                entry.Disable(true);
+            }
+            m_ChildEntries.Clear();
+        }
+        public int ChildCount()
+        {
+            return m_ChildEntries.Count;
+        }
+        public ItemEntry GetChild(int index)
+        {
+            return m_ChildEntries[index];
+        }
+
+        public string title
+        {
+            get => m_TextString; set
+            {
+                m_TextString = value;
+                if (value.Length > TextStringLimit)
+                    this.m_Text.title = value[..(TextStringLimit - 3)] + "...";
+                else
+                    this.m_Text.title = value;
+            }
+        }
+        public string text
+        {
+            get => title; set => title = value;
+        }
 
         private void Start()
         {
@@ -57,7 +106,10 @@ namespace Convention.WindowsUI.Variant
             {
                 FocusItem = this;
                 FocusWindowIndictaor.instance.SetTargetRectTransform(this.transform as RectTransform);
-                this.BroadcastMessage(nameof(IAssetsItemInvoke.OnAssetsItemFocus), this, SendMessageOptions.DontRequireReceiver);
+                foreach (var component in this.GetComponents<IAssetsItemInvoke>())
+                {
+                    component.OnAssetsItemFocus(this);
+                }
             }
             else
             {
@@ -65,7 +117,10 @@ namespace Convention.WindowsUI.Variant
                 FocusWindowIndictaor.instance.SetTargetRectTransform(null);
                 if (HasChildLayer)
                     (Entry.rootWindow as AssetsWindow).Push(title, m_ChildEntries, true);
-                this.BroadcastMessage(nameof(IAssetsItemInvoke.OnAssetsItemInvoke), this, SendMessageOptions.DontRequireReceiver);
+                foreach (var component in this.GetComponents<IAssetsItemInvoke>())
+                {
+                    component.OnAssetsItemInvoke(this);
+                }
             }
         }
     }

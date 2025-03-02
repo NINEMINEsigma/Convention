@@ -39,6 +39,6 @@ namespace Convention
         }
     }
 #else
-    public class ExampleHelpWindow : MonoAnyBehaviour {}
+    public class ExampleHelpWindow : MonoBehaviour {}
 #endif
 }

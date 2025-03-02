@@ -399,7 +399,7 @@ namespace Convention.WindowsUI.Variant
                 RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
         }
 
-        public List<ItemEntry> CreateRootItemEntrysFromString(params string[] prefabs)
+        public List<ItemEntry> CreateRootItemEntrysFromString(bool isActive, params string[] prefabs)
         {
             List<ItemEntry> result = new();
             foreach (string prefab in prefabs)
@@ -410,13 +410,19 @@ namespace Convention.WindowsUI.Variant
                 {
                     current.ref_value.GetComponents<IItemEntry>()[0].Entry = current;
                 }
-                current.ref_value.gameObject.SetActive(true);
+                current.ref_value.gameObject.SetActive(isActive);
             }
-            RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
+            if (isActive)
+                RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
             return result;
         }
 
-        public List<ItemEntry> CreateRootItemEntrys(int count)
+        public List<ItemEntry> CreateRootItemEntrysFromString(params string[] prefabs)
+        {
+            return CreateRootItemEntrysFromString(true, prefabs);
+        }
+
+        public List<ItemEntry> CreateRootItemEntrys(bool isActive, int count)
         {
             List<ItemEntry> result = new();
             while (count-- > 0)
@@ -427,10 +433,16 @@ namespace Convention.WindowsUI.Variant
                 {
                     current.ref_value.GetComponents<IItemEntry>()[0].Entry = current;
                 }
-                current.ref_value.gameObject.SetActive(true);
+                current.ref_value.gameObject.SetActive(isActive);
             }
-            RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
+            if (isActive)
+                RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
             return result;
+        }
+
+        public List<ItemEntry> CreateRootItemEntrys(int count)
+        {
+            return CreateRootItemEntrys(true, count);
         }
     }
 
@@ -507,12 +519,12 @@ namespace Convention.WindowsUI.Variant
             IsFold = !IsFold;
         }
 
-        private void FoldChilds()
+        protected virtual void FoldChilds()
         {
             dropdownImage.eulerAngles = new(0, 0, 90);
             m_entry.DisableChilds(true);
         }
-        private void UnfoldChilds()
+        protected virtual void UnfoldChilds()
         {
             m_entry.EnableChilds(true);
             dropdownImage.eulerAngles = new(0, 0, 0);
@@ -532,6 +544,12 @@ namespace Convention.WindowsUI.Variant
         public List<ItemEntry> CreateSubPropertyItem(int count)
         {
             return CreateSubPropertyItem(Entry.rootWindow, count);
+        }
+
+        [Content]
+        public void AdjustSizeToContainsChilds()
+        {
+            RectTransformExtension.AdjustSizeToContainsChilds(transform as RectTransform);
         }
     }
 }

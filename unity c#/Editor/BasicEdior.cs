@@ -27,11 +27,15 @@ namespace Convention
             Type _CurType = target.GetType();
             List<FieldInfo> fields = new();
             List<MethodInfo> methods = new();
+            fields.AddRange(_CurType.GetFields(BindingFlags.Public |
+                BindingFlags.Instance | BindingFlags.Static));
+            methods.AddRange(_CurType.GetMethods(BindingFlags.Public |
+                BindingFlags.Instance | BindingFlags.Static));
             while (_CurType != null && _CurType != typeof(UnityEngine.MonoBehaviour) && _CurType != typeof(object))
             {
-                fields.AddRange(_CurType.GetFields(BindingFlags.Public | BindingFlags.NonPublic |
+                fields.AddRange(_CurType.GetFields(BindingFlags.NonPublic |
                     BindingFlags.Instance | BindingFlags.Static));
-                methods.AddRange(_CurType.GetMethods(BindingFlags.Public | BindingFlags.NonPublic |
+                methods.AddRange(_CurType.GetMethods(BindingFlags.NonPublic |
                     BindingFlags.Instance | BindingFlags.Static));
                 _CurType = _CurType.BaseType;
             }
@@ -152,7 +156,7 @@ namespace Convention
                         return;
                 }
             }
-            if (HasOnlyNotNullMode|| HasHopeNotNullMode)
+            if (HasOnlyNotNullMode || HasHopeNotNullMode)
                 DisplayOnlyNotNull(field, isCheckIgnore);
             else if (isCheckIgnore && (HasIgnore || (field.IsPublic == false && !HasSerializeField)))
                 IgnoreField(field);

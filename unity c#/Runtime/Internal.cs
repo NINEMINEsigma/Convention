@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using Convention.Internal;
 using UnityEngine;
 
@@ -149,7 +150,21 @@ namespace Convention
     }
 #endif
 
-    public abstract class Singleton<T> : AnyClass where T : Singleton<T>
+    public interface ISingleton<T> : IAnyClass where T : ISingleton<T> { }
+
+    public static partial class ConventionUtility
+    {
+        public static T GetSingleton<T>() where T : ISingleton<T>
+        {
+            return (T)typeof(T).GetProperty("instance", BindingFlags.Instance | BindingFlags.Public).GetValue(null);
+        }
+        public static void SetSingleton<T>(T value) where T : ISingleton<T>
+        {
+            typeof(T).GetProperty("instance", BindingFlags.Instance | BindingFlags.Public).SetValue(null, value);
+        }
+    }
+
+    public abstract class Singleton<T> : AnyClass, ISingleton<T> where T : Singleton<T>
     {
         [Setting, Ignore] private static T m_instance;
         public static T instance { get=> m_instance; protected set=> m_instance = value; }
@@ -170,7 +185,7 @@ namespace Convention
         }
     }
 #if UNITY_2017_1_OR_NEWER
-    public abstract class MonoSingleton<T> : MonoAnyBehaviour where T : MonoSingleton<T>
+    public abstract class MonoSingleton<T> : MonoAnyBehaviour, ISingleton<T> where T : MonoSingleton<T>
     {
 
         [Setting, Ignore] private static T m_instance;

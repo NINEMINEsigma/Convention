@@ -114,6 +114,55 @@ namespace Convention
             }
             return null;
         }
+        public static object SeekValue([In] object obj, [In] string name, [In] Type valueType, BindingFlags flags, [Out][Opt] out bool isSucceed)
+        {
+            Type type = obj.GetType();
+            var field = type.GetField(name, flags);
+            isSucceed = true;
+            if (field != null && field.FieldType == valueType)
+            {
+                return field.GetValue(obj);
+            }
+            var property = type.GetProperty(name, flags);
+            if (property != null && property.PropertyType == valueType)
+            {
+                return property.GetValue(obj);
+            }
+            isSucceed = false;
+            return null;
+        }
+        public static object SeekValue([In] object obj, [In] string name, [In] Type valueType, BindingFlags flags)
+        {
+            Type type = obj.GetType();
+            var field = type.GetField(name, flags);
+            if (field != null && field.FieldType == valueType)
+            {
+                return field.GetValue(obj);
+            }
+            var property = type.GetProperty(name, flags);
+            if (property != null && property.PropertyType == valueType)
+            {
+                return property.GetValue(obj);
+            }
+            return null;
+        }
+        public static bool PushValue([In] object obj, [In] object value, [In] string name, BindingFlags flags)
+        {
+            Type type = obj.GetType();
+            var field = type.GetField(name, flags);
+            if (field != null)
+            {
+                field.SetValue(obj, value);
+                return true;
+            }
+            var property = type.GetProperty(name, flags);
+            if (property != null)
+            {
+                property.SetValue(obj, value);
+                return true;
+            }
+            return false;
+        }
 
         public static T GetOrAddComponent<T>(this MonoAnyBehaviour self) where T : Component
         {
@@ -463,6 +512,7 @@ namespace Convention
 
     public static partial class ConventionUtility
     {
+#if UNITY_EDITOR
         [UnityEditor.MenuItem("Convention/InitExtensionEnv", priority = 100000)]
         public static void InitExtensionEnv()
         {
@@ -473,6 +523,7 @@ namespace Convention
 
             ES3Plugin.InitExtensionEnv();
         }
+#endif
 
         public static bool IsNumber(object data)
         {

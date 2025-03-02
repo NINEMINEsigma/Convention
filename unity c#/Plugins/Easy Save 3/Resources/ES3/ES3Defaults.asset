@@ -37,6 +37,7 @@ MonoBehaviour:
     - Convention.Plugin
     - Convention.Runtime
     - Convention.Windows
+    - CustomBuilder
     - CW.Common
     - EasySave3
     - LeanCommon

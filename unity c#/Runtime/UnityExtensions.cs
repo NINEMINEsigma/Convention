@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Convention.WindowsUI;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Convention
@@ -193,6 +194,35 @@ namespace Convention
             {
                 SetParentAndResizeWithoutNotifyBaseWindowPlane(parent, child, isAdjustSizeToContainsChilds);
             }
+        }
+    }
+
+    public static partial class SkyExtension
+    {
+        public static void Load([In][Opt,When("If you sure")]Material skybox)
+        {
+            RenderSettings.skybox = skybox;
+        }
+
+        public static void Rotation(float angle)
+        {
+            RenderSettings.skybox.SetFloat("_Rotation", angle);
+        }
+    }
+
+    public static partial class SceneExtension
+    {
+        public static void Load(string name)
+        {
+            SceneManager.LoadScene(name, LoadSceneMode.Additive);
+        }
+        public static void Load(string name, out AsyncOperation async)
+        {
+            async = SceneManager.LoadSceneAsync(name, LoadSceneMode.Additive);
+        }
+        public static void Unload(string name)
+        {
+            SceneManager.UnloadSceneAsync(name);
         }
     }
 }

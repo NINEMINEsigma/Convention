@@ -13,14 +13,6 @@ namespace Convention.WindowsUI.Variant
         [Resources, OnlyNotNullMode, SerializeField, Tooltip("Path Text")] private Text m_PathTitle;
         [Content, OnlyPlayMode, SerializeField] public List<string> pathContainer = new();
 
-#if UNITY_EDITOR
-        public List<List<ItemEntry>> rendererEntries = new();
-        private void Update()
-        {
-            rendererEntries = m_EntriesStack.ToList();
-        }
-#endif
-
         public void UpdatePathText()
         {
             m_PathTitle.text = string.Join('/', pathContainer.ToArray());
