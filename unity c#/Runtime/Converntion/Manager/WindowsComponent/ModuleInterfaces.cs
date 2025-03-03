@@ -32,8 +32,5 @@ namespace Convention.WindowsUI
 
     public interface IButton : IWindowUIModule, IActionInvoke { }
 
-    public interface IToggle : IButton
-    {
-        bool toggleValue { get; set; }
-    }
+    public interface IToggle : IWindowUIModule, IActionInvoke<bool>, IGetRefValue<bool> { }
 }

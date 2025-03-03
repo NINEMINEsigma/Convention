@@ -77,11 +77,11 @@ namespace Convention
     {
         T ref_value { get; }
     }
-    public interface IGetRefalue<T>
+    public interface IGetRefValue<T>
     {
         T ref_value { set; }
     }
-    public abstract class BasicValueReference<T> : AnyClass, ISetRefValue<T>, IGetRefalue<T>
+    public abstract class BasicValueReference<T> : AnyClass, ISetRefValue<T>, IGetRefValue<T>
     {
         [SerializeField][Content] protected T _ref_value;
 

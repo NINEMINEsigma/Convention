@@ -1,4 +1,7 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -525,10 +528,38 @@ namespace Convention
         }
 #endif
 
-        public static bool IsNumber(object data)
+        public static bool IsNumber([In]object data)
         {
             if (data == null) return false;
             var type = data.GetType();
+            return IsNumber(type);
+        }
+        public static bool IsString([In] object data)
+        {
+            if (data == null) return false;
+            var type = data.GetType();
+            return IsString(type);
+        }
+        public static bool IsBinary([In] object data)
+        {
+            if (data == null) return false;
+            var type = data.GetType();
+            return IsBinary(type);
+        }
+        public static bool IsArray([In] object data)
+        {
+            if (data == null) return false;
+            var type = data.GetType();
+            return IsArray(type);
+        }
+        public static bool IsBool([In] object data)
+        {
+            if (data == null) return false;
+            return IsBool(data.GetType());
+        }
+
+        public static bool IsNumber([In] Type type)
+        {
             return
                 type == typeof(double) ||
                 type == typeof(float) ||
@@ -541,32 +572,130 @@ namespace Convention
                 type == typeof(ulong) ||
                 type == typeof(char);
         }
-        public static bool IsString(object data)
+        public static bool IsString([In] Type type)
         {
-            if (data == null) return false;
-            var type = data.GetType();
             return type == typeof(string) || type == typeof(char[]);
         }
-        public static bool IsBinary(object data)
+        public static bool IsBinary([In] Type type)
         {
-            if (data == null) return false;
-            var type = data.GetType();
             return
                 type == typeof(byte) ||
                 type == typeof(sbyte) ||
                 type == typeof(byte[]) ||
                 type == typeof(sbyte[]);
         }
-        public static bool IsArray(object data)
+        public static bool IsArray([In] Type type)
         {
-            if (data == null) return false;
-            var type = data.GetType();
             return type.IsArray;
         }
-        public static bool IsBool(object data)
+        public static bool IsBool([In] Type type)
         {
-            if (data == null) return false;
-            return data.GetType() == typeof(bool);
+            return type == typeof(bool);
+        }
+
+        public static bool HasCustomAttribute([In] MemberInfo member, [In] IEnumerable<Type> attrs)
+        {
+            foreach (var attr in attrs)
+            {
+                if (member.GetCustomAttribute(attr, true) != null)
+                    return true;
+            }
+            return false;
+        }
+        [return:ReturnMayNull]
+        public static Type GetMemberValue([In]MemberInfo member)
+        {
+            if (member is FieldInfo field)
+            {
+                return field.FieldType;
+            }
+            else if (member is PropertyInfo property)
+            {
+                return property.PropertyType;
+            }
+            return null;
+        }
+        public static bool GetMemberValue([In] MemberInfo member, [Out] out Type type)
+        {
+            if (member is FieldInfo field)
+            {
+                type = field.FieldType;
+                return true;
+            }
+            else if (member is PropertyInfo property)
+            {
+                type = property.PropertyType;
+                return true;
+            }
+            type = null;
+            return false;
+        }
+        public static void PushValue([In] object target, [In][Opt, When("If you sure")] object value, [In] MemberInfo info)
+        {
+            if (info is FieldInfo field)
+            {
+                field.SetValue(target, value);
+            }
+            else if(info is PropertyInfo property)
+            {
+                property.SetValue(target, value);
+            }
+            else
+            {
+                throw new InvalidOperationException("info is unsupport");
+            }
+        }
+        public static object SeekValue([In]object target, [In]MemberInfo info)
+        {
+            if (info is FieldInfo field)
+            {
+                return field.GetValue(target);
+            }
+            else if( info is PropertyInfo property)
+            {
+                return property.GetValue(target);
+            }
+            else
+            {
+                throw new InvalidOperationException("info is unsupport");
+            }
+        }
+        public static bool TrySeekValue([In] object target, [In] MemberInfo info, [Out] out object value)
+        {
+            if (info is FieldInfo field)
+            {
+                value = field.GetValue(target);
+                return true;
+            }
+            else if (info is PropertyInfo property)
+            {
+                value = property.GetValue(target);
+                return true;
+            }
+            value = null;
+            return false;
+        }
+
+        public static List<MemberInfo> SeekMemberInfo(
+            [In] object target,
+            [In,Opt] IEnumerable<Type> attrs, [In,Opt] IEnumerable<Type> types,
+            [In, Opt] Type untilBase = null
+            )
+        {
+            Type _CurType = target.GetType();
+            List<MemberInfo> result = new();
+            result.AddRange(_CurType.GetMembers(BindingFlags.Public | BindingFlags.Instance));
+            while (_CurType != null && _CurType != typeof(object) && _CurType != untilBase)
+            {
+                result.AddRange(
+                    from info in _CurType.GetMembers(BindingFlags.NonPublic | BindingFlags.Instance)
+                    where attrs == null || HasCustomAttribute(info, attrs)
+                    where types == null || (GetMemberValue(info, out var type) && types.Contains(type))
+                    select info
+                    );
+                _CurType = _CurType.BaseType;
+            }
+            return result;
         }
     }
 

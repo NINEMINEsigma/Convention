@@ -97,6 +97,8 @@ namespace Convention
                         continue;
                     if (childTransform.name.ToLower().Contains("<ignore rect>"))
                         continue;
+                    if (childTransform.name.ToLower().Contains($"<ignore {nameof(AdjustSizeToContainsChilds)}>"))
+                        continue;
                     if (childTransform.GetComponents<AdjustSizeIgnore>().Length != 0)
                         continue;
                     stats = true;

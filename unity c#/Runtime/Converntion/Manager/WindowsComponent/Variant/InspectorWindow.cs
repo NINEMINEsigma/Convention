@@ -14,6 +14,14 @@ namespace Convention.WindowsUI.Variant
         [Resources,SerializeField,HopeNotNull]private PropertiesWindow m_PropertiesWindow;
         [Content, SerializeField] private List<PropertiesWindow.ItemEntry> m_currentEntries = new();
 
+        private void Reset()
+        {
+            if (m_WindowManager == null)
+                m_WindowManager = GetComponent<WindowManager>();
+            if (m_PropertiesWindow == null)
+                m_PropertiesWindow = GetComponent<PropertiesWindow>();
+        }
+
         private void Start()
         {
             if (m_WindowManager == null)
