@@ -34,6 +34,11 @@ MonoBehaviour:
         CurrentValue: ModernUIButton<Button> (UnityEngine.GameObject)
         CurrentObject: {fileID: 1700112589223663275, guid: 630e23319fe05f246a3b983540e4ebe6, type: 3}
         RealType: GameObject
+    - Key: ModernUIImage
+      Value:
+        CurrentValue: ModernUIImage (UnityEngine.GameObject)
+        CurrentObject: {fileID: 110592770475720056, guid: 9f0945200623d184abeb024ce0bd49cb, type: 3}
+        RealType: GameObject
     - Key: ModernUIInputField
       Value:
         CurrentValue: ModernUIInputField (UnityEngine.GameObject)

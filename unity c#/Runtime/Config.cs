@@ -528,7 +528,7 @@ namespace Convention
         }
 #endif
 
-        public static bool IsNumber([In]object data)
+        public static bool IsNumber([In] object data)
         {
             if (data == null) return false;
             var type = data.GetType();
@@ -602,8 +602,8 @@ namespace Convention
             }
             return false;
         }
-        [return:ReturnMayNull]
-        public static Type GetMemberValue([In]MemberInfo member)
+        [return: ReturnMayNull]
+        public static Type GetMemberValue([In] MemberInfo member)
         {
             if (member is FieldInfo field)
             {
@@ -636,7 +636,7 @@ namespace Convention
             {
                 field.SetValue(target, value);
             }
-            else if(info is PropertyInfo property)
+            else if (info is PropertyInfo property)
             {
                 property.SetValue(target, value);
             }
@@ -645,13 +645,13 @@ namespace Convention
                 throw new InvalidOperationException("info is unsupport");
             }
         }
-        public static object SeekValue([In]object target, [In]MemberInfo info)
+        public static object SeekValue([In] object target, [In] MemberInfo info)
         {
             if (info is FieldInfo field)
             {
                 return field.GetValue(target);
             }
-            else if( info is PropertyInfo property)
+            else if (info is PropertyInfo property)
             {
                 return property.GetValue(target);
             }
@@ -678,7 +678,7 @@ namespace Convention
 
         public static List<MemberInfo> SeekMemberInfo(
             [In] object target,
-            [In,Opt] IEnumerable<Type> attrs, [In,Opt] IEnumerable<Type> types,
+            [In, Opt] IEnumerable<Type> attrs, [In, Opt] IEnumerable<Type> types,
             [In, Opt] Type untilBase = null
             )
         {
@@ -696,6 +696,24 @@ namespace Convention
                 _CurType = _CurType.BaseType;
             }
             return result;
+        }
+        public static object InvokeMember([In] MemberInfo member, [In] object target, params object[] parameters)
+        {
+            if (member is MethodInfo method)
+            {
+                return method.Invoke(target, parameters);
+            }
+            return null;
+        }
+        public static bool TryInvokeMember([In] MemberInfo member, object target, out object returnValue, params object[] parameters)
+        {
+            returnValue = null;
+            if (member is MethodInfo method)
+            {
+                returnValue = method.Invoke(target, parameters);
+                return true;
+            }
+            else return false;
         }
     }
 

@@ -31,6 +31,8 @@ namespace Convention.WindowsUI
             set { Source.text = value; }
         }
 
+        public bool interactable { get => Source.interactable; set => Source.interactable = value; }
+
         public void SetPlaceholderText(string text)
         {
             placeholder.text = text;

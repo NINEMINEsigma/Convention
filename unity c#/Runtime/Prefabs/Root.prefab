@@ -1004,6 +1004,7 @@ MonoBehaviour:
   m_ButtonModule: {fileID: 0}
   targetDrawType: 0
   targetAbleChangeMode: 1
+  targetUpdateMode: 0
 --- !u!1 &7213101401662820161
 GameObject:
   m_ObjectHideFlags: 0

@@ -49,6 +49,9 @@ namespace Convention.WindowsUI
             }
         }
 
+        [Setting, SerializeField] private bool m_interactable = true;
+        public bool interactable { get => m_interactable; set => m_interactable = value; }
+
         private void Start()
         {
             ResetContext();
@@ -65,6 +68,7 @@ namespace Convention.WindowsUI
                 normalCanvasGroup = transform.Find("Normal").GetComponent<CanvasGroup>();
             if (selectedCanvasGroup == null)
                 selectedCanvasGroup = transform.Find("Selected").GetComponent<CanvasGroup>();
+            interactable = true;
         }
         void OnEnable()
         {
@@ -86,6 +90,8 @@ namespace Convention.WindowsUI
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (interactable == false)
+                return;
             ref_value = !ref_value;
             if (enableButtonSounds == true)
                 soundSource.PlayOneShot(ref_value ? m_SwitchOnSound : m_SwitchOffSound);

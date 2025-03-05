@@ -128,6 +128,12 @@ namespace Convention.WindowsUI
         [Content, Ignore] private bool isPointerNotExit;
         [Content, Ignore] private float currentNormalValue;
         [Content, Ignore] private float currenthighlightedValue;
+        [Setting, SerializeField] private bool m_interactable = true;
+        public bool interactable
+        {
+            get => m_interactable;
+            set => m_interactable = value;
+        }
 
         private void Start()
         {
@@ -244,6 +250,8 @@ namespace Convention.WindowsUI
 
         public void OnPointerDown(PointerEventData eventData)
         {
+            if (interactable == false)
+                return;
             if (enableButtonSounds == true && useClickSound == true)
                 soundSource.PlayOneShot(clickSound);
 
@@ -254,6 +262,8 @@ namespace Convention.WindowsUI
 
         private void OnPointerEnter(PointerEventData eventData)
         {
+            if (interactable == false)
+                return;
             if (enableButtonSounds == true && useHoverSound == true)
                 soundSource.PlayOneShot(hoverSound);
 
@@ -269,6 +279,8 @@ namespace Convention.WindowsUI
 
         private void OnPointerExit(PointerEventData eventData)
         {
+            if (interactable == false)
+                return;
             if (exitCreateRipple)
                 OnPointerCreateRipple(eventData);
 

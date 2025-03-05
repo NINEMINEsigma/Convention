@@ -575,6 +575,7 @@ MonoBehaviour:
   rippleShape: {fileID: 21300000, guid: 3208598191d0a704eaed65f358b79e96, type: 3}
   hoverCreateRipple: 0
   exitCreateRipple: 0
+  m_interactable: 1
   m_IsAutoRename: 1
 --- !u!222 &1700112589223663278
 CanvasRenderer:

@@ -7,6 +7,7 @@ namespace Convention.WindowsUI.Variant
     public class InspectorText : InspectorDrawer
     {
         [Resources] public ModernUIInputField TextArea;
+        [Content] public bool isEditing = false;
 
         private void OnCallback(string str)
         {
@@ -16,13 +17,28 @@ namespace Convention.WindowsUI.Variant
         private void Start()
         {
             TextArea.AddListener(OnCallback);
+            TextArea.InputFieldSource.Source.onEndEdit.AddListener(x => isEditing = false);
+            TextArea.InputFieldSource.Source.onSelect.AddListener(x => isEditing = true);
         }
 
         public override void OnInspectorItemInit(InspectorItem item)
         {
             base.OnInspectorItemInit(item);
-            TextArea.InputFieldSource.Source.interactable = item.AbleChangeType;
-            TextArea.text = (string)targetItem.GetValue();
+            TextArea.interactable = item.AbleChangeType;
+            TextArea.text = targetItem.GetValue().ToString();
+        }
+
+        private void Update()
+        {
+            if (targetItem.UpdateType && !isEditing)
+            {
+                TextArea.text = targetItem.GetValue().ToString();
+            }
+        }
+
+        private void Reset()
+        {
+            TextArea = GetComponent<ModernUIInputField>();
         }
     }
 }

@@ -58,6 +58,7 @@ namespace Convention.WindowsUI.Variant
         [Content, OnlyPlayMode] public MemberInfo targetMemberInfo;
         [Content, OnlyPlayMode, SerializeField] private InspectorDrawType targetDrawType;
         [Content, OnlyPlayMode, SerializeField] private bool targetAbleChangeMode = true;
+        [Content, OnlyPlayMode, SerializeField] private bool targetUpdateMode = false;
 
         public InspectorDrawer CurrentModule => m_AllUIModules[targetDrawType];
         public InspectorDrawType DrawType
@@ -74,6 +75,11 @@ namespace Convention.WindowsUI.Variant
         {
             get => targetAbleChangeMode;
             private set => targetAbleChangeMode = value;
+        }
+        public bool UpdateType
+        {
+            get => targetUpdateMode;
+            private set => targetUpdateMode = value;
         }
 
         public static string BroadcastName => $"On{nameof(InspectorItem)}Init";
@@ -111,6 +117,10 @@ namespace Convention.WindowsUI.Variant
         public object GetValue()
         {
             return ConventionUtility.SeekValue(target, targetMemberInfo);
+        }
+        public void InvokeMember()
+        {
+            ConventionUtility.InvokeMember(targetMemberInfo, target);
         }
 
         [Content, OnlyPlayMode]
