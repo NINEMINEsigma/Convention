@@ -103,6 +103,10 @@ namespace internal
         std::is_integral_v<_Type>;
     template<typename _Type>
     constexpr bool is_stream_v = std::is_base_of_v<std::ios_base, _Type>;
+    template<typename _Type>
+    constexpr bool is_string_v = 
+			std::is_same_v<std::decay_t<std::remove_reference_t<std::remove_cv_t<_Type>>>, std::string>||
+			std::is_same_v<std::decay_t<std::remove_reference_t<std::remove_cv_t<_Type>>>, char*>;
     namespace
     {
         template<typename _Type>

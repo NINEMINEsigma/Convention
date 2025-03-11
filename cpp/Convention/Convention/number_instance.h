@@ -7,7 +7,7 @@ template<typename _Number>
 struct number_ex_indicator
 {
 	static constexpr bool value = 
-		!internal::is_stream_v<_Number> &&
+		//!internal::is_stream_v<_Number> &&
 		internal::is_number_v<_Number>;
 	using tag = std::enable_if_t<value, _Number>;
 };
@@ -138,5 +138,106 @@ namespace internal
 		}
 	};
 }
+
+#ifdef __REF_BOOST
+
+#include <boost/math_fwd.hpp>
+#include <boost/math/quaternion.hpp>
+#include <boost/multiprecision/number.hpp>
+#include <boost/multiprecision/cpp_dec_float.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/rational.hpp>
+#include <boost/math/constants/constants.hpp>
+#include <boost/math/special_functions.hpp>
+#include <boost/numeric/interval.hpp>
+#include <boost/math/quadrature/gauss.hpp>
+
+template<typename _NumberType>
+class extended_number : public instance<number_ex_indicator<_NumberType>, true>
+{
+private:
+	using _Mybase = instance<number_ex_indicator<_NumberType>, true>;
+public:
+	using _Mybase::_Mybase;  // 继承构造函数
+
+	// 高精度数值类型
+	using high_precision_float = boost::multiprecision::cpp_dec_float_100;
+	using big_integer = boost::multiprecision::cpp_int;
+	using rational = boost::rational<_NumberType>;
+
+	// 特殊数学常量
+	static constexpr auto pi() { return boost::math::constants::pi<_NumberType>(); }
+	static constexpr auto e() { return boost::math::constants::e<_NumberType>(); }
+	static constexpr auto phi() { return boost::math::constants::phi<_NumberType>(); }
+	static constexpr auto ln_two() { return boost::math::constants::ln_two<_NumberType>(); }
+
+	// 特殊数学函数
+	_NumberType factorial() const
+	{
+		return boost::math::factorial<_NumberType>(this->get_cvalue());
+	}
+
+	_NumberType gamma() const
+	{
+		return boost::math::tgamma(this->get_cvalue());
+	}
+
+	_NumberType bessel_j(int n) const
+	{
+		return boost::math::cyl_bessel_j(n, this->get_cvalue());
+	}
+
+	_NumberType bessel_y(int n) const
+	{
+		return boost::math::cyl_neumann(n, this->get_cvalue());
+	}
+
+	// 数值区间操作
+	using interval = boost::numeric::interval<_NumberType>;
+	interval make_interval(_NumberType upper) const
+	{
+		return interval(this->get_cvalue(), upper);
+	}
+
+	// 高精度转换
+	high_precision_float to_high_precision() const
+	{
+		return high_precision_float(this->get_cvalue());
+	}
+
+	// 有理数操作
+	rational to_rational(const _NumberType& denominator) const
+	{
+		return rational(this->get_cvalue(), denominator);
+	}
+
+	// 数值积分
+	template<typename F>
+	_NumberType integrate(const _NumberType& upper, F&& f) const
+	{
+		return boost::math::quadrature::gauss<_NumberType>::integrate(
+			std::forward<F>(f),
+			this->get_cvalue(),
+			upper
+		);
+	}
+
+	// 数值微分
+	template<typename F>
+	_NumberType derivative(F&& f) const
+	{
+		const _NumberType h = std::numeric_limits<_NumberType>::epsilon();
+		const _NumberType x = this->get_cvalue();
+		return (f(x + h) - f(x - h)) / (2 * h);
+	}
+};
+
+// 常用类型别名
+using extended_double = extended_number<double>;
+using extended_float = extended_number<float>;
+using extended_int = extended_number<int>;
+using extended_long = extended_number<long>;
+
+#endif // __REF_BOOST
 
 #endif // !__FILE_CONVENTION_NUMBER_INSTANCE

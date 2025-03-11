@@ -1,5 +1,6 @@
 # Make Setting
 option(__FILE_CONVENTION_FFMPEG_INSTANCE "disable ffmpeg_instance" OFF)
+option(__IS_REF_BOOST "is import boost" ON)
 
 message("Root: --- ----- ----- ----- ----- --")
 
@@ -7,6 +8,25 @@ add_compile_definitions(__PLATFORM_NAME="${PLATFORM_NAME}")
 add_compile_definitions(__PLATFORM_VERSION="${PLATFORM_VERSION}")
 add_compile_definitions(__PLATFORM_EXTENSION="${PLATFORM_EXTENSION}")
 
+function(BoostRefer)
+    
+    # 检查是否启用Boost
+    if(__IS_REF_BOOST)
+        message("Convention: Boost support enabled")
+        add_compile_definitions(__REF_BOOST)
+        
+        # 查找Boost库
+        find_package(Boost REQUIRED)
+        if(Boost_FOUND)
+            include_directories(${Boost_INCLUDE_DIRS})
+            link_directories(${Boost_LIBRARY_DIRS})
+            message("Convention: Boost found at ${Boost_INCLUDE_DIRS}")
+        else()
+            message(FATAL_ERROR "Convention: Boost not found, but __IS_REF_BOOST is enabled")
+        endif()
+    endif()
+    
+endfunction(BoostRefer)
 
 # All Configs
 cmake_minimum_required (VERSION 3.14)

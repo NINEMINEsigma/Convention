@@ -1,3 +1,6 @@
+
+BoostRefer()
+
 add_executable(TEST main.cpp)
 include_directories(../Convention)
 target_link_libraries(TEST Convention)

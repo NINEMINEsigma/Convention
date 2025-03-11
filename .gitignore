@@ -5,3 +5,4 @@
 /python/Convention/include/__pycache__
 /python/Convention/Convention/__pycache__
 *.meta
+/cpp/.vscode
