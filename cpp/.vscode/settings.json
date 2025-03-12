@@ -1,3 +1,5 @@
 {
-    "Codegeex.RepoIndex": true
+    "files.associations": {
+        "xstring": "cpp"
+    }
 }
