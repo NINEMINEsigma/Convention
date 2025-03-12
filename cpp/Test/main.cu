@@ -5,6 +5,11 @@
 using namespace std;
 using namespace convention_kit;
 
+__global__  void test()
+{
+
+}
+
 int main()
 {
     auto str = make_instance(string("123456789"));

@@ -1,16 +1,18 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Convention.WindowsUI.Variant
 {
-    public class InspectorButton : InspectorDrawer
+    public class InspectorStructure : InspectorDrawer
     {
         [Resources] public Button RawButton;
         [Resources] public ModernUIButton ModernButton;
 
         private void OnCallback()
         {
-            targetItem.InvokeAction();
+            InspectorWindow.instance.SetTarget(targetItem.GetValue(), null);
         }
 
         private void Start()
@@ -29,7 +31,7 @@ namespace Convention.WindowsUI.Variant
                 if (targetItem.targetMemberInfo != null)
                     ModernButton.title = targetItem.targetMemberInfo.Name;
                 else
-                    ModernButton.title = "Invoke";
+                    ModernButton.title = "Structure";
             }
         }
 
@@ -38,7 +40,7 @@ namespace Convention.WindowsUI.Variant
             if (RawButton)
                 RawButton.interactable = targetItem.AbleChangeType;
             if (ModernButton)
-                ModernButton.interactable = targetItem.AbleChangeType;
+                ModernButton.interactable = targetItem.AbleChangeType;     
         }
 
         private void Reset()

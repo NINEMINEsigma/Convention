@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 using static Convention.WindowsUI.Variant.PropertiesWindow;
 
 namespace Convention.WindowsUI.Variant
 {
-    public class PropertyListItem : WindowUIModule, ITitle, IText, IItemEntry
+    public class PropertyListItem : WindowUIModule, ITitle, IText, IItemEntry, IActionInvoke
     {
         [Resources, SerializeField, OnlyNotNullMode] private Button m_rawButton;
         [Resources, SerializeField, OnlyNotNullMode(nameof(m_rawButton))] private float layerTab = 7.5f;
@@ -73,6 +74,7 @@ namespace Convention.WindowsUI.Variant
 
         public string title { get => m_buttonText.title; set => m_buttonText.title = value; }
         public string text { get => m_buttonText.text; set => m_buttonText.text = value; }
+        public bool interactable { get => m_rawButton.interactable; set => m_rawButton.interactable = value; }
 
         public void Switch()
         {
@@ -105,11 +107,46 @@ namespace Convention.WindowsUI.Variant
         {
             return CreateSubPropertyItem(Entry.rootWindow, count);
         }
+        public List<ItemEntry> CreateSubPropertyItem([In] WindowUIModule prefab, int count)
+        {
+            List<ItemEntry> result = new();
+            while (count-- > 0)
+            {
+                var item = ItemEntry.MakeItemWithInstantiate(prefab, this.Entry);
+                (item.ref_value as PropertyListItem).Entry = item;
+                result.Add(item);
+            }
+            return result;
+        }
 
         [Content]
         public void AdjustSizeToContainsChilds()
         {
             RectTransformExtension.AdjustSizeToContainsChilds(transform as RectTransform);
+        }
+
+        public IActionInvoke AddListener(params UnityAction[] action)
+        {
+            foreach (var item in action)
+            {
+                m_rawButton.onClick.AddListener(item);
+            }
+            return this;
+        }
+
+        public IActionInvoke RemoveListener(params UnityAction[] action)
+        {
+            foreach (var item in action)
+            {
+                m_rawButton.onClick.RemoveListener(item);
+            }
+            return this;
+        }
+
+        public IActionInvoke RemoveAllListeners()
+        {
+            m_rawButton.onClick.RemoveAllListeners();
+            return this;
         }
     }
 }

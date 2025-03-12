@@ -12,6 +12,10 @@ namespace Convention.WindowsUI.Variant
         private void OnCallback(string str)
         {
             targetItem.SetValue(str);
+            if (targetItem.target is IInspectorUpdater updater)
+            {
+                updater.OnInspectorUpdate();
+            }
         }
 
         private void Start()
@@ -24,15 +28,19 @@ namespace Convention.WindowsUI.Variant
         public override void OnInspectorItemInit(InspectorItem item)
         {
             base.OnInspectorItemInit(item);
-            TextArea.interactable = item.AbleChangeType;
+        }
+
+        private void OnEnable()
+        {
+            TextArea.interactable = targetItem.AbleChangeType;
             TextArea.text = targetItem.GetValue().ToString();
         }
 
-        private void Update()
+        private void FixedUpdate()
         {
             if (targetItem.UpdateType && !isEditing)
             {
-                TextArea.text = targetItem.GetValue().ToString();
+                TextArea.text = (string)targetItem.GetValue();
             }
         }
 

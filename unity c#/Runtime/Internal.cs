@@ -52,8 +52,8 @@ namespace Convention
         public override int GetHashCode() => base.GetHashCode();
         public virtual string SymbolName() => this.GetType().Name;
 
-        public static bool operator ==(TypeClass left, Type right) => left.GetType().Equals(right);
-        public static bool operator !=(TypeClass left, Type right) => left.GetType().Equals((Type)right) == false;
+        //public static bool operator ==([In] TypeClass left, [In] Type right) => left.GetType().Equals(right);
+        //public static bool operator !=([In] TypeClass left, [In] Type right) => left.GetType().Equals(right) == false;
     }
     public interface IAnyClass : ITypeClass { }
     public class AnyClass : TypeClass, IAnyClass { }
@@ -167,7 +167,7 @@ namespace Convention
     public abstract class Singleton<T> : AnyClass, ISingleton<T> where T : Singleton<T>
     {
         [Setting, Ignore] private static T m_instance;
-        public static T instance { get=> m_instance; protected set=> m_instance = value; }
+        public static T instance { get => m_instance; protected set => m_instance = value; }
         public Singleton()
         {
             if (instance != this)
@@ -194,7 +194,7 @@ namespace Convention
 
         protected virtual void Awake()
         {
-            if(instance!= null)
+            if (instance != null)
             {
                 this.gameObject.SetActive(false);
                 return;
@@ -210,4 +210,31 @@ namespace Convention
         }
     }
 #endif
+
+    [ArgPackage]
+    public class ValueWrapper : AnyClass
+    {
+        private Func<object> getter;
+        private Action<object> setter;
+        public readonly Type type;
+
+        public ValueWrapper([In,Opt]Func<object> getter,[In,Opt] Action<object> setter,[In] Type type)
+        {
+            this.getter = getter;
+            this.setter = setter;
+            this.type = type;
+        }
+
+        public bool IsChangeAble => setter != null;
+        public bool IsObtainAble => getter != null;
+
+        public void SetValue(object value)
+        {
+            setter(value);
+        }
+        public object GetValue()
+        {
+            return getter();
+        }
+    }
 }

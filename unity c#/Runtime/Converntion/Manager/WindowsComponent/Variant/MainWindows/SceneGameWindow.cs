@@ -30,7 +30,7 @@ namespace Convention.WindowsUI.Variant
             }
             else
             {
-                ModuleCamera.gameObject.SetActive(false);
+                SceneCamera.gameObject.SetActive(false);
                 ModuleCamera.gameObject.SetActive(true);
             }
         }

@@ -44,13 +44,13 @@ namespace Convention.WindowsUI.Variant
 
         public List<ItemEntry> AddChilds(int count)
         {
-            var entries = Entry.rootWindow.CreateRootItemEntrys(false, count);
+            var entries = Entry.rootWindow.CreateRootItemEntries(false, count);
             m_ChildEntries.AddRange(entries);
             return entries;
         }
         public ItemEntry AddChild()
         {
-            var entry = Entry.rootWindow.CreateRootItemEntrys(false, 1)[0];
+            var entry = Entry.rootWindow.CreateRootItemEntries(false, 1)[0];
             m_ChildEntries.Add(entry);
             return entry;
         }
@@ -116,7 +116,7 @@ namespace Convention.WindowsUI.Variant
                 FocusItem = null;
                 FocusWindowIndictaor.instance.SetTargetRectTransform(null);
                 if (HasChildLayer)
-                    (Entry.rootWindow as AssetsWindow).Push(title, m_ChildEntries, true);
+                    Entry.rootWindow.GetComponent<AssetsWindow>().Push(title, m_ChildEntries, true);
                 foreach (var component in this.GetComponents<IAssetsItemInvoke>())
                 {
                     component.OnAssetsItemInvoke(this);

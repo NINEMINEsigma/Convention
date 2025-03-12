@@ -18,6 +18,17 @@ namespace UnityEditor
 
 namespace Convention
 {
+    public static partial class ConventionUtility
+    {
+        public static object GetDefault([In] Type type)
+        {
+            if (type.IsClass)
+                return null;
+            else
+                return System.Activator.CreateInstance(type);
+        }
+    }
+
     namespace Internal
     {
         public class Indicator
@@ -200,7 +211,7 @@ namespace Convention
     public class InAttribute : Attribute { }
     [System.AttributeUsage(AttributeTargets.Parameter, Inherited = true, AllowMultiple = false)]
     public class OutAttribute : Attribute { }
-    [System.AttributeUsage(AttributeTargets.Parameter, Inherited = true, AllowMultiple = false)]
+    [System.AttributeUsage(AttributeTargets.Parameter, Inherited = true, AllowMultiple = true)]
     public class OptAttribute : Attribute { }
     [System.AttributeUsage(AttributeTargets.ReturnValue, Inherited = true, AllowMultiple = false)]
     public class ReturnVirtualAttribute : Attribute { }

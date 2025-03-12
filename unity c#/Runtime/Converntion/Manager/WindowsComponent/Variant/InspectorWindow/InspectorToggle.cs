@@ -11,6 +11,10 @@ namespace Convention.WindowsUI.Variant
         private void OnCallback(bool value)
         {
             targetItem.SetValue(value);
+            if (targetItem.target is IInspectorUpdater updater)
+            {
+                updater.OnInspectorUpdate();
+            }
         }
 
         private void Start()
@@ -18,7 +22,7 @@ namespace Convention.WindowsUI.Variant
             Toggle.AddListener(OnCallback);
         }
 
-        private void Update()
+        private void FixedUpdate()
         {
             if (targetItem.UpdateType)
             {
@@ -26,11 +30,10 @@ namespace Convention.WindowsUI.Variant
             }
         }
 
-        public override void OnInspectorItemInit(InspectorItem item)
+        private void OnEnable()
         {
-            base.OnInspectorItemInit(item);
-            Toggle.interactable = item.AbleChangeType;
-            Toggle.ref_value = (bool)item.GetValue();
+            Toggle.interactable = targetItem.AbleChangeType;
+            Toggle.ref_value = (bool)targetItem.GetValue();
         }
 
         private void Reset()

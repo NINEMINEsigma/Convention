@@ -14,33 +14,88 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Datas:
     Data:
-    - Key: file
+    - Key: default
       Value:
-        CurrentValue: file (UnityEngine.Texture2D)
-        CurrentObject: {fileID: 2800000, guid: 1024adf990ed4c645a45f674f9f1313f, type: 3}
-        RealType: Texture2D
-    - Key: file-black
-      Value:
-        CurrentValue: file-black (UnityEngine.Texture2D)
-        CurrentObject: {fileID: 2800000, guid: 7abab2b138f689e43b034bc9db9c59d7, type: 3}
-        RealType: Texture2D
+        CurrentValue: file (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 1024adf990ed4c645a45f674f9f1313f, type: 3}
+        RealType: Sprite
     - Key: folder
       Value:
-        CurrentValue: folder (UnityEngine.Texture2D)
-        CurrentObject: {fileID: 2800000, guid: c9889352de45cb848b716693e6ce9150, type: 3}
-        RealType: Texture2D
-    - Key: folder-black
+        CurrentValue: folder (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: c9889352de45cb848b716693e6ce9150, type: 3}
+        RealType: Sprite
+    - Key: ab
       Value:
-        CurrentValue: folder-black (UnityEngine.Texture2D)
-        CurrentObject: {fileID: 2800000, guid: 70f7467412cc9ce4c99612432f43a2d6, type: 3}
-        RealType: Texture2D
+        CurrentValue: layer (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 5d6c89e0324de024c855f4ab7e7846b6, type: 3}
+        RealType: Sprite
+    - Key: ab.data
+      Value:
+        CurrentValue: ab.data (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: f8921074f15c144469a0ac105afee94e, type: 3}
+        RealType: Sprite
+    - Key: picture
+      Value:
+        CurrentValue: picture (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 69135347e8e8d0f4f807128899ebb4a6, type: 3}
+        RealType: Sprite
+    - Key: image
+      Value:
+        CurrentValue: picture (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 69135347e8e8d0f4f807128899ebb4a6, type: 3}
+        RealType: Sprite
+    - Key: writing
+      Value:
+        CurrentValue: writing (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 170c60fbb8945b249bb36d6c3c4e8514, type: 3}
+        RealType: Sprite
+    - Key: text
+      Value:
+        CurrentValue: writing (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 170c60fbb8945b249bb36d6c3c4e8514, type: 3}
+        RealType: Sprite
+    - Key: skys
+      Value:
+        CurrentValue: sky (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 9cfe928d67746fe40b441da5e54cbb00, type: 3}
+        RealType: Sprite
+    - Key: mat
+      Value:
+        CurrentValue: mat (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: ec4c3c4d044c6b7438b8fbc65510babc, type: 3}
+        RealType: Sprite
     - Key: layer
       Value:
-        CurrentValue: layer (UnityEngine.Texture2D)
-        CurrentObject: {fileID: 2800000, guid: 5d6c89e0324de024c855f4ab7e7846b6, type: 3}
-        RealType: Texture2D
-    - Key: layer-black
+        CurrentValue: layer (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 5d6c89e0324de024c855f4ab7e7846b6, type: 3}
+        RealType: Sprite
+    - Key: code
       Value:
-        CurrentValue: layer-black (UnityEngine.Texture2D)
-        CurrentObject: {fileID: 2800000, guid: a45eab7443138504b83faa611aecd0b5, type: 3}
-        RealType: Texture2D
+        CurrentValue: code (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 22967adeb0baea344aa73c382b5872f9, type: 3}
+        RealType: Sprite
+    - Key: component
+      Value:
+        CurrentValue: component (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 3520e462edef2ea41a1c3b4a56eb7866, type: 3}
+        RealType: Sprite
+    - Key: scene
+      Value:
+        CurrentValue: scene (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 2abdc19f55a13dd448618d8f6cc49559, type: 3}
+        RealType: Sprite
+    - Key: unity
+      Value:
+        CurrentValue: unity (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 65bc268cea3d23046a6ec320bf655d6a, type: 3}
+        RealType: Sprite
+    - Key: prefab
+      Value:
+        CurrentValue: unity (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 65bc268cea3d23046a6ec320bf655d6a, type: 3}
+        RealType: Sprite
+    - Key: gameobjects
+      Value:
+        CurrentValue: layer (UnityEngine.Sprite)
+        CurrentObject: {fileID: 21300000, guid: 5d6c89e0324de024c855f4ab7e7846b6, type: 3}
+        RealType: Sprite

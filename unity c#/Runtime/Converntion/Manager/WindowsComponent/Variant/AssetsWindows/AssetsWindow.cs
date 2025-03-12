@@ -6,12 +6,15 @@ using UnityEngine.UI;
 
 namespace Convention.WindowsUI.Variant
 {
-    public class AssetsWindow : PropertiesWindow
+    [RequireComponent(typeof(PropertiesWindow))]
+    public class AssetsWindow : MonoSingleton<AssetsWindow>
     {
-        [Content, OnlyPlayMode, SerializeField, Header("Assets Stack")] private Stack<List<ItemEntry>> m_EntriesStack = new();
+        [Content, OnlyPlayMode, SerializeField, Header("Assets Stack")] private Stack<List<PropertiesWindow.ItemEntry>> m_EntriesStack = new();
+        [Resources, OnlyNotNullMode, SerializeField] private PropertiesWindow m_PropertiesWindow;
         [Resources, OnlyNotNullMode, SerializeField, Tooltip("Back Button")] private Button m_BackButton;
         [Resources, OnlyNotNullMode, SerializeField, Tooltip("Path Text")] private Text m_PathTitle;
         [Content, OnlyPlayMode, SerializeField] public List<string> pathContainer = new();
+        private RegisterWrapper<AssetsWindow> m_RegisterWrapper;
 
         public void UpdatePathText()
         {
@@ -22,14 +25,16 @@ namespace Convention.WindowsUI.Variant
         {
             m_BackButton.onClick.AddListener(() => Pop(true));
             UpdatePathText();
+            m_RegisterWrapper = new(() => { });
         }
 
         protected virtual void Reset()
         {
-            this.m_PerformanceMode = PerformanceIndicator.PerformanceMode.L1;
+            m_PropertiesWindow.m_PerformanceMode = PerformanceIndicator.PerformanceMode.L1;
+            m_PropertiesWindow = GetComponent<PropertiesWindow>();
         }
 
-        public void Push([In] string label, [In] List<ItemEntry> entries, bool isRefreshTop)
+        public void Push([In] string label, [In] List<PropertiesWindow.ItemEntry> entries, bool isRefreshTop)
         {
             var top = Peek();
             if (top != null)
@@ -43,19 +48,19 @@ namespace Convention.WindowsUI.Variant
                 entry.Enable(false);
             }
             if (isRefreshTop)
-                RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
+                RectTransformExtension.AdjustSizeToContainsChilds(m_PropertiesWindow.TargetWindowContent);
             pathContainer.Add(label);
             UpdatePathText();
         }
         [return: ReturnMayNull, When("m_EntriesStack is empty")]
-        public List<ItemEntry> Peek()
+        public List<PropertiesWindow.ItemEntry> Peek()
         {
             if (m_EntriesStack.Count == 0)
                 return null;
             return m_EntriesStack.Peek();
         }
         [return: ReturnMayNull, When("m_EntriesStack is empty")]
-        public List<ItemEntry> Pop(bool isRefreshTop)
+        public List<PropertiesWindow.ItemEntry> Pop(bool isRefreshTop)
         {
             if (m_EntriesStack.Count <= 1)
                 return null;
@@ -72,7 +77,7 @@ namespace Convention.WindowsUI.Variant
                     entry.Enable(false);
                 }
             if (isRefreshTop)
-                RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
+                RectTransformExtension.AdjustSizeToContainsChilds(m_PropertiesWindow.TargetWindowContent);
             if (pathContainer.Count != 0)
                 pathContainer.RemoveAt(pathContainer.Count - 1);
             UpdatePathText();

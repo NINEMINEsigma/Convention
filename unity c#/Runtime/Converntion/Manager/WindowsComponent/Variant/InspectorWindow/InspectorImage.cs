@@ -20,6 +20,10 @@ namespace Convention.WindowsUI.Variant
                 Texture2D texture = file.LoadAsImage();
                 targetItem.SetValue(texture);
                 ImageArea.texture = texture;
+                if (targetItem.target is IInspectorUpdater updater)
+                {
+                    updater.OnInspectorUpdate();
+                }
             }, "image", "texture", ToolFile.ImageFileExtension);
         }
 
@@ -28,14 +32,13 @@ namespace Convention.WindowsUI.Variant
             RawButton.onClick.AddListener(OnCallback);
         }
 
-        public override void OnInspectorItemInit(InspectorItem item)
+        private void OnEnable()
         {
-            base.OnInspectorItemInit(item);
-            RawButton.interactable = item.AbleChangeType;
+            RawButton.interactable = targetItem.AbleChangeType;
             ImageArea.texture = (Texture)targetItem.GetValue();
         }
 
-        private void Update()
+        private void FixedUpdate()
         {
             if (targetItem.UpdateType)
             {

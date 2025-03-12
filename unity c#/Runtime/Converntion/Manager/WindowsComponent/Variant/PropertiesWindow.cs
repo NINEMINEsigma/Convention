@@ -232,16 +232,14 @@ namespace Convention.WindowsUI.Variant
                         base.ref_value = value;
                         if (parentWindow != null)
                         {
-                            //parentWindow.m_WindowManager.AddContextChild(
-                            //    parentWindow.m_WindowManager[parentWindow.m_TargetWindowContent],
-                            //    value.GetComponent<RectTransform>(),
-                            //    true);
                             parentWindow.m_WindowManager.SelectContextPlane(parentWindow.m_TargetWindowContent);
-                            parentWindow.m_WindowManager.AddContextChild(value.GetComponent<RectTransform>(), true);
+                            if (value != null)
+                                parentWindow.m_WindowManager.AddContextChild(value.GetComponent<RectTransform>(), true);
                         }
                         else if (parentEntry != null)
                         {
-                            SetupParentRectTransform(value.GetComponent<RectTransform>(), parentEntry.ref_value.GetComponent<RectTransform>());
+                            if (value != null)
+                                SetupParentRectTransform(value.GetComponent<RectTransform>(), parentEntry.ref_value.GetComponent<RectTransform>());
                         }
                         ForceRebuildLayoutImmediate();
                     }
@@ -255,6 +253,7 @@ namespace Convention.WindowsUI.Variant
             public readonly PropertiesWindow rootWindow;
 
             public List<ItemEntry> GetChilds() => new(childs);
+            public ItemEntry GetParent() => parentEntry;
 
             public ItemEntry(PropertiesWindow parent) : base(null)
             {
@@ -398,7 +397,7 @@ namespace Convention.WindowsUI.Variant
                 RectTransformExtension.AdjustSizeToContainsChilds(TargetWindowContent);
         }
 
-        public List<ItemEntry> CreateRootItemEntrysFromString(bool isActive, params string[] prefabs)
+        public List<ItemEntry> CreateRootItemEntriesFromString(bool isActive, params string[] prefabs)
         {
             List<ItemEntry> result = new();
             foreach (string prefab in prefabs)
@@ -416,12 +415,12 @@ namespace Convention.WindowsUI.Variant
             return result;
         }
 
-        public List<ItemEntry> CreateRootItemEntrysFromString(params string[] prefabs)
+        public List<ItemEntry> CreateRootItemEntriesFromString(params string[] prefabs)
         {
-            return CreateRootItemEntrysFromString(true, prefabs);
+            return CreateRootItemEntriesFromString(true, prefabs);
         }
 
-        public List<ItemEntry> CreateRootItemEntrys(bool isActive, int count)
+        public List<ItemEntry> CreateRootItemEntries(bool isActive, int count)
         {
             List<ItemEntry> result = new();
             while (count-- > 0)
@@ -439,9 +438,9 @@ namespace Convention.WindowsUI.Variant
             return result;
         }
 
-        public List<ItemEntry> CreateRootItemEntrys(int count)
+        public List<ItemEntry> CreateRootItemEntries(int count)
         {
-            return CreateRootItemEntrys(true, count);
+            return CreateRootItemEntries(true, count);
         }
     }
 }
