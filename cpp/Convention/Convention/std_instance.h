@@ -2054,7 +2054,7 @@ public:
 	{
 		return this->get()->remove_if(pr)
 	}
-
+	
 	template<typename _Data>
 	auto merge(_Data&& data) const
 	{

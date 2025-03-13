@@ -171,17 +171,19 @@ public:
 	static constexpr auto phi() { return boost::math::constants::phi<_NumberType>(); }
 	static constexpr auto ln_two() { return boost::math::constants::ln_two<_NumberType>(); }
 
-	// 特殊数学函数
+	// 阶乘
 	_NumberType factorial() const
 	{
 		return boost::math::factorial<_NumberType>(this->get_cvalue());
 	}
 
+	// 伽马函数
 	_NumberType gamma() const
 	{
 		return boost::math::tgamma(this->get_cvalue());
 	}
 
+	// 贝塞尔函数
 	_NumberType bessel_j(int n) const
 	{
 		return boost::math::cyl_bessel_j(n, this->get_cvalue());
@@ -194,6 +196,7 @@ public:
 
 	// 数值区间操作
 	using interval = boost::numeric::interval<_NumberType>;
+	static interval make_interval(_NumberType lower, _NumberType upper);
 	interval make_interval(_NumberType upper) const
 	{
 		return interval(this->get_cvalue(), upper);
@@ -231,6 +234,12 @@ public:
 		return (f(x + h) - f(x - h)) / (2 * h);
 	}
 };
+
+template<typename _NumberType>
+extended_number<_NumberType>::interval extended_number<_NumberType>::make_interval(_NumberType lower, _NumberType upper)
+{
+	return interval(lower, upper);
+}
 
 // 常用类型别名
 using extended_double = extended_number<double>;
