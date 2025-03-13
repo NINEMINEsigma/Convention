@@ -196,6 +196,24 @@ namespace Convention
                 return null;
             return results[0];
         }
+        public static T GetOrAddComponent<T>(this GameObject self) where T : Component
+        {
+            if (self.GetComponents<T>().Length == 0)
+            {
+                return self.AddComponent<T>();
+            }
+            else
+            {
+                return self.GetComponents<T>()[0];
+            }
+        }
+        public static T SeekComponent<T>(this GameObject self) where T : class
+        {
+            var results = self.GetComponents<T>();
+            if (results.Length == 0)
+                return null;
+            return results[0];
+        }
     }
 
     [Serializable]

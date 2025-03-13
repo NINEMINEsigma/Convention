@@ -11,7 +11,7 @@ namespace Convention.WindowsUI.Variant
     public class HierarchyWindow : MonoSingleton<HierarchyWindow>
     {
         [Resources] public WindowManager windowManager;
-        [Resources] private PropertiesWindow m_PropertiesWindow;
+        [Resources, SerializeField] private PropertiesWindow m_PropertiesWindow;
         private RegisterWrapper<HierarchyWindow> m_Register;
 
         private Dictionary<int, object> AllReferenceLinker = new();

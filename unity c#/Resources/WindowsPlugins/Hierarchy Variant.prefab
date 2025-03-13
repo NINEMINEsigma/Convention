@@ -87,6 +87,7 @@ MonoBehaviour:
     childs: []
     parentWindow: {fileID: 0}
   m_folderStats: 1
+  IsEnableFocusWindow: 1
 --- !u!1 &4429790346174012524
 GameObject:
   m_ObjectHideFlags: 0
@@ -538,6 +539,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2814737429463080094, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5519511324717522623}
+    - targetCorrespondingSourceObject: {fileID: 2814737429463080094, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 5551824027870255850}
   m_SourcePrefab: {fileID: 100100000, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
 --- !u!114 &1053894969927359569 stripped
 MonoBehaviour:
@@ -573,6 +577,20 @@ MonoBehaviour:
   m_Entrys: []
   ItemPrefab: {fileID: 2447206846939804910}
   m_PerformanceMode: -1
+--- !u!114 &5551824027870255850
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2476344447420352570}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 958316f304c029041901ecb7fffa1929, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  windowManager: {fileID: 1053894969927359569}
+  m_PropertiesWindow: {fileID: 5519511324717522623}
 --- !u!224 &8975345697986449064 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8781068999274584588, guid: 14851ab435cb18448974bf76e92d8952, type: 3}

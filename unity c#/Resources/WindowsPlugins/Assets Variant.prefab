@@ -776,6 +776,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2814737429463080094, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5981089689042882848}
+    - targetCorrespondingSourceObject: {fileID: 2814737429463080094, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 478095602033530195}
     - targetCorrespondingSourceObject: {fileID: 7372040660896824969, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2319879483591238082}
@@ -842,15 +845,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6145859b1511d7e4bb47c6c770695b6f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_PropertiesWindow: {fileID: 0}
+  m_BackButton: {fileID: 4889144979612949642}
+  m_PathTitle: {fileID: 5854387544823977911}
+  pathContainer: []
+--- !u!114 &478095602033530195
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9189537005313265669}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b96c24611a65c34abcfc36d83ba5e5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_WindowsConfig: {fileID: 11400000, guid: bd7af352251cd7846b99be9858901829, type: 2}
   m_WindowManager: {fileID: 6015220258457388142}
   m_TargetWindowContent: 0
   m_Entrys: []
-  ItemPrefab: {fileID: 1660781395767712569}
+  ItemPrefab: {fileID: 0}
   m_PerformanceMode: 255
-  m_BackButton: {fileID: 4889144979612949642}
-  m_PathTitle: {fileID: 5854387544823977911}
-  pathContainer: []
 --- !u!1001 &7673283254404162197
 PrefabInstance:
   m_ObjectHideFlags: 0

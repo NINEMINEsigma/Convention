@@ -142,14 +142,52 @@ namespace Convention.WindowsUI.Variant
                 }
             }
         }
-        private class GameObjectItem : AssetBundleItem
+        private class GameObjectItem : AssetBundleItem,IOnlyFocusThisOnInspector
         {
             [Content, IsInstantiated(true)] public GameObject target;
             [Content, IsInstantiated(true)] public GameObject last;
+            private Image image;
+
+            [InspectorDraw(InspectorDrawType.Button),Content]
+            public void ReleaseGameObjectToScene()
+            {
+                if (target != null)
+                {
+                    HierarchyWindow.instance.CreateRootItemEntries(target);
+                    target = null;
+                }
+            }
+            [InspectorDraw(InspectorDrawType.Button), Content]
+            public void DestroyCurrentSelect()
+            {
+                if (target != null)
+                {
+                    HierarchyWindow.instance.RemoveReference(target);
+                    GameObject.Destroy(target);
+                    target = null;
+                }
+            }
+
+
+            private void OnEnable()
+            {
+                image = GetComponent<Image>();
+            }
+            private void OnDisable()
+            {
+                if (target != null)
+                {
+                    GameObject.Destroy(target);
+                }
+            }
+
+            private void FixedUpdate()
+            {
+                image.color = target == null ? Color.white : Color.green;
+            }
 
             public override void OnAssetsItemFocus(AssetsItem item)
             {
-                item.GetComponent<Image>().color = target == null ? Color.white : Color.green;
             }
 
             public override void OnAssetsItemInvoke(AssetsItem item)

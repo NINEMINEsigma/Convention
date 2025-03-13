@@ -16,6 +16,8 @@ namespace Convention.WindowsUI.Variant
         [Resources, SerializeField, OnlyNotNullMode] private Text m_buttonText;
         [Resources, SerializeField, OnlyNotNullMode, Header("Self Layer")] private RectTransform m_Layer;
 
+        public RectTransform TextRectTransform;
+
         [Content, SerializeField] private ItemEntry m_entry;
         [Content, Ignore, SerializeField] private bool m_folderStats = true;
 
@@ -24,7 +26,9 @@ namespace Convention.WindowsUI.Variant
             get => m_entry;
             set
             {
-                if (this.gameObject.activeInHierarchy && m_entry != null)
+                if (this.gameObject.activeInHierarchy &&
+                    //因为unity会生成可序列化的成员, 所以需要再检查类内必定存在的成员是否生成
+                    (m_entry != null && m_entry.rootWindow != null))
                 {
                     throw new InvalidOperationException();
                 }
@@ -44,6 +48,7 @@ namespace Convention.WindowsUI.Variant
             dropdownImage.gameObject.AddComponent<RectTransformExtension.AdjustSizeIgnore>();
             m_buttonText.gameObject.AddComponent<RectTransformExtension.AdjustSizeIgnore>();
             m_rawButton.onClick.AddListener(Switch);
+            TextRectTransform = m_buttonText.GetComponent<RectTransform>();
             dropdownImage.eulerAngles = new(0, 0, 90);
         }
 

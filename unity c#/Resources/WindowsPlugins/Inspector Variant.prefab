@@ -258,8 +258,8 @@ MonoBehaviour:
   m_ImageModule: {fileID: 7881758590243776313}
   m_ReferenceModule: {fileID: 395273804971371234}
   m_ButtonModule: {fileID: 8687203440428814812}
-  m_DictionaryItemModule: {fileID: 0}
   m_StructureModule: {fileID: 4862194669178218458}
+  m_DictionaryItemModule: {fileID: 0}
   targetDrawType: 0
   targetAbleChangeMode: 1
   targetUpdateMode: 0

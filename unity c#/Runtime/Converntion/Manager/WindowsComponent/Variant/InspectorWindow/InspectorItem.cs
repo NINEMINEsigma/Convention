@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
-using UnityEngine.UIElements;
 using static Convention.WindowsUI.Variant.PropertiesWindow;
 
 namespace Convention.WindowsUI.Variant
@@ -352,4 +351,12 @@ namespace Convention.WindowsUI.Variant
             AdjustSizeToContainsChilds();
         }
     }
+
+
+    /// <summary>
+    /// 使用这个接口, 将在GameObject被SetTarget在Inspector上时只展示这个类实例的内容,
+    /// 而不会展示Components也不能通过<To GameObject>跳转到GameObject的Components列表,
+    /// 见<see cref="InspectorWindow.BuildWindow"/>
+    /// </summary>
+    public interface IOnlyFocusThisOnInspector : IAnyClass { }
 }

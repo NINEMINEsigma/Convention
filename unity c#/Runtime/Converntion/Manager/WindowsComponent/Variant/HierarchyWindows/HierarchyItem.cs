@@ -15,6 +15,13 @@ namespace Convention.WindowsUI.Variant
             base.Start();
             AddListener(OnFocusHierarchyItem);
         }
+        private void OnDestroy()
+        {
+            if (InspectorWindow.instance.GetTarget() == target)
+            {
+                InspectorWindow.instance.ClearWindow();
+            }
+        }
 
         public List<ItemEntry> CreateSubPropertyItem(params object[] binders)
         {
@@ -34,7 +41,7 @@ namespace Convention.WindowsUI.Variant
             InspectorWindow.instance.SetTarget(target, this);
             if (!IsEnableFocusWindow)
                 return;
-            FocusWindowIndictaor.instance.SetTargetRectTransform(transform as RectTransform);
+            FocusWindowIndictaor.instance.SetTargetRectTransform(TextRectTransform);
         }
     }
 }

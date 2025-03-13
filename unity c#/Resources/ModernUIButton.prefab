@@ -415,7 +415,7 @@ GameObject:
   - component: {fileID: 1700112589005259400}
   - component: {fileID: 1700112589005259401}
   m_Layer: 5
-  m_Name: Ripple
+  m_Name: Ripple<ignore rect>
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
