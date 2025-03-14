@@ -151,15 +151,24 @@ namespace Convention.WindowsUI.Variant
             int GenerateGameObjectComponentModules(int offset, GameObject go)
             {
                 int componentsCount = go.GetComponentCount();
-                m_currentEntries.AddRange(m_PropertiesWindow.CreateRootItemEntries(componentsCount));
-                for (int i = 0, e = componentsCount; i < e; i++)
+                int usedcomponentsCount = 0;
+                for (int i = 0; i < componentsCount; i++)
                 {
                     var x_component = go.GetComponentAtIndex(i);
-                    m_currentEntries[i + offset].ref_value.GetComponent<PropertyListItem>().title = x_component.GetType().Name;
-                    m_currentEntries[i + offset].ref_value.GetComponent<InspectorItem>().SetTarget(
+                    var members =
+                        (from member in x_component.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+                         where member.GetCustomAttributes(typeof(InspectorDrawAttribute), true).Length != 0
+                         select member).ToList();
+                    if (members.Count == 0)
+                        continue;
+                    var current = m_PropertiesWindow.CreateRootItemEntries(1)[0];
+                    m_currentEntries.Add(current);
+                    current.ref_value.GetComponent<PropertyListItem>().title = x_component.GetType().Name;
+                    current.ref_value.GetComponent<InspectorItem>().SetTarget(
                         target, () => InspectorWindow.instance.SetTarget(x_component, null));
+                    usedcomponentsCount++;
                 }
-                offset += componentsCount;
+                offset += usedcomponentsCount;
                 {
                     var DestroyGameObjectButton = m_PropertiesWindow.CreateRootItemEntries(1)[0];
                     DestroyGameObjectButton.ref_value.GetComponent<PropertyListItem>().title = "Destroy GameObject";
