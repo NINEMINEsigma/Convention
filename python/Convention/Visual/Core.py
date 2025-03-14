@@ -406,17 +406,17 @@ class VignettingAugmentConfig(BasicAugmentConfig):
         h, w = origin.shape[:2]
         min_dist = np.array([h, w]) / 2 * np.random.random() * self.ratio_min_dist
 
-        # create matrix of distance from the center on the two axis
+        # 创建距离中心点在两个轴上的距离矩阵
         x, y = np.meshgrid(np.linspace(-w/2, w/2, w), np.linspace(-h/2, h/2, h))
         x, y = np.abs(x), np.abs(y)
 
-        # create the vignette mask on the two axis
+        # 在两个轴上创建晕影遮罩
         x = (x - min_dist[0]) / (np.max(x) - min_dist[0])
         x = np.clip(x, 0, 1)
         y = (y - min_dist[1]) / (np.max(y) - min_dist[1])
         y = np.clip(y, 0, 1)
 
-        # then get a random intensity of the vignette
+        # 获取随机晕影强度
         vignette = (x + y) / 2 * np.random.uniform(self.range_vignette[0], self.range_vignette[1])
         vignette = np.tile(vignette[..., None], [1, 1, 3])
 
@@ -435,27 +435,347 @@ class LensDistortionAugmentConfig(BasicAugmentConfig):
         change_config = {
             "d_coef":self.d_coef
         }
-        # get the height and the width of the image
+        # 获取图像的高度和宽度
         h, w = origin.shape[:2]
 
-        # compute its diagonal
+        # 计算对角线长度
         f = (h ** 2 + w ** 2) ** 0.5
 
-        # set the image projective to carrtesian dimension
+        # 设置图像投影到笛卡尔坐标系的维度
         K = np.array([[f, 0, w / 2],
                       [0, f, h / 2],
                       [0, 0,     1]])
 
-        d_coef = self.d_coef * np.random.random(5) # value
-        d_coef = d_coef * (2 * (np.random.random(5) < 0.5) - 1) # sign
-        # Generate new camera matrix from parameters
+        d_coef = self.d_coef * np.random.random(5) # 值
+        d_coef = d_coef * (2 * (np.random.random(5) < 0.5) - 1) # 符号
+        # 从参数生成新的相机矩阵
         M, _ = cv2.getOptimalNewCameraMatrix(K, d_coef, (w, h), 0)
 
-        # Generate look-up tables for remapping the camera image
+        # 生成用于重映射相机图像的查找表
         remap = cv2.initUndistortRectifyMap(K, d_coef, None, M, (w, h), 5)
 
-        # Remap the original image to a new image
+        # 将原始图像重映射到新图像
         return (change_config, ImageObject(cv2.remap(origin.image, *remap, cv2.INTER_LINEAR)))
+class RotationAugmentConfig(BasicAugmentConfig):
+    name:       str     = "rotation"
+    angle:      Optional[float]   = None
+    scale:      float   = 1.0
+    center:     Optional[Tuple[int, int]] = None
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        angle = self.angle if self.angle is not None else random.uniform(-30, 30)
+        center = self.center if self.center is not None else (origin.width // 2, origin.height // 2)
+        change_config = {
+            "angle": angle,
+            "scale": self.scale,
+            "center": center
+        }
+        # 获取旋转矩阵
+        rotation_matrix = cv2.getRotationMatrix2D(center, angle, self.scale)
+        # 应用旋转变换
+        rotated_image = cv2.warpAffine(origin.image, rotation_matrix, (origin.width, origin.height))
+        return (change_config, ImageObject(rotated_image))
+class BlurAugmentConfig(BasicAugmentConfig):
+    name:       str     = "blur"
+    kernel_size: Tuple[int, int] = (5, 5)
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        change_config = {
+            "kernel_size": self.kernel_size
+        }
+        # 应用均值模糊
+        blurred_image = cv2.blur(origin.image, self.kernel_size)
+        return (change_config, ImageObject(blurred_image))
+class MedianBlurAugmentConfig(BasicAugmentConfig):
+    name:       str     = "median_blur"
+    ksize:      int     = 5
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        change_config = {
+            "ksize": self.ksize
+        }
+        # 应用中值模糊
+        blurred_image = cv2.medianBlur(origin.image, self.ksize)
+        return (change_config, ImageObject(blurred_image))
+class SaturationAugmentConfig(BasicAugmentConfig):
+    name:       str     = "saturation"
+    factor:     Optional[float]   = None
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        factor = self.factor if self.factor is not None else random.uniform(0.5, 1.5)
+        change_config = {
+            "factor": factor
+        }
+        # 转换为HSV颜色空间
+        hsv = cv2.cvtColor(origin.image, cv2.COLOR_BGR2HSV).astype(np.float32)
+        # 调整饱和度
+        hsv[:, :, 1] = hsv[:, :, 1] * factor
+        hsv[:, :, 1] = np.clip(hsv[:, :, 1], 0, 255)
+        # 转换回BGR颜色空间
+        result = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+        return (change_config, ImageObject(result))
+class HueAugmentConfig(BasicAugmentConfig):
+    name:       str     = "hue"
+    shift:      Optional[int]   = None
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        shift = self.shift if self.shift is not None else random.randint(-20, 20)
+        change_config = {
+            "shift": shift
+        }
+        # 转换为HSV颜色空间
+        hsv = cv2.cvtColor(origin.image, cv2.COLOR_BGR2HSV).astype(np.float32)
+        # 调整色调
+        hsv[:, :, 0] = (hsv[:, :, 0] + shift) % 180
+        # 转换回BGR颜色空间
+        result = cv2.cvtColor(hsv.astype(np.uint8), cv2.COLOR_HSV2BGR)
+        return (change_config, ImageObject(result))
+class GammaAugmentConfig(BasicAugmentConfig):
+    name:       str     = "gamma"
+    gamma:      Optional[float]   = None
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        gamma = self.gamma if self.gamma is not None else random.uniform(0.5, 2.0)
+        change_config = {
+            "gamma": gamma
+        }
+        # 应用伽马校正
+        inv_gamma = 1.0 / gamma
+        table = np.array([((i / 255.0) ** inv_gamma) * 255 for i in range(256)]).astype(np.uint8)
+        result = cv2.LUT(origin.image, table)
+        return (change_config, ImageObject(result))
+class PerspectiveTransformAugmentConfig(BasicAugmentConfig):
+    name:       str     = "perspective"
+    intensity:  Optional[float]   = None
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        intensity = self.intensity if self.intensity is not None else random.uniform(0.05, 0.1)
+        change_config = {
+            "intensity": intensity
+        }
+        h, w = origin.shape[:2]
+
+        # 定义源点和目标点
+        src_points = np.float32([[0, 0], [w, 0], [0, h], [w, h]])
+
+        # 随机扰动目标点
+        dst_points = np.float32([
+            [0 + random.uniform(-intensity * w, intensity * w), 0 + random.uniform(-intensity * h, intensity * h)],
+            [w + random.uniform(-intensity * w, intensity * w), 0 + random.uniform(-intensity * h, intensity * h)],
+            [0 + random.uniform(-intensity * w, intensity * w), h + random.uniform(-intensity * h, intensity * h)],
+            [w + random.uniform(-intensity * w, intensity * w), h + random.uniform(-intensity * h, intensity * h)]
+        ])
+
+        # 计算透视变换矩阵
+        M = cv2.getPerspectiveTransform(src_points, dst_points)
+
+        # 应用透视变换
+        result = cv2.warpPerspective(origin.image, M, (w, h))
+        return (change_config, ImageObject(result))
+class ElasticTransformAugmentConfig(BasicAugmentConfig):
+    name:       str     = "elastic"
+    alpha:      float   = 50
+    sigma:      float   = 5
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        change_config = {
+            "alpha": self.alpha,
+            "sigma": self.sigma
+        }
+        h, w = origin.shape[:2]
+
+        # 创建随机位移场
+        dx = np.random.rand(h, w) * 2 - 1
+        dy = np.random.rand(h, w) * 2 - 1
+
+        # 高斯模糊位移场
+        dx = cv2.GaussianBlur(dx, (0, 0), self.sigma)
+        dy = cv2.GaussianBlur(dy, (0, 0), self.sigma)
+
+        # 归一化并缩放
+        dx = dx * self.alpha
+        dy = dy * self.alpha
+
+        # 创建网格
+        x, y = np.meshgrid(np.arange(w), np.arange(h))
+
+        # 应用位移
+        indices_x = np.clip(x + dx, 0, w - 1).astype(np.float32)
+        indices_y = np.clip(y + dy, 0, h - 1).astype(np.float32)
+
+        # 重映射
+        result = cv2.remap(origin.image, indices_x, indices_y, interpolation=cv2.INTER_LINEAR)
+        return (change_config, ImageObject(result))
+class ChannelShuffleAugmentConfig(BasicAugmentConfig):
+    name:       str     = "channel_shuffle"
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        # 获取随机通道顺序
+        channels = list(range(origin.image.shape[2]))
+        random.shuffle(channels)
+        change_config = {
+            "channels": channels
+        }
+        # 重新排列通道
+        result = origin.image[:, :, channels]
+        return (change_config, ImageObject(result))
+class MotionBlurAugmentConfig(BasicAugmentConfig):
+    name:       str     = "motion_blur"
+    kernel_size: int    = 15
+    angle:      Optional[float]   = None
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        angle = self.angle if self.angle is not None else random.uniform(0, 360)
+        change_config = {
+            "kernel_size": self.kernel_size,
+            "angle": angle
+        }
+        # 创建运动模糊核
+        kernel = np.zeros((self.kernel_size, self.kernel_size))
+        center = self.kernel_size // 2
+
+        # 计算角度的弧度值
+        rad = np.deg2rad(angle)
+
+        # 在核上绘制一条线
+        x = np.cos(rad) * center
+        y = np.sin(rad) * center
+
+        # 使用Bresenham算法绘制线
+        cv2.line(kernel,
+                (center - int(np.round(x)), center - int(np.round(y))),
+                (center + int(np.round(x)), center + int(np.round(y))),
+                1, thickness=1)
+
+        # 归一化核
+        kernel = kernel / np.sum(kernel)
+
+        # 应用卷积
+        result = cv2.filter2D(origin.image, -1, kernel)
+        return (change_config, ImageObject(result))
+class SolarizeAugmentConfig(BasicAugmentConfig):
+    name:       str     = "solarize"
+    threshold:  Optional[int]   = None
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        threshold = self.threshold if self.threshold is not None else random.randint(100, 200)
+        change_config = {
+            "threshold": threshold
+        }
+        # 应用曝光效果
+        result = origin.image.copy()
+        mask = origin.image > threshold
+        result[mask] = 255 - result[mask]
+        return (change_config, ImageObject(result))
+class PosterizeAugmentConfig(BasicAugmentConfig):
+    name:       str     = "posterize"
+    bits:       Optional[int]   = None
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        bits = self.bits if self.bits is not None else random.randint(3, 7)
+        change_config = {
+            "bits": bits
+        }
+        # 应用海报效果（减少颜色位数）
+        mask = 255 - (1 << (8 - bits))
+        result = origin.image & mask
+        return (change_config, ImageObject(result))
+class InvertAugmentConfig(BasicAugmentConfig):
+    name:       str     = "invert"
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        change_config = {}
+        # 反转图像颜色
+        result = 255 - origin.image
+        return (change_config, ImageObject(result))
+class EqualizationAugmentConfig(BasicAugmentConfig):
+    name:       str     = "equalize"
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        change_config = {}
+        # 对每个通道进行直方图均衡化
+        result = origin.image.copy()
+        if len(origin.shape) > 2 and origin.shape[2] > 1:
+            for i in range(origin.shape[2]):
+                result[:, :, i] = cv2.equalizeHist(origin.image[:, :, i])
+        else:
+            result = cv2.equalizeHist(origin.image)
+        return (change_config, ImageObject(result))
+class CutoutAugmentConfig(BasicAugmentConfig):
+    name:       str     = "cutout"
+    n_holes:    int     = 1
+    length:     Optional[int]   = None
+    @override
+    def augment(
+        self,
+        origin:     ImageObject
+        ) -> Tuple[Dict[str, Any], ImageObject]:
+        length = self.length if self.length is not None else min(origin.width, origin.height) // 4
+        change_config = {
+            "n_holes": self.n_holes,
+            "length": length
+        }
+
+        result = origin.image.copy()
+        h, w = origin.shape[:2]
+
+        for _ in range(self.n_holes):
+            # 随机选择矩形的中心点
+            y = np.random.randint(h)
+            x = np.random.randint(w)
+
+            # 计算矩形的边界
+            y1 = np.clip(y - length // 2, 0, h)
+            y2 = np.clip(y + length // 2, 0, h)
+            x1 = np.clip(x - length // 2, 0, w)
+            x2 = np.clip(x + length // 2, 0, w)
+
+            # 将矩形区域填充为黑色
+            result[y1:y2, x1:x2] = 0
+
+        return (change_config, ImageObject(result))
 # Config.name -> (field, value)
 type ChangeConfig = Dict[str, Dict[str, Any]]
 # (field, value)
@@ -476,6 +796,19 @@ class ImageAugmentConfig(BaseModel):
     noise:      Optional[NoiseAugmentConfig]                = None
     vignette:   Optional[VignettingAugmentConfig]           = None
     lens_distortion: Optional[LensDistortionAugmentConfig]  = None
+    rotation:   Optional[RotationAugmentConfig]             = None
+    blur:       Optional[BlurAugmentConfig]                 = None
+    median_blur:Optional[MedianBlurAugmentConfig]           = None
+    saturation: Optional[SaturationAugmentConfig]           = None
+    hue:        Optional[HueAugmentConfig]                  = None
+    gamma:      Optional[GammaAugmentConfig]                = None
+    perspective:Optional[PerspectiveTransformAugmentConfig] = None
+    elastic:    Optional[ElasticTransformAugmentConfig]     = None
+    channel_shuffle: Optional[ChannelShuffleAugmentConfig]  = None
+    motion_blur:Optional[MotionBlurAugmentConfig]           = None
+    solarize:   Optional[SolarizeAugmentConfig]             = None
+    posterize:  Optional[PosterizeAugmentConfig]            = None
+    invert:     Optional[InvertAugmentConfig]               = None
     '''
     None:
         0
@@ -532,23 +865,23 @@ class ImageAugmentConfig(BaseModel):
             input:      Union[tool_file, str, ImageObject, np.ndarray, PILImage, PILImageFile],
             output_dir: tool_file_or_str,
             *,
-            # if output_dir is not exist, it will call must_exist
-            # if output_dir is exist but not dir, it will back to parent
+            # 如果输出目录不存在,将调用must_exist
+            # 如果输出目录存在但不是目录,将返回父目录
             must_output_dir_exist:  bool                                = False,
             output_file_name:       str                                 = "output.png",
             callback:               Optional[Action[ChangeConfig]]      = None,
         ) -> ResultImageObjects:
-        # Init env and vars
+        # 初始化环境和变量
         origin_image:   ImageObject = self.__init_origin_image(input)
         result_dir:     tool_file   = self.__init_result_dir(output_dir, must_output_dir_exist)
-        # augment
-        self._inject_log(f"output<{output_file_name}> is start augment")
+        # 增强
+        self._inject_log(f"输出<{output_file_name}>开始增强")
         change_config, result = self._inject_augment(
             origin_image=origin_image,
             result_dir=result_dir,
             output_file_name=output_file_name,
         )
-        # result
+        # 结果
         if callback is not None:
             callback(change_config)
         return result
@@ -557,12 +890,12 @@ class ImageAugmentConfig(BaseModel):
             input_dir:  Union[tool_file, str],
             output_dir: tool_file_or_str,
             *,
-            # if output_dir is not exist, it will call must_exist
-            # if output_dir is exist but not dir, it will back to parent
+            # 如果输出目录不存在,将调用must_exist
+            # 如果输出目录存在但不是目录,将返回父目录
             must_output_dir_exist:  bool                                        = False,
             callback:               Optional[Action2[tool_file, ChangeConfig]]  = None,
         ) -> Dict[str, List[ImageObject]]:
-        # Init env and vars
+        # 初始化环境和变量
         origin_images:  tool_file   = Wrapper2File(input_dir)
         result_dir:     tool_file   = self.__init_result_dir(output_dir, must_output_dir_exist)
         if origin_images.exists() is False or origin_images.is_dir() is False:
@@ -577,24 +910,24 @@ class ImageAugmentConfig(BaseModel):
                 result_dir=result_dir,
                 output_file_name=image_file.get_filename(),
             )
-            # append single result
+            # 添加单个结果
             for key in curResult:
                 if key in result:
                     result[key].append(curResult[key])
                 else:
                     result[key] = [curResult[key]]
-            # call feedback
+            # 调用回调
             if callback is not None:
                 callback(image_file, change_config)
-        # result
+        # 结果
         return result
     def augment_from_images_to(
             self,
             inputs:     Sequence[ImageObject],
             output_dir: tool_file_or_str,
             *,
-            # if output_dir is not exist, it will call must_exist
-            # if output_dir is exist but not dir, it will back to parent
+            # 如果输出目录不存在,将调用must_exist
+            # 如果输出目录存在但不是目录,将返回父目录
             must_output_dir_exist:  bool                                            = False,
             callback:               Optional[Action2[ImageObject, ChangeConfig]]    = None,
             fileformat:             str                                             = "{}.jpg",

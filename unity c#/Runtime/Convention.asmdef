@@ -10,7 +10,9 @@
         "Cinemachine",
         "Unity.Mathematics",
         "Unity.Timeline",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Unity.Entities",
+        "Unity.Collections"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

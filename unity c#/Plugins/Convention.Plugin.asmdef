@@ -4,7 +4,9 @@
     "references": [
         "LeanPool",
         "EasySave3",
-        "Unity.Mathematics"
+        "Unity.Mathematics",
+        "Unity.Entities",
+        "Unity.Collections"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
