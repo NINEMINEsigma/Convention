@@ -45,20 +45,35 @@ namespace Convention.WindowsUI.Variant
             m_ThisHashCodeField.gameObject.SetActive(false);
             m_ParentHashCodeField.AddListener(x =>
             {
-                if (int.TryParse(x, out var code) && HierarchyWindow.instance.ContainsReference(code))
+                if (int.TryParse(x, out var code))
                 {
                     m_lastParentHashCode = code;
-                    HierarchyWindow.instance.SetHierarchyItemParent(
-                        HierarchyWindow.instance.GetReferenceItem(target),
-                        HierarchyWindow.instance.GetReferenceItem(HierarchyWindow.instance.GetReference(code))
-                        );
+                    if (code == 0)
+                    {
+                        HierarchyWindow.instance.SetHierarchyItemParent(
+                            HierarchyWindow.instance.GetReferenceItem(target),
+                            HierarchyWindow.instance
+                            );
+                    }
+                    else if (HierarchyWindow.instance.ContainsReference(code))
+                    {
+                        HierarchyWindow.instance.SetHierarchyItemParent(
+                            HierarchyWindow.instance.GetReferenceItem(target),
+                            HierarchyWindow.instance.GetReferenceItem(HierarchyWindow.instance.GetReference(code))
+                            );
+                    }
                 }
                 else
                 {
                     m_ParentHashCodeField.text = m_lastParentHashCode.ToString();
                 }
             });
-            m_ThisHashCodeField.interactable = false;
+        }
+
+        private void FixedUpdate()
+        {
+            if (target != null)
+                m_ThisHashCodeField.text = target.GetHashCode().ToString();
         }
 
         /// <summary>
@@ -118,7 +133,7 @@ namespace Convention.WindowsUI.Variant
         }
         private void BuildWindow()
         {
-            m_TypeText.text = target.GetType().FullName;
+            m_TypeText.text = target.GetType().Name;
             var members =
                 (from member in target.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
                  where member.GetCustomAttributes(typeof(InspectorDrawAttribute), true).Length != 0
@@ -143,32 +158,29 @@ namespace Convention.WindowsUI.Variant
             }
             offset += members.Count;
             // End To GameObject
+            if(target is MonoBehaviour mono)
+            {
+                offset = GenerateEnableToggleModule(offset, mono);
+            }
             if (target is Component component_1)
             {
+                offset = GenerateRemoveComponentButtonModule(offset, component_1);
                 offset = GenerateToGameObjectButtonModule(offset, component_1);
             }
 
             int GenerateGameObjectComponentModules(int offset, GameObject go)
             {
                 int componentsCount = go.GetComponentCount();
-                int usedcomponentsCount = 0;
                 for (int i = 0; i < componentsCount; i++)
                 {
                     var x_component = go.GetComponentAtIndex(i);
-                    var members =
-                        (from member in x_component.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
-                         where member.GetCustomAttributes(typeof(InspectorDrawAttribute), true).Length != 0
-                         select member).ToList();
-                    if (members.Count == 0)
-                        continue;
                     var current = m_PropertiesWindow.CreateRootItemEntries(1)[0];
                     m_currentEntries.Add(current);
                     current.ref_value.GetComponent<PropertyListItem>().title = x_component.GetType().Name;
                     current.ref_value.GetComponent<InspectorItem>().SetTarget(
                         target, () => InspectorWindow.instance.SetTarget(x_component, null));
-                    usedcomponentsCount++;
                 }
-                offset += usedcomponentsCount;
+                offset += componentsCount;
                 {
                     var DestroyGameObjectButton = m_PropertiesWindow.CreateRootItemEntries(1)[0];
                     DestroyGameObjectButton.ref_value.GetComponent<PropertyListItem>().title = "Destroy GameObject";
@@ -193,6 +205,25 @@ namespace Convention.WindowsUI.Variant
                     m_currentEntries.Add(DestroyGameObjectButton);
                     offset++;
                 }
+                {
+                    var addComponentField = m_PropertiesWindow.CreateRootItemEntries(1)[0];
+                    addComponentField.ref_value.GetComponent<PropertyListItem>().title = "Add Component";
+                    var item = addComponentField.ref_value.GetComponent<InspectorItem>();
+                    item.SetTarget(target, new ValueWrapper(
+                        () => "",
+                        (x) =>
+                        {
+                            var components = ConventionUtility.SeekType(t=>t.IsSubclassOf(typeof(Component))&& t.FullName.Contains((string)x));
+                            if (components.Count != 1)
+                                return;
+                            var component = components[0];
+                            InspectorWindow.instance.SetTarget(go.AddComponent(component), null);
+                        },
+                        typeof(string)
+                        ));
+                    m_currentEntries.Add(addComponentField);
+                    offset++;
+                }
                 return offset;
             }
 
@@ -215,6 +246,40 @@ namespace Convention.WindowsUI.Variant
                 var toGameObjectButton = m_PropertiesWindow.CreateRootItemEntries(1)[0];
                 toGameObjectButton.ref_value.GetComponent<PropertyListItem>().title = "To GameObject";
                 toGameObjectButton.ref_value.GetComponent<InspectorItem>().SetTarget(target, () => SetTarget(component.gameObject, null));
+                m_currentEntries.Add(toGameObjectButton);
+                offset++;
+                return offset;
+            }
+
+            int GenerateRemoveComponentButtonModule(int offset, Component component)
+            {
+                var toGameObjectButton = m_PropertiesWindow.CreateRootItemEntries(1)[0];
+                toGameObjectButton.ref_value.GetComponent<PropertyListItem>().title = "Remove Component";
+                toGameObjectButton.ref_value.GetComponent<InspectorItem>().SetTarget(target, () =>
+                {
+                    HierarchyItem item = null;
+                    if (HierarchyWindow.instance.ContainsReference(component.gameObject))
+                        item = HierarchyWindow.instance.GetReferenceItem(component.gameObject);
+                    if (HierarchyWindow.instance.ContainsReference(component))
+                        HierarchyWindow.instance.GetReferenceItem(component).Entry.Release();
+                    var xtemp = component.gameObject;
+                    Component.Destroy(component);
+                    InspectorWindow.instance.SetTarget(xtemp, item);
+                });
+                m_currentEntries.Add(toGameObjectButton);
+                offset++;
+                return offset;
+            }
+
+            int GenerateEnableToggleModule(int offset, MonoBehaviour mono)
+            {
+                var toGameObjectButton = m_PropertiesWindow.CreateRootItemEntries(1)[0];
+                toGameObjectButton.ref_value.GetComponent<PropertyListItem>().title = "Is Enable";
+                toGameObjectButton.ref_value.GetComponent<InspectorItem>().SetTarget(target, new ValueWrapper(
+                    () => mono.enabled,
+                    (x) => mono.enabled = (bool)x,
+                    typeof(bool)
+                    ));
                 m_currentEntries.Add(toGameObjectButton);
                 offset++;
                 return offset;

@@ -1,11 +1,11 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public static class MonoPlugin
 {
-    //¼´±ãÊÇ2022.3°æ±¾ÖĞÒ²²»Ò»¶¨ÓĞÕâÁ½¸ö·½·¨Òò´Ë±ØĞë½øĞĞÊÖ¶¯ÅĞ¶Ï
-#if true
+    //å³ä¾¿æ˜¯2022.3ç‰ˆæœ¬ä¸­ä¹Ÿä¸ä¸€å®šæœ‰è¿™ä¸¤ä¸ªæ–¹æ³•å› æ­¤å¿…é¡»è¿›è¡Œæ‰‹åŠ¨åˆ¤æ–­
+#if false
     public static int GetComponentCount(this GameObject go)
     {
         return go.GetComponents<Component>().Length;

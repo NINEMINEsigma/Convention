@@ -1,5 +1,3 @@
-
-
 using UnityEngine.Events;
 
 namespace Convention.WindowsUI

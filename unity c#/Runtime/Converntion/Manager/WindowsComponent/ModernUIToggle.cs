@@ -77,7 +77,7 @@ namespace Convention.WindowsUI
         public void ResetContext()
         {
             var Context = this.GetOrAddComponent<BehaviourContextManager>();
-            Context.OnPointerDownEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnPointerClickEvent, OnPointerDown);
+            Context.OnPointerDownEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnPointerDownEvent, OnPointerDown);
 
         }
         public void UpdateUI()
@@ -96,6 +96,7 @@ namespace Convention.WindowsUI
             if (enableButtonSounds == true)
                 soundSource.PlayOneShot(ref_value ? m_SwitchOnSound : m_SwitchOffSound);
             (ref_value ? m_SwitchOnEvent : m_SwitchOffEvent).Invoke();
+            m_ToggleEvent.Invoke(ref_value);
         }
 
         public IActionInvoke<bool> AddListener(params UnityAction<bool>[] action)

@@ -215,9 +215,12 @@ namespace Convention.WindowsUI
             }
             public override void Release()
             {
-                if (plane == null)
+                if (Application.isPlaying)
                 {
-                    throw new InvalidOperationException("page was released");
+                    if (!plane)
+                        throw new InvalidOperationException("page was released");
+                    else
+                        return;
                 }
                 if (root)
                 {

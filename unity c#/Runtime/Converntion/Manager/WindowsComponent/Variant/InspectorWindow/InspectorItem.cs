@@ -157,12 +157,12 @@ namespace Convention.WindowsUI.Variant
         public bool AbleChangeType
         {
             get => targetAbleChangeMode;
-            private set => targetAbleChangeMode = value;
+            set => targetAbleChangeMode = value;
         }
         public bool UpdateType
         {
             get => targetUpdateMode;
-            private set => targetUpdateMode = value;
+            set => targetUpdateMode = value;
         }
 
         public static string BroadcastName => $"On{nameof(InspectorItem)}Init";

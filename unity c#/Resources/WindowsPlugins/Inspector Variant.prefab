@@ -247,6 +247,7 @@ MonoBehaviour:
   dropdownImage: {fileID: 240697464900702333}
   m_buttonText: {fileID: 7601201441173455637}
   m_Layer: {fileID: 1011510495005369172}
+  TextRectTransform: {fileID: 0}
   m_entry:
     _ref_value: {fileID: 0}
     childs: []
@@ -347,7 +348,8 @@ MonoBehaviour:
   Position: {fileID: 2968240094508948309}
   Rotation: {fileID: 4600419288882057997}
   Scale: {fileID: 1793314927399822869}
-  Parent: {fileID: 0}
+  ThisID: {fileID: 0}
+  ParentID: {fileID: 0}
   isEditing: 0
   lastValue: 
 --- !u!1 &9042581283965941276
@@ -1919,6 +1921,7 @@ MonoBehaviour:
   m_WindowManager: {fileID: 3165012067934678947}
   m_PropertiesWindow: {fileID: 5345149840428145741}
   m_currentEntries: []
+  m_TypeText: {fileID: 0}
 --- !u!114 &3165012067934678947 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 860861549860063477, guid: 14851ab435cb18448974bf76e92d8952, type: 3}

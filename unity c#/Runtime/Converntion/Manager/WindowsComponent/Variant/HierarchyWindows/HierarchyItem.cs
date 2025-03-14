@@ -23,7 +23,7 @@ namespace Convention.WindowsUI.Variant
             }
         }
 
-        public List<ItemEntry> CreateSubPropertyItem(params object[] binders)
+        public List<ItemEntry> CreateSubPropertyItemWithBinders(params object[] binders)
         {
             List<ItemEntry> entries = CreateSubPropertyItem(Entry.rootWindow, binders.Length);
             for (int i = 0, e = binders.Length; i != e; i++)

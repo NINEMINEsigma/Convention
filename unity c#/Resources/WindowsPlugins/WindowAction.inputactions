@@ -121,6 +121,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Rename",
+                    "type": "Button",
+                    "id": "f01a7483-b388-46f9-9104-0100e1d7c09e",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -640,6 +649,17 @@
                     "action": "RefreshMode",
                     "isComposite": false,
                     "isPartOfComposite": true
+                },
+                {
+                    "name": "",
+                    "id": "899edc14-01a8-4213-9e0a-95911a6eef7d",
+                    "path": "<Keyboard>/f2",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Rename",
+                    "isComposite": false,
+                    "isPartOfComposite": false
                 }
             ]
         }

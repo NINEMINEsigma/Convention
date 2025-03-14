@@ -291,7 +291,7 @@ namespace Convention.WindowsUI
         }
 
         public delegate bool HowSetupRaycastLocationValid(Vector2 sp, Camera eventCamera);
-        public HowSetupRaycastLocationValid locationValid;
+        [Ignore]public HowSetupRaycastLocationValid locationValid;
 
         public bool IsRaycastLocationValid(Vector2 sp, Camera eventCamera)
         {

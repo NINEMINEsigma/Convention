@@ -45,13 +45,21 @@ namespace Convention.WindowsUI.Variant
 
         public void SetHierarchyItemParent([In] HierarchyItem childItemTab, [In] HierarchyItem parentItemTab)
         {
-            object target = childItemTab.target;
-            childItemTab.Entry.Release();
-            parentItemTab.CreateSubPropertyItem(target);
+            //object target = childItemTab.target;
+            //childItemTab.Entry.Release();
+            //parentItemTab.CreateSubPropertyItemWithBinders(target);
+            childItemTab.transform.SetParent(parentItemTab.transform);
+        }
+        public void SetHierarchyItemParent([In] HierarchyItem childItemTab, [In] HierarchyWindow rootWindow)
+        {
+            //object target = childItemTab.target;
+            //childItemTab.Entry.Release();
+            //rootWindow.CreateRootItemEntryWithBinders(target);
+            childItemTab.transform.SetParent(rootWindow.m_PropertiesWindow.TargetWindowContent);
         }
 
 
-        public List<ItemEntry> CreateRootItemEntries(params object[] binders)
+        public List<ItemEntry> CreateRootItemEntryWithBinders(params object[] binders)
         {
             List<ItemEntry> entries = m_PropertiesWindow.CreateRootItemEntries(binders.Length);
             for (int i = 0, e = binders.Length; i != e; i++)
@@ -63,6 +71,30 @@ namespace Convention.WindowsUI.Variant
             return entries;
         }
 
+        public ItemEntry CreateRootItemEntryWithGameObjectAndSetParent([In]GameObject binder, [In] HierarchyItem parentItemTab)
+        {
+            var result = parentItemTab.CreateSubPropertyItemWithBinders(binder)[0];
+            var root = result.ref_value.GetComponent<HierarchyItem>();
+            root.title = binder.name;
+            AddReference(binder, root);
+            foreach (Transform child in binder.transform)
+            {
+                CreateRootItemEntryWithGameObjectAndSetParent(child.gameObject, root);
+            }
+            return result;
+        }
+        public ItemEntry CreateRootItemEntryWithGameObject([In]GameObject binder)
+        {
+            var result = m_PropertiesWindow.CreateRootItemEntries(1)[0];
+            var root = result.ref_value.GetComponent<HierarchyItem>();
+            root.title = binder.name;
+            AddReference(binder, root);
+            foreach (Transform child in binder.transform)
+            {
+                CreateRootItemEntryWithGameObjectAndSetParent(child.gameObject, root);
+            }
+            return result;
+        }
 
         private void Start()
         {

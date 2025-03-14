@@ -214,6 +214,24 @@ namespace Convention
                 return null;
             return results[0];
         }
+
+        public static List<Type> SeekType(Predicate<Type> pr, IEnumerable<Assembly> assemblys = null, int findCount = -1)
+        {
+            List<Type> types = new List<Type>();
+            if (assemblys == null)
+                assemblys = AppDomain.CurrentDomain.GetAssemblies();
+            foreach (var assembly in assemblys)
+            {
+                foreach (var type in assembly.GetTypes())
+                {
+                    if (pr(type))
+                        types.Add(type);
+                    if (types.Count == findCount)
+                        return types;
+                }
+            }
+            return types;
+        }
     }
 
     [Serializable]

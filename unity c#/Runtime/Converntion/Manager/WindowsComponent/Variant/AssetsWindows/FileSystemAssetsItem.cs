@@ -153,7 +153,7 @@ namespace Convention.WindowsUI.Variant
             {
                 if (target != null)
                 {
-                    HierarchyWindow.instance.CreateRootItemEntries(target);
+                    HierarchyWindow.instance.CreateRootItemEntryWithGameObject(target);
                     target = null;
                 }
             }
@@ -162,7 +162,11 @@ namespace Convention.WindowsUI.Variant
             {
                 if (target != null)
                 {
-                    HierarchyWindow.instance.RemoveReference(target);
+                    if (HierarchyWindow.instance.ContainsReference(target))
+                    {
+                        HierarchyWindow.instance.GetReferenceItem(target).Entry.Release();
+                        HierarchyWindow.instance.RemoveReference(target);
+                    }
                     GameObject.Destroy(target);
                     target = null;
                 }
