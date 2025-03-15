@@ -156,11 +156,11 @@ namespace Convention
     {
         public static T GetSingleton<T>() where T : ISingleton<T>
         {
-            return (T)typeof(T).GetProperty("instance", BindingFlags.Instance | BindingFlags.Public).GetValue(null);
+            return (T)typeof(T).GetProperty("instance", BindingFlags.Static | BindingFlags.Public).GetValue(null);
         }
         public static void SetSingleton<T>(T value) where T : ISingleton<T>
         {
-            typeof(T).GetProperty("instance", BindingFlags.Instance | BindingFlags.Public).SetValue(null, value);
+            typeof(T).GetProperty("instance", BindingFlags.Static | BindingFlags.Public).SetValue(null, value);
         }
     }
 
@@ -170,13 +170,13 @@ namespace Convention
         public static T instance { get => m_instance; protected set => m_instance = value; }
         public Singleton()
         {
-            if (instance != this)
+            if (instance != null && instance != this)
                 throw new AnyException("instance is exist");
-            instance = (T)this;
         }
         ~Singleton()
         {
-            instance = null;
+            if (instance == this)
+                instance = null;
         }
 
         public static bool IsAvailable()

@@ -161,7 +161,7 @@ namespace Convention
             if (PerformanceTestManager.RunningBenchmark)
                 return;
 
-            //Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.lockState = newState ? CursorLockMode.Locked : CursorLockMode.None;
         }
     }
 }

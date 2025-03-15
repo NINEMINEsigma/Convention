@@ -71,11 +71,12 @@ namespace Convention.WindowsUI.Variant
             return entries;
         }
 
-        public ItemEntry CreateRootItemEntryWithGameObjectAndSetParent([In]GameObject binder, [In] HierarchyItem parentItemTab)
+        public ItemEntry CreateRootItemEntryWithGameObjectAndSetParent([In] GameObject binder, [In] HierarchyItem parentItemTab)
         {
             var result = parentItemTab.CreateSubPropertyItemWithBinders(binder)[0];
             var root = result.ref_value.GetComponent<HierarchyItem>();
             root.title = binder.name;
+            root.target = binder;
             AddReference(binder, root);
             foreach (Transform child in binder.transform)
             {
@@ -83,11 +84,12 @@ namespace Convention.WindowsUI.Variant
             }
             return result;
         }
-        public ItemEntry CreateRootItemEntryWithGameObject([In]GameObject binder)
+        public ItemEntry CreateRootItemEntryWithGameObject([In] GameObject binder)
         {
             var result = m_PropertiesWindow.CreateRootItemEntries(1)[0];
             var root = result.ref_value.GetComponent<HierarchyItem>();
             root.title = binder.name;
+            root.target = binder;
             AddReference(binder, root);
             foreach (Transform child in binder.transform)
             {
@@ -106,6 +108,26 @@ namespace Convention.WindowsUI.Variant
             windowManager = GetComponent<WindowManager>();
             m_PropertiesWindow = GetComponent<PropertiesWindow>();
             AllReferenceLinker = new();
+        }
+
+        public void RenameTabWhenItFocus()
+        {
+            Transform focus = FocusWindowIndictaor.instance.Target;
+            var item = focus.GetComponent<HierarchyItem>();
+            while (item == null && focus != null)
+            {
+                focus = focus.parent;
+                if (focus == null)
+                    return;
+                item = focus.GetComponent<HierarchyItem>();
+            }
+            if (item != null)
+            {
+                SharedModule.instance.Rename(item.text, x =>
+                {
+                    item.text = x;
+                });
+            }
         }
     }
 }

@@ -201,6 +201,11 @@ namespace Convention
 
     public static partial class SkyExtension
     {
+        public static Material GetSky()
+        {
+            return RenderSettings.skybox;
+        }
+
         public static void Load([In][Opt,When("If you sure")]Material skybox)
         {
             RenderSettings.skybox = skybox;
@@ -225,6 +230,10 @@ namespace Convention
         public static void Unload(string name)
         {
             SceneManager.UnloadSceneAsync(name);
+        }
+        public static Scene GetScene(string name)
+        {
+            return SceneManager.GetSceneByName(name);
         }
     }
 }
