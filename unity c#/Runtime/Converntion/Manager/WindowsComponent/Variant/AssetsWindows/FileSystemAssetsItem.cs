@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Convention.WindowsUI.Variant
@@ -100,8 +101,23 @@ namespace Convention.WindowsUI.Variant
         private class SkyItem : AssetBundleItem
         {
             [Resources, SerializeField] private Material SkyBox;
+            public class SkyItemInstanceWrapper : Singleton<SkyItemInstanceWrapper>
+            {
+                public static void InitInstance()
+                {
+                    if (instance == null)
+                    {
+                        instance = new SkyItemInstanceWrapper();
+                    }
+                }
+                [InspectorDraw(InspectorDrawType.Reference), Ignore] public Material SkyBox;
+                [InspectorDraw(InspectorDrawType.Text), Ignore] public string SkyBoxName;
+            }
 
-
+            private void OnEnable()
+            {
+                SkyItemInstanceWrapper.InitInstance();
+            }
             private void OnDisable()
             {
                 SkyBox = null;
@@ -118,11 +134,21 @@ namespace Convention.WindowsUI.Variant
             public override void OnAssetsItemInvoke(AssetsItem item)
             {
                 SkyExtension.Load(SkyBox);
+                if (!HierarchyWindow.instance.ContainsReference(SkyItemInstanceWrapper.instance))
+                {
+                    var skyItem = HierarchyWindow.instance.CreateRootItemEntryWithBinders(SkyItemInstanceWrapper.instance)[0].ref_value.GetComponent<HierarchyItem>();
+                    skyItem.title = "Global Skybox";
+                }
+                SkyItemInstanceWrapper.instance.SkyBox = SkyBox;
+                SkyItemInstanceWrapper.instance.SkyBoxName = targetName;
+                InspectorWindow.instance.ClearWindow();
             }
         }
         private class SceneItem : AssetBundleItem
         {
             [Resources, SerializeField] private bool isLoad = false;
+            [Content, SerializeField, Ignore] private Scene m_Scene;
+            private PropertiesWindow.ItemEntry m_entry;
 
             public override void OnAssetsItemFocus(AssetsItem item)
             {
@@ -134,21 +160,28 @@ namespace Convention.WindowsUI.Variant
                 {
                     SceneExtension.Load(targetName);
                     item.GetComponent<Image>().color = Color.green;
+                    // init scene item
+                    m_Scene = SceneExtension.GetScene(targetName);
+                    m_entry = HierarchyWindow.instance.CreateRootItemEntryWithBinders(item)[0];
+                    var hierarchyItem = m_entry.ref_value.GetComponent<HierarchyItem>();
+                    hierarchyItem.title = m_Scene.name;
                 }
                 else
                 {
                     SceneExtension.Unload(targetName);
                     item.GetComponent<Image>().color = Color.white;
+                    // unload scene item
+                    m_entry.Release();
                 }
             }
         }
-        private class GameObjectItem : AssetBundleItem,IOnlyFocusThisOnInspector
+        private class GameObjectItem : AssetBundleItem, IOnlyFocusThisOnInspector
         {
             [Content, IsInstantiated(true)] public GameObject target;
             [Content, IsInstantiated(true)] public GameObject last;
             private Image image;
 
-            [InspectorDraw(InspectorDrawType.Button),Content]
+            [InspectorDraw(InspectorDrawType.Button), Content]
             public void ReleaseGameObjectToScene()
             {
                 if (target != null)
@@ -208,6 +241,10 @@ namespace Convention.WindowsUI.Variant
                     {
                         target = null;
                     }
+                }
+                else
+                {
+                    ReleaseGameObjectToScene();
                 }
             }
         }

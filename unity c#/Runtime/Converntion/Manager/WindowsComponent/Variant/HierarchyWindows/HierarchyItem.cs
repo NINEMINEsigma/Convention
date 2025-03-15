@@ -1,6 +1,5 @@
 using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
+using System;
 using static Convention.WindowsUI.Variant.PropertiesWindow;
 
 namespace Convention.WindowsUI.Variant
@@ -38,6 +37,10 @@ namespace Convention.WindowsUI.Variant
         [Content]
         public void OnFocusHierarchyItem()
         {
+            if (target == null)
+            {
+                throw new InvalidOperationException("target is null");
+            }
             InspectorWindow.instance.SetTarget(target, this);
             if (!IsEnableFocusWindow)
                 return;

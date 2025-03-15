@@ -105,20 +105,24 @@ namespace Convention.WindowsUI.Variant
             }
             m_ParentHashCodeField.gameObject.SetActive(item != null);
             m_ThisHashCodeField.gameObject.SetActive(item != null);
-            RefreshImmediate();
+            RefreshImmediateWithoutFocusCheck();
             return result;
         }
         public object GetTarget()
         {
             return this.target;
         }
+        public void RefreshImmediateWithoutFocusCheck()
+        {
+            ClearWindow();
+            if (target != null)
+                BuildWindow();
+        }
         public void RefreshImmediate()
         {
-            //if (FocusWindowIndictaor.instance.Target == this.rectTransform)
+            if (FocusWindowIndictaor.instance.Target == this.rectTransform)
             {
-                ClearWindow();
-                if (target != null)
-                    BuildWindow();
+                RefreshImmediateWithoutFocusCheck();
             }
         }
 
