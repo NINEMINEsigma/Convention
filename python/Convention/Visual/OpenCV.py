@@ -1179,6 +1179,12 @@ class ImageObject(left_np_ndarray_reference):
         # 返回绘制了方框的结果
         return result
 
+    # 图像卷积
+    def conv(self, kernel:MatLike, *args, **kwargs):
+        return base.filter2D(self.image, -1, kernel, *args, **kwargs)
+    def conv_with_shape(self, shape:Tuple[int, int], *args, **kwargs):
+        return base.filter2D(self.image, -1, shape, *args, **kwargs)
+
     # np加速
 
 def get_new_noise(
