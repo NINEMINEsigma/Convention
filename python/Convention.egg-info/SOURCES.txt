@@ -6,9 +6,17 @@ Convention/__init__.py
 Convention/lazy.py
 Convention/short.py
 Convention.egg-info/PKG-INFO
+Convention.egg-info/PKG-INFO.meta
 Convention.egg-info/SOURCES.txt
+Convention.egg-info/SOURCES.txt.meta
 Convention.egg-info/dependency_links.txt
+Convention.egg-info/dependency_links.txt.meta
 Convention.egg-info/top_level.txt
+Convention.egg-info/top_level.txt.meta
+Convention/Algorithm/__init__.py
+Convention/Algorithm/Graph/Core.py
+Convention/Algorithm/Graph/LazyThetaStar.py
+Convention/Algorithm/Graph/__init__.py
 Convention/Audio/Core.py
 Convention/Audio/Microphone.py
 Convention/Audio/Vocal.py
@@ -58,3 +66,4 @@ Convention/Web/Core.py
 Convention/Web/Requests.py
 Convention/Web/Selunit.py
 Convention/Web/__init__.py
+tests/test.py
