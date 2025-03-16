@@ -3,7 +3,7 @@ import io
 
 setup(
     name="Convention",
-    version="0.1.0",
+    version="0.1.2",
     author="Convention Unity",
     description="A comprehensive Python utility library",
     long_description=io.open("README.md", encoding="utf-8").read(),
@@ -15,7 +15,7 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires=">=3.6",
+    python_requires=">=3.10",
     install_requires=[
         # 在这里添加依赖包
     ],

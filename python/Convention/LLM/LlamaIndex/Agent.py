@@ -1,8 +1,13 @@
 from ...Internal                    import *
-from .Core                          import LlamaCPPEmbedding
+from .Core                          import LlamaCPPEmbedding, make_directory_reader
 from ...File.Core                   import tool_file, Wrapper as Wrapper2File, tool_file_or_str
 from ...Str.Core                    import UnWrapper as UnWrapper2Str
-from llama_index.core               import VectorStoreIndex, SimpleDirectoryReader, ServiceContext
+from llama_index.core               import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.core.storage.storage_context import (
+    StorageContext                  as     StorageContext
+)
+from llama_index.core.callbacks     import CallbackManager
+from llama_index.core.schema        import TransformComponent
 from llama_index.core.node_parser   import SentenceSplitter
 from llama_index.core.retrievers    import VectorIndexRetriever
 from llama_index.core.query_engine  import RetrieverQueryEngine
@@ -10,6 +15,7 @@ from llama_index.core.llms          import LLM
 from llama_index.core.postprocessor import SimilarityPostprocessor
 import os
 
+# https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/service_context_migration/
 class WorkflowAgent(any_class):
     """
     基于LlamaIndex的工作流智能体，用于构建和执行知识密集型工作流。
@@ -18,7 +24,7 @@ class WorkflowAgent(any_class):
 
     def __init__(
         self,
-        documents:      tool_file_or_str,
+        documents:          tool_file_or_str,
         llm:                LLM,
         embedding_model:    Optional[LlamaCPPEmbedding] = None,
         chunk_size:         int = 1024,
@@ -43,8 +49,8 @@ class WorkflowAgent(any_class):
         self.chunk_overlap:     int                         = chunk_overlap
         self.similarity_top_k:  int                         = similarity_top_k
 
-        # 创建服务上下文
-        self.service_context = ServiceContext.from_defaults(
+        # 配置全局设置
+        settings = Settings.from_defaults(
             llm=self.llm,
             embed_model=self.embedding_model,
             node_parser=SentenceSplitter(
@@ -55,31 +61,47 @@ class WorkflowAgent(any_class):
 
         # 加载文档并创建索引
         self.index = None
-        self.load_documents()
+        self.load_documents(settings)
 
-    def load_documents(self):
-        """加载文档并创建索引"""
+    def load_documents(
+        self,
+        storage_context:        Optional[StorageContext]            = None,
+        show_progress:          bool                                = False,
+        callback_manager:       Optional[CallbackManager]           = None,
+        transformations:        Optional[List[TransformComponent]]  = None,
+        **kwargs: Any,
+        ) -> VectorStoreIndex:
+        """
+        加载文档并创建索引
+
+        参数:
+            storage_context: 可选的StorageContext对象，用于配置索引创建
+            show_progress: 是否显示进度条
+            callback_manager: 可选的CallbackManager对象，用于管理回调
+            transformations: 可选的TransformComponent对象列表，用于配置索引创建
+            **kwargs: 其他可选参数
+        """
         if not self.documents.exists():
             print(f"文档目录 {self.documents} 不存在")
             return
 
         try:
             # 加载文档
-            documents = (
-                SimpleDirectoryReader(UnWrapper2Str(self.documents)).load_data()
-                if self.documents.is_dir()
-                else SimpleDirectoryReader(UnWrapper2Str(self.documents)).load_data()
-            )
+            documents =  make_directory_reader(self.documents).load_data()
             print(f"已加载 {len(documents)} 个文档")
 
-            # 创建索引
             self.index = VectorStoreIndex.from_documents(
                 documents,
-                service_context=self.service_context
+                storage_context=storage_context,
+                show_progress=show_progress,
+                callback_manager=callback_manager,
+                transformations=transformations,
+                **kwargs
             )
             print("索引创建成功")
         except Exception as e:
             print(f"加载文档或创建索引时出错: {str(e)}")
+        return self.index
 
     def query(self, query_text: str) -> str:
         """
@@ -103,10 +125,11 @@ class WorkflowAgent(any_class):
             # 创建后处理器
             postprocessor = SimilarityPostprocessor(similarity_cutoff=0.7)
 
-            # 创建查询引擎
+            # 创建查询引擎，显式传递llm参数
             query_engine = RetrieverQueryEngine(
                 retriever=retriever,
-                node_postprocessors=[postprocessor]
+                node_postprocessors=[postprocessor],
+                llm=self.llm
             )
 
             # 执行查询

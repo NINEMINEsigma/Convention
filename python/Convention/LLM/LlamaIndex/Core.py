@@ -1,11 +1,12 @@
-from ...Internal import *
-from ...File.Core import tool_file_or_str, UnWrapper as UnwrapperFile2Str
-from llama_index.core.embeddings import BaseEmbedding
-from llama_index.core import SimpleDirectoryReader
-from pydantic import Field
-import requests
-import asyncio
-import aiohttp
+from ...Internal                    import *
+from ...File.Core                   import tool_file_or_str, UnWrapper as UnwrapperFile2Str
+from llama_index.core.embeddings    import BaseEmbedding
+from llama_index.core               import SimpleDirectoryReader
+from llama_index.core.schema        import Document
+from pydantic                       import Field
+import requests                     as     requests
+import asyncio                      as     asyncio
+import aiohttp                      as     aiohttp
 
 # https://docs.llamaindex.ai/en/stable/module_guides/loading/simpledirectoryreader/#simpledirectoryreader
 def make_directory_reader(
@@ -84,6 +85,13 @@ class EasyIndexReader(left_value_reference[SimpleDirectoryReader]):
             if isinstance(reader, SimpleDirectoryReader)
             else SimpleDirectoryReader(UnwrapperFile2Str(reader))
             )
+
+    @property
+    def reader(self) -> SimpleDirectoryReader:
+        return self.reader
+
+    def load_data(self) -> List[Document]:
+        return self.reader.load_data()
 
 class LlamaCPPEmbedding(BaseEmbedding, any_class):
     """
