@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Convention.Internal;
 using UnityEngine;
+using UnityEngine.Events;
 using static UnityEngine.Rendering.DebugUI;
 
 #if UNITY_2017_1_OR_NEWER
@@ -59,7 +60,7 @@ namespace Convention
 
     public static partial class ConventionUtility
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        //[MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string convert_xstring([In] object obj)
         {
             return Convert.ToString(obj);
@@ -231,6 +232,25 @@ namespace Convention
                 }
             }
             return types;
+        }
+
+        public static List<MemberInfo> GetMemberInfos(Type type, IEnumerable<Type> cutOffType = null, bool isGetNotPublic = false, bool isGetStatic = false)
+        {
+            Type current = type;
+            BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+            List<MemberInfo> result = new();
+            if (isGetNotPublic)
+                flags |= BindingFlags.NonPublic;
+            if (isGetStatic)
+                flags |= BindingFlags.Static;
+            while ((cutOffType != null && !cutOffType.Contains(current)) && current != null)
+            {
+                result.AddRange(current.GetFields(flags));
+                result.AddRange(current.GetProperties(flags));
+                result.AddRange(current.GetMethods(flags));
+                current = current.BaseType;
+            }
+            return result;
         }
     }
 
@@ -458,11 +478,30 @@ namespace Convention
     [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
     public class IgnoreAttribute : Attribute { }
     [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
-    public class SettingAttribute : Attribute { }
+    public class ProjectContextLabelAttribute : Attribute
+    {
+        public enum ContextLabelType
+        {
+            Content, Resources, Setting
+        }
+        public static void DebugError(string mainName, string message, ContextLabelType type, UnityEngine.Object obj)
+        {
+            string labelname = type switch
+            {
+                ContextLabelType.Setting => "setting",
+                ContextLabelType.Resources => "resources",
+                ContextLabelType.Content => "content",
+                _ => "context-label"
+            };
+            Debug.LogError($"{mainName} - {message} due to missing {labelname}.", obj);
+        }
+    }
     [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
-    public class ResourcesAttribute : Attribute { }
+    public class SettingAttribute : ProjectContextLabelAttribute { }
     [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
-    public class ContentAttribute : Attribute { }
+    public class ResourcesAttribute : ProjectContextLabelAttribute { }
+    [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
+    public class ContentAttribute : ProjectContextLabelAttribute { }
     [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
     public class OnlyPlayModeAttribute : Attribute { }
     [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = false)]
@@ -575,6 +614,18 @@ namespace Convention
         }
 #endif
 
+        private static CoroutineMonoStarterUtil CoroutineStarter;
+
+        private class CoroutineMonoStarterUtil : MonoBehaviour { }
+        public static Coroutine StartCoroutine(IEnumerator coroutine)
+        {
+            if (CoroutineStarter == null)
+            {
+                CoroutineStarter = new GameObject($"{nameof(ConventionUtility)}-{nameof(CoroutineStarter)}").AddComponent<CoroutineMonoStarterUtil>();
+            }
+            return CoroutineStarter.StartCoroutine(coroutine);
+        }
+
         public static bool IsNumber([In] object data)
         {
             if (data == null) return false;
@@ -639,6 +690,14 @@ namespace Convention
         {
             return type == typeof(bool);
         }
+        public static bool IsEnum([In]Type type)
+        {
+            return type.IsEnum;
+        }
+        public static bool IsImage([In]Type type)
+        {
+            return type.IsSubclassOf(typeof(Texture)) || type == typeof(Sprite);
+        }
 
         public static bool HasCustomAttribute([In] MemberInfo member, [In] IEnumerable<Type> attrs)
         {
@@ -650,7 +709,7 @@ namespace Convention
             return false;
         }
         [return: ReturnMayNull]
-        public static Type GetMemberValue([In] MemberInfo member)
+        public static Type GetMemberValueType([In] MemberInfo member)
         {
             if (member is FieldInfo field)
             {
@@ -662,7 +721,7 @@ namespace Convention
             }
             return null;
         }
-        public static bool GetMemberValue([In] MemberInfo member, [Out] out Type type)
+        public static bool GetMemberValueType([In] MemberInfo member, [Out] out Type type)
         {
             if (member is FieldInfo field)
             {
@@ -737,7 +796,7 @@ namespace Convention
                 result.AddRange(
                     from info in _CurType.GetMembers(BindingFlags.NonPublic | BindingFlags.Instance)
                     where attrs == null || HasCustomAttribute(info, attrs)
-                    where types == null || (GetMemberValue(info, out var type) && types.Contains(type))
+                    where types == null || (GetMemberValueType(info, out var type) && types.Contains(type))
                     select info
                     );
                 _CurType = _CurType.BaseType;
@@ -798,6 +857,55 @@ namespace Convention
             {
                 PerformanceIndicator.value = value == PerformanceMode.Quality;
             }
+        }
+    }
+
+    public static partial class ConventionUtility
+    {
+        public static UnityEvent WrapperAction2Event(params UnityAction[] actions)
+        {
+            var result = new UnityEvent();
+            foreach (var action in actions)
+            {
+                result.AddListener(action);
+            }
+            return result;
+        }
+        public static UnityEvent<T> WrapperAction2Event<T>(params UnityAction<T>[] actions)
+        {
+            var result = new UnityEvent<T>();
+            foreach (var action in actions)
+            {
+                result.AddListener(action);
+            }
+            return result;
+        }
+        public static UnityEvent<T, Y> WrapperAction2Event<T, Y>(params UnityAction<T, Y>[] actions)
+        {
+            var result = new UnityEvent<T, Y>();
+            foreach (var action in actions)
+            {
+                result.AddListener(action);
+            }
+            return result;
+        }
+        public static UnityEvent<T, Y, U> WrapperAction2Event<T, Y, U>(params UnityAction<T, Y, U>[] actions)
+        {
+            var result = new UnityEvent<T, Y, U>();
+            foreach (var action in actions)
+            {
+                result.AddListener(action);
+            }
+            return result;
+        }
+        public static UnityEvent<T, Y, U, I> WrapperAction2Event<T, Y, U, I>(params UnityAction<T, Y, U, I>[] actions)
+        {
+            var result = new UnityEvent<T, Y, U, I>();
+            foreach (var action in actions)
+            {
+                result.AddListener(action);
+            }
+            return result;
         }
     }
 }

@@ -27,5 +27,9 @@ namespace Convention
         {
             return CropTexture(texture, new(0, 0, texture.width, texture.height));
         }
+        public static Sprite ToSprite(this Texture2D texture)
+        {
+            return Sprite.Create(texture, new(0, 0, texture.width, texture.height), new(0.5f, 0.5f));
+        }
     }
 }

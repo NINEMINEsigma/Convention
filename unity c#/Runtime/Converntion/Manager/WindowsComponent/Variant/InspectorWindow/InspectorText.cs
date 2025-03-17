@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -33,6 +34,11 @@ namespace Convention.WindowsUI.Variant
         private void OnEnable()
         {
             TextArea.interactable = targetItem.AbleChangeType;
+            try
+            {
+                TextArea.interactable = ConventionUtility.IsString(targetItem.GetValue().GetType());
+            }
+            catch (Exception) { }
             TextArea.text = targetItem.GetValue().ToString();
         }
 
@@ -40,7 +46,7 @@ namespace Convention.WindowsUI.Variant
         {
             if (targetItem.UpdateType && !isEditing)
             {
-                TextArea.text = (string)targetItem.GetValue();
+                TextArea.text = targetItem.GetValue().ToString();
             }
         }
 

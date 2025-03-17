@@ -35,6 +35,8 @@ namespace Convention.WindowsUI.Variant
             }
         }
 
+
+
         private void Start()
         {
             if (m_WindowManager == null)

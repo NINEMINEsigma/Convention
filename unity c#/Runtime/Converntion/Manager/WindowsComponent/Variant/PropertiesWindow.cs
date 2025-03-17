@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -276,20 +277,39 @@ namespace Convention.WindowsUI.Variant
             {
                 if (ref_value != null)
                 {
-                    var rectTransform = ref_value.transform as RectTransform;
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
-                    RectTransformExtension.AdjustSizeToContainsChilds(rectTransform);
+                    //var rectTransform = ref_value.transform as RectTransform;
+                    //LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+                    //RectTransformExtension.AdjustSizeToContainsChilds(rectTransform);
+                    ConventionUtility.StartCoroutine(Adjuster(ref_value.transform as RectTransform));
+
                 }
                 if (parentWindow)
                 {
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(parentWindow.TargetWindowContent);
-                    RectTransformExtension.AdjustSizeToContainsChilds(parentWindow.TargetWindowContent);
+                    //LayoutRebuilder.ForceRebuildLayoutImmediate(parentWindow.TargetWindowContent);
+                    //RectTransformExtension.AdjustSizeToContainsChilds(parentWindow.TargetWindowContent);
+                    ConventionUtility.StartCoroutine(Adjuster(parentWindow.TargetWindowContent));
                 }
                 else
                 {
-                    var rgo = parentEntry.ref_value.transform as RectTransform;
-                    LayoutRebuilder.ForceRebuildLayoutImmediate(rgo);
-                    RectTransformExtension.AdjustSizeToContainsChilds(rgo);
+                    //var rgo = parentEntry.ref_value.transform as RectTransform;
+                    //LayoutRebuilder.ForceRebuildLayoutImmediate(rgo);
+                    //RectTransformExtension.AdjustSizeToContainsChilds(rgo);
+                    //parentEntry.ForceRebuildLayoutImmediate();
+                    ConventionUtility.StartCoroutine(Adjuster2(parentEntry.ref_value.transform as RectTransform, parentEntry));
+                }
+
+                static IEnumerator Adjuster(RectTransform rectTransform)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+                    yield return null;
+                    RectTransformExtension.AdjustSizeToContainsChilds(rectTransform);
+                }
+                static IEnumerator Adjuster2(RectTransform rectTransform, ItemEntry parentEntry)
+                {
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
+                    yield return null;
+                    RectTransformExtension.AdjustSizeToContainsChilds(rectTransform);
+                    yield return null;
                     parentEntry.ForceRebuildLayoutImmediate();
                 }
             }

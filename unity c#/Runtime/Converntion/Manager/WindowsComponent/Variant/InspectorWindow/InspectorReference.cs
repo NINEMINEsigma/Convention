@@ -1,18 +1,20 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Convention.WindowsUI.Variant
 {
     public class InspectorReference : InspectorDrawer
     {
         [Resources] public ModernUIInputField TextArea;
+        [Resources] public Button RawButton;
         public IAnyClass lastReference;
         [Content] public bool isEditing = false;
 
         private void OnCallback(string str)
         {
-            if(str==null || str.Length==0)
+            if (str == null || str.Length == 0)
             {
                 targetItem.SetValue(null);
                 if (targetItem.target is IInspectorUpdater updater)
@@ -32,6 +34,7 @@ namespace Convention.WindowsUI.Variant
 
         private void Start()
         {
+            RawButton.onClick.AddListener(() => InspectorWindow.instance.SetTarget(targetItem.GetValue(), null));
             TextArea.AddListener(OnCallback);
             TextArea.InputFieldSource.Source.onEndEdit.AddListener(x => isEditing = false);
             TextArea.InputFieldSource.Source.onSelect.AddListener(x => isEditing = true);

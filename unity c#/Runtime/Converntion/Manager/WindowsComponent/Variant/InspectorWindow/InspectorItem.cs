@@ -25,7 +25,9 @@ namespace Convention.WindowsUI.Variant
         // Object
         Reference = 1 << 7, Structure = 1 << 8,
         // Method
-        Button = 1 << 9
+        Button = 1 << 9,
+        // Enum
+        Enum = 1 << 10
     }
 
 
@@ -59,7 +61,7 @@ namespace Convention.WindowsUI.Variant
         private InspectorDrawer m_TransformModule;
         [Resources, OnlyNotNullMode, SerializeField]
         private InspectorDrawer m_TextModule, m_ToggleModule, m_ImageModule, m_ReferenceModule, 
-            m_ButtonModule, m_StructureModule, m_DictionaryItemModule;
+            m_ButtonModule, m_StructureModule, m_DictionaryItemModule, m_EnumItemModule;
         private Dictionary<InspectorDrawType, InspectorDrawer> m_AllUIModules = new();
         private List<ItemEntry> m_DynamicSubEntries = new();
 
@@ -176,6 +178,7 @@ namespace Convention.WindowsUI.Variant
             m_AllUIModules[InspectorDrawType.Reference] = m_ReferenceModule;
             m_AllUIModules[InspectorDrawType.Structure] = m_StructureModule;
             m_AllUIModules[InspectorDrawType.Button] = m_ButtonModule;
+            m_AllUIModules[InspectorDrawType.Enum] = m_EnumItemModule;
             foreach (var module in m_AllUIModules)
             {
                 module.Value.OnInspectorItemInit(this);
@@ -228,6 +231,15 @@ namespace Convention.WindowsUI.Variant
             else
                 throw new InvalidOperationException();
         }
+        public Type GetValueType()
+        {
+            if (targetMemberInfo != null)
+                return ConventionUtility.GetMemberValueType(targetMemberInfo);
+            else if (targetValueWrapper != null)
+                return targetValueWrapper.type;
+            else
+                throw new InvalidOperationException();
+        }
         public void InvokeAction()
         {
             if (targetFunctionCall != null)
@@ -261,7 +273,7 @@ namespace Convention.WindowsUI.Variant
                 // Reset AbleChangeType
                 drawAttr = targetMemberInfo.GetCustomAttribute<InspectorDrawAttribute>(true);
                 argAttr = targetMemberInfo.GetCustomAttribute<ArgPackageAttribute>(true);
-                type = ConventionUtility.GetMemberValue(targetMemberInfo);
+                type = ConventionUtility.GetMemberValueType(targetMemberInfo);
                 name = targetMemberInfo.Name;
                 AbleChangeType = targetMemberInfo.GetCustomAttributes(typeof(IgnoreAttribute), true).Length == 0;
                 // Reset DrawType
@@ -271,20 +283,22 @@ namespace Convention.WindowsUI.Variant
                 }
                 else if (type != null)
                 {
+                    if (ConventionUtility.IsEnum(type))
+                        DrawType = InspectorDrawType.Enum;
                     if (ConventionUtility.IsBool(type))
                         DrawType = InspectorDrawType.Toggle;
                     else if (ConventionUtility.IsString(type) || ConventionUtility.IsNumber(type))
                         DrawType = InspectorDrawType.Text;
                     else if (ConventionUtility.IsArray(type))
                         DrawType = InspectorDrawType.Array;
+                    else if (ConventionUtility.IsImage(type))
+                        DrawType = InspectorDrawType.Image;
                     else if (type.GetInterface(nameof(IEnumerable)) != null && type.GetGenericArguments().Length == 1)
                         DrawType = InspectorDrawType.List;
                     else if (type.GetInterface(nameof(IEnumerable)) != null && type.GetGenericArguments().Length == 2)
                         DrawType = InspectorDrawType.Dictionary;
                     else if (type == typeof(Transform))
                         DrawType = InspectorDrawType.Transform;
-                    else if (type.IsSubclassOf(typeof(Texture)))
-                        DrawType = InspectorDrawType.Image;
                     else if (type.IsClass)
                         DrawType = InspectorDrawType.Reference;
                     else
@@ -348,7 +362,7 @@ namespace Convention.WindowsUI.Variant
 
         private void FixedUpdate()
         {
-            AdjustSizeToContainsChilds();
+            //AdjustSizeToContainsChilds();
         }
     }
 

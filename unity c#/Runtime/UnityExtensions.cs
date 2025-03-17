@@ -5,6 +5,8 @@ using Convention.WindowsUI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEditor;
+using UnityEngine.Profiling;
 
 namespace Convention
 {
@@ -60,16 +62,23 @@ namespace Convention
     {
         private static bool IsDisableAdjustSizeToContainsChilds2DeferUpdates = false;
 
+
         public static void InitExtensionEnv()
         {
             IsDisableAdjustSizeToContainsChilds2DeferUpdates = false;
         }
 
         public class AdjustSizeIgnore : MonoAnyBehaviour { }
+#if UNITY_EDITOR
+        [UnityEditor.MenuItem("Convention/DisableAdjustSize", priority = 100000)]
+#endif
         public static void DisableAdjustSizeToContainsChilds2DeferUpdates()
         {
             IsDisableAdjustSizeToContainsChilds2DeferUpdates = true;
         }
+#if UNITY_EDITOR
+        [UnityEditor.MenuItem("Convention/EnableAdjustSize", priority = 100000)]
+#endif
         public static void AppleAndEnableAdjustSizeToContainsChilds()
         {
             IsDisableAdjustSizeToContainsChilds2DeferUpdates = false;
@@ -83,6 +92,7 @@ namespace Convention
             bool stats = false;
 
             List<RectTransform> currentList = new(), nextList = new();
+            var corners = new Vector3[4];
             foreach (RectTransform item in rectTransform)
             {
                 currentList.Add(item);
@@ -106,9 +116,7 @@ namespace Convention
                     {
                         nextList.Add(item);
                     }
-                    var corners = new Vector3[4];
                     childTransform.GetWorldCorners(corners);
-
                     foreach (var corner in corners)
                     {
                         Vector2 localCorner = rectTransform.InverseTransformPoint(corner);
@@ -122,7 +130,6 @@ namespace Convention
                 }
                 currentList.Clear();
             } while (nextList.Count > 0);
-
             if (stats)
             {
                 if ((axis.HasValue && axis.Value == RectTransform.Axis.Vertical) ||

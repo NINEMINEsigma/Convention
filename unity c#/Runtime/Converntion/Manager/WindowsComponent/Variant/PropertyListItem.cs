@@ -19,7 +19,7 @@ namespace Convention.WindowsUI.Variant
         public RectTransform TextRectTransform;
 
         [Content, SerializeField] private ItemEntry m_entry;
-        [Content, Ignore, SerializeField] private bool m_folderStats = true;
+        [Content, SerializeField] private bool m_folderStats = true;
 
         public ItemEntry Entry
         {
@@ -49,7 +49,7 @@ namespace Convention.WindowsUI.Variant
             m_buttonText.gameObject.AddComponent<RectTransformExtension.AdjustSizeIgnore>();
             m_rawButton.onClick.AddListener(Switch);
             TextRectTransform = m_buttonText.GetComponent<RectTransform>();
-            dropdownImage.eulerAngles = new(0, 0, 90);
+            dropdownImage.eulerAngles = new(0, 0, IsFold ? 90 : 0);
         }
 
         protected virtual void OnEnable()

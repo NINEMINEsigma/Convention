@@ -135,12 +135,21 @@ namespace Convention.WindowsUI.Variant
             }
             m_currentEntries.Clear();
         }
+        private static readonly Type[] IgnoreCutOffType = new Type[] {
+                typeof(MonoAnyBehaviour),
+                typeof(GameObject),
+                typeof(MonoBehaviour),
+                typeof(UnityEngine.Object),
+                typeof(Component)
+            };
         private void BuildWindow()
         {
             m_TypeText.text = target.GetType().Name;
+            var allmembers = ConventionUtility.GetMemberInfos(target.GetType(), IgnoreCutOffType, true, true);
             var members =
-                (from member in target.GetType().GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+                (from member in allmembers
                  where member.GetCustomAttributes(typeof(InspectorDrawAttribute), true).Length != 0
+                 where (member is MethodInfo info && info.GetParameters().Length == 0) || member is not MethodInfo
                  select member).ToList();
             int offset = m_currentEntries.Count;
             // Component or GameObject
@@ -154,6 +163,18 @@ namespace Convention.WindowsUI.Variant
                 offset = GenerateGameObjectComponentModules(offset, go);
             }
             // Main
+            if (members.Count == 0)
+            {
+                allmembers = ConventionUtility.GetMemberInfos(target.GetType(), IgnoreCutOffType, false, true);
+                members = (from member in allmembers
+                           where (
+                           member is MethodInfo info &&
+                           info.GetParameters().Length == 0 &&
+                           !info.Name.StartsWith("get_") &&
+                           !info.Name.StartsWith("set_")
+                           ) || member is not MethodInfo
+                           select member).ToList();
+            }
             m_currentEntries.AddRange(m_PropertiesWindow.CreateRootItemEntries(members.Count));
             for (int i = 0, e = members.Count; i < e; i++)
             {
@@ -162,7 +183,7 @@ namespace Convention.WindowsUI.Variant
             }
             offset += members.Count;
             // End To GameObject
-            if(target is MonoBehaviour mono)
+            if (target is MonoBehaviour mono)
             {
                 offset = GenerateEnableToggleModule(offset, mono);
             }
@@ -217,7 +238,7 @@ namespace Convention.WindowsUI.Variant
                         () => "",
                         (x) =>
                         {
-                            var components = ConventionUtility.SeekType(t=>t.IsSubclassOf(typeof(Component))&& t.FullName.Contains((string)x));
+                            var components = ConventionUtility.SeekType(t => t.IsSubclassOf(typeof(Component)) && t.FullName.Contains((string)x));
                             if (components.Count != 1)
                                 return;
                             var component = components[0];

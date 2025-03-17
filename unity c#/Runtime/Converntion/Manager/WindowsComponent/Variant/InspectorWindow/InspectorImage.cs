@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System;
 
 namespace Convention.WindowsUI.Variant
 {
@@ -7,6 +8,25 @@ namespace Convention.WindowsUI.Variant
     {
         [Resources] public RawImage ImageArea;
         [Resources] public Button RawButton;
+
+        public void SetImage([In]Texture texture)
+        {
+            if (targetItem.GetValueType() == texture.GetType())
+                targetItem.SetValue(texture);
+            else if (targetItem.GetValueType() == typeof(Sprite))
+            {
+                targetItem.SetValue(texture.CopyTexture().ToSprite());
+            }
+            else if(targetItem.GetType() == typeof(Texture2D))
+            {
+                targetItem.SetValue(texture.CopyTexture());
+            }
+            else
+            {
+                throw new NotSupportedException("Unsupport Image Convert");
+            }
+            ImageArea.texture = texture;
+        }
 
         private void OnCallback()
         {
@@ -18,8 +38,7 @@ namespace Convention.WindowsUI.Variant
                 if (file.IsExist == false)
                     return;
                 Texture2D texture = file.LoadAsImage();
-                targetItem.SetValue(texture);
-                ImageArea.texture = texture;
+                SetImage(texture);
                 if (targetItem.target is IInspectorUpdater updater)
                 {
                     updater.OnInspectorUpdate();
@@ -35,12 +54,15 @@ namespace Convention.WindowsUI.Variant
         private void OnEnable()
         {
             RawButton.interactable = targetItem.AbleChangeType;
-            ImageArea.texture = (Texture)targetItem.GetValue();
+            if (targetItem.GetValueType().IsSubclassOf(typeof(Texture)))
+                ImageArea.texture = (Texture)targetItem.GetValue();
+            else if (targetItem.GetValueType() == typeof(Sprite))
+                ImageArea.texture = ((Sprite)targetItem.GetValue()).texture;
         }
 
         private void FixedUpdate()
         {
-            if (targetItem.UpdateType)
+            if (targetItem.UpdateType && targetItem.GetValueType().IsSubclassOf(typeof(Texture)))
             {
                 ImageArea.texture = (Texture)targetItem.GetValue();
             }
