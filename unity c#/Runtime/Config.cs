@@ -605,6 +605,7 @@ namespace Convention
         [UnityEditor.MenuItem("Convention/InitExtensionEnv", priority = 100000)]
         public static void InitExtensionEnv()
         {
+            UnityEngine.Application.quitting += () => CoroutineStarter = null;
             RegisterBaseWrapperExtension.InitExtensionEnv();
             SO.Windows.InitExtensionEnv();
 
@@ -625,6 +626,55 @@ namespace Convention
             }
             return CoroutineStarter.StartCoroutine(coroutine);
         }
+        public static void CloseCoroutine(Coroutine coroutine)
+        {
+            CoroutineStarter.StopCoroutine(coroutine);
+        }
+        public static void StopAllCoroutine()
+        {
+            CoroutineStarter.StopAllCoroutines();
+        }
+        /// <summary>
+        /// 不要保存这个类, 此类在析构后执行任务
+        /// </summary>
+        public class ActionStepCoroutineWrapper:AnyClass
+        {
+            private List<KeyValuePair<YieldInstruction, Action>> steps = new();
+            public void Update(Action action)
+            {
+                steps.Add(new(null, action));
+            }
+            public void Wait(float time,Action action)
+            {
+                steps.Add(new(new WaitForSeconds(time), action));
+            }
+            public void FixedUpdate(Action action)
+            {
+                steps.Add(new(new WaitForFixedUpdate(), action));
+            }
+            public void Next(Action action)
+            {
+                steps.Add(new(new WaitForEndOfFrame(), action));
+            }
+            private IEnumerator Execute()
+            {
+                foreach (var step in steps)
+                {
+                    step.Value();
+                    yield return step.Key;
+                }
+            }
+            ~ActionStepCoroutineWrapper()
+            {
+                StartCoroutine(Execute());
+            }
+        }
+        /// <summary>
+        /// 不要接收返回值, 否则将延迟到Wrapper被析构后才执行任务
+        /// </summary>
+        /// <returns></returns>
+        [return: ReturnNotSelf]
+        public static ActionStepCoroutineWrapper CreateSteps() => new();
 
         public static bool IsNumber([In] object data)
         {

@@ -7,10 +7,10 @@ using UnityEngine.InputSystem;
 
 namespace Convention
 {
-    public class FreeSceneCamera : MonoSingleton<FreeSceneCamera>
+    public class FreeSceneCamera : MonoSingleton<FreeSceneCamera>, ILoadedInHierarchy
     {
         [Resources, InspectorDraw(InspectorDrawType.Reference)] public Transform TargetFollow;
-        [Resources,InspectorDraw(InspectorDrawType.Reference)] public CinemachineVirtualCamera VirtualCamera;
+        [Resources, InspectorDraw(InspectorDrawType.Reference)] public CinemachineVirtualCamera VirtualCamera;
         [Setting, InspectorDraw(InspectorDrawType.Text)] public float moveSpeed = 1;
         [Setting, InspectorDraw(InspectorDrawType.Text)] public float rotationSpeed = 1;
         private bool m_IsFocus = false;
@@ -27,6 +27,11 @@ namespace Convention
                     Cursor.visible = !m_IsFocus;
                 }
             }
+        }
+
+        private void Start()
+        {
+            m_IsFocus = false;
         }
 
         private void Update()
