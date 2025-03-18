@@ -1,7 +1,7 @@
 from ...Internal                    import *
 from ...File.Core                   import tool_file_or_str, UnWrapper as UnwrapperFile2Str
 from llama_index.core.embeddings    import BaseEmbedding
-from llama_index.core               import SimpleDirectoryReader
+from llama_index.core               import SimpleDirectoryReader, Settings as LlamaIndexSettings
 from llama_index.core.schema        import Document
 from pydantic                       import Field
 import requests                     as     requests
@@ -88,7 +88,7 @@ class EasyIndexReader(left_value_reference[SimpleDirectoryReader]):
 
     @property
     def reader(self) -> SimpleDirectoryReader:
-        return self.reader
+        return self.ref_value
 
     def load_data(self) -> List[Document]:
         return self.reader.load_data()
@@ -365,4 +365,6 @@ class LlamaCPPEmbedding(BaseEmbedding, any_class):
     def test_health(self) -> int:
         response = requests.get(f"{self.base_url}/health")
         return response.status_code
+
+
 

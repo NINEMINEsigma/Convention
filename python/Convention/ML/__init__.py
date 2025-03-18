@@ -14,4 +14,4 @@ try:
     from keras import api as _
     from ..ML.Keras import *
 except ImportError as ex:
-    ImportingThrow(ex, "Keras", ["keras(or tensorflow)"])
+    ImportingThrow(ex, "Keras", [r"keras#(or tensorflow)"])
