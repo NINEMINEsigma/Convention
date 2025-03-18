@@ -1,12 +1,36 @@
 from ...Internal                    import *
+from ...Str.Core                    import UnWrapper
 from ...File.Core                   import tool_file_or_str, UnWrapper as UnwrapperFile2Str
-from llama_index.core.embeddings    import BaseEmbedding
-from llama_index.core               import SimpleDirectoryReader, Settings as LlamaIndexSettings
-from llama_index.core.schema        import Document
 from pydantic                       import Field
 import requests                     as     requests
 import asyncio                      as     asyncio
 import aiohttp                      as     aiohttp
+from llama_index.core               import (
+    SimpleDirectoryReader           as     SimpleDirectoryReader,
+    Settings                        as     LlamaIndexSettings,
+    VectorStoreIndex                as     VectorStoreIndex,
+    load_index_from_storage         as     load_index_from_storage,
+    get_response_synthesizer        as     get_response_synthesizer,
+    )
+from llama_index.core.node_parser   import SentenceSplitter
+from llama_index.core.llms          import LLM
+from llama_index.core.embeddings    import BaseEmbedding
+from llama_index.core.schema        import (
+    Document                        as     Document,
+    TransformComponent              as     TransformComponent,
+    )
+from llama_index.core.storage       import StorageContext
+from llama_index.core.callbacks     import CallbackManager
+from llama_index.core.query_engine  import CustomQueryEngine
+from llama_index.core.retrievers    import BaseRetriever
+from llama_index.core.response_synthesizers     import BaseSynthesizer
+
+from llama_index.core.prompts.base              import BasePromptTemplate
+from llama_index.core.base.base_query_engine    import BaseQueryEngine
+from llama_index.core.base.response.schema      import RESPONSE_TYPE
+
+from llama_index.llms.llama_cpp     import LlamaCPP
+from llama_index.llms.openai        import OpenAI
 
 # https://docs.llamaindex.ai/en/stable/module_guides/loading/simpledirectoryreader/#simpledirectoryreader
 def make_directory_reader(
@@ -78,22 +102,157 @@ def make_directory_reader(
         **kwargs
     )
 
-class EasyIndexReader(left_value_reference[SimpleDirectoryReader]):
-    def __init__(self, reader: SimpleDirectoryReader|tool_file_or_str):
+def test_health(url:str) -> int:
+    response = requests.get(f"{url}/health")
+    return response.status_code
+
+def make_gpt_model_prompt[T:BasePromptTemplate](cls:Typen[T]) -> T:
+    return cls(
+        "Context information is below.\n"
+        "---------------------\n"
+        "{context_str}\n"
+        "---------------------\n"
+        "Given the context information and not prior knowledge, "
+        "answer the query.\n"
+        "Query: {query_str}\n"
+        "Answer: "
+    )
+
+
+#https://docs.llamaindex.ai/en/stable/examples/query_engine/custom_query_engine/
+class AbsCustomQueryEngine(CustomQueryEngine,ABC):
+    pass
+class RAGQueryEngine(AbsCustomQueryEngine):
+    """RAG Query Engine."""
+
+    retriever: BaseRetriever
+    response_synthesizer: BaseSynthesizer
+
+    def custom_query(self, query_str: str) -> RESPONSE_TYPE:
+        nodes = self.retriever.retrieve(query_str)
+        response_obj = self.response_synthesizer.synthesize(query_str, nodes)
+        return response_obj
+class RAGStringQueryEngine(AbsCustomQueryEngine):
+    """RAG String Query Engine."""
+
+    retriever:              BaseRetriever
+    response_synthesizer:   BaseSynthesizer
+    llm:                    LLM
+    qa_prompt:              BasePromptTemplate
+
+    def custom_query(self, query_str: str):
+        nodes = self.retriever.retrieve(query_str)
+
+        context_str = "\n\n".join([n.node.get_content() for n in nodes])
+        response = self.llm.complete(
+            self.qa_prompt.format(context_str=context_str, query_str=query_str)
+        )
+
+        return str(response)
+
+class IndexCore(left_value_reference[VectorStoreIndex]):
+    """
+    索引核心类，用于管理索引相关的操作。
+    """
+    def __init__(
+        self,
+        index:      VectorStoreIndex|Tuple[StorageContext|tool_file_or_str, str]
+        ):
+        if isinstance(index, VectorStoreIndex):
+            super().__init__(index)
+        else:
+            if isinstance(index[0], StorageContext):
+                super().__init__(load_index_from_storage(index[0], index[1]))
+            else:
+                super().__init__(load_index_from_storage(StorageContext.from_defaults(persist_dir=UnWrapper(index[0])), index[1]))
+
+    @property
+    def index(self) -> VectorStoreIndex:
+        return self.ref_value
+
+    def set_index_id(self, index_id: str) -> None:
+        self.index.set_index_id(index_id)
+    def get_index_id(self) -> str:
+        return self.index.index_id
+
+    def save(self, dirpath:tool_file_or_str) -> None:
+        self.index.storage_context.persist(UnWrapper(dirpath))
+
+    __query_engine: BaseQueryEngine = None
+    def rebuild_query_engine(
+        self,
+        llm:            Optional[LLM]   = None,
+        **kwargs,
+        ):
+        '''
+        response_mode:      str             = "tree_summarize"
+        text_qa_template:   PromptTemplate  = QA_PROMPT
+        '''
+        self.__query_engine = self.index.as_query_engine(
+            llm=llm,
+            **kwargs
+            )
+    @property
+    def query_engine(self) -> BaseQueryEngine:
+        if self.__query_engine is None:
+            self.rebuild_query_engine()
+        return self.__query_engine
+    def query(self, query: str) -> RESPONSE_TYPE:
+        return self.query_engine.query(query)
+
+class IndexBuilder(left_value_reference[SimpleDirectoryReader]):
+    """
+    索引核心类，用于创建索引。
+    """
+
+    __documents: List[Document] = None
+
+    def __init__(
+        self,
+        reader_or_documentsDir:     SimpleDirectoryReader|tool_file_or_str,
+        ):
         super().__init__(
-            reader
-            if isinstance(reader, SimpleDirectoryReader)
-            else SimpleDirectoryReader(UnwrapperFile2Str(reader))
+            reader_or_documentsDir
+            if isinstance(reader_or_documentsDir, SimpleDirectoryReader)
+            else SimpleDirectoryReader(UnwrapperFile2Str(reader_or_documentsDir))
             )
 
     @property
     def reader(self) -> SimpleDirectoryReader:
         return self.ref_value
 
-    def load_data(self) -> List[Document]:
-        return self.reader.load_data()
+    def __load_documents(self):
+        self.__documents = self.reader.load_data()
 
-class LlamaCPPEmbedding(BaseEmbedding, any_class):
+    @property
+    def documents(self) -> List[Document]:
+        if self.__documents is None:
+            self.__load_documents()
+        return self.__documents
+    @documents.setter
+    def documents(self, value: List[Document]):
+        self.__documents = value
+    def reset_documents(self):
+        self.__load_documents()
+
+    def build_vector_store_index(
+        self,
+        storage_context: Optional[StorageContext] = None,
+        show_progress: bool = False,
+        callback_manager: Optional[CallbackManager] = None,
+        transformations: Optional[List[TransformComponent]] = None,
+        **kwargs,
+        ) -> IndexCore:
+        return IndexCore(VectorStoreIndex.from_documents(
+            self.documents,
+            storage_context=storage_context,
+            show_progress=show_progress,
+            callback_manager=callback_manager,
+            transformations=transformations,
+            **kwargs,
+        ))
+
+class EmbeddingCore(BaseEmbedding, any_class):
     """
     LlamaCPP嵌入类，用于生成文本嵌入向量。
     继承自BaseEmbedding基类。
@@ -111,6 +270,12 @@ class LlamaCPPEmbedding(BaseEmbedding, any_class):
         default=60.0,
         description="请求超时时间(秒)。",
     )
+
+    def set_as_global_embedding(self) -> None:
+        LlamaIndexSettings.embed_model = self
+    @classmethod
+    def get_global_embedding(cls) -> BaseEmbedding:
+        return LlamaIndexSettings.embed_model
 
     def __init__(
         self,
@@ -362,9 +527,45 @@ class LlamaCPPEmbedding(BaseEmbedding, any_class):
             print(f"异步获取嵌入向量时出错: {str(e)}")
             raise
 
-    def test_health(self) -> int:
-        response = requests.get(f"{self.base_url}/health")
-        return response.status_code
+class LLMObject(left_value_reference[LLM]):
+    """
+    LLM对象类，用于管理LLM对象。
+    """
+    def __init__(self, llm:Optional[LLM] = None) -> None:
+        super().__init__(llm)
+
+    @property
+    def llm(self) -> LLM:
+        return self.ref_value
+    @llm.setter
+    def llm(self, value:LLM) -> None:
+        self.ref_value = value
+
+    def set_as_global_llm(self) -> None:
+        LlamaIndexSettings.llm = self.llm
+    @classmethod
+    def get_global_llm(cls) -> LLM:
+        return LlamaIndexSettings.llm
+
+    @classmethod
+    def create_LlamaCPP_from_local_path(cls, model_path:tool_file_or_str, **kwargs:Any) -> None:
+        return cls(LlamaCPP(model_path=UnWrapper(model_path), **kwargs))
+    @classmethod
+    def create_LlamaCPP_from_url(cls, model_uid:str, base_url:str, **kwargs:Any) -> None:
+        return cls(LlamaCPP(model_uid=model_uid, base_url=base_url, **kwargs))
+
+    @classmethod
+    def create_OpenAI_from_api_key(cls, api_key:str, **kwargs:Any) -> None:
+        return cls(OpenAI(api_key=api_key, **kwargs))
+    @classmethod
+    def create_OpenAI_from_api_key_file(cls, api_key_file:tool_file_or_str, **kwargs:Any) -> None:
+        return cls(OpenAI(api_key=UnWrapper(api_key_file), **kwargs))
+
+
+
+
+
+
 
 
 

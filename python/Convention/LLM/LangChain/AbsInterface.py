@@ -9,7 +9,7 @@ from ...File.Core                        import tool_file
 from langchain_core.tools                   import tool as FunctionTool
 from langchain_core.language_models.base    import *
 
-MessageObject = LanguageModelInput
+type MessageObject = LanguageModelInput
 MessageType = Literal[
     "human",
     "user",

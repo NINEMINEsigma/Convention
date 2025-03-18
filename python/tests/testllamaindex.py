@@ -1,7 +1,10 @@
 from ..Convention.Internal import *
 from ..Convention.LLM.LlamaIndex.Agent import WorkflowAgent, LLM
-from ..Convention.LLM.LlamaIndex.Workflow import Workflow, WorkflowStep, LLMTextPromptTemplateResponseStep
+from ..Convention.LLM.LlamaIndex.Workflow import WorkflowStep, LLMTextPromptTemplateResponseStep
+from ..Convention.Workflow.Core import Workflow
 import os
+
+model_path = r"D:\LLM\MODELs\llama3-8B\Meta-Llama-3-8B-Instruct\Meta-Llama-3-8B-Instruct-Q4_0.gguf"
 
 def document_qa_example():
     """
@@ -10,9 +13,9 @@ def document_qa_example():
     # 初始化工作流智能体
     agent = WorkflowAgent(
         documents="./documents",  # 文档目录
-        model_path="/path/to/llama-model.gguf",  # LLM模型路径
-        embedding_model_uid="embedding-model",  # 嵌入模型ID
-        embedding_base_url="http://127.0.0.1:8080",  # 嵌入服务URL
+        model_path=model_path,  # LLM模型路径
+        embedding_model_uid=model_path,  # 嵌入模型ID
+        embedding_base_url="http://127.0.0.1:9997",  # 嵌入服务URL
     )
 
     # 查询文档
@@ -25,7 +28,7 @@ def custom_workflow_example():
     """
     # 初始化LLM模型
     llm = LlamaCPP(
-        model_path="/path/to/llama-model.gguf",
+        model_path=model_path,
         temperature=0.1,
         max_new_tokens=512,
         context_window=4096,
@@ -95,9 +98,9 @@ def rag_workflow_example():
     # 初始化工作流智能体
     agent = WorkflowAgent(
         documents="./documents",
-        model_path="/path/to/llama-model.gguf",
-        embedding_model_uid="embedding-model",
-        embedding_base_url="http://127.0.0.1:8080",
+        model_path=model_path,
+        embedding_model_uid=model_path,
+        embedding_base_url="http://127.0.0.1:9997",
     )
 
     # 初始化LLM模型

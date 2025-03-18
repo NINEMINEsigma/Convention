@@ -1,5 +1,5 @@
 from ...Internal            import *
-from .Core                  import LlamaCPPEmbedding
+from .Core                  import EmbeddingCore
 from ...Workflow.Step       import *
 from llama_index.core       import PromptTemplate
 from llama_index.core.llms  import LLM
@@ -75,11 +75,11 @@ class LLMTextPromptTemplateResponseStep(WorkflowStep):
             description=description,
             action=llm_step_action_wrapper.name,
             input_mapping={
-                "prompt_template": self.prompt_template,
-                "llm": self.llm,
+                "prompt_template": self.prompt_template_context_name,
+                "llm": self.llm_context_name,
                 **self.kwargs_context_names
             },
-            output_mapping= {"result": output_context_name},
+            output_mapping= {"result": self.output_context_name},
             retry_count=retry_count,
             retry_delay=retry_delay,
         )
