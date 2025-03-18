@@ -18,18 +18,44 @@ namespace Convention
             {
                 if (onlys != null && onlys.Length != 0)
                 {
-                    WindowsUI.Variant.HierarchyWindow.instance.CreateRootItemEntryWithBinders(onlys[0])[0].ref_value.GetComponent<WindowsUI.Variant.HierarchyItem>().title = $"{name}";
+                    WindowsUI.Variant.HierarchyWindow.instance.CreateRootItemEntryWithBinders(onlys[0])[0]
+                        .ref_value
+                        .GetComponent<WindowsUI.Variant.HierarchyItem>()
+                        .title = $"{name}";
                 }
                 else
                 {
-                    var goItem = WindowsUI.Variant.HierarchyWindow.instance.CreateRootItemEntryWithGameObject(gameObject);
-                    goItem.ref_value.GetComponent<WindowsUI.Variant.HierarchyItem>().title = $"{name}";
-                    foreach (var item in GetComponents<ILoadedInHierarchy>())
+                    var components = GetComponents<ILoadedInHierarchy>();
+                    if (components.Length > 1)
                     {
-                        goItem.ref_value.GetComponent<WindowsUI.Variant.HierarchyItem>().CreateSubPropertyItemWithBinders(item)[0]
+                        var goItem = WindowsUI.Variant.HierarchyWindow.instance.CreateRootItemEntryWithGameObject(gameObject);
+                        goItem.ref_value.GetComponent<WindowsUI.Variant.HierarchyItem>().title = $"{name}";
+                        foreach (var item in components)
+                        {
+                            goItem.ref_value.GetComponent<WindowsUI.Variant.HierarchyItem>().CreateSubPropertyItemWithBinders(item)[0]
+                                .ref_value
+                                .GetComponent<WindowsUI.Variant.HierarchyItem>()
+                                .title = $"{name}-{item.GetType()}";
+                        }
+                    }
+                    else if(components.Length==1)
+                    {
+                        WindowsUI.Variant.HierarchyWindow.instance.CreateRootItemEntryWithBinders(components[0])[0]
                             .ref_value
                             .GetComponent<WindowsUI.Variant.HierarchyItem>()
-                            .title = $"{name}-{item.GetType()}";
+                            .title = $"{name}";
+                    }
+                    else
+                    {
+                        var goItem = WindowsUI.Variant.HierarchyWindow.instance.CreateRootItemEntryWithGameObject(gameObject);
+                        goItem.ref_value.GetComponent<WindowsUI.Variant.HierarchyItem>().title = $"{name}";
+                        foreach (var item in GetComponents<Component>())
+                        {
+                            goItem.ref_value.GetComponent<WindowsUI.Variant.HierarchyItem>().CreateSubPropertyItemWithBinders(item)[0]
+                                .ref_value
+                                .GetComponent<WindowsUI.Variant.HierarchyItem>()
+                                .title = $"{name}-{item.GetType()}";
+                        }
                     }
                 }
             }

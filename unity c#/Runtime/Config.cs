@@ -617,7 +617,13 @@ namespace Convention
 
         private static CoroutineMonoStarterUtil CoroutineStarter;
 
-        private class CoroutineMonoStarterUtil : MonoBehaviour { }
+        private class CoroutineMonoStarterUtil : MonoBehaviour
+        {
+            private void OnDestroy()
+            {
+                CoroutineStarter = null;
+            }
+        }
         public static Coroutine StartCoroutine(IEnumerator coroutine)
         {
             if (CoroutineStarter == null)

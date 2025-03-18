@@ -36,7 +36,7 @@ namespace Convention.WindowsUI.Variant
         }
         private static string ConvertString(Vector3 vec)
         {
-            return $"{vec.x},{vec.y},{vec.z}";
+            return $"{vec.x:F4},{vec.y:F4},{vec.z:F4}";
         }
 
         private UnityAction<string> GenerateCallback(Action<Vector3> action)
