@@ -87,7 +87,7 @@ def convert_audio_format(input_data, output_type:str, tool_temp_path:str=".temp_
     :param output_type: 输出格式
     :param tool_temp_path: 临时文件路径
     """
-    file = tool_file(tool_temp_path+("." if output_type[0] is not '.' else '')+output_type)
+    file = tool_file(tool_temp_path+("." if output_type[0] != '.' else '')+output_type)
     file.data = input_data
     file.save_as_audio()
     result = file.refresh().data

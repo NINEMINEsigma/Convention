@@ -1,9 +1,9 @@
 from ..Internal import *
 
 try:
-    from . import MathEx as _
+    from ..MathEx import Core as _
 except ImportError:
-    InternalImportingThrow("Machine-Learning", "Math")
+    InternalImportingThrow("Machine-Learning", ["Math"])
 
 try:
     import sklearn as _
@@ -14,4 +14,4 @@ try:
     from keras import api as _
     from ..ML.Keras import *
 except ImportError as ex:
-    ImportingThrow(ex, "Keras", [r"keras#(or tensorflow)"])
+    ImportingThrow(ex, "Keras", ["keras"])
