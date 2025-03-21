@@ -662,7 +662,7 @@ namespace Convention
             {
                 steps.Add(new(new WaitForEndOfFrame(), action));
             }
-            private IEnumerator Execute()
+            private static IEnumerator Execute(List<KeyValuePair<YieldInstruction, Action>> steps)
             {
                 foreach (var step in steps)
                 {
@@ -672,7 +672,13 @@ namespace Convention
             }
             ~ActionStepCoroutineWrapper()
             {
-                StartCoroutine(Execute());
+                StartCoroutine(Execute(steps));
+                steps.Clear();
+            }
+            public void Invoke()
+            {
+                StartCoroutine(Execute(steps));
+                steps.Clear();
             }
         }
         /// <summary>

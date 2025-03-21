@@ -238,7 +238,23 @@ namespace Convention.WindowsUI.Variant
                         () => "",
                         (x) =>
                         {
-                            var components = ConventionUtility.SeekType(t => t.IsSubclassOf(typeof(Component)) && t.FullName.Contains((string)x));
+                            string typeName = (string)x;
+                            var components = ConventionUtility.SeekType(t => t.IsSubclassOf(typeof(Component)) && t.FullName.Contains(typeName));
+                            int c = 0;
+                            foreach (var x_component in components)
+                            {
+                                if (x_component.GetType().Name == typeName || x_component.GetType().Name == typeName)
+                                {
+                                    c++;
+                                }
+                            }
+                            if (c == 1)
+                            {
+                                components = (
+                                from y_component in components
+                                where y_component.GetType().Name == typeName || y_component.GetType().FullName == typeName
+                                select y_component).ToList();
+                            }
                             if (components.Count != 1)
                                 return;
                             var component = components[0];

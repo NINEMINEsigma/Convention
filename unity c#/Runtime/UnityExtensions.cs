@@ -243,4 +243,250 @@ namespace Convention
             return SceneManager.GetSceneByName(name);
         }
     }
+
+    public static class GameObjectExtension
+    {
+        /// <summary>
+        /// 递归设置GameObject及其所有子物体的Layer
+        /// </summary>
+        public static void SetLayerRecursively(GameObject gameObject, int layer)
+        {
+            gameObject.layer = layer;
+            foreach (Transform t in gameObject.transform)
+            {
+                SetLayerRecursively(t.gameObject, layer);
+            }
+        }
+
+        /// <summary>
+        /// 递归设置GameObject及其所有子物体的Tag
+        /// </summary>
+        public static void SetTagRecursively(GameObject gameObject, string tag)
+        {
+            gameObject.tag = tag;
+            foreach (Transform t in gameObject.transform)
+            {
+                SetTagRecursively(t.gameObject, tag);
+            }
+        }
+
+        /// <summary>
+        /// 递归启用/禁用所有Collider组件
+        /// </summary>
+        public static void SetCollisionRecursively(GameObject gameObject, bool enabled)
+        {
+            var colliders = gameObject.GetComponentsInChildren<Collider>();
+            foreach (var collider in colliders)
+            {
+                collider.enabled = enabled;
+            }
+        }
+
+        /// <summary>
+        /// 递归启用/禁用所有Renderer组件
+        /// </summary>
+        public static void SetVisualRecursively(GameObject gameObject, bool enabled)
+        {
+            var renderers = gameObject.GetComponentsInChildren<Renderer>();
+            foreach (var renderer in renderers)
+            {
+                renderer.enabled = enabled;
+            }
+        }
+
+        /// <summary>
+        /// 获取指定Tag的所有子组件
+        /// </summary>
+        public static T[] GetComponentsInChildrenWithTag<T>(GameObject gameObject, string tag) where T : Component
+        {
+            List<T> results = new List<T>();
+            
+            if (gameObject.CompareTag(tag))
+            {
+                var component = gameObject.GetComponent<T>();
+                if (component != null)
+                    results.Add(component);
+            }
+
+            foreach (Transform t in gameObject.transform)
+            {
+                results.AddRange(GetComponentsInChildrenWithTag<T>(t.gameObject, tag));
+            }
+
+            return results.ToArray();
+        }
+
+        /// <summary>
+        /// 在父物体中查找组件
+        /// </summary>
+        public static T GetComponentInParents<T>(GameObject gameObject) where T : Component
+        {
+            for (Transform t = gameObject.transform; t != null; t = t.parent)
+            {
+                T result = t.GetComponent<T>();
+                if (result != null)
+                    return result;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 获取或添加组件
+        /// </summary>
+        public static T GetOrAddComponent<T>(GameObject gameObject) where T : Component
+        {
+            T component = gameObject.GetComponent<T>();
+            return component ?? gameObject.AddComponent<T>();
+        }
+    }
+
+    public static class TransformExtension
+    {
+        /// <summary>
+        /// 获取所有子物体
+        /// </summary>
+        public static List<Transform> GetAllChildren(this Transform transform)
+        {
+            List<Transform> children = new List<Transform>();
+            foreach (Transform child in transform)
+            {
+                children.Add(child);
+                children.AddRange(child.GetAllChildren());
+            }
+            return children;
+        }
+
+        /// <summary>
+        /// 销毁所有子物体
+        /// </summary>
+        public static void DestroyAllChildren(this Transform transform)
+        {
+            for (int i = transform.childCount - 1; i >= 0; i--)
+            {
+                UnityEngine.Object.Destroy(transform.GetChild(i).gameObject);
+            }
+        }
+
+        /// <summary>
+        /// 设置父物体并保持世界坐标
+        /// </summary>
+        public static void SetParentKeepWorldPosition(this Transform transform, Transform parent)
+        {
+            Vector3 worldPos = transform.position;
+            Quaternion worldRot = transform.rotation;
+            transform.SetParent(parent);
+            transform.position = worldPos;
+            transform.rotation = worldRot;
+        }
+    }
+
+    public static class CoroutineExtension
+    {
+        /// <summary>
+        /// 延迟执行
+        /// </summary>
+        public static IEnumerator Delay(float delay, Action action)
+        {
+            yield return new WaitForSeconds(delay);
+            action?.Invoke();
+        }
+
+        /// <summary>
+        /// 延迟执行并返回结果
+        /// </summary>
+        public static IEnumerator Delay<T>(float delay, Func<T> action, Action<T> callback)
+        {
+            yield return new WaitForSeconds(delay);
+            callback?.Invoke(action());
+        }
+
+        /// <summary>
+        /// 等待直到条件满足
+        /// </summary>
+        public static IEnumerator WaitUntil(Func<bool> condition, Action onComplete = null)
+        {
+            yield return new WaitUntil(condition);
+            onComplete?.Invoke();
+        }
+
+        /// <summary>
+        /// 等待直到条件满足，带超时
+        /// </summary>
+        public static IEnumerator WaitUntil(Func<bool> condition, float timeout, Action onComplete = null, Action onTimeout = null)
+        {
+            float elapsedTime = 0;
+            while (!condition() && elapsedTime < timeout)
+            {
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
+
+            if (elapsedTime >= timeout)
+            {
+                onTimeout?.Invoke();
+            }
+            else
+            {
+                onComplete?.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// 执行动画曲线
+        /// </summary>
+        public static IEnumerator Animate(float duration, AnimationCurve curve, Action<float> onUpdate)
+        {
+            float elapsedTime = 0;
+            while (elapsedTime < duration)
+            {
+                elapsedTime += Time.deltaTime;
+                float normalizedTime = elapsedTime / duration;
+                float evaluatedValue = curve.Evaluate(normalizedTime);
+                onUpdate?.Invoke(evaluatedValue);
+                yield return null;
+            }
+            onUpdate?.Invoke(curve.Evaluate(1));
+        }
+
+        /// <summary>
+        /// 执行线性插值
+        /// </summary>
+        public static IEnumerator Lerp<T>(T start, T end, float duration, Action<T> onUpdate, Func<T, T, float, T> lerpFunction)
+        {
+            float elapsedTime = 0;
+            while (elapsedTime < duration)
+            {
+                elapsedTime += Time.deltaTime;
+                float normalizedTime = elapsedTime / duration;
+                T current = lerpFunction(start, end, normalizedTime);
+                onUpdate?.Invoke(current);
+                yield return null;
+            }
+            onUpdate?.Invoke(end);
+        }
+
+        /// <summary>
+        /// 执行Vector3插值
+        /// </summary>
+        public static IEnumerator LerpVector3(Vector3 start, Vector3 end, float duration, Action<Vector3> onUpdate)
+        {
+            yield return Lerp(start, end, duration, onUpdate, Vector3.Lerp);
+        }
+
+        /// <summary>
+        /// 执行Quaternion插值
+        /// </summary>
+        public static IEnumerator LerpQuaternion(Quaternion start, Quaternion end, float duration, Action<Quaternion> onUpdate)
+        {
+            yield return Lerp(start, end, duration, onUpdate, Quaternion.Lerp);
+        }
+
+        /// <summary>
+        /// 执行float插值
+        /// </summary>
+        public static IEnumerator LerpFloat(float start, float end, float duration, Action<float> onUpdate)
+        {
+            yield return Lerp(start, end, duration, onUpdate, Mathf.Lerp);
+        }
+    }
 }

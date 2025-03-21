@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -100,6 +101,16 @@ namespace Convention.WindowsUI
         private void Reset()
         {
             triggerObject = transform.Find("Trigger").gameObject;
+        }
+
+        [Resources] public RectTransform ResizeBroadcastRect;
+        public IEnumerator ResizeBroadcast()
+        {
+            for (int i = 0; i < 60; i++)
+            {
+                RectTransformExtension.AdjustSizeToContainsChilds(ResizeBroadcastRect);
+                yield return null;
+            }
         }
 
         private void Start()
@@ -289,6 +300,9 @@ namespace Convention.WindowsUI
                     gameObject.transform.SetSiblingIndex(siblingIndex);
                 }
             }
+
+            StopCoroutine(nameof(ResizeBroadcast));
+            StartCoroutine(nameof(ResizeBroadcast));
 
             if (enableTrigger == true && isOn == false)
                 triggerObject.SetActive(false);

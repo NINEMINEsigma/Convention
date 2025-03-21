@@ -12,6 +12,8 @@ namespace Convention.WindowsUI.Variant
     /// </summary>
     public enum InspectorDrawType
     {
+        // Auto
+        Auto = -1,
         // String
         Text = 0,
         // Bool
@@ -35,7 +37,7 @@ namespace Convention.WindowsUI.Variant
     public class InspectorDrawAttribute : Attribute
     {
         public readonly InspectorDrawType drawType;
-        public InspectorDrawAttribute(InspectorDrawType drawType)
+        public InspectorDrawAttribute(InspectorDrawType drawType = InspectorDrawType.Auto)
         {
             this.drawType = drawType;
         }
@@ -277,7 +279,7 @@ namespace Convention.WindowsUI.Variant
                 name = targetMemberInfo.Name;
                 AbleChangeType = targetMemberInfo.GetCustomAttributes(typeof(IgnoreAttribute), true).Length == 0;
                 // Reset DrawType
-                if (drawAttr != null)
+                if (drawAttr != null && drawAttr.drawType != InspectorDrawType.Auto)
                 {
                     DrawType = drawAttr.drawType;
                 }
