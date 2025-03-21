@@ -3,6 +3,12 @@
 #include "Convention/web_instance.h"
 
 
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#pragma comment(lib, "ws2_32.lib")
+
+
+
 void instance<web_indicator::broadcast::server, true>::handleClient(web_indicator::socket_type clientSocket)
 {
     char buffer[1024];

@@ -23,7 +23,7 @@ try:
     from PIL                import ImageFile as _
     from ..Visual.OpenCV import *
 except ImportError as ex:
-    ImportingThrow(ex, "OpenCV", ["numpy", "Pillow"])
+    ImportingThrow(ex, "OpenCV", ["numpy", "pillow"])
 
 # Import WordCloud.py
 try:

@@ -98,37 +98,37 @@ extern "C"
 std::tuple<
 	std::map<std::string, std::string>,
 	std::vector<std::pair<std::string, std::string>>
-> make_config(int argv, char** argc)
+> make_config(int argc, char** argv)
 {
 	std::map<std::string, std::string> first;
 	std::vector<std::pair<std::string, std::string>> second;
 	std::string key;
 	std::string value;
 	bool is_key = true;
-	if (argv > 0)
+	if (argc > 0)
 	{
-		first["execute"] = argc[0];
-		second.push_back({ argc[0],"" });
+		first["execute"] = argv[0];
+		second.push_back({ argv[0],"" });
 	}
-	for (int i = 1; i < argv; i++)
+	for (int i = 1; i < argc; i++)
 	{
 		if (second.size() != 0 &&
 			second.back().first.front() == '-' &&
 			second.back().second.size() == 0 &&
-			argc[i][0] != '-'
+			argv[i][0] != '-'
 			)
-			second.back().second = argc[i];
+			second.back().second = argv[i];
 		else
-			second.push_back({ argc[i],"" });
+			second.push_back({ argv[i],"" });
 
-		if (argc[i][0] == '-')
+		if (argv[i][0] == '-')
 		{
 			if (is_key)
-				key = argc[i];
+				key = argv[i];
 			else
 				first[key] = value;
 			is_key = false;
-			key = argc[i];
+			key = argv[i];
 			while (key.front() == '-')
 			{
 				key.erase(key.begin());
@@ -141,12 +141,12 @@ std::tuple<
 		}
 		else if (is_key==false)
 		{
-			first[key] = argc[i];
+			first[key] = argv[i];
 			is_key = true;
 		}
 		else
 		{
-			first[argc[i]] = "";
+			first[argv[i]] = "";
 			is_key = true;
 		}
 	}

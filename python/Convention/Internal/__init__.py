@@ -41,10 +41,10 @@ def InternalImportingThrow(
     moduleName:     str,
     requierds:      Sequence[str],
     *,
-    messageBase:    str = ConsoleFrontColor.RED+"{module} Module requires internal lekit package: {required}."+ConsoleFrontColor.RESET,
+    messageBase:    str = ConsoleFrontColor.RED+"{module} Module requires internal Convention package: {required}."+ConsoleFrontColor.RESET,
     ):
         requierds_str = ",".join([f"<{r}>" for r in requierds])
-        print(f"Internal lekit package is not installed.\n{messageBase.format_map(dict(module=moduleName, required=requierds_str))}")
+        print(f"Internal Convention package is not installed.\n{messageBase.format_map(dict(module=moduleName, required=requierds_str))}")
 
 def ReleaseFailed2Requirements():
     global ImportingFailedSet
@@ -583,8 +583,8 @@ class atomic[_T](any_class):
 def create_py_file(path:str):
     with open(path, "w") as f:
         f.write("# -*- coding: utf-8 -*-\n")
-        f.write("from lekit import lazy\n")
-        f.write("from lekit.lazy import *\n")
+        f.write("from Convention import lazy\n")
+        f.write("from Convention.lazy import *\n")
         f.write("\n")
         f.write("def run():\n")
         f.write("\tpass\n")

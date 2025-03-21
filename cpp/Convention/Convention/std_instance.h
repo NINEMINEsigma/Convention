@@ -59,7 +59,7 @@ public:
 	instance(typename _Mybase::_shared& data) :_Mybase(data) {}
 	instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
 	explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
-	explicit instance(std::initializer_list<int> data) :_Mybase(new tag(data)) {}
+	explicit instance(std::initializer_list<_Elem> data) :_Mybase(new tag(data)) {}
 	template<typename... _Args>
 	instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
 	instance(instance& data) :_Mybase(data) {}
@@ -249,7 +249,7 @@ public:
 	{
 		return std::max<size_t>(0, _Mytail - _Myhead);
 	}
-	void clear() const noexcept
+	void clear() noexcept
 	{
 		_Mytail = _Myhead;
 		this->get()->erase(this->begin(), this->end());
@@ -261,11 +261,11 @@ public:
 		index += _Myhead;
 		if (index < _Mytail)
 			return this->get()->at(_Myhead + index);
-		throw std::overflow_error();
+		throw std::overflow_error("view.at overflow");
 	}
 	const auto& front() const
 	{
-		return *(this->begin())
+		return *(this->begin());
 	}
 	const auto& back() const
 	{
@@ -283,17 +283,17 @@ public:
 	{
 		return _Mytail - _Myhead == 0;
 	}
-	auto erase(const_iterator iter) const
+	auto erase(const_iterator iter)
 	{
 		_Mytail--;
 		return this->get()->erase(iter);
 	}
-	auto erase(const_iterator head, const_iterator end) const
+	auto erase(const_iterator head, const_iterator end)
 	{
 		_Mytail -= std::distance(head, end);
 		return this->get()->erase(head, end);
 	}
-	size_t erase(const _Elem& value, size_t ignore = 0, size_t countdown = static_cast<size_t>(-1)) const
+	size_t erase(const _Elem& value, size_t ignore = 0, size_t countdown = static_cast<size_t>(-1))
 	{
 		int counter = ignore;
 		counter = -counter;
@@ -547,7 +547,7 @@ public:
 	instance(typename _Mybase::_shared& data) :_Mybase(data) {}
 	instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
 	explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
-	explicit instance(std::initializer_list<int> data) :_Mybase(new tag(data)) {}
+	explicit instance(std::initializer_list<_Elem> data) :_Mybase(new tag(data)) {}
 	template<typename... _Args>
 	instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
 	instance(instance& data) :_Mybase(data) {}
@@ -716,7 +716,7 @@ public:
 	}
 	auto compare(const _Elem* ptr) const noexcept
 	{
-		return contains_compare(tag(ptr));
+		return compare(tag(ptr));
 	}
 	int compare(const typename _Mybase::_shared& right)
 	{
@@ -992,10 +992,6 @@ public:
 	{
 		return this->at(index);
 	}
-	auto deep_copy() const
-	{
-		return instance(**this);
-	}
 	auto shallow_copy() const noexcept
 	{
 		return instance(*this);
@@ -1050,7 +1046,8 @@ public:
 	}
 	auto compare(const _Elem* ptr) const noexcept
 	{
-		return contains_compare(tag(ptr));
+		//return contains_compare(tag(ptr));
+		return compare(tag(ptr));
 	}
 	int compare(const typename _Mybase::_shared& right)
 	{
@@ -1357,7 +1354,7 @@ public:
 	using shared_from_instance = instance<tag, true>;
 
 	instance() :_Mybase(nullptr), _Mysize(0) {}
-	instance(typename _Mybase::_shared& data, const_iterator head, const_iterator tail)
+	instance(typename _Mybase::_shared& data, iterator head, iterator tail)
 		:_Mybase(data), _Myhead(head), _Mytail(tail)
 	{
 		_Mysize = std::distance(head, tail);
@@ -2307,48 +2304,32 @@ template class instance<std::vector<int>, true>;
 template class instance<std::vector<double>, true>;
 template class instance<std::vector<std::string>, true>;
 template class instance<std::vector<char>, true>;
-template class instance<std::vector<instance<int, true>>, true>;
-template class instance<std::vector<instance<double, true>>, true>;
-template class instance<std::vector<instance<std::string, true>>, true>;
 template class instance<view_indicator<std::vector<int>>, true>;
 template class instance<view_indicator<std::vector<double>>, true>;
 template class instance<view_indicator<std::vector<std::string>>, true>;
 template class instance<view_indicator<std::vector<char>>, true>;
-template class instance<view_indicator<std::vector<instance<int, true>>>, true>;
-template class instance<view_indicator<std::vector<instance<double, true>>>, true>;
-template class instance<view_indicator<std::vector<instance<std::string, true>>>, true>;
 
 // std::list 实例化
 template class instance<std::list<int>, true>;
 template class instance<std::list<double>, true>;
 template class instance<std::list<std::string>, true>;
-template class instance<std::list<instance<int, true>>, true>;
-template class instance<std::list<instance<double, true>>, true>;
-template class instance<std::list<instance<std::string, true>>, true>;
 template class instance<view_indicator<std::list<int>>, true>;
 template class instance<view_indicator<std::list<double>>, true>;
 template class instance<view_indicator<std::list<std::string>>, true>;
-template class instance<view_indicator<std::list<instance<int, true>>>, true>;
-template class instance<view_indicator<std::list<instance<double, true>>>, true>;
-template class instance<view_indicator<std::list<instance<std::string, true>>>, true>;
 
 // std::map 实例化
 template class instance<std::map<std::string, int>, true>;
 template class instance<std::map<std::string, std::string>, true>;
 template class instance<std::map<int, std::string>, true>;
 template class instance<std::map<int, int>, true>;
-template class instance<std::map<std::string, instance<int, true>>, true>;
 template class instance<std::map<std::string, instance<std::string, true>>, true>;
 template class instance<std::map<int, instance<std::string, true>>, true>;
-template class instance<std::map<int, instance<int, true>>, true>;
 template class instance<view_indicator<std::map<std::string, int>>, true>;
 template class instance<view_indicator<std::map<std::string, std::string>>, true>;
 template class instance<view_indicator<std::map<int, std::string>>, true>;
 template class instance<view_indicator<std::map<int, int>>, true>;
-template class instance<view_indicator<std::map<std::string, instance<int, true>>>, true>;
 template class instance<view_indicator<std::map<std::string, instance<std::string, true>>>, true>;
 template class instance<view_indicator<std::map<int, instance<std::string, true>>>, true>;
-template class instance<view_indicator<std::map<int, instance<int, true>>>, true>;
 
 // std::basic_string 实例化
 template class instance<std::string, true>;
@@ -2360,14 +2341,10 @@ template class instance<view_indicator<std::wstring>, true>;
 template class instance<std::set<int>, true>;
 template class instance<std::set<double>, true>;
 template class instance<std::set<std::string>, true>;
-template class instance<std::set<instance<int, true>>, true>;
-template class instance<std::set<instance<double, true>>, true>;
 template class instance<std::set<instance<std::string, true>>, true>;
 template class instance<view_indicator<std::set<int>>, true>;
 template class instance<view_indicator<std::set<double>>, true>;
 template class instance<view_indicator<std::set<std::string>>, true>;
-template class instance<view_indicator<std::set<instance<int, true>>>, true>;
-template class instance<view_indicator<std::set<instance<double, true>>>, true>;
 template class instance<view_indicator<std::set<instance<std::string, true>>>, true>;
 
 // std::unordered_map 实例化
@@ -2375,94 +2352,65 @@ template class instance<std::unordered_map<std::string, int>, true>;
 template class instance<std::unordered_map<std::string, std::string>, true>;
 template class instance<std::unordered_map<int, std::string>, true>;
 template class instance<std::unordered_map<int, int>, true>;
-template class instance<std::unordered_map<std::string, instance<int, true>>, true>;
 template class instance<std::unordered_map<std::string, instance<std::string, true>>, true>;
 template class instance<std::unordered_map<int, instance<std::string, true>>, true>;
-template class instance<std::unordered_map<int, instance<int, true>>, true>;
 template class instance<view_indicator<std::unordered_map<std::string, int>>, true>;
 template class instance<view_indicator<std::unordered_map<std::string, std::string>>, true>;
 template class instance<view_indicator<std::unordered_map<int, std::string>>, true>;
 template class instance<view_indicator<std::unordered_map<int, int>>, true>;
-template class instance<view_indicator<std::unordered_map<std::string, instance<int, true>>>, true>;
 template class instance<view_indicator<std::unordered_map<std::string, instance<std::string, true>>>, true>;
 template class instance<view_indicator<std::unordered_map<int, instance<std::string, true>>>, true>;
-template class instance<view_indicator<std::unordered_map<int, instance<int, true>>>, true>;
 
 // std::unordered_set 实例化
 template class instance<std::unordered_set<int>, true>;
 template class instance<std::unordered_set<double>, true>;
 template class instance<std::unordered_set<std::string>, true>;
-template class instance<std::unordered_set<instance<int, true>>, true>;
-template class instance<std::unordered_set<instance<double, true>>, true>;
-template class instance<std::unordered_set<instance<std::string, true>>, true>;
 template class instance<view_indicator<std::unordered_set<int>>, true>;
 template class instance<view_indicator<std::unordered_set<double>>, true>;
 template class instance<view_indicator<std::unordered_set<std::string>>, true>;
-template class instance<view_indicator<std::unordered_set<instance<int, true>>>, true>;
-template class instance<view_indicator<std::unordered_set<instance<double, true>>>, true>;
-template class instance<view_indicator<std::unordered_set<instance<std::string, true>>>, true>;
 
 // std::deque 实例化
 template class instance<std::deque<int>, true>;
 template class instance<std::deque<double>, true>;
 template class instance<std::deque<std::string>, true>;
-template class instance<std::deque<instance<int, true>>, true>;
-template class instance<std::deque<instance<double, true>>, true>;
 template class instance<std::deque<instance<std::string, true>>, true>;
 template class instance<view_indicator<std::deque<int>>, true>;
 template class instance<view_indicator<std::deque<double>>, true>;
 template class instance<view_indicator<std::deque<std::string>>, true>;
-template class instance<view_indicator<std::deque<instance<int, true>>>, true>;
-template class instance<view_indicator<std::deque<instance<double, true>>>, true>;
 template class instance<view_indicator<std::deque<instance<std::string, true>>>, true>;
 
 // std::forward_list 实例化
 template class instance<std::forward_list<int>, true>;
 template class instance<std::forward_list<double>, true>;
 template class instance<std::forward_list<std::string>, true>;
-template class instance<std::forward_list<instance<int, true>>, true>;
-template class instance<std::forward_list<instance<double, true>>, true>;
 template class instance<std::forward_list<instance<std::string, true>>, true>;
 template class instance<view_indicator<std::forward_list<int>>, true>;
 template class instance<view_indicator<std::forward_list<double>>, true>;
 template class instance<view_indicator<std::forward_list<std::string>>, true>;
-template class instance<view_indicator<std::forward_list<instance<int, true>>>, true>;
-template class instance<view_indicator<std::forward_list<instance<double, true>>>, true>;
 template class instance<view_indicator<std::forward_list<instance<std::string, true>>>, true>;
 
 // std::stack 实例化
 template class instance<std::stack<int>, true>;
 template class instance<std::stack<double>, true>;
 template class instance<std::stack<std::string>, true>;
-template class instance<std::stack<instance<int, true>>, true>;
-template class instance<std::stack<instance<double, true>>, true>;
 template class instance<std::stack<instance<std::string, true>>, true>;
 template class instance<std::stack<int, std::deque<int>>, true>;
 template class instance<std::stack<int, std::vector<int>>, true>;
-template class instance<std::stack<instance<int, true>, std::deque<instance<int, true>>>, true>;
-template class instance<std::stack<instance<int, true>, std::vector<instance<int, true>>>, true>;
 
 // std::queue 实例化
 template class instance<std::queue<int>, true>;
 template class instance<std::queue<double>, true>;
 template class instance<std::queue<std::string>, true>;
-template class instance<std::queue<instance<int, true>>, true>;
-template class instance<std::queue<instance<double, true>>, true>;
 template class instance<std::queue<instance<std::string, true>>, true>;
 template class instance<std::queue<int, std::deque<int>>, true>;
 template class instance<std::queue<int, std::list<int>>, true>;
-template class instance<std::queue<instance<int, true>, std::deque<instance<int, true>>>, true>;
-template class instance<std::queue<instance<int, true>, std::list<instance<int, true>>>, true>;
 
 // std::priority_queue 实例化
 template class instance<std::priority_queue<int>, true>;
 template class instance<std::priority_queue<double>, true>;
 template class instance<std::priority_queue<std::string>, true>;
-template class instance<std::priority_queue<instance<int, true>>, true>;
-template class instance<std::priority_queue<instance<double, true>>, true>;
 template class instance<std::priority_queue<instance<std::string, true>>, true>;
 template class instance<std::priority_queue<int, std::vector<int>, std::greater<int>>, true>;
-template class instance<std::priority_queue<instance<int, true>, std::vector<instance<int, true>>, std::greater<instance<int, true>>>, true>;
 
 #pragma endregion
 

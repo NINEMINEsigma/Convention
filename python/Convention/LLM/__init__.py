@@ -16,18 +16,20 @@ try:
     import llama_cpp as _
     from ..LLM.llama import *
 except ImportError as ex:
-    ImportingThrow(ex, "llama", ["llama_cpp"])
+    ImportingThrow(ex, "llama", ["llama-cpp"])
 
 # Import LlamaIndex module
 try:
     import llama_index as _
+    from llama_index.llms.llama_cpp import LlamaCPP as _
     from ..LLM.LlamaIndex import *
 except ImportError as ex:
     ImportingThrow(ex, "LlamaIndex", [
         "llama-index-core",
         "llama-index-readers-file",
         "llama-index-llms-ollama",
-        "llama-index-embeddings-huggingface"
+        "llama-index-embeddings-huggingface",
+        "llama-index-llms-llama-cpp",
         ])
 
 # Import LangChain module

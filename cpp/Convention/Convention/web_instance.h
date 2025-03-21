@@ -3,18 +3,11 @@
 
 #include "Convention/Interface.h"
 
-#if defined(_WIN64)||defined(_WIN32)
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#pragma comment(lib, "ws2_32.lib")
-
-#endif // _WIN
 
 struct web_indicator
 {
 #if defined(_WIN64)||defined(_WIN32)
-	using socket_type = SOCKET;
+	using socket_type = unsigned long long;
 
 #endif
 	struct broadcast
@@ -62,7 +55,7 @@ public:
 };
 
 template<>
-class instance<web_indicator::broadcast::client, true> :instance<web_indicator::broadcast::client, false>
+class instance<web_indicator::broadcast::client, true> :public instance<web_indicator::broadcast::client, false>
 {
 public:
 	using tag = web_indicator::broadcast::client;

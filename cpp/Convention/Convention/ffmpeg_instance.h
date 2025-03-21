@@ -255,8 +255,8 @@ public:
 		return this->exc((
 			make_string("ffmpeg ") + this->commandline +
 			input_list +
-			make_string(" -filter_complex concat=n=") + string_indicator::to_string(inputs.size()) + string_indicator::to_string(":v=1:a=1 \"") +
-			output + string_indicator::to_string("\"")
+			make_string(" -filter_complex concat=n=") + string_indicator::to_string(inputs.size()) + make_string(":v=1:a=1 \"") +
+			output + make_string("\"")
 		).c_str());
 	}
 

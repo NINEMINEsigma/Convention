@@ -1273,6 +1273,16 @@ namespace std
 	{
 		return std::wstring(str);
 	}
+	template<size_t size>
+	inline std::string to_string(const char str[size])
+	{
+		return std::string(str);
+	}
+	template<size_t size>
+	inline std::wstring to_wstring(const wchar_t str[size])
+	{
+		return std::wstring(str);
+	}
 }
 
 struct char_indicator
@@ -1587,7 +1597,7 @@ _Notnull_ _T* no_warning_6387(_T* from)
 extern std::tuple <
 	std::map<std::string, std::string>,
 	std::vector<std::pair<std::string, std::string>>
-> make_config(int argv, char** argc);
+> make_config(int argc, char** argv);
 
 template<typename _Type>
 struct descriptive_indicator

@@ -1,6 +1,6 @@
 from typing                                                 import *
-from lekit.MathEx.Transform                                 import *
-from lekit.File.Core                                        import tool_file, UnWrapper as Unwrapper2Str, is_loss_tool_file
+from ..MathEx.Transform                                 import *
+from ..File.Core                                        import tool_file, UnWrapper as Unwrapper2Str, is_loss_tool_file
 from selenium.webdriver.remote.webdriver                    import WebDriver
 from selenium.webdriver.remote.webelement                   import WebElement
 from selenium.webdriver.common.by                           import By, ByType

@@ -151,15 +151,10 @@ namespace internal
 #include <boost/math/special_functions.hpp>
 #include <boost/numeric/interval.hpp>
 #include <boost/math/quadrature/gauss.hpp>
-
 template<typename _NumberType>
-class extended_number : public instance<number_ex_indicator<_NumberType>, true>
+class number_traits
 {
-private:
-	using _Mybase = instance<number_ex_indicator<_NumberType>, true>;
 public:
-	using _Mybase::_Mybase;  // 继承构造函数
-
 	// 高精度数值类型
 	using high_precision_float = boost::multiprecision::cpp_dec_float_100;
 	using big_integer = boost::multiprecision::cpp_int;
@@ -172,80 +167,87 @@ public:
 	static constexpr auto ln_two() { return boost::math::constants::ln_two<_NumberType>(); }
 
 	// 阶乘
-	_NumberType factorial() const
+	static _NumberType factorial(_NumberType value)
 	{
-		return boost::math::factorial<_NumberType>(this->get_cvalue());
+		return boost::math::factorial<_NumberType>(value);
 	}
 
 	// 伽马函数
-	_NumberType gamma() const
+	static _NumberType gamma(_NumberType value)
 	{
-		return boost::math::tgamma(this->get_cvalue());
+		return boost::math::tgamma(value);
 	}
 
-	// 贝塞尔函数
-	_NumberType bessel_j(int n) const
+	// 贝塞尔函数 J
+	static _NumberType bessel_j(int n, _NumberType value)
 	{
-		return boost::math::cyl_bessel_j(n, this->get_cvalue());
+		return boost::math::cyl_bessel_j(n, value);
 	}
 
-	_NumberType bessel_y(int n) const
+	// 贝塞尔函数 Y
+	static _NumberType bessel_y(int n, _NumberType value)
 	{
-		return boost::math::cyl_neumann(n, this->get_cvalue());
+		return boost::math::cyl_neumann(n, value);
 	}
 
 	// 数值区间操作
 	using interval = boost::numeric::interval<_NumberType>;
-	static interval make_interval(_NumberType lower, _NumberType upper);
-	interval make_interval(_NumberType upper) const
+	static interval make_interval(_NumberType lower, _NumberType upper)
 	{
-		return interval(this->get_cvalue(), upper);
+		return interval(lower, upper);
 	}
 
 	// 高精度转换
-	high_precision_float to_high_precision() const
+	static high_precision_float to_high_precision(_NumberType value)
 	{
-		return high_precision_float(this->get_cvalue());
+		return high_precision_float(value);
 	}
 
 	// 有理数操作
-	rational to_rational(const _NumberType& denominator) const
+	static rational to_rational(_NumberType numerator, _NumberType denominator)
 	{
-		return rational(this->get_cvalue(), denominator);
+		return rational(numerator, denominator);
+	}
+	static _NumberType from_rational(rational& r)
+	{
+		return static_cast<_NumberType>(r);	
 	}
 
 	// 数值积分
 	template<typename F>
-	_NumberType integrate(const _NumberType& upper, F&& f) const
+	static _NumberType integrate(const _NumberType& upper, F&& f, _NumberType lower = 0)
 	{
 		return boost::math::quadrature::gauss<_NumberType>::integrate(
 			std::forward<F>(f),
-			this->get_cvalue(),
+			lower,
 			upper
 		);
 	}
 
 	// 数值微分
 	template<typename F>
-	_NumberType derivative(F&& f) const
+	static _NumberType derivative(F&& f, _NumberType x)
 	{
 		const _NumberType h = std::numeric_limits<_NumberType>::epsilon();
-		const _NumberType x = this->get_cvalue();
 		return (f(x + h) - f(x - h)) / (2 * h);
 	}
 };
 
-template<typename _NumberType>
-extended_number<_NumberType>::interval extended_number<_NumberType>::make_interval(_NumberType lower, _NumberType upper)
-{
-	return interval(lower, upper);
-}
-
 // 常用类型别名
-using extended_double = extended_number<double>;
-using extended_float = extended_number<float>;
-using extended_int = extended_number<int>;
-using extended_long = extended_number<long>;
+using double_traits = number_traits<double>;
+using float_traits = number_traits<float>;
+using int_traits = number_traits<int>;
+using long_traits = number_traits<long>;
+using long_long_traits = number_traits<long long>;
+using unsigned_int_traits = number_traits<unsigned int>;
+using unsigned_long_traits = number_traits<unsigned long>;
+using unsigned_long_long_traits = number_traits<unsigned long long>;
+using short_traits = number_traits<short>;
+using unsigned_short_traits = number_traits<unsigned short>;
+using char_traits = number_traits<char>;
+using unsigned_char_traits = number_traits<unsigned char>;
+using long_double_traits = number_traits<long double>;
+using size_t_traits = number_traits<size_t>;
 
 #endif // __REF_BOOST
 

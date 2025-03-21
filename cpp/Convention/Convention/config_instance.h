@@ -179,16 +179,12 @@ private:
 		return internal_make_manual_summary(is_necessary, key) +" " + internal_make_manual_summary(args...);
 	}
 public:
-	std::string make_manual()
-	{
-		return "";
-	}
 	template<typename _Val>
-	std::string make_manual(const descriptive_indicator<_Val>& key) const
+	std::string make_manual(const descriptive_indicator<_Val>& key)
 	{
 		return Combine("\t\t[", key.target, "] \t", key.description, "\n");
 	}
-	std::string make_manual(const descriptive_indicator<void>& layer) const
+	std::string make_manual(const descriptive_indicator<void>& layer)
 	{
 		return Combine("\t", layer.description, ":\n");
 	}
@@ -196,10 +192,15 @@ public:
 	{
 		return top + "\n";
 	}
-	template<typename _First, typename... _Args>
-	std::string make_manual(const _First& key, const _Args&... args)
+	template<typename _First, typename _Second>
+	std::string make_manual(_First&& key, _Second&& second)
 	{
-		return make_manual(key) + make_manual(args...);
+		return make_manual(std::forward<_First>(key)) + make_manual(std::forward<_Second>(second));
+	}
+	template<typename _First, typename _Second, typename... _Args>
+	std::string make_manual(_First&& key, _Second&& second, _Args&&... args)
+	{
+		return make_manual(std::forward<_First>(key)) + make_manual(std::forward<_Second>(second)) + make_manual(std::forward<_Args>(args)...);
 	}
 	template<typename... _Args>
 	std::string make_manual_summary(bool is_necessary, const std::string& key, const _Args&... args) const

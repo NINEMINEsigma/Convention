@@ -20,7 +20,7 @@ public:
     using _MyType = _Type;
     static constexpr bool _is_extension = _Extension;
 private:
-    void* operator new(size_t t) {}
+    void* operator new(size_t t) { return ::operator new(t); }
 public:
     constexpr instance() :_Mybase() {}
     constexpr instance(nullptr_t) : _Mybase(nullptr) {}

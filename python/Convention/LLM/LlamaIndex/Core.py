@@ -548,17 +548,17 @@ class LLMObject(left_value_reference[LLM]):
         return LlamaIndexSettings.llm
 
     @classmethod
-    def create_LlamaCPP_from_local_path(cls, model_path:tool_file_or_str, **kwargs:Any) -> None:
+    def create_LlamaCPP_from_local_path(cls, model_path:tool_file_or_str, **kwargs:Any) -> Self:
         return cls(LlamaCPP(model_path=UnWrapper(model_path), **kwargs))
     @classmethod
-    def create_LlamaCPP_from_url(cls, model_uid:str, base_url:str, **kwargs:Any) -> None:
-        return cls(LlamaCPP(model_uid=model_uid, base_url=base_url, **kwargs))
+    def create_LlamaCPP_from_url(cls, base_url:str, **kwargs:Any) -> Self:
+        return cls(LlamaCPP(base_url=base_url, **kwargs))
 
     @classmethod
-    def create_OpenAI_from_api_key(cls, api_key:str, **kwargs:Any) -> None:
+    def create_OpenAI_from_api_key(cls, api_key:str, **kwargs:Any) -> Self:
         return cls(OpenAI(api_key=api_key, **kwargs))
     @classmethod
-    def create_OpenAI_from_api_key_file(cls, api_key_file:tool_file_or_str, **kwargs:Any) -> None:
+    def create_OpenAI_from_api_key_file(cls, api_key_file:tool_file_or_str, **kwargs:Any) -> Self:
         return cls(OpenAI(api_key=UnWrapper(api_key_file), **kwargs))
 
 
