@@ -6,7 +6,7 @@ namespace Convention.WindowsUI
     [RequireComponent(typeof(BehaviourContextManager))]
     public class DragBehaviour : MonoAnyBehaviour
     {
-        [SerializeField] private BehaviourContextManager Context = null;
+        [SerializeField, Resources] private BehaviourContextManager Context = null;
         public BehaviourContextManager GetBehaviourContext()
         {
             if (Context == null)
@@ -23,7 +23,7 @@ namespace Convention.WindowsUI
             }
         }
 
-        public bool isCanDrag = true;
+        [Setting] public bool isCanDrag = true;
 
         public void SetDragAble(bool isCanDrag)
         {
@@ -45,6 +45,12 @@ namespace Convention.WindowsUI
             DragBehaviourContext.locationValid = IsRaycastLocationValid;
         }
 
+        [Setting] public bool IsAutoInit = true;
+        private void Start()
+        {
+            Init(this.DragObjectInternal ?? transform as RectTransform);
+        }
+
         public void Init(RectTransform DragObjectInternal, RectTransform DragAreaInternal)
         {
             this.DragObjectInternal = DragObjectInternal;
@@ -60,14 +66,14 @@ namespace Convention.WindowsUI
             DragBehaviourContext.locationValid = IsRaycastLocationValid;
         }
 
-        public bool topOnClick = true;
+        [Setting] public bool topOnClick = true;
 
         private Vector2 originalLocalPointerPosition;
         private Vector3 originalPanelLocalPosition;
 
-        private RectTransform DragObjectInternal;
+        [Resources, SerializeField] private RectTransform DragObjectInternal;
 
-        private RectTransform DragAreaInternal;
+        [Resources, SerializeField] private RectTransform DragAreaInternal;
 
         public void OnBeginDrag(PointerEventData data)
         {

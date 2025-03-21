@@ -41,9 +41,6 @@ except ImportError as ex:
 try:
     import torch as _
     import transformers as _
-    from ..LLM.convert_lora_to_gguf import *
-    from ..LLM.convert_llama_ggml_to_gguf import *
-    from ..LLM.convert_hf_to_gguf_update import *
-    from ..LLM.convert_hf_to_gguf import *
+    import gguf as _
 except ImportError as ex:
-    ImportingThrow(ex, "LLM Model Conversion", ["torch", "transformers"])
+    ImportingThrow(ex, "LLM Model Conversion", ["torch", "transformers", "gguf"])

@@ -16,6 +16,7 @@ from PIL                import Image, ImageFile
 from docx               import Document
 from docx.document      import Document as DocumentObject
 
+text_readable_file_type = ["txt", "md", "json", "csv", "xml", "xlsx", "xls", "docx", "doc", "svg"]
 audio_file_type = ["mp3","ogg","wav"]
 image_file_type = ['png', 'jpg', 'jpeg', 'bmp', 'svg', 'ico']
 temp_tool_file_path_name = "temp.tool_file"
@@ -198,7 +199,7 @@ class tool_file(any_class):
             self.load_as_xml()
         elif suffix == 'xlsx' or suffix == 'xls':
             self.load_as_excel()
-        elif suffix == 'txt':
+        elif suffix in text_readable_file_type:
             self.load_as_text()
         elif suffix == 'docx' or suffix == 'doc':
             self.load_as_docx()
@@ -261,7 +262,7 @@ class tool_file(any_class):
     def load_as_unknown(self, suffix:str) -> Any:
         return self.load_as_text()
 
-    def save(self, path:str=None):
+    def save(self, path:Optional[str]=None):
         if path is None and self.__file_path is None:
             raise Exception('No file path specified')
         elif path is None and self.is_dir():
@@ -277,7 +278,7 @@ class tool_file(any_class):
             self.save_as_xml(path)
         elif suffix == 'xlsx' or suffix == 'xls':
             self.save_as_excel(path)
-        elif suffix == 'txt':
+        elif suffix in text_readable_file_type:
             self.save_as_text(path)
         elif suffix == 'docx':
             self.save_as_docx(path)

@@ -3,7 +3,7 @@ import io
 
 setup(
     name="Convention",
-    version="0.1.3",
+    version="0.1.5",
     author="Convention Unity",
     description="A comprehensive Python utility library",
     long_description=io.open("README.md", encoding="utf-8").read(),
