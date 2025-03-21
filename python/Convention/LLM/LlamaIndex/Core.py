@@ -551,8 +551,8 @@ class LLMObject(left_value_reference[LLM]):
     def create_LlamaCPP_from_local_path(cls, model_path:tool_file_or_str, **kwargs:Any) -> Self:
         return cls(LlamaCPP(model_path=UnWrapper(model_path), **kwargs))
     @classmethod
-    def create_LlamaCPP_from_url(cls, base_url:str, **kwargs:Any) -> Self:
-        return cls(LlamaCPP(base_url=base_url, **kwargs))
+    def create_LlamaCPP_from_url(cls, model_url:str, **kwargs:Any) -> Self:
+        return cls(LlamaCPP(base_url=model_url, **kwargs))
 
     @classmethod
     def create_OpenAI_from_api_key(cls, api_key:str, **kwargs:Any) -> Self:
