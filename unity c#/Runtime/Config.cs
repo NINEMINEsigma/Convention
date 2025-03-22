@@ -901,7 +901,7 @@ namespace Convention
         public enum PerformanceMode
         {
             Speed = 0,
-            Quality = 0b11111111,
+            Quality = 1 << 8 - 1,
             L1 = 1 << 0,
             L2 = 1 << 1,
             L3 = 1 << 2,

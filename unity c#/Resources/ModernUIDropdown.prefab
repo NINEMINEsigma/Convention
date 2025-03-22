@@ -396,7 +396,7 @@ MonoBehaviour:
   setHighPriorty: 1
   outOnPointerExit: 0
   isListItem: 0
-  animationType: 0
+  animationType: 1
   OnSelect:
     m_PersistentCalls:
       m_Calls: []

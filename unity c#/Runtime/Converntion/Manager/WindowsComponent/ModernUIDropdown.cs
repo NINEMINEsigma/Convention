@@ -15,8 +15,8 @@ namespace Convention.WindowsUI
     {
         // Resources
         [Resources, OnlyNotNullMode] public GameObject triggerObject;
-        [Resources,OnlyNotNullMode] public Transform itemParent;
-        [Resources,OnlyNotNullMode] public GameObject itemPrefab;
+        [Resources, OnlyNotNullMode] public Transform itemParent;
+        [Resources, OnlyNotNullMode] public GameObject itemPrefab;
         [Resources, OnlyNotNullMode] public GameObject scrollbar;
         private VerticalLayoutGroup itemList;
         private Transform currentListParent;
@@ -31,7 +31,7 @@ namespace Convention.WindowsUI
         [Setting] public bool setHighPriorty = true;
         [Setting] public bool outOnPointerExit = false;
         [Setting] public bool isListItem = false;
-        [Setting] public AnimationType animationType;
+        [Setting] public AnimationType animationType = AnimationType.FADING;
         [Setting] public UnityEvent<string> OnSelect = new();
         [Setting] public bool isMutiSelect = false;
 
@@ -59,6 +59,7 @@ namespace Convention.WindowsUI
 
         public enum AnimationType
         {
+            None,
             FADING,
             SLIDING,
             STYLISH
@@ -106,6 +107,8 @@ namespace Convention.WindowsUI
         [Resources] public RectTransform ResizeBroadcastRect;
         public IEnumerator ResizeBroadcast()
         {
+            if (ResizeBroadcastRect == null)
+                yield break;
             for (int i = 0; i < 60; i++)
             {
                 RectTransformExtension.AdjustSizeToContainsChilds(ResizeBroadcastRect);
@@ -146,6 +149,7 @@ namespace Convention.WindowsUI
                 transform.SetAsLastSibling();
         }
 
+        [Content, OnlyPlayMode]
         public void RefreshImmediate()
         {
             foreach (Transform child in itemParent)
@@ -366,6 +370,7 @@ namespace Convention.WindowsUI
             RefreshImmediate();
         }
 
+        [Content, OnlyPlayMode]
         public void ClearOptions()
         {
             dropdownItems.Clear();

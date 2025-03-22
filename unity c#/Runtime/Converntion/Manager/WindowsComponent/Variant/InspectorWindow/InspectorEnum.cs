@@ -51,6 +51,7 @@ namespace Convention.WindowsUI.Variant
                 }
             }
             m_Dropdown.interactable = targetItem.AbleChangeType;
+            m_Dropdown.RefreshImmediate();
         }
 
         private void Reset()

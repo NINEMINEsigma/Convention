@@ -362,10 +362,6 @@ namespace Convention.WindowsUI.Variant
             CurrentModule.gameObject.SetActive(true);
         }
 
-        private void FixedUpdate()
-        {
-            //AdjustSizeToContainsChilds();
-        }
     }
 
 

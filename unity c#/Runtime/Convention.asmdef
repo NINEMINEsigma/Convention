@@ -12,7 +12,9 @@
         "Unity.Timeline",
         "Unity.TextMeshPro",
         "Unity.Entities",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Unity.Splines",
+        "Dreamteck.Splines"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
