@@ -38,6 +38,8 @@ MonoBehaviour:
     - Convention.Runtime
     - Convention.Windows
     - CW.Common
+    - Dreamteck.Splines
+    - Dreamteck.Utilities
     - EasySave3
     - LeanCommon
     - LeanPool
