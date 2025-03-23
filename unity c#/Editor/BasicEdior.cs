@@ -9,7 +9,7 @@ using UnityEngine.Events;
 
 namespace Convention
 {
-    [CustomEditor(typeof(ConventionEditorInspectorGUI), true)]
+    [CustomEditor(typeof(ConventionEditorInspectorGUI), true, isFallback = true)]
     public class AbstractCustomEditor : Editor
     {
         protected int currentTab = 0;

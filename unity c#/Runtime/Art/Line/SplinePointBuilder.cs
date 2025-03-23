@@ -1,3 +1,4 @@
+#if UNITY_SPLINE
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -130,4 +131,7 @@ namespace Convention.VFX
         }
     }
 }
- 
+#else
+
+
+#endif

@@ -3,8 +3,7 @@ using UnityEngine.EventSystems;
 
 namespace Convention.WindowsUI
 {
-    [RequireComponent(typeof(BehaviourContextManager))]
-    public class DragBehaviour : MonoAnyBehaviour
+    public class DragBehaviour : WindowsComponent
     {
         [SerializeField, Resources] private BehaviourContextManager Context = null;
         public BehaviourContextManager GetBehaviourContext()
@@ -30,10 +29,16 @@ namespace Convention.WindowsUI
             this.isCanDrag = isCanDrag;
         }
 
-        public void Init(RectTransform DragObjectInternal)
+        public void Init([In, Opt] RectTransform DragObjectInternal, [In, Opt] RectTransform DragAreaInternal)
         {
-            this.DragObjectInternal = DragObjectInternal;
-            this.DragAreaInternal = transform.parent.transform as RectTransform;
+            if (DragObjectInternal != null)
+                this.DragObjectInternal = DragObjectInternal;
+            else if (this.DragObjectInternal == null)
+                this.DragObjectInternal = rectTransform;
+            if (DragAreaInternal != null)
+                this.DragAreaInternal = DragAreaInternal;
+            else if (this.DragAreaInternal == null)
+                this.DragAreaInternal = rectTransform.parent as RectTransform;
 
             DragBehaviourContext.OnBeginDragEvent ??= new();
             DragBehaviourContext.OnDragEvent ??= new();
@@ -48,32 +53,24 @@ namespace Convention.WindowsUI
         [Setting] public bool IsAutoInit = true;
         private void Start()
         {
-            Init(this.DragObjectInternal ?? transform as RectTransform);
+            Init(null, null);
         }
 
-        public void Init(RectTransform DragObjectInternal, RectTransform DragAreaInternal)
+        private void Reset()
         {
-            this.DragObjectInternal = DragObjectInternal;
-            this.DragAreaInternal = DragAreaInternal;
-
-            DragBehaviourContext.OnBeginDragEvent ??= new();
-            DragBehaviourContext.OnDragEvent ??= new();
-
-            DragBehaviourContext.OnBeginDragEvent.RemoveListener(this.OnBeginDrag);
-            DragBehaviourContext.OnBeginDragEvent.AddListener(this.OnBeginDrag);
-            DragBehaviourContext.OnDragEvent.RemoveListener(this.OnDrag);
-            DragBehaviourContext.OnDragEvent.AddListener(this.OnDrag);
-            DragBehaviourContext.locationValid = IsRaycastLocationValid;
+            isCanDrag = true;
+            DragObjectInternal = rectTransform;
         }
+
 
         [Setting] public bool topOnClick = true;
 
-        private Vector2 originalLocalPointerPosition;
-        private Vector3 originalPanelLocalPosition;
+        [Content, Ignore, OnlyPlayMode, SerializeField] private Vector2 originalLocalPointerPosition;
+        [Content, Ignore, OnlyPlayMode, SerializeField] private Vector3 originalPanelLocalPosition;
 
         [Resources, SerializeField] private RectTransform DragObjectInternal;
 
-        [Resources, SerializeField] private RectTransform DragAreaInternal;
+        [Resources, SerializeField, WhenAttribute.Not(nameof(DragObjectInternal), null)] private RectTransform DragAreaInternal;
 
         public void OnBeginDrag(PointerEventData data)
         {

@@ -1,4 +1,5 @@
 using System;
+using Codice.Client.BaseCommands;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -77,10 +78,32 @@ namespace Convention.WindowsUI
         {
             LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
         }
+
+        [Resources, Tooltip("before AdjustSizeToContainsChilds, will compute it first")] public RectTransform AdjustSizeToContainsRect;
+
         [Content]
         public void AdjustSizeToContainsChilds()
         {
-            RectTransformExtension.AdjustSizeToContainsChilds(rectTransform);
+            if (AdjustSizeToContainsRect == null)
+                RectTransformExtension.AdjustSizeToContainsChilds(rectTransform);
+            else
+            {
+                var corners = new Vector3[4];
+                Vector2 min = new Vector2(float.MaxValue, float.MaxValue);
+                Vector2 max = new Vector2(float.MinValue, float.MinValue);
+                AdjustSizeToContainsRect.GetWorldCorners(corners);
+                foreach (var corner in corners)
+                {
+                    Vector2 localCorner = rectTransform.InverseTransformPoint(corner);
+                    if (float.IsNaN(localCorner.x) || float.IsNaN(localCorner.y))
+                        break;
+                    min.x = Mathf.Min(min.x, localCorner.x);
+                    min.y = Mathf.Min(min.y, localCorner.y);
+                    max.x = Mathf.Max(max.x, localCorner.x);
+                    max.y = Mathf.Max(max.y, localCorner.y);
+                }
+                RectTransformExtension.AdjustSizeToContainsChilds(rectTransform, min, max, null);
+            }
         }
     }
 }

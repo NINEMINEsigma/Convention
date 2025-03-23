@@ -461,7 +461,12 @@ namespace Convention
                     else
                         return targetValue.GetType().IsSubclassOf(this.Value as Type);
                 }
-                return this.Value.Equals(this.InjectGetValue(target));
+                if (this.Value != null)
+                    return this.Value.Equals(this.InjectGetValue(target));
+                var injectValue = this.InjectGetValue(target);
+                if (injectValue != null)
+                    return injectValue.Equals(this.Value);
+                return injectValue == null && this.Value == null;
             }
             public IsAttribute(string Name, object value) : base(Name, value) { }
         }

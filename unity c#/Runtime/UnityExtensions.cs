@@ -489,4 +489,31 @@ namespace Convention
             yield return Lerp(start, end, duration, onUpdate, Mathf.Lerp);
         }
     }
+
+    public static class ScriptingDefineUtility
+    {
+#if UNITY_EDITOR
+        public static void Add(string define, BuildTargetGroup target, bool log = false)
+        {
+            string definesString = PlayerSettings.GetScriptingDefineSymbolsForGroup(target);
+            if (definesString.Contains(define)) return;
+            string[] allDefines = definesString.Split(';');
+            ArrayUtility.Add(ref allDefines, define);
+            definesString = string.Join(";", allDefines);
+            PlayerSettings.SetScriptingDefineSymbolsForGroup(target, definesString);
+            Debug.Log("Added \"" + define + "\" from " + EditorUserBuildSettings.selectedBuildTargetGroup + " Scripting define in Player Settings");
+        }
+
+        public static void Remove(string define, BuildTargetGroup target, bool log = false)
+        {
+            string definesString = PlayerSettings.GetScriptingDefineSymbolsForGroup(target);
+            if (!definesString.Contains(define)) return;
+            string[] allDefines = definesString.Split(';');
+            ArrayUtility.Remove(ref allDefines, define);
+            definesString = string.Join(";", allDefines);
+            PlayerSettings.SetScriptingDefineSymbolsForGroup(target, definesString);
+            Debug.Log("Removed \"" + define + "\" from " + EditorUserBuildSettings.selectedBuildTargetGroup + " Scripting define in Player Settings");
+        }
+#endif
+    }
 }
