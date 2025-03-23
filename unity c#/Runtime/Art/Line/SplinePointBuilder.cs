@@ -3,35 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using Convention.WindowsUI.Variant;
 using UnityEngine;
-#if DREAMTECK_SPLINES
-using Dreamteck.Splines;
-#else
 using UnityEngine.Splines;
-#endif
 
 namespace Convention.VFX
 {
-    [ExecuteAlways]
     public class SplinePointBuilder : MonoAnyBehaviour, ILoadedInHierarchy
     {
         [Setting, InspectorDraw] public PerformanceIndicator.PerformanceMode performanceMode = PerformanceIndicator.PerformanceMode.Speed;
         [Content] public List<LinePoint> childPoints = new();
 
-#if DREAMTECK_SPLINES
-        [Resources, SerializeField, HopeNotNull, InspectorDraw] private SplineComputer m_splineContainer;
-        public SplineComputer MainSpline => m_splineContainer;
-#else
         [Resources, SerializeField, HopeNotNull, InspectorDraw] private SplineContainer m_splineContainer;
         public Spline MainSpline => m_splineContainer.Spline;
         [Resources, SerializeField, HopeNotNull, InspectorDraw] private SplineExtrude m_splineExtrude;
-        [Content] public List<BezierKnot> bezierKnots = new List<BezierKnot>();
-#endif
+        [Content] public List<BezierKnot> knots = new List<BezierKnot>();
 
         [InspectorDraw]
         public Vector2 Range
         {
-            get => new();//m_splineExtrude.Range;
-            set { }// m_splineExtrude.Range = value;
+            get => m_splineExtrude.Range;
+            set => m_splineExtrude.Range = value;
         }
         [Percentage(0, 1), InspectorDraw]
         public float Head
@@ -55,21 +45,14 @@ namespace Convention.VFX
 
         private void Reset()
         {
-#if DREAMTECK_SPLINES
-
-#else
             m_splineExtrude = GetComponent<SplineExtrude>();
             m_splineContainer = GetComponent<SplineContainer>();
             if (m_splineExtrude != null)
                 m_splineExtrude.Container = m_splineContainer;
-#endif
         }
 
         void Start()
         {
-#if DREAMTECK_SPLINES
-
-#else
             if (m_splineExtrude == null)
                 m_splineExtrude = GetComponent<SplineExtrude>();
             if (m_splineContainer == null)
@@ -77,74 +60,52 @@ namespace Convention.VFX
                 m_splineContainer = GetComponent<SplineContainer>();
                 m_splineExtrude.Container = m_splineContainer;
             }
-#endif
         }
 
         private void LateUpdate()
         {
             if ((int)performanceMode >= (int)PerformanceIndicator.PerformanceMode.L8)
             {
-                RebuildAll();
-            }
-            else if ((int)performanceMode >= (int)PerformanceIndicator.PerformanceMode.L6)
-            {
-                ResetPoints();
+                if (childPoints.Count != knots.Count)
+                    RebuildAll();
+                else
+                    ResetPoints();
+                m_splineExtrude.Rebuild();
             }
         }
-#if DREAMTECK_SPLINES
-
-#else
-        [Setting, SerializeField] private BezierKnot BezierKnotTemplate = new();
-        public BezierKnot BuildPoint(Vector3 position)
-        {
-            return new()
-            {
-                Position = position,
-                Rotation = BezierKnotTemplate.Rotation
-            };
-        }
-#endif
 
         [Content]
         public void RebuildAll()
         {
-#if DREAMTECK_SPLINES
-
-#else
-            int lastcount = bezierKnots.Count;
-            if (bezierKnots.Count < childPoints.Count)
+            int lastcount = knots.Count;
+            if (knots.Count < childPoints.Count)
             {
-                bezierKnots.AddRange(new BezierKnot[childPoints.Count - bezierKnots.Count]);
+                knots.AddRange(new BezierKnot[childPoints.Count - knots.Count]);
             }
-            else if (bezierKnots.Count == childPoints.Count)
+            else if (knots.Count == childPoints.Count)
             {
 
             }
             else
             {
-                bezierKnots = new BezierKnot[childPoints.Count].ToList();
+                knots = new BezierKnot[childPoints.Count].ToList();
             }
-            MainSpline.Knots = bezierKnots;
+            MainSpline.Knots = knots;
             for (int i = 0, e = childPoints.Count; i < e; i++)
             {
-                MainSpline.SetKnot(i, new BezierKnot(childPoints[i].transform.position));
+                MainSpline.SetKnot(i, new BezierKnot(childPoints[i].transform.localPosition));
             }
             for (int i = childPoints.Count, e = lastcount; i < e; i++)
             {
                 MainSpline.RemoveAt(i);
             }
-#endif
         }
         [Content]
         public void ResetPoints()
         {
             for (int i = 0, e = childPoints.Count; i < e; i++)
             {
-#if DREAMTECK_SPLINES
-
-#else
-                MainSpline.SetKnot(i, new BezierKnot(childPoints[i].transform.position));
-#endif
+                MainSpline.SetKnot(i, knots[i] = new BezierKnot(childPoints[i].transform.localPosition));
             }
         }
         [Content]
