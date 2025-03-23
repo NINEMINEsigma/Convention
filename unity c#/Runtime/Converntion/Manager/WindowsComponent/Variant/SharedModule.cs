@@ -21,14 +21,19 @@ namespace Convention.WindowsUI.Variant
                 RenameCallback(x);
                 RenameField.gameObject.SetActive(false);
             });
-            CustomMenuRelease.onClick.AddListener(() =>
+            this.CustomMenuRelease.onClick.AddListener(() =>
             {
-                foreach (var menu in customMenus)
-                {
-                    menu.ReleaseMenu();
-                }
-                CustomMenuRelease.gameObject.SetActive(false);
+                ReleaseAllCustomMenu();
             });
+        }
+
+        private void ReleaseAllCustomMenu()
+        {
+            foreach (var menu in customMenus)
+            {
+                menu.ReleaseMenu();
+            }
+            CustomMenuRelease.gameObject.SetActive(false);
         }
 
         public void Rename([In]string initText, [In]Action<string> callback)
@@ -48,7 +53,11 @@ namespace Convention.WindowsUI.Variant
             customMenus.Add(target);
             foreach (var action in actions)
             {
-                target.CreateItem(() => action.Item2(root.gameObject), action.Item1);
+                target.CreateItem(() =>
+                {
+                    action.Item2(root.gameObject);
+                    ReleaseAllCustomMenu();
+                }, action.Item1);
             }
             Vector3[] points = new Vector3[4];
             root.GetWorldCorners(points);
