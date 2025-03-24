@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Convention
 {
-    public class GradientEffect : BaseMeshEffect,IAnyClass
+    public class GradientEffect : BaseMeshEffect, IAnyClass
     {
         [return: ReturnNotNull]
         public string SymbolName()
