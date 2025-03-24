@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Rendering;
+#if UNITY_URP
 using UnityEngine.Rendering.Universal;
 
 namespace Convention
@@ -116,3 +117,4 @@ namespace Convention
         }
     }
 }
+#endif

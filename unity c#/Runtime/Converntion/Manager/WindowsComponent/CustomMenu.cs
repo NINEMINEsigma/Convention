@@ -18,6 +18,7 @@ namespace Convention
         public virtual Button CreateItem()
         {
             var item = GameObject.Instantiate(ButtonPrefab, Plane).GetComponent<Button>();
+            item.gameObject.SetActive(true);
             childs.Add(item.gameObject);
             return item;
         }

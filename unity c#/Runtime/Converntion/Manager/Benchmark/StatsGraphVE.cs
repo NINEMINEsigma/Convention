@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UIElements;
+#if UNITY_URP
 using Unity.Mathematics;
 using Unity.Burst;
 
@@ -134,3 +135,4 @@ namespace Convention
         }
     }
 }
+#endif

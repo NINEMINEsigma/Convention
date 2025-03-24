@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
+#if UNITY_URP
 using UnityEngine.Rendering.Universal;
+#endif
 using UnityEngine.SceneManagement;
 using Convention.Benchmarking;
 using Cinemachine;
@@ -28,10 +30,17 @@ namespace Convention
         [Content, Ignore, SerializeField] private string currentSceneName;
         [Tooltip("Transition Scene")]
         [Content, Ignore, SerializeField] private string targetSceneName;
+#if UNITY_URP
         [Tooltip("Layers to render when in a location")]
         [Setting, SerializeField] private SerializedDictionary<string, LayerMask> locationLayers;
         [Tooltip("Current Registered Scenes")]
         [Content,Ignore,SerializeField] private SerializedDictionary<string, SceneMetaData> registeredScenes;
+#else
+        [Tooltip("Layers to render when in a location")]
+        [Setting, SerializeField] private Dictionary<string, LayerMask> locationLayers;
+        [Tooltip("Current Registered Scenes")]
+        [Content, Ignore, SerializeField] private Dictionary<string, SceneMetaData> registeredScenes;
+#endif
 
         private SceneLoader m_Loader;
 
@@ -100,7 +109,9 @@ namespace Convention
         }
         #endregion
 
+#if UNITY_URP
         [SerializeField, Resources] private VFX.FullscreenEffect m_FullscreenEffect;
+#endif
         private bool InTransition = false;
         [SerializeField, Content, OnlyPlayMode, Ignore] private bool CoolingOff = false; //After teleporting
         [SerializeField, Content, OnlyPlayMode, Ignore] private float ElapsedTimeInTransition = 0;
@@ -138,7 +149,9 @@ namespace Convention
                 m_Loader.SetVolumeWeights(1 - tSquared);
             }
 
+#if UNITY_URP
             m_FullscreenEffect.SetEffectWeight(t);
+#endif
 
             void TriggerTeleport()
             {
@@ -429,7 +442,9 @@ namespace Convention
 
             //Set the renderer index
             int index = sceneMetaData.RendererIndex > 1 ? sceneMetaData.RendererIndex : 1;
+#if UNITY_URP
             instance.m_ScreenCamera.GetComponent<UniversalAdditionalCameraData>().SetRenderer(index);
+#endif
 
             instance.m_ScreenCamera.GetComponent<Camera>().enabled = true;
             instance.m_ScreenOff = false;
@@ -502,7 +517,7 @@ namespace Convention
             return instance != null && instance.ElapsedTimeInTransition > 0.001f;
         }
 
-        #endregion
+#endregion
 
         #region Getters
 

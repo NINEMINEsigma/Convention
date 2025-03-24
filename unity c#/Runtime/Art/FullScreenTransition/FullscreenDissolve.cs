@@ -8,6 +8,7 @@ namespace Convention
 {
     namespace VFX
     {
+#if UNITY_URP
         public class FullscreenDissolve : FullscreenEffect
         {
             [Setting, SerializeField] private List<string> IgnoreCameraTag = new();
@@ -88,5 +89,6 @@ namespace Convention
                 base.OnBeginCamera(ctx, cam);
             }
         }
+#endif
     }
 }

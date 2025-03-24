@@ -13,14 +13,16 @@ namespace Convention.WindowsUI.Variant
         private RegisterWrapper<InspectorWindow> registerWrapper;
         private object target;
 
-        [Resources, SerializeField, OnlyNotNullMode] private ModernUIInputField m_ParentHashCodeField;
+        [Setting] public bool IsWorkWithHierarchyWindow = true;
+        [Setting] public bool IsWorkWithTypeIndictaor = true;
+        [Resources, SerializeField, OnlyNotNullMode, WhenAttribute.Is(nameof(IsWorkWithHierarchyWindow), true)] private ModernUIInputField m_ParentHashCodeField;
         private int m_lastParentHashCode = 0;
-        [Resources, SerializeField, OnlyNotNullMode] private ModernUIInputField m_ThisHashCodeField;
+        [Resources, SerializeField, OnlyNotNullMode, WhenAttribute.Is(nameof(IsWorkWithHierarchyWindow), true)] private ModernUIInputField m_ThisHashCodeField;
         [Resources, SerializeField, HopeNotNull] private WindowManager m_WindowManager;
         [Resources, SerializeField, HopeNotNull] private PropertiesWindow m_PropertiesWindow;
         [Content, SerializeField] private List<PropertiesWindow.ItemEntry> m_currentEntries = new();
 
-        [Resources, SerializeField, OnlyNotNullMode] private Text m_TypeText;
+        [Resources, SerializeField, OnlyNotNullMode, WhenAttribute.Is(nameof(IsWorkWithTypeIndictaor), true)] private Text m_TypeText;
 
         private void Reset()
         {
@@ -41,38 +43,46 @@ namespace Convention.WindowsUI.Variant
             registerWrapper = new(() => { });
             instance = this;
 
-            m_ParentHashCodeField.gameObject.SetActive(false);
-            m_ThisHashCodeField.gameObject.SetActive(false);
-            m_ParentHashCodeField.AddListener(x =>
+            if (IsWorkWithHierarchyWindow == true)
             {
-                if (int.TryParse(x, out var code))
+                m_ParentHashCodeField.gameObject.SetActive(false);
+                m_ParentHashCodeField.AddListener(x =>
                 {
-                    m_lastParentHashCode = code;
-                    if (code == 0)
+                    if (int.TryParse(x, out var code))
                     {
-                        HierarchyWindow.instance.SetHierarchyItemParent(
-                            HierarchyWindow.instance.GetReferenceItem(target),
-                            HierarchyWindow.instance
-                            );
+                        m_lastParentHashCode = code;
+                        if (code == 0)
+                        {
+                            HierarchyWindow.instance.SetHierarchyItemParent(
+                                HierarchyWindow.instance.GetReferenceItem(target),
+                                HierarchyWindow.instance
+                                );
+                        }
+                        else if (HierarchyWindow.instance.ContainsReference(code))
+                        {
+                            HierarchyWindow.instance.SetHierarchyItemParent(
+                                HierarchyWindow.instance.GetReferenceItem(target),
+                                HierarchyWindow.instance.GetReferenceItem(HierarchyWindow.instance.GetReference(code))
+                                );
+                        }
                     }
-                    else if (HierarchyWindow.instance.ContainsReference(code))
+                    else
                     {
-                        HierarchyWindow.instance.SetHierarchyItemParent(
-                            HierarchyWindow.instance.GetReferenceItem(target),
-                            HierarchyWindow.instance.GetReferenceItem(HierarchyWindow.instance.GetReference(code))
-                            );
+                        m_ParentHashCodeField.text = m_lastParentHashCode.ToString();
                     }
-                }
-                else
-                {
-                    m_ParentHashCodeField.text = m_lastParentHashCode.ToString();
-                }
-            });
+                });
+            }
+            else if (m_ParentHashCodeField != null)
+                m_ParentHashCodeField.gameObject.SetActive(false);
+            if (IsWorkWithHierarchyWindow == true)
+                m_ThisHashCodeField.gameObject.SetActive(false);
+            else if (m_ThisHashCodeField != null)
+                m_ThisHashCodeField.gameObject.SetActive(false);
         }
 
         private void FixedUpdate()
         {
-            if (target != null)
+            if (IsWorkWithHierarchyWindow && target != null)
                 m_ThisHashCodeField.text = target.GetHashCode().ToString();
         }
 
@@ -85,6 +95,11 @@ namespace Convention.WindowsUI.Variant
         [return: When("当传入的target与被设置为target的实例相同")]
         public bool SetTarget([In] object target, [In, Opt] HierarchyItem item)
         {
+            if (item != null && IsWorkWithHierarchyWindow)
+            {
+                throw new InvalidOperationException($"This {nameof(InspectorWindow)} is set {nameof(IsWorkWithHierarchyWindow)}={IsWorkWithHierarchyWindow}, but Argument" +
+                    $"{nameof(item)}={item} not null");
+            }
             bool result = true;
             if (target is GameObject go)
             {
@@ -98,13 +113,16 @@ namespace Convention.WindowsUI.Variant
             if (this.target == target)
                 return true;
             this.target = target;
-            if (item)
+            if (IsWorkWithHierarchyWindow)
             {
-                m_ThisHashCodeField.text = target.GetHashCode().ToString();
-                m_lastParentHashCode = item.Entry.GetParent() == null ? 0 : item.Entry.GetParent().ref_value.GetComponent<HierarchyItem>().target.GetHashCode();
+                if (item)
+                {
+                    m_ThisHashCodeField.text = target.GetHashCode().ToString();
+                    m_lastParentHashCode = item.Entry.GetParent() == null ? 0 : item.Entry.GetParent().ref_value.GetComponent<HierarchyItem>().target.GetHashCode();
+                }
+                m_ParentHashCodeField.gameObject.SetActive(item != null);
+                m_ThisHashCodeField.gameObject.SetActive(item != null);
             }
-            m_ParentHashCodeField.gameObject.SetActive(item != null);
-            m_ThisHashCodeField.gameObject.SetActive(item != null);
             RefreshImmediateWithoutFocusCheck();
             return result;
         }
@@ -128,7 +146,8 @@ namespace Convention.WindowsUI.Variant
 
         public void ClearWindow()
         {
-            m_TypeText.text = "Not Selected";
+            if (IsWorkWithTypeIndictaor)
+                m_TypeText.text = "Not Selected";
             foreach (var entry in m_currentEntries)
             {
                 entry.Release();
@@ -144,7 +163,8 @@ namespace Convention.WindowsUI.Variant
             };
         private void BuildWindow()
         {
-            m_TypeText.text = target.GetType().Name;
+            if (IsWorkWithTypeIndictaor)
+                m_TypeText.text = target.GetType().Name;
             var allmembers = ConventionUtility.GetMemberInfos(target.GetType(), IgnoreCutOffType, true, true);
             var members =
                 (from member in allmembers

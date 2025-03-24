@@ -12,11 +12,19 @@ namespace Convention
         [Tooltip("What scene to load")]
         [Setting]public string SceneName;
 
+#if UNITY_URP
         [SerializeField]
         [Resources]private Volume m_CurrentVolume;
 
         [SerializeField]
         [Resources]private Volume m_DestinationVolume;
+#else
+        [SerializeField]
+        [Resources] private int m_CurrentVolume;
+
+        [SerializeField]
+        [Resources] private int m_DestinationVolume;
+#endif
 
         [Tooltip("Used for cinemachine transition")]
         [Setting,SerializeField] private bool m_SkipLoading;
@@ -75,6 +83,7 @@ namespace Convention
 
         public void SetVolumeWeights(float weight)
         {
+#if UNITY_URP
             if (m_CurrentVolume != null)
             {
                 m_CurrentVolume.weight = weight;
@@ -84,8 +93,9 @@ namespace Convention
             {
                 m_DestinationVolume.weight = 1 - weight;
             }
+#endif
         }
-
+#if UNITY_URP
         public void SetCurrentVolume(Volume volume)
         {
             m_CurrentVolume = volume;
@@ -95,5 +105,16 @@ namespace Convention
         {
             return m_DestinationVolume;
         }
+#else
+        public void SetCurrentVolume(int volume)
+        {
+            m_CurrentVolume = volume;
+        }
+
+        public int GetDestinationVolume()
+        {
+            return m_DestinationVolume;
+        }
+#endif
     }
 }

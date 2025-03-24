@@ -17,20 +17,11 @@ namespace Convention.Workflow
         public string title { get => ((ITitle)this.Title).title; set => ((ITitle)this.Title).title = value; }
         public string text { get => ((IText)this.Description).text; set => ((IText)this.Description).text = value; }
 
-        private Tuple<string, Action<GameObject>> TestSetter()
-        {
-            throw new NotImplementedException();
-        }
-
         private void Start()
         {
             AddContentInput.AddListener(() =>
             {
-                List<Tuple<string, Action<GameObject>>> tuples = new()
-                {
-                    TestSetter()
-                };
-                SharedModule.instance.OpenCustomMenu(this.transform as RectTransform, tuples);
+                SharedModule.instance.OpenCustomMenu(this.transform as RectTransform, new SharedModule.CallbackData("test", go => { }));
             });
         }
 

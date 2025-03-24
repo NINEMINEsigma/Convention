@@ -37,9 +37,16 @@ namespace Convention.WindowsUI.Variant
     public class InspectorDrawAttribute : Attribute
     {
         public readonly InspectorDrawType drawType;
-        public InspectorDrawAttribute(InspectorDrawType drawType = InspectorDrawType.Auto)
+        public readonly bool isUpdateAble = true;
+        public readonly bool isChangeAble = true;
+        public readonly string name = null;
+        public InspectorDrawAttribute(InspectorDrawType drawType = InspectorDrawType.Auto, bool isUpdateAble = true,
+                                      bool isChangeAble = true, string name = null)
         {
             this.drawType = drawType;
+            this.isUpdateAble = isUpdateAble;
+            this.isChangeAble = isChangeAble;
+            this.name = name;   
         }
     }
 
@@ -57,8 +64,9 @@ namespace Convention.WindowsUI.Variant
         }
     }
 
-    public class InspectorItem : PropertyListItem
+    public class InspectorItem : PropertyListItem,ITitle
     {
+        [Resources, OnlyNotNullMode, SerializeField] private Text Title;
         [Resources, OnlyNotNullMode, SerializeField, Header("Inspector Components")]
         private InspectorDrawer m_TransformModule;
         [Resources, OnlyNotNullMode, SerializeField]
@@ -79,12 +87,7 @@ namespace Convention.WindowsUI.Variant
         public InspectorDrawType DrawType
         {
             get => targetDrawType;
-            set
-            {
-                DisableDrawType();
-                targetDrawType = value;
-                EnableDrawType();
-            }
+            set => targetDrawType = value;
         }
 
         private void EnableDrawType()
@@ -181,6 +184,10 @@ namespace Convention.WindowsUI.Variant
             m_AllUIModules[InspectorDrawType.Structure] = m_StructureModule;
             m_AllUIModules[InspectorDrawType.Button] = m_ButtonModule;
             m_AllUIModules[InspectorDrawType.Enum] = m_EnumItemModule;
+            MakeInspectorItemInit();
+        }
+        private void MakeInspectorItemInit()
+        {
             foreach (var module in m_AllUIModules)
             {
                 module.Value.OnInspectorItemInit(this);
@@ -261,7 +268,7 @@ namespace Convention.WindowsUI.Variant
             {
                 RebuildWithWrapper();
             }
-            else if(targetFunctionCall != null)
+            else if (targetFunctionCall != null)
             {
                 RebuildWithFunctionCall();
             }
@@ -271,14 +278,19 @@ namespace Convention.WindowsUI.Variant
                 InspectorDrawAttribute drawAttr = null;
                 ArgPackageAttribute argAttr = null;
                 Type type = null;
-                string name = null;
                 // Reset AbleChangeType
                 drawAttr = targetMemberInfo.GetCustomAttribute<InspectorDrawAttribute>(true);
                 argAttr = targetMemberInfo.GetCustomAttribute<ArgPackageAttribute>(true);
                 type = ConventionUtility.GetMemberValueType(targetMemberInfo);
-                name = targetMemberInfo.Name;
                 AbleChangeType = targetMemberInfo.GetCustomAttributes(typeof(IgnoreAttribute), true).Length == 0;
                 // Reset DrawType
+                DisableDrawType();
+                if (drawAttr != null)
+                {
+                    AbleChangeType &= drawAttr.isChangeAble;
+                    UpdateType = drawAttr.isUpdateAble;
+                    title = drawAttr.name;
+                }
                 if (drawAttr != null && drawAttr.drawType != InspectorDrawType.Auto)
                 {
                     DrawType = drawAttr.drawType;
@@ -312,8 +324,9 @@ namespace Convention.WindowsUI.Variant
                 }
                 else
                 {
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("Reach this location by unknown Impl");
                 }
+                EnableDrawType();
                 RectTransformExtension.AdjustSizeToContainsChilds(transform as RectTransform);
                 RectTransformExtension.AdjustSizeToContainsChilds(this.Entry.rootWindow.TargetWindowContent);
             }

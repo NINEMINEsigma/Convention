@@ -6,9 +6,9 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Convention.Internal;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
-using static UnityEngine.Rendering.DebugUI;
 
 #if UNITY_2017_1_OR_NEWER
 namespace UnityEditor
@@ -617,6 +617,16 @@ namespace Convention
             UnityExtension.InitExtensionEnv();
 
             ES3Plugin.InitExtensionEnv();
+        }
+        [UnityEditor.MenuItem("Convention/SetupURPDefined", priority = 1024)]
+        public static void AddURPDefined()
+        {
+            ScriptingDefineUtility.Add("UNITY_URP", EditorUserBuildSettings.selectedBuildTargetGroup);
+        }
+        [UnityEditor.MenuItem("Convention/RemoveURPDefined", priority = 1024)]
+        public static void RemoveURPDefined()
+        {
+            ScriptingDefineUtility.Add("UNITY_URP", EditorUserBuildSettings.selectedBuildTargetGroup);
         }
 #endif
 

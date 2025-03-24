@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using System;
 using UnityEngine.SceneManagement;
 
 namespace Convention
@@ -16,12 +17,16 @@ namespace Convention
                 //Add current
                 if (GUILayout.Button("Add current"))
                 {
+#if UNITY_URP
                     PerformanceTestStage stage = new PerformanceTestStage();
                     stage.sceneName = SceneManager.GetActiveScene().name;
                     Transform sceneCamTransform = SceneView.lastActiveSceneView.camera.transform;
                     stage.cameraPosition = sceneCamTransform.position;
                     stage.cameraRotation = sceneCamTransform.rotation;
                     performnceTest.StageScenes.Add(stage);
+#else
+                    throw new InvalidOperationException("URP is not setup");
+#endif
                 }
             }
 

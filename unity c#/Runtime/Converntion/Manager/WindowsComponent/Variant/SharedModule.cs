@@ -34,6 +34,7 @@ namespace Convention.WindowsUI.Variant
                 menu.ReleaseMenu();
             }
             CustomMenuRelease.gameObject.SetActive(false);
+            customMenus.Clear();
         }
 
         public void Rename([In]string initText, [In]Action<string> callback)
@@ -43,21 +44,33 @@ namespace Convention.WindowsUI.Variant
             RenameCallback = callback;
         }
 
+        [ArgPackage]
+        public class CallbackData : AnyClass
+        {
+            public string name;
+            public Action<GameObject> callback;
+            public CallbackData(string name, Action<GameObject> callback)
+            {
+                this.name = name;
+                this.callback = callback;
+            }
+        }
         /// <summary>
         /// 回调函数的参数是root
         /// </summary>
         [return: ReturnNotNull, IsInstantiated(true)]
-        public CustomMenu OpenCustomMenu([In] RectTransform root, [In] List<Tuple<string, Action<GameObject>>> actions)
+        public CustomMenu OpenCustomMenu([In] RectTransform root, params CallbackData[] actions)
         {
             var target = GameObject.Instantiate(CustomMenuPrefab.gameObject, CustomMenuPlane).GetComponent<CustomMenu>();
+            target.gameObject.SetActive(true);
             customMenus.Add(target);
             foreach (var action in actions)
             {
                 target.CreateItem(() =>
                 {
-                    action.Item2(root.gameObject);
+                    action.callback(root.gameObject);
                     ReleaseAllCustomMenu();
-                }, action.Item1);
+                }, action.name);
             }
             Vector3[] points = new Vector3[4];
             root.GetWorldCorners(points);

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using UnityEngine.UIElements;
@@ -28,8 +27,10 @@ namespace Convention
 
         public class PerformanceTestManager : MonoSingleton<PerformanceTestManager>
         {
+#if UNITY_URP
             //public bool _autoStart = true;
             [Setting] public List<PerformanceTestStage> StageScenes;
+#endif
 
             [Setting] public float WaitTime = 5f;
             // TODO: Remove _framesToCapture
@@ -52,7 +53,11 @@ namespace Convention
             }
 
             private int _currentStageIndex;
+#if UNITY_URP
             public PerformanceTestStage CurrentStage => StageScenes[_currentStageIndex];
+#else
+            public int CurrentStage => 0;
+#endif
 
 
 
@@ -170,6 +175,7 @@ namespace Convention
 
             void Start()
             {
+#if UNITY_URP
                 Time.maximumDeltaTime = 120;
                 Application.runInBackground = true;
 
@@ -189,7 +195,6 @@ namespace Convention
                 _closeButton.style.opacity = 0;
 
                 var testList = rootVE.Q<VisualElement>(name: "TestsList");
-
                 var cleanedUpStages = StageScenes.Where(s => SceneExists(s.sceneName) && s.enabled).ToList();
 
                 for (int i = 0; i < cleanedUpStages.Count; i++)
@@ -215,6 +220,7 @@ namespace Convention
                 Application.targetFrameRate = (int)Screen.currentResolution.refreshRateRatio.value * 8;
 
                 cleanedUpStages[0].Start();
+#endif
             }
 
             static bool SceneExists(string sceneName)
@@ -262,9 +268,10 @@ namespace Convention
 
                 _currentDataTypeLabel.text = dataType.ToString();
                 _currentTimingUnitLabel.text = (dataType == DataType.FPS) ? "" : "ms";
-
+#if UNITY_URP
                 foreach (var stage in StageScenes)
                     stage.RefreshDisplayedData();
+#endif
             }
 
             private void LoopDisplayedDataNext() { LoopDisplayedData(1); }

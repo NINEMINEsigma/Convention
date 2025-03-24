@@ -1,3 +1,4 @@
+#if UNITY_URP
 using Cinemachine;
 using System;
 using System.Collections;
@@ -541,3 +542,4 @@ namespace Convention
         }
     }
 }
+#endif

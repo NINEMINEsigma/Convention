@@ -48,11 +48,14 @@ namespace Convention.WindowsUI.Variant
         private void OnEnable()
         {
             TextArea.interactable = targetItem.AbleChangeType;
-            try
+            if (targetItem.AbleChangeType)
             {
-                TextArea.interactable = targetItem.GetValueType().GetMethod(nameof(float.Parse)) != null || ConventionUtility.IsString(targetItem.GetValueType());
+                try
+                {
+                    TextArea.interactable = targetItem.GetValueType().GetMethod(nameof(float.Parse)) != null || ConventionUtility.IsString(targetItem.GetValueType());
+                }
+                catch (Exception) { }
             }
-            catch (Exception) { }
             TextArea.text = targetItem.GetValue().ToString();
         }
 

@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+#if UNITY_URP
 using static Unity.Mathematics.math;
+#endif
 using static Convention.MathExtension;
 
 namespace Convention

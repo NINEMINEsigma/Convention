@@ -9,7 +9,7 @@ namespace Convention.WindowsUI.Variant
 {
     public class PropertiesWindow : MonoAnyBehaviour
     {
-        [Serializable, ArgPackage]
+        [ArgPackage]
         public class ItemEntry : LeftValueReference<WindowUIModule>
         {
             #region Tools
@@ -351,6 +351,11 @@ namespace Convention.WindowsUI.Variant
 
             public void Release()
             {
+                if ((parentWindow==null&& parentEntry==null)|| childs==null|| rootWindow==null)
+                {
+                    Debug.LogWarning("Auto Gen is bad supporting");
+                    return;
+                }
                 if (ref_value)
                 {
                     ref_value.gameObject.SetActive(false);
