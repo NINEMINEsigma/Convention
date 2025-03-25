@@ -45,17 +45,27 @@ namespace Convention.Workflow
             IsDirty = true;
         }
 
+        private void DrawLine(params Vector3[] positions)
+        {
+            LineRenderer.positionCount = positions.Length;
+            LineRenderer.SetPositions(positions);
+        }
+
         public void UpdateLineImmediate()
         {
             if (TargetSlot == null)
             {
-                LineRenderer.positionCount = 0;
+                DrawLine();
             }
             else
             {
-                LineRenderer.positionCount = 4;
-                LineRenderer.SetPosition(0, Anchor.localPosition);
-
+                var offsetVev = new Vector3(Offset, 0, 0);
+                DrawLine(
+                    Anchor.position,
+                    Anchor.position + offsetVev,
+                    TargetSlot.Anchor.position - Anchor.position + Anchor.localPosition - offsetVev,
+                    TargetSlot.Anchor.position - Anchor.position + Anchor.localPosition
+                    );
             }
         }
 
@@ -66,12 +76,12 @@ namespace Convention.Workflow
         public void DragLine(PointerEventData pointer)
         {
             LineRenderer.positionCount = 2;
-            LineRenderer.SetPosition(0, Anchor.localPosition);
-            LineRenderer.SetPosition(1, pointer.pointerCurrentRaycast.worldPosition);
+            DrawLine(Anchor.position, pointer.pointerCurrentRaycast.worldPosition);
         }
         public void EndDragLine(PointerEventData _)
         {
             IsKeepDrag = false;
+            //TODO
         }
     }
 }

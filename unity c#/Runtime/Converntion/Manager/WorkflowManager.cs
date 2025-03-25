@@ -104,14 +104,20 @@ namespace Convention.Workflow
         }
         public GraphNode GetGraphNode(int id)
         {
+            if (id < 0)
+                return null;
             return workflow.Nodes[id];
         }
         public GraphNodeInfo GetGraphNodeInfo(int id)
         {
+            if(id < 0)
+                return null;
             return workflow.Nodes[id].info;
         }
         public int GetGraphNodeID(GraphNode node)
         {
+            if (node == null)
+                return -1;
             return workflow.Nodes.IndexOf(node);
         }
 

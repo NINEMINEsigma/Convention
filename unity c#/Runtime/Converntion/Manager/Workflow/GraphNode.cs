@@ -26,19 +26,17 @@ namespace Convention.Workflow
             title = node.title;
             inmappingNode.Clear();
             inmappingSlot.Clear();
-            foreach (var (key, value) in node.m_InmappingNode)
+            foreach (var (key, value) in node.m_Inmapping)
             {
-                inmappingNode.Add(key, WorkflowManager.instance.GetGraphNodeID(value));
-                if (node.m_InmappingSlot.TryGetValue(key, out var slot))
-                    inmappingSlot.Add(key, slot);
+                inmappingNode.Add(key, WorkflowManager.instance.GetGraphNodeID(value.node));
+                inmappingSlot.Add(key, value.slotName);
             }
             outmappingNode.Clear();
             outmappingSlot.Clear();
-            foreach (var (key, value) in node.m_OutmappingNode)
+            foreach (var (key, value) in node.m_Outmapping)
             {
-                outmappingNode.Add(key, WorkflowManager.instance.GetGraphNodeID(value));
-                if (node.m_OutmappingSlot.TryGetValue(key, out var slot))
-                    outmappingSlot.Add(key, slot);
+                outmappingNode.Add(key, WorkflowManager.instance.GetGraphNodeID(value.node));
+                outmappingSlot.Add(key, value.slotName);
             }
             position = node.transform.position;
         }
@@ -58,6 +56,8 @@ namespace Convention.Workflow
     {
         [HideInInspector] public BehaviourContextManager Context;
         [Resources, OnlyNotNullMode, SerializeField] private Text Title;
+        [Resources, OnlyNotNullMode, SerializeField] private GraphNodeSlot InSlotPrefab;
+        [Resources, OnlyNotNullMode, SerializeField] public GraphNodeSlot OutSlotPrefab;
 
         public string title
         {
@@ -77,6 +77,14 @@ namespace Convention.Workflow
                     InspectorWindow.instance.SetTarget(this.m_info, null);
                 else
                     Debug.LogError($"GraphNode<{this.GetType()}>={this}'s info is not setup", this);
+            });
+            Context.OnDragEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnDragEvent, _ =>
+            {
+                foreach (var info in m_Inmapping)
+                {
+                    if (info.Value.slot != null)
+                        info.Value.slot.SetDirty();
+                }
             });
         }
 
@@ -127,9 +135,13 @@ namespace Convention.Workflow
             node.LinkInslotToOtherNodeOutslot(node, targetSlotName, slotName);
         }
 
-        internal Dictionary<string, GraphNode> m_InmappingNode = new();
-        internal Dictionary<string, GraphNode> m_OutmappingNode = new();
-        internal Dictionary<string, string> m_InmappingSlot = new();
-        internal Dictionary<string, string> m_OutmappingSlot = new();
+        internal class SlotInfo
+        {
+            public GraphNode node;
+            public string slotName;
+            public GraphNodeSlot slot;
+        }
+        internal Dictionary<string, SlotInfo> m_Inmapping = new();
+        internal Dictionary<string, SlotInfo> m_Outmapping = new();
     }
 }
