@@ -26,10 +26,37 @@ namespace Convention.Workflow
         {
 
         }
+
     }
 
     public class GraphNodeSlot : WindowsComponent, ITitle
     {
+        private static void Link(GraphNodeSlot left, GraphNodeSlot right)
+        {
+            if(left.Info.IsInmappingSlot==right.Info.IsInmappingSlot)
+            {
+                throw new InvalidOperationException($"{left} and {right} has same mapping type");
+            }
+            if (left.Info.typeIndicator != right.Info.typeIndicator)
+            {
+                throw new InvalidOperationException($"{left} and {right} has different type indicator");
+            }
+            left.Info.targetSlot = right;
+            right.Info.targetSlot = left;
+
+            left.Info.targetSlotName = right.Info.slotName;
+            right.Info.targetSlotName = left.Info.slotName;
+
+            left.Info.targetNode = right.Info.parentNode;
+            right.Info.targetNode = right.Info.parentNode;
+
+            left.Info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(right.Info.targetNode);
+            right.Info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(left.Info.targetNode);
+
+            left.SetDirty();
+            right.SetDirty();
+        }
+
         public static GraphNodeSlot CurrentHighLightSlot { get; private set; }
         public static void EnableHighLight(GraphNodeSlot slot)
         {
@@ -45,16 +72,16 @@ namespace Convention.Workflow
             if (CurrentHighLightSlot != null)
             {
                 CurrentHighLightSlot.HighLight.SetActive(false);
+                CurrentHighLightSlot = null;
             }
-            CurrentHighLightSlot = null;
         }
         public static void DisableHighLight(GraphNodeSlot slot)
         {
             if (CurrentHighLightSlot == slot)
             {
                 CurrentHighLightSlot.HighLight.SetActive(false);
+                CurrentHighLightSlot = null;
             }
-            CurrentHighLightSlot = null;
         }
 
         public static readonly Vector3[] zeroVecs = new Vector3[0];
@@ -90,7 +117,12 @@ namespace Convention.Workflow
             contextManager.OnEndDragEvent = BehaviourContextManager.InitializeContextSingleEvent(contextManager.OnEndDragEvent, EndDragLine);
             contextManager.OnPointerEnterEvent = BehaviourContextManager.InitializeContextSingleEvent(contextManager.OnPointerEnterEvent, _ =>
             {
-                EnableHighLight(this);
+                if (
+                CurrentHighLightSlot == null ||
+                (CurrentHighLightSlot.Info.IsInmappingSlot != this.Info.IsInmappingSlot &&
+                CurrentHighLightSlot.Info.typeIndicator == this.Info.typeIndicator)
+                )
+                    EnableHighLight(this);
             });
             contextManager.OnPointerExitEvent = BehaviourContextManager.InitializeContextSingleEvent(contextManager.OnPointerExitEvent, _ =>
             {
@@ -141,22 +173,11 @@ namespace Convention.Workflow
         public void EndDragLine(PointerEventData _)
         {
             IsKeepDrag = false;
-            //TODO
-            if (CurrentHighLightSlot != null)
+            if (CurrentHighLightSlot != null && CurrentHighLightSlot.Info.IsInmappingSlot != this.Info.IsInmappingSlot)
             {
-                if (CurrentHighLightSlot == this)
-                {
-                    return;
-                }
-                else
-                {
-                    Info.targetSlot = CurrentHighLightSlot;
-
-                }
+                Link(this, CurrentHighLightSlot);
             }
-            //TODO
             DisableAllHighLight();
-            SetDirty();
         }
     }
 }
