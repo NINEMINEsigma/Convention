@@ -602,6 +602,26 @@ namespace Convention
             throw new NotImplementedException();
         }
     }
+    [System.AttributeUsage(AttributeTargets.All, Inherited = true, AllowMultiple = false)]
+    public class ImportantAttribute : Attribute
+    {
+        public string description;
+
+        public ImportantAttribute(string description)
+        {
+            this.description = description;
+        }
+        public ImportantAttribute() { }
+    }
+    [System.AttributeUsage(AttributeTargets.All, Inherited = false, AllowMultiple = true)]
+    public class DescriptionAttribute : Attribute
+    {
+        public string description;
+        public DescriptionAttribute(string description)
+        {
+            this.description = description;
+        }
+    }
 
 
     public static partial class ConventionUtility
@@ -916,7 +936,7 @@ namespace Convention
         public enum PerformanceMode
         {
             Speed = 0,
-            Quality = 1 << 8 - 1,
+            Quality = (1 << 8) - 1,
             L1 = 1 << 0,
             L2 = 1 << 1,
             L3 = 1 << 2,

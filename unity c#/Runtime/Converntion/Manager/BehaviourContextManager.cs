@@ -38,6 +38,31 @@ namespace Convention.WindowsUI
                 Event.AddListener(call);
             return Event;
         }
+
+        public static void InitializeContextSingleEvent(ref UnityEvent<PointerEventData> Event, params UnityAction<PointerEventData>[] calls)
+        {
+            Event ??= new();
+            foreach (var call in calls)
+                Event.RemoveListener(call);
+            foreach (var call in calls)
+                Event.AddListener(call);
+        }
+        public static void InitializeContextSingleEvent(ref UnityEvent<BaseEventData> Event, params UnityAction<BaseEventData>[] calls)
+        {
+            Event ??= new();
+            foreach (var call in calls)
+                Event.RemoveListener(call);
+            foreach (var call in calls)
+                Event.AddListener(call);
+        }
+        public static void InitializeContextSingleEvent(ref UnityEvent<AxisEventData> Event, params UnityAction<AxisEventData>[] calls)
+        {
+            Event ??= new();
+            foreach (var call in calls)
+                Event.RemoveListener(call);
+            foreach (var call in calls)
+                Event.AddListener(call);
+        }
         [Setting]
         public UnityEvent<PointerEventData> OnBeginDragEvent
         {

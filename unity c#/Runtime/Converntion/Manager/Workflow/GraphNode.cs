@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using Convention.WindowsUI;
 using Convention.WindowsUI.Variant;
 using UnityEngine;
@@ -10,33 +11,42 @@ namespace Convention.Workflow
     [Serializable, ArgPackage]
     public class GraphNodeInfo : AnyClass
     {
+        public string typename;
+
         [Ignore, NonSerialized] public GraphNode node;
         public string title = "";
-        public Dictionary<string, int> inmappingNode = new();
-        public Dictionary<string, int> outmappingNode = new();
-        public Dictionary<string, string> inmappingSlot = new();
-        public Dictionary<string, string> outmappingSlot = new();
-        public Dictionary<string, string> inmappingTypeIndicator = new();
-        public Dictionary<string, string> outmappingTypeIndicator = new();
-        public string type;
+        public Dictionary<string, GraphNodeSlotInfo> inmapping = new();
+        public Dictionary<string, GraphNodeSlotInfo> outmapping = new();
         public Vector2 position = Vector2.zero;
 
-        public void SynchronizeWithNode()
+        public void CopyFromNode()
         {
             title = node.title;
-            inmappingNode.Clear();
-            inmappingSlot.Clear();
+            inmapping.Clear();
             foreach (var (key, value) in node.m_Inmapping)
             {
-                inmappingNode.Add(key, WorkflowManager.instance.GetGraphNodeID(value.node));
-                inmappingSlot.Add(key, value.slotName);
+                inmapping.Add(key, new()
+                {
+                    //parentNodeID = WorkflowManager.instance.GetGraphNodeID(value.Info.parentNode),
+                    slotName = value.Info.slotName,
+                    targetNodeID = WorkflowManager.instance.GetGraphNodeID(value.Info.targetNode),
+                    targetSlotName = value.Info.slotName,
+                    typeIndicator = value.Info.typeIndicator,
+                    IsInmappingSlot = true
+                });
             }
-            outmappingNode.Clear();
-            outmappingSlot.Clear();
+            outmapping.Clear();
             foreach (var (key, value) in node.m_Outmapping)
             {
-                outmappingNode.Add(key, WorkflowManager.instance.GetGraphNodeID(value.node));
-                outmappingSlot.Add(key, value.slotName);
+                outmapping.Add(key, new()
+                {
+                    //parentNodeID = WorkflowManager.instance.GetGraphNodeID(value.Info.parentNode),
+                    slotName = value.Info.slotName,
+                    targetNodeID = WorkflowManager.instance.GetGraphNodeID(value.Info.targetNode),
+                    targetSlotName = value.Info.slotName,
+                    typeIndicator = value.Info.typeIndicator,
+                    IsInmappingSlot = true
+                });
             }
             position = node.transform.position;
         }
@@ -48,7 +58,7 @@ namespace Convention.Workflow
             set => node.title = value;
         }
         [InspectorDraw(InspectorDrawType.Text, false, false, name: "节点类型")]
-        public string GraphNodeType => type;
+        public string GraphNodeType => typename;
 
     }
 
@@ -56,8 +66,9 @@ namespace Convention.Workflow
     {
         [HideInInspector] public BehaviourContextManager Context;
         [Resources, OnlyNotNullMode, SerializeField] private Text Title;
-        [Resources, OnlyNotNullMode, SerializeField] private GraphNodeSlot InSlotPrefab;
-        [Resources, OnlyNotNullMode, SerializeField] public GraphNodeSlot OutSlotPrefab;
+        [Resources, OnlyNotNullMode, SerializeField] 
+        private PropertiesWindow InSlotPropertiesWindow, OutSlotPropertiesWindow;
+        private List<PropertiesWindow.ItemEntry> InSlots, OutSlots;
 
         public string title
         {
@@ -82,8 +93,8 @@ namespace Convention.Workflow
             {
                 foreach (var info in m_Inmapping)
                 {
-                    if (info.Value.slot != null)
-                        info.Value.slot.SetDirty();
+                    if (info.Value != null)
+                        info.Value.SetDirty();
                 }
             });
         }
@@ -113,11 +124,33 @@ namespace Convention.Workflow
         }
         public void ClearLink()
         {
-
+            m_Inmapping.Clear();
+            m_Outmapping.Clear();
+            foreach(var slot in InSlots)
+            {
+                slot.Release();
+            }
+            foreach (var slot in OutSlots)
+            {
+                slot.Release();
+            }
         }
         public void BuildLink()
         {
-
+            int InSlotCount = info.inmapping.Count;
+            InSlots = InSlotPropertiesWindow.CreateRootItemEntries(InSlotCount);
+            foreach(var (key,slotInfo) in info.inmapping)
+            {
+                InSlotCount--;
+                var slot = InSlots[InSlotCount].ref_value.GetComponent<GraphNodeSlot>();
+                m_Inmapping.Add(key, slot);
+                slot.Info = new()
+                {
+                    parentNode = slotInfo.parentNode,
+                    slotName = slotInfo.slotName,
+                    typeIndicator = slotInfo.typeIndicator
+                };
+            }
         }
 
         public void LinkInslotToOtherNodeOutslot(
@@ -135,13 +168,7 @@ namespace Convention.Workflow
             node.LinkInslotToOtherNodeOutslot(node, targetSlotName, slotName);
         }
 
-        internal class SlotInfo
-        {
-            public GraphNode node;
-            public string slotName;
-            public GraphNodeSlot slot;
-        }
-        internal Dictionary<string, SlotInfo> m_Inmapping = new();
-        internal Dictionary<string, SlotInfo> m_Outmapping = new();
+        internal Dictionary<string, GraphNodeSlot> m_Inmapping = new();
+        internal Dictionary<string, GraphNodeSlot> m_Outmapping = new();
     }
 }
