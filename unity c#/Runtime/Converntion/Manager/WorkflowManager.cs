@@ -47,6 +47,17 @@ namespace Convention.Workflow
         private RectTransform focusObject;
         private List<SharedModule.CallbackData> callbackDatas = new();
 
+        public void SetupWorkflowGraphNodeTypes(string label, [In] GraphNodeInfo template)
+        {
+            callbackDatas.Add(new(label, x =>
+                {
+                    var info = template.TemplateClone();
+                    var node = CreateGraphNode(info);
+                    node.transform.position = x;
+                }
+            ));
+        }
+
         private void Start()
         {
             m_RegisterWrapper = new(() =>
