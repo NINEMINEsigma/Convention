@@ -11,7 +11,8 @@ namespace Convention.Workflow
     [Serializable, ArgPackage]
     public class GraphNodeInfo : AnyClass
     {
-        [Setting] public int nodeID;
+        [Setting, Ignore, NonSerialized] public GraphNode node = null;
+        [Setting] public int nodeID = -1;
 
         [InspectorDraw(InspectorDrawType.Text, name: "节点名称")]
         public string GraphNodeTitle
@@ -25,6 +26,26 @@ namespace Convention.Workflow
         [Setting] public Dictionary<string, GraphNodeSlotInfo> inmapping = new();
         [Setting] public Dictionary<string, GraphNodeSlotInfo> outmapping = new();
         [Content] public Vector2 position = Vector2.zero;
+
+        public GraphNodeInfo TemplateClone()
+        {
+            GraphNodeInfo result = new()
+            {
+                nodeID = -1,
+                typename = typename,
+                title = title,
+                position = Vector2.zero
+            };
+            foreach (var (key, value) in inmapping)
+            {
+                result.inmapping.Add(key, value.TemplateClone());
+            }
+            foreach (var (key,value) in outmapping)
+            {
+                result.outmapping.Add(key, value.TemplateClone());
+            }
+            return result;
+        }
 
         //public void CopyFromNode([In] GraphNode node)
         //{
@@ -71,6 +92,8 @@ namespace Convention.Workflow
 
         private Dictionary<string, GraphNodeSlot> m_Inmapping = new();
         private Dictionary<string, GraphNodeSlot> m_Outmapping = new();
+
+        [Resources, SerializeField, OnlyNotNullMode] private BaseWindowPlane InoutContainerPlane;
 
         public string title
         {
@@ -132,6 +155,7 @@ namespace Convention.Workflow
             {
                 slot.Release();
             }
+            InoutContainerPlane.AdjustSizeToContainsChilds();
         }
         private List<PropertiesWindow.ItemEntry> CreateGraphNodeSlots(int count)
         {
@@ -154,6 +178,22 @@ namespace Convention.Workflow
                     typeIndicator = slotInfo.typeIndicator
                 });
             }
+            int OutSlotCount = info.outmapping.Count;
+            OutSlots = CreateGraphNodeSlots(OutSlotCount);
+            foreach (var (key, slotInfo) in info.outmapping)
+            {
+                OutSlotCount--;
+                var slot = OutSlots[OutSlotCount].ref_value.GetComponent<GraphNodeSlot>();
+                m_Outmapping.Add(key, slot);
+                slot.SetupFromInfo(new()
+                {
+                    parentNode = slotInfo.parentNode,
+                    slot = slot,
+                    slotName = slotInfo.slotName,
+                    typeIndicator = slotInfo.typeIndicator
+                });
+            }
+            InoutContainerPlane.AdjustSizeToContainsChilds();
         }
 
         public void LinkInslotToOtherNodeOutslot(

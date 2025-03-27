@@ -48,8 +48,8 @@ namespace Convention.WindowsUI.Variant
         public class CallbackData : AnyClass
         {
             public string name;
-            public Action<GameObject> callback;
-            public CallbackData(string name, Action<GameObject> callback)
+            public Action<Vector3> callback;
+            public CallbackData(string name, Action<Vector3> callback)
             {
                 this.name = name;
                 this.callback = callback;
@@ -64,14 +64,6 @@ namespace Convention.WindowsUI.Variant
             var target = GameObject.Instantiate(CustomMenuPrefab.gameObject, CustomMenuPlane).GetComponent<CustomMenu>();
             target.gameObject.SetActive(true);
             customMenus.Add(target);
-            foreach (var action in actions)
-            {
-                target.CreateItem(() =>
-                {
-                    action.callback(root.gameObject);
-                    ReleaseAllCustomMenu();
-                }, action.name);
-            }
             Vector3[] points = new Vector3[4];
             root.GetWorldCorners(points);
             var rightTop = points[2];
@@ -79,6 +71,14 @@ namespace Convention.WindowsUI.Variant
             target.rectTransform.GetWorldCorners(points2);
             var leftTop = points2[1];
             target.rectTransform.Translate(rightTop - leftTop, Space.World);
+            foreach (var action in actions)
+            {
+                target.CreateItem(() =>
+                {
+                    action.callback(rightTop);
+                    ReleaseAllCustomMenu();
+                }, action.name);
+            }
             CustomMenuRelease.gameObject.SetActive(true);
             return target;
         }

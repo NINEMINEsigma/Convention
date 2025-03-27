@@ -22,9 +22,20 @@ namespace Convention.Workflow
 
         public string typeIndicator;
         public bool IsInmappingSlot;
+
+        public GraphNodeSlotInfo TemplateClone()
+        {
+            return new()
+            {
+                slotName = slotName,
+                targetNodeID = -1,
+                typeIndicator = typeIndicator,
+                IsInmappingSlot = IsInmappingSlot
+            };
+        }
     }
 
-    public class GraphNodeSlot : WindowsComponent, ITitle
+    public class GraphNodeSlot : WindowUIModule, ITitle
     {
         public static void Link(GraphNodeSlot left, GraphNodeSlot right)
         {
