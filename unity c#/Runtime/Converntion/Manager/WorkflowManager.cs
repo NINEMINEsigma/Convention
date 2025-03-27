@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Convention.WindowsUI.Variant;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 
 namespace Convention.Workflow
@@ -38,9 +40,12 @@ namespace Convention.Workflow
         [Setting] public float ScrollSpeed = 1;
 
         [Resources, SerializeField, OnlyNotNullMode, Header("Prefabs")]
-        private ScriptableObject GraphNodePrefabs;
+        private GameObject GraphNodePrefab;
         [Resources, SerializeField, OnlyNotNullMode, Header("Content")]
         private RectTransform ContentPlane;
+        [Resources, SerializeField, OnlyNotNullMode, Header("Mouse Click")]
+        private RectTransform focusObject;
+        private List<SharedModule.CallbackData> callbackDatas = new();
 
         private void Start()
         {
@@ -88,13 +93,11 @@ namespace Convention.Workflow
             }
         }
 
-        public int CreateGraphNodeWithSetup([In]GraphNodeInfo info)
+        public GraphNode CreateGraphNode([In] GraphNodeInfo info)
         {
-            var node = GameObject.Instantiate((GraphNodePrefabs.Datas[info.GraphNodeType].uobjectValue as GameObject), ContentPlane).GetComponent<GraphNode>();
-            node.info = info;
-            workflow.Nodes.Add(node);
-            workflow.Datas.Add(info);
-            return workflow.Nodes.Count;
+            var node = GameObject.Instantiate(GraphNodePrefab, ContentPlane).GetComponent<GraphNode>();
+            node.SetupFromInfo(info);
+            return node;
         }
         public bool ContainsNode(int id)
         {
@@ -107,12 +110,6 @@ namespace Convention.Workflow
             if (id < 0)
                 return null;
             return workflow.Nodes[id];
-        }
-        public GraphNodeInfo GetGraphNodeInfo(int id)
-        {
-            if(id < 0)
-                return null;
-            return workflow.Nodes[id].info;
         }
         public int GetGraphNodeID(GraphNode node)
         {
@@ -129,10 +126,11 @@ namespace Convention.Workflow
                 throw new FileNotFoundException($"{parent} is not exist");
             var currentWorkflow = workflow;
             currentWorkflow.Datas.Clear();
-            for (int i = 0,e=currentWorkflow.Nodes.Count;i!=e;i++)
+            for (int i = 0, e = currentWorkflow.Nodes.Count; i != e; i++)
             {
                 var node = currentWorkflow.Nodes[i];
-                node.info.position = node.transform.position;
+                var info = currentWorkflow.Datas[i];
+                info.position = node.transform.position;
                 currentWorkflow.Datas.Add(node.info);
             }
             local.data = currentWorkflow;
@@ -149,9 +147,22 @@ namespace Convention.Workflow
             this.m_workflow = new();
             foreach (var info in loadedWorkflow.Datas)
             {
-                CreateGraphNodeWithSetup(info);
+                workflow.Nodes.Add(CreateGraphNode(info));
             }
             return workflow;
+        }
+
+        public void OpenMenu(PointerEventData data)
+        {
+            focusObject.position = Mouse.current.position.ReadValue();
+#if UNITY_EDITOR
+            if (callbackDatas.Count == 0)
+                SharedModule.instance.OpenCustomMenu(focusObject, new SharedModule.CallbackData("Empty", x => Debug.Log(x)));
+            else
+#endif
+            {
+                SharedModule.instance.OpenCustomMenu(focusObject, callbackDatas.ToArray());
+            }
         }
     }
 }

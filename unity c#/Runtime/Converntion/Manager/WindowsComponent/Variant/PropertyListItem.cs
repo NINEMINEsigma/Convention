@@ -77,9 +77,9 @@ namespace Convention.WindowsUI.Variant
             }
         }
 
-        public string title { get => m_buttonText.title; set => m_buttonText.title = value; }
-        public string text { get => m_buttonText.text; set => m_buttonText.text = value; }
-        public bool interactable { get => m_rawButton.interactable; set => m_rawButton.interactable = value; }
+        public virtual string title { get => m_buttonText.title; set => m_buttonText.title = value; }
+        public virtual string text { get => m_buttonText.text; set => m_buttonText.text = value; }
+        public virtual bool interactable { get => m_rawButton.interactable; set => m_rawButton.interactable = value; }
 
         public void Switch()
         {

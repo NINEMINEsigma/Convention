@@ -10,6 +10,7 @@ namespace Convention.Workflow
     public class GraphNodeSlotInfo
     {
         [Ignore, NonSerialized] public GraphNode parentNode;
+        [Ignore, NonSerialized] public GraphNodeSlot slot;
         public string slotName;
 
         [Ignore, NonSerialized, Description("This is a lazy variable that needs to be taken care of manually syncing the value of the " + nameof(targetNodeID))]
@@ -21,37 +22,31 @@ namespace Convention.Workflow
 
         public string typeIndicator;
         public bool IsInmappingSlot;
-
-        public void CopyFromNode()
-        {
-
-        }
-
     }
 
     public class GraphNodeSlot : WindowsComponent, ITitle
     {
-        private static void Link(GraphNodeSlot left, GraphNodeSlot right)
+        public static void Link(GraphNodeSlot left, GraphNodeSlot right)
         {
-            if(left.Info.IsInmappingSlot==right.Info.IsInmappingSlot)
+            if(left.info.IsInmappingSlot==right.info.IsInmappingSlot)
             {
                 throw new InvalidOperationException($"{left} and {right} has same mapping type");
             }
-            if (left.Info.typeIndicator != right.Info.typeIndicator)
+            if (left.info.typeIndicator != right.info.typeIndicator)
             {
                 throw new InvalidOperationException($"{left} and {right} has different type indicator");
             }
-            left.Info.targetSlot = right;
-            right.Info.targetSlot = left;
+            left.info.targetSlot = right;
+            right.info.targetSlot = left;
 
-            left.Info.targetSlotName = right.Info.slotName;
-            right.Info.targetSlotName = left.Info.slotName;
+            left.info.targetSlotName = right.info.slotName;
+            right.info.targetSlotName = left.info.slotName;
 
-            left.Info.targetNode = right.Info.parentNode;
-            right.Info.targetNode = right.Info.parentNode;
+            left.info.targetNode = right.info.parentNode;
+            right.info.targetNode = right.info.parentNode;
 
-            left.Info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(right.Info.targetNode);
-            right.Info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(left.Info.targetNode);
+            left.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(right.info.targetNode);
+            right.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(left.info.targetNode);
 
             left.SetDirty();
             right.SetDirty();
@@ -86,17 +81,14 @@ namespace Convention.Workflow
 
         public static readonly Vector3[] zeroVecs = new Vector3[0];
 
-        [Content, OnlyPlayMode, Ignore, SerializeField] private GraphNodeSlotInfo m_info;
-        public GraphNodeSlotInfo Info
+        [Content, OnlyPlayMode, Ignore] public GraphNodeSlotInfo info { get;private set; }
+        public void SetupFromInfo(GraphNodeSlotInfo value)
         {
-            get => m_info;
-            set
+            if (info != value)
             {
-                if (m_info != value)
-                {
-                    m_info = value;
-                    SetDirty();
-                }
+                info = value;
+                info.slot = this;
+                SetDirty();
             }
         }
         [Resources, OnlyNotNullMode, SerializeField] private Text Title;
@@ -119,8 +111,8 @@ namespace Convention.Workflow
             {
                 if (
                 CurrentHighLightSlot == null ||
-                (CurrentHighLightSlot.Info.IsInmappingSlot != this.Info.IsInmappingSlot &&
-                CurrentHighLightSlot.Info.typeIndicator == this.Info.typeIndicator)
+                (CurrentHighLightSlot.info.IsInmappingSlot != this.info.IsInmappingSlot &&
+                CurrentHighLightSlot.info.typeIndicator == this.info.typeIndicator)
                 )
                     EnableHighLight(this);
             });
@@ -156,10 +148,10 @@ namespace Convention.Workflow
         public void BeginDragLine(PointerEventData _)
         {
             IsKeepDrag = true;
-            if (Info.targetNode != null)
+            if (info.targetNode != null)
             {
-                Info.targetSlot.Points = zeroVecs;
-                Info.targetSlot.SetDirty();
+                info.targetSlot.Points = zeroVecs;
+                info.targetSlot.SetDirty();
             }
             Points = zeroVecs;
             SetDirty();
@@ -173,7 +165,7 @@ namespace Convention.Workflow
         public void EndDragLine(PointerEventData _)
         {
             IsKeepDrag = false;
-            if (CurrentHighLightSlot != null && CurrentHighLightSlot.Info.IsInmappingSlot != this.Info.IsInmappingSlot)
+            if (CurrentHighLightSlot != null && CurrentHighLightSlot.info.IsInmappingSlot != this.info.IsInmappingSlot)
             {
                 Link(this, CurrentHighLightSlot);
             }
