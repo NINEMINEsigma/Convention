@@ -10,6 +10,8 @@ import                     platform
 if platform.system() == "Windows":
     from colorama       import Fore as ConsoleFrontColor, Back as ConsoleBackgroundColor, Style as ConsoleStyle
 
+__DEBUG__ = False
+
 def print_colorful(color:str, *args, is_reset:bool=False, **kwargs):
     if is_reset:
         print(color,*args,ConsoleStyle.RESET_ALL, **kwargs)

@@ -408,47 +408,7 @@ class EmbeddingCore(BaseEmbedding, any_class):
             response_json = response.json()
             if globals().get("__DEBUG__", False):
                 print(f"API响应: {response_json}")
-
-            # 尝试适应不同的响应格式
-            if isinstance(response_json, list) and len(response_json) > 0:
-                if "embedding" in response_json[0]:
-                    if isinstance(response_json[0]["embedding"], list):
-                        return response_json[0]["embedding"]
-                    else:
-                        return response_json[0]["embedding"][0]
-            elif "data" in response_json and len(response_json["data"]) > 0:
-                if "embedding" in response_json["data"][0]:
-                    if isinstance(response_json["data"][0]["embedding"], list):
-                        return response_json["data"][0]["embedding"]
-                    else:
-                        return response_json["data"][0]["embedding"][0]
-            elif "embedding" in response_json:
-                if isinstance(response_json["embedding"], list):
-                    return response_json["embedding"]
-                else:
-                    return response_json["embedding"][0]
-
-            # 如果以上格式都不匹配，尝试递归查找embedding字段
-            def find_embedding(obj):
-                if isinstance(obj, dict):
-                    for key, value in obj.items():
-                        if key == "embedding" and isinstance(value, list):
-                            return value
-                        result = find_embedding(value)
-                        if result is not None:
-                            return result
-                elif isinstance(obj, list):
-                    for item in obj:
-                        result = find_embedding(item)
-                        if result is not None:
-                            return result
-                return None
-
-            embedding = find_embedding(response_json)
-            if embedding is not None:
-                return embedding
-
-            raise Exception(f"无法解析嵌入响应: {response_json}")
+            return response_json["data"]["embedding"]
         except Exception as e:
             print(f"获取嵌入向量时出错: {str(e)}")
             raise
@@ -481,48 +441,9 @@ class EmbeddingCore(BaseEmbedding, any_class):
 
                     data = await response.json()
                     # 打印响应内容以便调试
-                    print(f"异步API响应: {data}")
-
-                    # 尝试适应不同的响应格式
-                    if isinstance(data, list) and len(data) > 0:
-                        if "embedding" in data[0]:
-                            if isinstance(data[0]["embedding"], list):
-                                return data[0]["embedding"]
-                            else:
-                                return data[0]["embedding"][0]
-                    elif "data" in data and len(data["data"]) > 0:
-                        if "embedding" in data["data"][0]:
-                            if isinstance(data["data"][0]["embedding"], list):
-                                return data["data"][0]["embedding"]
-                            else:
-                                return data["data"][0]["embedding"][0]
-                    elif "embedding" in data:
-                        if isinstance(data["embedding"], list):
-                            return data["embedding"]
-                        else:
-                            return data["embedding"][0]
-
-                    # 如果以上格式都不匹配，尝试递归查找embedding字段
-                    def find_embedding(obj):
-                        if isinstance(obj, dict):
-                            for key, value in obj.items():
-                                if key == "embedding" and isinstance(value, list):
-                                    return value
-                                result = find_embedding(value)
-                                if result is not None:
-                                    return result
-                        elif isinstance(obj, list):
-                            for item in obj:
-                                result = find_embedding(item)
-                                if result is not None:
-                                    return result
-                        return None
-
-                    embedding = find_embedding(data)
-                    if embedding is not None:
-                        return embedding
-
-                    raise Exception(f"无法解析嵌入响应: {data}")
+                    if globals().get("__DEBUG__", False):
+                        print(f"异步API响应: {data}")
+                    return data["data"]["embedding"]
         except Exception as e:
             print(f"异步获取嵌入向量时出错: {str(e)}")
             raise
@@ -561,7 +482,11 @@ class LLMObject(left_value_reference[LLM]):
     def create_OpenAI_from_api_key_file(cls, api_key_file:tool_file_or_str, **kwargs:Any) -> Self:
         return cls(OpenAI(api_key=UnWrapper(api_key_file), **kwargs))
 
+if __name__ == "__main__":
+    embedding = EmbeddingCore(model_uid="", base_url="http://127.0.0.1:61111")
+    embedding.set_as_global_embedding()
 
+    embedding.get_general_text_embedding("你好")
 
 
 

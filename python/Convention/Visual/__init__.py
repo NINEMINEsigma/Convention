@@ -13,7 +13,7 @@ try:
     import pandas               as     _
     import cv2                  as _
     import numpy                as _
-    from ..Visual.Core import *
+    #from ..Visual.Core import *
 except ImportError as ex:
     ImportingThrow(ex, "Visual-Core", ["matplotlib", "seaborn", "pandas", "opencv-python", "numpy"])
 
@@ -21,7 +21,7 @@ except ImportError as ex:
 try:
     import numpy            as     _
     from PIL                import ImageFile as _
-    from ..Visual.OpenCV import *
+    #from ..Visual.OpenCV import *
 except ImportError as ex:
     ImportingThrow(ex, "OpenCV", ["numpy", "pillow"])
 
@@ -29,13 +29,13 @@ except ImportError as ex:
 try:
     from pyecharts.charts import WordCloud as _
     from pyecharts import options as _
-    from ..Visual.WordCloud import *
+    #from ..Visual.WordCloud import *
 except ImportError as ex:
     ImportingThrow(ex, "WordCloud", ["wordcloud"])
 
 # Import Manim.py
 try:
     import manim as _
-    from ..Visual.Manim import *
+    #from ..Visual.Manim import *
 except ImportError as ex:
     ImportingThrow(ex, "Manim", ["manim"])

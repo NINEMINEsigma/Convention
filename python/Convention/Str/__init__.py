@@ -8,7 +8,7 @@ except ImportError:
 # Import RE.py
 try:
     import re as _
-    from ..Str.RE import *
+    #from ..Str.RE import *
 except ImportError:
     InternalImportingThrow("Regular-Expression", ["re"])
 
@@ -19,6 +19,6 @@ try:
     import xml.etree.ElementTree as _
     from xml.dom import minidom as _
     import math as _
-    from ..Str.Core import *
+    #from ..Str.Core import *
 except ImportError as ex:
     ImportingThrow(ex, "String-Core", ["pathlib", "re", "xml", "math"])

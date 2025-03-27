@@ -3,12 +3,12 @@ import io
 
 setup(
     name="Convention",
-    version="0.1.5",
-    author="Convention Unity",
+    version="0.2.0",
+    author="LiuBai",
     description="A comprehensive Python utility library",
     long_description=io.open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/Convention",  # 请替换为实际的GitHub仓库地址
+    url="https://github.com/NINEMINEsigma/Convention",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

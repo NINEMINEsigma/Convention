@@ -10,14 +10,14 @@ except ImportError:
 # Import Core.py
 try:
     from http import server as _
-    from .Core import *
+    #from .Core import *
 except ImportError as ex:
     ImportingThrow(ex, "Web-Core", ["http"])
 
 # Import BeautifulSoup.py
 try:
     import bs4 as _
-    from .BeautifulSoup import *
+    #from .BeautifulSoup import *
 except ImportError as ex:
     ImportingThrow(ex, "BeautifulSoup", ["bs4"])
 
@@ -25,13 +25,13 @@ except ImportError as ex:
 try:
     import requests as _
     import urllib3 as _
-    from .Requests import *
+    #from .Requests import *
 except ImportError as ex:
     ImportingThrow(ex, "Requests", ["requests", "urllib3"])
 
 # Import Selunit.py
 try:
     import selenium as _
-    from .Selunit import *
+    #from .Selunit import *
 except ImportError as ex:
     ImportingThrow(ex, "Selunit", ["selenium"])

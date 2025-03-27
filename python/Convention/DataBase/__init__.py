@@ -9,7 +9,8 @@ except ImportError:
 
 # Import Core.py
 try:
-    from ..DataBase.Core import *
+    pass
+    #from ..DataBase.Core import *
 except ImportError as ex:
     ImportingThrow(ex, "DataBase Core", [])
 
@@ -17,6 +18,6 @@ except ImportError as ex:
 # Import Core.py
 try:
     import sqlite3 as _
-    from ..DataBase.light_sqlite import *
+    #from ..DataBase.light_sqlite import *
 except ImportError as ex:
     ImportingThrow(ex, "light_sqlite", ["sqlite3"])

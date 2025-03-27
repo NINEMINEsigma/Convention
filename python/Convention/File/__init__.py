@@ -16,6 +16,6 @@ try:
     from PIL                                            import Image as _, ImageFile as _
     from docx                                           import Document as _
     from docx.document                                  import Document as _
-    from ..File.Core import *
+    #from ..File.Core import *
 except ImportError as ex:
     ImportingThrow(ex, "File Core", ["shutil", "pandas", "pathlib", "pydub", "pillow", "python-docx"])

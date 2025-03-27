@@ -10,7 +10,7 @@ import asyncio
 import threading
 import mimetypes
 
-from ..Str.Core import *
+#from ..Str.Core import *
 
 # 全局变量
 local_message = "<init>"
