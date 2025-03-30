@@ -1,15 +1,23 @@
 from ...Internal                                import *
+import                                                 json
 from ...Str.Core                                import UnWrapper
-from ...File.Core                               import tool_file_or_str, UnWrapper as UnwrapperFile2Str, json
+from ...File.Core                               import (
+    tool_file_or_str                            as     tool_file_or_str,
+    UnWrapper                                   as     UnwrapperFile2Str,
+    tool_file                                   as     tool_file,
+    Wrapper                                     as     WrapperFile
+    )
 from pydantic                                   import Field
 import requests                                 as     requests
 import asyncio                                  as     asyncio
 import aiohttp                                  as     aiohttp
+from llama_index.core.constants                 import *
 from llama_index.core                           import (
     SimpleDirectoryReader                       as     SimpleDirectoryReader,
     Settings                                    as     LlamaIndexSettings,
     VectorStoreIndex                            as     VectorStoreIndex,
     KeywordTableIndex                           as     KeywordTableIndex,
+    SummaryIndex                                as     SummaryIndex,
     load_index_from_storage                     as     load_index_from_storage,
     get_response_synthesizer                    as     get_response_synthesizer,
     )
@@ -26,11 +34,15 @@ from llama_index.core.embeddings                import BaseEmbedding
 from llama_index.core.schema                    import (
     Document                                    as     Document,
     TransformComponent                          as     TransformComponent,
+    Node                                        as     Node,
+    BaseNode                                    as     BaseNode,
+    TextNode                                    as     TextNode,
+    ImageNode                                   as     ImageNode,
     )
 from llama_index.core.storage                   import StorageContext
 from llama_index.core.callbacks                 import CallbackManager
 from llama_index.core.query_engine              import CustomQueryEngine
-from llama_index.core.retrievers                import BaseRetriever
+from llama_index.core.retrievers                import BaseRetriever, VectorIndexRetriever
 from llama_index.core.response_synthesizers     import BaseSynthesizer
 from llama_index.core.agent                     import (
     FunctionCallingAgent                        as     FunctionCallingAgent,
@@ -48,6 +60,7 @@ from llama_index.core.readers.base              import BaseReader
 from llama_index.core.base.base_query_engine    import BaseQueryEngine
 from llama_index.core.base.response.schema      import RESPONSE_TYPE
 from llama_index.core.base.llms.types           import LLMMetadata
+from llama_index.core.vector_stores.types       import MetadataFilters, VectorStoreQueryMode
 
 # https://zhuanlan.zhihu.com/p/16349452850
 # Prompt -- Reader -- Index -- Retriever -- Query Engine -- Agent --Workflow
@@ -158,6 +171,7 @@ def make_gpt_model_prompt[T:BasePromptTemplate](cls:Typen[T]) -> T:
         "Query: {query_str}\n"
         "Answer: "
     )
+
 def make_gpt_model_prompt_zh[T:BasePromptTemplate](cls:Typen[T]) -> T:
     return cls(
         "以下是上下文信息：\n"
@@ -176,6 +190,7 @@ def make_gpt_model_prompt_zh[T:BasePromptTemplate](cls:Typen[T]) -> T:
 class AbsCustomQueryEngine(CustomQueryEngine,ABC):
     """自定义查询引擎的抽象基类"""
     pass
+
 class RAGQueryEngine(AbsCustomQueryEngine):
     """
     RAG(检索增强生成)查询引擎
@@ -183,8 +198,8 @@ class RAGQueryEngine(AbsCustomQueryEngine):
     使用检索器获取相关文档,然后使用响应合成器生成答案
     """
 
-    retriever: BaseRetriever
-    response_synthesizer: BaseSynthesizer
+    retriever:              BaseRetriever
+    response_synthesizer:   BaseSynthesizer
 
     def custom_query(self, query_str: str) -> RESPONSE_TYPE:
         """
@@ -199,6 +214,7 @@ class RAGQueryEngine(AbsCustomQueryEngine):
         nodes = self.retriever.retrieve(query_str)
         response_obj = self.response_synthesizer.synthesize(query_str, nodes)
         return response_obj
+
 class RAGStringQueryEngine(AbsCustomQueryEngine):
     """
     RAG字符串查询引擎
@@ -229,20 +245,153 @@ class RAGStringQueryEngine(AbsCustomQueryEngine):
         )
 
         return str(response)
+
+def make_retriever(
+        index:                      VectorStoreIndex,
+        similarity_top_k:           int                         = DEFAULT_SIMILARITY_TOP_K,
+        vector_store_query_mode:    VectorStoreQueryMode        = VectorStoreQueryMode.DEFAULT,
+        filters:                    Optional[MetadataFilters]   = None,
+        alpha:                      Optional[float]             = None,
+        node_ids:                   Optional[List[str]]         = None,
+        doc_ids:                    Optional[List[str]]         = None,
+        sparse_top_k:               Optional[int]               = None,
+        hybrid_top_k:               Optional[int]               = None,
+        callback_manager:           Optional[CallbackManager]   = None,
+        object_map:                 Optional[dict]              = None,
+        embed_model:                Optional[BaseEmbedding]     = None,
+        verbose:                    bool = False,
+        **kwargs: Any,
+        ) -> VectorIndexRetriever:
+    """
+    创建一个向量存储检索器
+
+    参数:
+        index: 向量存储索引
+        similarity_top_k: 相似度阈值
+        vector_store_query_mode: 向量存储查询模式
+        filters: 过滤器
+        alpha: 阿尔法
+        node_ids: 节点ID列表
+        doc_ids: 文档ID列表
+        sparse_top_k: 稀疏阈值
+        hybrid_top_k: 混合阈值
+        callback_manager: 回调管理器
+        object_map: 对象映射
+        embed_model: 嵌入模型
+        verbose: 是否启用详细日志
+    """
+    return VectorIndexRetriever(
+        index=index,
+        similarity_top_k=similarity_top_k,
+        vector_store_query_mode=vector_store_query_mode,
+        filters=filters,
+        alpha=alpha,
+        node_ids=node_ids,
+        doc_ids=doc_ids,
+        sparse_top_k=sparse_top_k,
+        hybrid_top_k=hybrid_top_k,
+        callback_manager=callback_manager,
+        object_map=object_map,
+        embed_model=embed_model,
+        verbose=verbose,
+        **kwargs,
+        )
+
+
+def make_query_engine_with_keywords(
+    retriever:              VectorIndexRetriever,
+    required_keywords:      List[str]   = None,
+    lang:                   str         = "zh",
+    ) -> RAGQueryEngine:
+    """
+    创建一个对关键词敏感的查询引擎
+
+    参数:
+        retriever: 向量存储检索器
+        required_keywords: 关键词列表
+        lang: 语言
+
+    """
+    from llama_index.core import get_response_synthesizer
+    from llama_index.core.query_engine import RetrieverQueryEngine
+    from llama_index.core.postprocessor import KeywordNodePostprocessor
+
+    # 配置上下文与prompt的合成方式
+    response_synthesizer = get_response_synthesizer()
+
+    # 组合生成引擎
+    query_engine = RetrieverQueryEngine(
+        retriever=retriever,
+        response_synthesizer=response_synthesizer,
+        node_postprocessors=[
+            KeywordNodePostprocessor(
+            required_keywords=required_keywords,
+            lang=lang)]
+    )
+    return query_engine
+
 # End Layer
 
 # Index Layer And Reader Layer - 索引和读取器层
+class VectorStoreHelper(any_class):
+    """
+    向量存储助手类
+    """
+    @classmethod
+    def make_chroma(cls,
+        path:str,
+        ) -> BaseIndex:
+        # 需要先 pip install llama-index-vector-stores-chroma
+        try:
+            import chromadb
+            from llama_index.core.vector_stores.chroma import ChromaVectorStore
+        except ImportError:
+            InternalImportingThrow("LlamaIndex", ["llama-index-vector-stores-chroma", "chromadb"])
+            raise
+        # Initialize client, setting path to save data
+        db = chromadb.PersistentClient(path=path)
+
+        # Create collection
+        Chroma_collection = db.get_or_create_collection("quickstart")
+
+        # Assign chroma as the vector_store to the context
+        vector_store = ChromaVectorStore(chroma_collection=Chroma_collection)
+        return StorageContext.from_defaults(vector_store=vector_store)
+
+def make_text_node(text:str) -> TextNode:
+    return TextNode(text=text)
+
+def make_image_node_from_local_file(
+    image_path: str,
+) -> ImageNode:
+    """
+    创建一个ImageNode实例。
+    """
+    return ImageNode(image_path=image_path,)
+
+def make_image_node_from_url(
+    image_url: str,
+) -> ImageNode:
+    """
+    创建一个ImageNode实例。
+    """
+    return ImageNode(image_url=image_url)
+
 class IndexCore[IndexType:BaseIndex](left_value_reference[IndexType]):
     """
     索引核心类，用于管理索引相关的操作。
+    IndexType: 索引类型, 可以使用SummaryIndex, KeywordTableIndex, VectorStoreIndex等
     """
     def __init__(
         self,
-        index:      IndexType|Tuple[StorageContext|tool_file_or_str, str]
+        index:      Union[
+            IndexType,
+            Tuple[StorageContext|tool_file_or_str, str]
+        ],
         ):
         if isinstance(index, BaseIndex):
             super().__init__(index)
-        else:
+        elif isinstance(index, tuple) and len(index) == 2:
             if isinstance(index[0], StorageContext):
                 super().__init__(load_index_from_storage(index[0], index[1]))
             else:
@@ -324,9 +473,11 @@ class IndexCore[IndexType:BaseIndex](left_value_reference[IndexType]):
             return_direct=return_direct,
             resolve_input_errors=resolve_input_errors,
         )
+
 class IndexBuilder[Reader:BaseReader](left_value_reference[Reader]):
     """
     索引构建器类,用于创建索引
+    Reader: 读取器类型, 可以使用SimpleDirectoryReader等
 
     主要功能:
     - 从Reader加载文档
@@ -334,18 +485,26 @@ class IndexBuilder[Reader:BaseReader](left_value_reference[Reader]):
     """
 
     __documents: List[Document] = None
+    type URL_t = str
 
     def __init__(
         self,
-        reader_or_documentsDir:     Reader|tool_file_or_str,
+        data:           Reader|tool_file_or_str|Sequence[tool_file_or_str],
         /,
-        reader_cls:               Type[Reader] = SimpleDirectoryReader,
+        reader_cls:     Type[Reader]    = SimpleDirectoryReader,
+        **kwargs
         ):
-        super().__init__(
-            reader_or_documentsDir
-            if isinstance(reader_or_documentsDir, reader_cls)
-            else reader_cls(UnwrapperFile2Str(reader_or_documentsDir))
-            )
+        if isinstance(data, Reader):
+            super().__init__(data)
+        elif isinstance(data, tool_file_or_str):
+            if WrapperFile(data).is_dir():
+                super().__init__(reader_cls(input_dir=UnwrapperFile2Str(data), **kwargs))
+            else:
+                super().__init__(reader_cls(input_files=[UnwrapperFile2Str(data)], **kwargs))
+        elif isinstance(data, Sequence):
+            super().__init__(reader_cls(input_files=[UnwrapperFile2Str(item) for item in data], **kwargs))
+        else:
+            raise ValueError(f"Invalid data type: {type(data)}")
 
     @property
     def reader(self) -> Reader:
@@ -365,7 +524,7 @@ class IndexBuilder[Reader:BaseReader](left_value_reference[Reader]):
     def reset_documents(self):
         self.__load_documents()
 
-    def build_vector_store_index(
+    def make_vector_store_index(
         self,
         storage_context:    Optional[StorageContext]            = None,
         show_progress:      bool                                = False,
@@ -394,7 +553,7 @@ class IndexBuilder[Reader:BaseReader](left_value_reference[Reader]):
             transformations=transformations,
             **kwargs,
         ))
-    def build_keyword_table_index(
+    def make_keyword_table_index(
         self,
         storage_context:    Optional[StorageContext]            = None,
         show_progress:      bool                                = False,
@@ -423,6 +582,90 @@ class IndexBuilder[Reader:BaseReader](left_value_reference[Reader]):
             transformations=transformations,
             **kwargs,
             ))
+    def make_summary_index(
+        self,
+        storage_context:    Optional[StorageContext]            = None,
+        show_progress:      bool                                = False,
+        callback_manager:   Optional[CallbackManager]           = None,
+        transformations:    Optional[List[TransformComponent]]  = None,
+        **kwargs,
+        ) -> IndexCore[SummaryIndex]:
+        '''
+        构建摘要索引
+
+        参数:
+            storage_context: 存储上下文
+            show_progress: 是否显示进度
+            callback_manager: 回调管理器
+            transformations: 文档转换组件列表
+        '''
+        return IndexCore[SummaryIndex](SummaryIndex.from_documents(
+            self.documents,
+            storage_context=storage_context,
+            show_progress=show_progress,
+            callback_manager=callback_manager,
+            transformations=transformations,
+            **kwargs,
+            ))
+
+    @classmethod
+    def make_vector_store_index_with_split_nodes(
+        cls,
+        data:               tool_file_or_str|Sequence[tool_file_or_str],
+        nodes:              Optional[List[BaseNode]]            = None,
+        reader:             Type[Reader]                        = SimpleDirectoryReader,
+        recursive:          bool                                = True,
+        chunk_size:         int                                 = 500,
+        chunk_overlap:      int                                 = 100,
+        storage_context:    Optional[StorageContext]            = None,
+        show_progress:      bool                                = False,
+        callback_manager:   Optional[CallbackManager]           = None,
+        transformations:    Optional[List[TransformComponent]]  = None,
+        **kwargs,
+        ) -> IndexCore[VectorStoreIndex]:
+        from llama_index.core.ingestion import IngestionPipeline
+        from llama_index.core.node_parser import TokenTextSplitter
+        # 加载数据
+        if isinstance(data, tool_file_or_str):
+            if WrapperFile(data).is_dir():
+                documents = reader(input_dir=UnwrapperFile2Str(data),recursive=recursive).load_data()
+            else:
+                documents = reader(input_files=[UnwrapperFile2Str(data)],recursive=recursive).load_data()
+        elif isinstance(data, Sequence):
+            documents = reader(input_files=[UnwrapperFile2Str(item) for item in data],recursive=recursive).load_data()
+        else:
+            raise ValueError(f"data类型错误: {type(data)}")
+        # 分块
+        pipeline=IngestionPipeline(transformations=[
+            TokenTextSplitter(chunk_size=chunk_size,chunk_overlap=chunk_overlap)
+            ])
+        if nodes is None:
+            nodes = pipeline.run(documents=documents)
+        else:
+            nodes.extend(pipeline.run(documents=documents))
+        # 创建索引
+        return IndexCore[VectorStoreIndex](VectorStoreIndex(
+            nodes=nodes,
+            storage_context=storage_context,
+            show_progress=show_progress,
+            callback_manager=callback_manager,
+            transformations=transformations,
+            **kwargs,))
+
+    @classmethod
+    def create_web_page_reader(
+        cls,
+        html_to_text:   bool            = True,
+        **kwargs,
+        ) -> Self:
+        # 默认不带这个加载器，通过命令安装：python -m pip install llama-index-readers-web
+        try:
+            from llama_index.readers.web import SimpleWebPageReader
+        except ImportError:
+            InternalImportingThrow("LlamaIndex", ["llama-index-readers-web"])
+            raise
+        kwargs["html_to_text"] = html_to_text
+        return cls(SimpleWebPageReader(**kwargs))
 # End Layer
 
 # Embedding Layer - 嵌入层
@@ -1310,21 +1553,21 @@ def make_sync_func_tool(
         callback=callback
     )
 def make_async_func_tool(
+    async_fn:       Optional[Callable[[Any], Awaitable[Any]]]   = None,
     async_callback: Optional[Callable[[Any], Awaitable[Any]]]   = None,
     name:           Optional[str]                               = None,
     description:    Optional[str]                               = None,
     return_direct:  bool                                        = False,
     fn_schema:      Optional[type[BaseModel]]                   = None,
     tool_metadata:  Optional[ToolMetadata]                      = None,
-    callback:       Optional[Callable[[Any], Any]]              = None,
     ) -> FunctionTool:
     return FunctionTool.from_defaults(
+        async_fn=async_fn,
         name=name,
         description=description,
         return_direct=return_direct,
         fn_schema=fn_schema,
         tool_metadata=tool_metadata,
-        callback=callback,
         async_callback=async_callback
     )
 def make_sync_funcs_tool(
@@ -1355,24 +1598,107 @@ def make_async_funcs_tool(
     return_direct:  bool                                        = False,
     fn_schema:      Optional[type[BaseModel]]                   = None,
     tool_metadata:  Optional[ToolMetadata]                      = None,
-    callback:       Optional[Callable[[Any], Any]]              = None,
+    async_callback: Optional[Callable[..., Awaitable[Any]]]     = None,
     ) -> List[FunctionTool]:
     return [
         FunctionTool.from_defaults(
+            async_fn=async_fn,
             name=name,
             description=description,
             return_direct=return_direct,
             fn_schema=fn_schema,
             tool_metadata=tool_metadata,
-            callback=callback,
             async_callback=async_callback
         )
-        for async_callback in funcs
+        for async_fn in funcs
     ]
 from llama_index.core.tools.function_tool import (
     sync_to_async as make_sync_to_async,
     async_to_sync as make_async_to_sync
 )
+def make_base_web_tool(
+    url:            str,
+    method:         Literal["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"] = "GET",
+    headers:        Optional[Dict[str, str]]    = None,
+    params:         Optional[Dict[str, str]]    = None,
+    data:           Optional[Dict[str, str]]    = None,
+    name:           Optional[str]               = None,
+    description:    Optional[str]               = None,
+    return_direct:  bool                        = False,
+    fn_schema:      Optional[type[BaseModel]]   = None,
+    tool_metadata:  Optional[ToolMetadata]      = None,
+) -> BaseTool:
+    return FunctionTool.from_defaults(
+        fn=lambda: requests.request(method, url, headers=headers, params=params, data=data),
+        name=name,
+        description=description,
+        return_direct=return_direct,
+        fn_schema=fn_schema,
+        tool_metadata=tool_metadata,
+    )
+def make_base_document_tool(
+    text_or_texts:      str|Sequence[str],
+    name:               Optional[str]               =None,
+    description:        Optional[str]               =None,
+    return_direct:      bool                        =False,
+    fn_schema:          Optional[type[BaseModel]]   =None,
+    tool_metadata:      Optional[ToolMetadata]      =None,
+    ) -> BaseTool:
+    documents:List[Document] = []
+    if isinstance(text_or_texts, str):
+        documents = [Document(text=text_or_texts)]
+    else:
+        documents = [Document(text=text) for text in text_or_texts]
+
+
+    return FunctionTool.from_defaults(
+    )
+def function_tool(
+    func:           Callable,
+    return_direct:  bool                        = False,
+    fn_schema:      Optional[type[BaseModel]]   = None,
+    tool_metadata:  Optional[ToolMetadata]      = None
+    ) -> Callable:
+    '''
+    装饰器,用于将函数转换为FunctionTool
+    ---
+    参数:
+        func: Callable
+            被装饰的函数
+        return_direct: bool
+            是否直接返回结果,默认为False
+        fn_schema: type[BaseModel]
+            函数参数的类型检查
+        tool_metadata: ToolMetadata
+            工具的元数据
+
+    目前只支持非异步函数
+    '''
+    try:
+        func.__function_tool_status__           = True
+        func.__function_tool_name__             = func.__name__
+        func.__function_tool_description__      = func.__doc__
+        func.__function_tool_return_direct__    = return_direct
+        func.__function_tool_fn_schema__        = fn_schema
+        func.__function_tool_tool_metadata__    = tool_metadata
+    except AttributeError:
+        pass
+    return func
+def make_function_tool(func:Callable, **kwargs) -> FunctionTool:
+    config = {}
+    if func.__function_tool_status__:
+        config = {
+            "name":func.__function_tool_name__,
+            "description":func.__function_tool_description__,
+            "return_direct":func.__function_tool_return_direct__,
+            "fn_schema":func.__function_tool_fn_schema__,
+            "tool_metadata":func.__function_tool_tool_metadata__,
+        }
+    config.update(kwargs)
+    return FunctionTool.from_defaults(
+        fn=func,
+        **config
+    )
 # End Layer
 
 # Agent Layer - 代理层
@@ -1382,16 +1708,18 @@ class ReActAgentCore(left_value_reference[ReActAgent]):
     """
     def __init__(
         self,
-        agent_or_tools_and_llm: Optional[ReActAgent|Tuple[List[BaseTool], LLM, Dict[str, Any]]] = None,
+        agent_or_tools_and_llm: ReActAgent|Tuple[List[BaseTool], Optional[LLM]],
         **kwargs:Any,
         ) -> None:
         if isinstance(agent_or_tools_and_llm, ReActAgent):
             super().__init__(agent_or_tools_and_llm)
         else:
+            tools = agent_or_tools_and_llm[0]
+            c_llm = agent_or_tools_and_llm[1] if len(agent_or_tools_and_llm) > 1 else None
             super().__init__(ReActAgent.from_tools(
-                tools=agent_or_tools_and_llm[0],
-                llm=agent_or_tools_and_llm[1],
-                **agent_or_tools_and_llm[2],
+                tools=tools,
+                llm=c_llm,
+                **kwargs,
             ))
     def chat(self, message:str, **kwargs:Any) -> ChatResponse:
         """聊天方法。
