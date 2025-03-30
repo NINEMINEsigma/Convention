@@ -7,7 +7,7 @@ from ...File.Core                               import (
     tool_file                                   as     tool_file,
     Wrapper                                     as     WrapperFile
     )
-from pydantic                                   import Field
+from pydantic                                   import Field, BaseModel
 import requests                                 as     requests
 import asyncio                                  as     asyncio
 import aiohttp                                  as     aiohttp
@@ -29,6 +29,9 @@ from llama_index.core.llms                      import (
     CompletionResponse                          as     CompletionResponse,
     ChatResponse                                as     ChatResponse,
     MessageRole                                 as     MessageRole,
+    TextBlock                                   as     TextBlock,
+    ImageBlock                                  as     ImageBlock,
+    AudioBlock                                  as     AudioBlock,
     )
 from llama_index.core.embeddings                import BaseEmbedding
 from llama_index.core.schema                    import (
@@ -39,6 +42,7 @@ from llama_index.core.schema                    import (
     TextNode                                    as     TextNode,
     ImageNode                                   as     ImageNode,
     )
+from llama_index.core.prompts                   import BasePromptTemplate
 from llama_index.core.storage                   import StorageContext
 from llama_index.core.callbacks                 import CallbackManager
 from llama_index.core.query_engine              import CustomQueryEngine
@@ -54,7 +58,6 @@ from llama_index.core.types                     import TokenGen
 from llama_index.core.chat_engine.types         import AgentChatResponse
 from llama_index.core.memory                    import ChatMemoryBuffer, BaseMemory
 
-from llama_index.core.prompts.base              import BasePromptTemplate
 from llama_index.core.indices.base              import BaseIndex
 from llama_index.core.readers.base              import BaseReader
 from llama_index.core.base.base_query_engine    import BaseQueryEngine
@@ -901,12 +904,29 @@ class CustomEmbedding(BaseEmbedding, any_class):
 # End Layer
 
 # LLM Object Layer - 模型封装层
-def make_system_message(content:str) -> ChatMessage:
-    return ChatMessage(role=MessageRole.SYSTEM, content=content)
-def make_user_message(content:str) -> ChatMessage:
-    return ChatMessage(role=MessageRole.USER, content=content)
-def make_assistant_message(content:str) -> ChatMessage:
-    return ChatMessage(role=MessageRole.ASSISTANT, content=content)
+def make_system_message(content_or_blocks:str|List[TextBlock|ImageBlock|AudioBlock]) -> ChatMessage:
+    if isinstance(content_or_blocks, str):
+        return ChatMessage(role=MessageRole.SYSTEM, content=content_or_blocks)
+    elif isinstance(content_or_blocks, list):
+        return ChatMessage(role=MessageRole.SYSTEM, blocks=content_or_blocks)
+    else:
+        raise ValueError("Invalid content or blocks")
+
+def make_user_message(content_or_blocks:str|List[TextBlock|ImageBlock|AudioBlock]) -> ChatMessage:
+    if isinstance(content_or_blocks, str):
+        return ChatMessage(role=MessageRole.USER, content=content_or_blocks)
+    elif isinstance(content_or_blocks, list):
+        return ChatMessage(role=MessageRole.USER, blocks=content_or_blocks)
+    else:
+        raise ValueError("Invalid content or blocks")
+
+def make_assistant_message(content_or_blocks:str|List[TextBlock|ImageBlock|AudioBlock]) -> ChatMessage:
+    if isinstance(content_or_blocks, str):
+        return ChatMessage(role=MessageRole.ASSISTANT, content=content_or_blocks)
+    elif isinstance(content_or_blocks, list):
+        return ChatMessage(role=MessageRole.ASSISTANT, blocks=content_or_blocks)
+    else:
+        raise ValueError("Invalid content or blocks")
 
 class HttpLlamaCPP(CustomLLM, any_class):
     """HTTP LlamaCPP LLM类,用于通过HTTP API调用远程LlamaCPP模型。
@@ -1433,6 +1453,16 @@ class LLMObject(left_value_reference[LLM]):
         """
         return self.llm.chat(messages, **kwargs)
 
+    def predict_and_call(
+        self,
+        tools:          List[BaseTool],
+        user_msg:       Optional[Union[str, ChatMessage]]   = None,
+        chat_history:   Optional[List[ChatMessage]]         = None,
+        verbose:        bool                                = False,
+        **kwargs: Any,
+    ) -> AgentChatResponse:
+        return self.llm.predict_and_call(tools, user_msg, chat_history, verbose, **kwargs)
+
     def serve_http(self, host:str="0.0.0.0", port:int=8000) -> None:
         """
         将LLM模型通过HTTP API开放到网络。
@@ -1457,7 +1487,6 @@ class LLMObject(left_value_reference[LLM]):
         """
         from fastapi import FastAPI, HTTPException
         import uvicorn
-        from pydantic import BaseModel
         from typing import List, Optional
 
         app = FastAPI(title="LLM API Service")
@@ -1531,6 +1560,7 @@ class LLMObject(left_value_reference[LLM]):
     def create_OpenAI_from_api_key_file(cls, api_key_file:tool_file_or_str, **kwargs:Any) -> Self:
         from llama_index.llms.openai        import OpenAI
         return cls(OpenAI(api_key=UnWrapper(api_key_file), **kwargs))
+
 # End Layer
 
 # Function Tool Layer - 函数工具层
@@ -1708,17 +1738,22 @@ class ReActAgentCore(left_value_reference[ReActAgent]):
     """
     def __init__(
         self,
-        agent_or_tools_and_llm: ReActAgent|Tuple[List[BaseTool], Optional[LLM]],
+        agent_or_tools_and_llm: ReActAgent|Tuple[List[BaseTool], Optional[LLM]]|List[BaseTool],
         **kwargs:Any,
         ) -> None:
         if isinstance(agent_or_tools_and_llm, ReActAgent):
             super().__init__(agent_or_tools_and_llm)
-        else:
+        elif isinstance(agent_or_tools_and_llm, tuple) and len(agent_or_tools_and_llm) == 2:
             tools = agent_or_tools_and_llm[0]
             c_llm = agent_or_tools_and_llm[1] if len(agent_or_tools_and_llm) > 1 else None
             super().__init__(ReActAgent.from_tools(
                 tools=tools,
                 llm=c_llm,
+                **kwargs,
+            ))
+        elif isinstance(agent_or_tools_and_llm, list):
+            super().__init__(ReActAgent.from_tools(
+                tools=agent_or_tools_and_llm,
                 **kwargs,
             ))
     def chat(self, message:str, **kwargs:Any) -> ChatResponse:
@@ -1771,6 +1806,90 @@ class ReActAgentCore(left_value_reference[ReActAgent]):
                 callback_manager=callback_manager,
                 verbose=verbose,
                 context=context,
+                **kwargs,
+            )
+        )
+
+class FunctionCallAgentCore(left_value_reference[FunctionCallingAgent]):
+    """
+    函数调用代理核心类，用于管理函数调用代理相关的操作。
+    """
+    def __init__(
+        self,
+        agent_or_tools_and_llm: FunctionCallingAgent|Tuple[List[BaseTool], FunctionCallingLLM],
+        **kwargs: Any,
+    ) -> None:
+        if isinstance(agent_or_tools_and_llm, FunctionCallingAgent):
+            super().__init__(agent_or_tools_and_llm)
+        elif isinstance(agent_or_tools_and_llm, tuple) and len(agent_or_tools_and_llm) == 2:
+            tools = agent_or_tools_and_llm[0]
+            c_llm = agent_or_tools_and_llm[1]
+            super().__init__(FunctionCallingAgent.from_tools(
+                tools=tools,
+                llm=c_llm,
+                **kwargs,
+            ))
+        else:
+            raise ValueError("Invalid agent or tools and llm")
+
+
+    def call_function(self, function_name: str, *args, **kwargs) -> Any:
+        """调用指定的函数。
+
+        参数:
+            function_name: 要调用的函数名称。
+            *args: 传递给函数的位置参数。
+            **kwargs: 传递给函数的关键字参数。
+
+        返回:
+            函数的返回值。
+        """
+        return self.ref_value.call_function(function_name, *args, **kwargs)
+
+    def get_prompt(self) -> str:
+        """获取当前的提示信息。"""
+        return self.ref_value.get_prompts()
+
+    def update_prompts(self, prompts_dict: Dict[str, BasePromptTemplate]) -> None:
+        """更新提示信息。"""
+        self.ref_value.update_prompts(prompts_dict)
+
+    from llama_index.core.objects.base import ObjectRetriever
+    from llama_index.core.agent.function_calling.step import DEFAULT_MAX_FUNCTION_CALLS
+    from llama_index.core.llms.function_calling import FunctionCallingLLM
+    from llama_index.core.agent.runner.base import AgentState
+
+    @classmethod
+    def create(
+        cls,
+        tools:                      Optional[List[BaseTool]]            = None,
+        tool_retriever:             Optional[ObjectRetriever[BaseTool]] = None,
+        llm:                        Optional[FunctionCallingLLM]        = None,
+        verbose:                    bool                                = False,
+        max_function_calls:         int                                 = DEFAULT_MAX_FUNCTION_CALLS,
+        callback_manager:           Optional[CallbackManager]           = None,
+        system_prompt:              Optional[str]                       = None,
+        prefix_messages:            Optional[List[ChatMessage]]         = None,
+        memory:                     Optional[BaseMemory]                = None,
+        chat_history:               Optional[List[ChatMessage]]         = None,
+        state:                      Optional[AgentState]                = None,
+        allow_parallel_tool_calls:  bool = True,
+        **kwargs: Any
+    ) -> Self:
+        return cls(
+            FunctionCallingAgent.from_tools(
+                tools=tools,
+                tool_retriever=tool_retriever,
+                llm=llm,
+                verbose=verbose,
+                max_function_calls=max_function_calls,
+                callback_manager=callback_manager,
+                system_prompt=system_prompt,
+                prefix_messages=prefix_messages,
+                memory=memory,
+                chat_history=chat_history,
+                state=state,
+                allow_parallel_tool_calls=allow_parallel_tool_calls,
                 **kwargs,
             )
         )
