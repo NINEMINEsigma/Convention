@@ -33,6 +33,7 @@ from llama_index.core.llms                      import (
     ImageBlock                                  as     ImageBlock,
     AudioBlock                                  as     AudioBlock,
     )
+from llama_index.core.llms.function_calling     import FunctionCallingLLM
 from llama_index.core.embeddings                import BaseEmbedding
 from llama_index.core.schema                    import (
     Document                                    as     Document,
