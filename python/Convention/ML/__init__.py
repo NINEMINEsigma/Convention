@@ -11,7 +11,8 @@ except ImportError as ex:
     ImportingThrow(ex, "Core", ["scikit-learn"])
 
 try:
-    from keras import api as _
+    pass
+    #from keras import api as _
     #from ..ML.Keras import *
 except ImportError as ex:
     ImportingThrow(ex, "Keras", ["tensorflow"])

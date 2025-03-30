@@ -3,7 +3,7 @@ import io
 
 setup(
     name="Convention",
-    version="0.2.0",
+    version="0.2.2",
     author="LiuBai",
     description="A comprehensive Python utility library",
     long_description=io.open("README.md", encoding="utf-8").read(),

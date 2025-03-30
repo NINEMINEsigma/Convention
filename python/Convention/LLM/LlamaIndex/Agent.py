@@ -22,7 +22,7 @@ class WorkflowAgent(any_class):
     支持本地模型。
     """
 
-    embedding:          EmbeddingCore
+    embedding:          CustomEmbedding
     llm:                LLMObject
     storage_dir:        Wrapper2File
     reader:             SimpleDirectoryReader
@@ -34,7 +34,7 @@ class WorkflowAgent(any_class):
     def __init__(
         self,
         model_path:             Optional[str] = None,
-        embedding:              Optional[EmbeddingCore|Tuple[str, str]] = None,
+        embedding:              Optional[CustomEmbedding|Tuple[str, str]] = None,
         storage_dir:            Optional[tool_file_or_str]              = None,
         chunk_size:             int                                     = 512,
         chunk_overlap:          int                                     = 50,
@@ -54,17 +54,17 @@ class WorkflowAgent(any_class):
         """
         # 初始化嵌入模型
         if embedding is None:
-            self.embedding = EmbeddingCore.get_global_embedding()
-        elif isinstance(embedding, EmbeddingCore):
+            self.embedding = CustomEmbedding.get_global_embedding()
+        elif isinstance(embedding, CustomEmbedding):
             self.embedding = embedding
         else:
-            self.embedding = EmbeddingCore(
+            self.embedding = CustomEmbedding(
                 model_uid=embedding[0],
                 base_url=embedding[1]
             )
 
         # 初始化LLM模型
-        self.llm = LLMObject.create_LlamaCPP_from_local_path(model_path)
+        self.llm = LLMObject.loading_LlamaCPP_from_local_path(model_path)
         Settings.llm = self.llm
 
         # 创建文本分块器

@@ -1,5 +1,5 @@
 from ...Internal            import *
-from .Core                  import EmbeddingCore
+from .Core                  import CustomEmbedding
 from ...Workflow.Step       import *
 from llama_index.core       import PromptTemplate
 from llama_index.core.llms  import LLM
