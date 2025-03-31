@@ -7,9 +7,9 @@ import matplotlib.pyplot    as     plt
 import seaborn              as     sns
 from ..Internal         import *
 from ..MathEx.Core      import *
-from ..Str.Core         import UnWrapper as Unwrapper2Str
+#from ..Str.Core         import UnWrapper as Unwrapper2Str
 from ..File.Core        import tool_file, Wrapper as Wrapper2File, tool_file_or_str, is_image_file, loss_file, static_loss_file_dir
-from ..Visual.OpenCV    import ImageObject, tool_file_cvex, WrapperFile2CVEX, Wrapper as Wrapper2Image, get_new_noise
+#from ..Visual.OpenCV    import ImageObject, tool_file_cvex, WrapperFile2CVEX, Wrapper as Wrapper2Image, get_new_noise
 from PIL.Image              import Image as PILImage
 from PIL.ImageFile          import ImageFile as PILImageFile
 import cv2                  as     cv2

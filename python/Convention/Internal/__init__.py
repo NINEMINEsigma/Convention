@@ -10,6 +10,8 @@ import                     platform
 if platform.system() == "Windows":
     from colorama       import Fore as ConsoleFrontColor, Back as ConsoleBackgroundColor, Style as ConsoleStyle
 
+INTERNAL_DEBUG = False
+
 def print_colorful(color:str, *args, is_reset:bool=False, **kwargs):
     if is_reset:
         print(color,*args,ConsoleStyle.RESET_ALL, **kwargs)
@@ -55,10 +57,33 @@ def ReleaseFailed2Requirements():
 
 def virtual(func:Callable) -> Callable:
     try:
-        func.__is_virtual__ = True
-    except:
+        if not hasattr(func, "__is_sealed__"):
+            func.__is_virtual__ = True
+        else:
+            raise TypeError("Cannot override a sealed method")
+    except AttributeError:
         pass
     return func
+def sealed(func:Callable) -> Callable:
+    try:
+        if not hasattr(func, "__is_virtual__"):
+            func.__is_sealed__ = True
+        else:
+            raise TypeError("Cannot sealed a virtual method")
+    except AttributeError:
+        pass
+    return func
+def final(func:Callable) -> Callable:
+    try:
+        if hasattr(func, "__is_virtual__"):
+            func.__is_final__ = True
+            func.__is_virtual__ = False
+        else:
+            raise TypeError("Cannot final a un-virtual method")
+    except AttributeError:
+        pass
+    return func
+
 
 false = False
 true = True
@@ -172,6 +197,11 @@ class type_class:
             return True
         else:
             return False
+
+    @classmethod
+    def class_name(cls) -> str:
+        return cls.__name__
+
 class base_value_reference[_T](type_class):
     _ref_value:     Optional[_T]        = None
     __real_type:    Optional[type]      = None

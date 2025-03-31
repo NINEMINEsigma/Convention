@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from ...Web.Selunit import *
+#from ...Web.Selunit import *
 from ...lazy import *
 from ...Lang.CppLike import *
 from ...Lang.Reflection import get_type_from_string

@@ -2,7 +2,7 @@ from ..Internal import *
 from pyecharts.charts import WordCloud
 from pyecharts import options as opts
 from pyecharts import types
-from ..File.Core import tool_file, UnWrapper as UnWrapper2Str
+#from ..File.Core import tool_file, UnWrapper as UnWrapper2Str
 
 def make_word_cloud(
         series_name:    str,

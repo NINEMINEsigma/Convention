@@ -1,5 +1,5 @@
 from ...Internal import *
-from ...Visual.Manim import *
+#from ...Visual.Manim import *
 
 class UncreateDestructor(invoke_callable):
     def __init__(self, duration=0.36):
