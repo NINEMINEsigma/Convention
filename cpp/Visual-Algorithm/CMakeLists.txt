@@ -12,6 +12,6 @@ endfunction(VA_target_execute)
 VA_target_execute(va-main)
 VA_target_execute(va-test)
 
-add_subdirectory("Singles")
+#add_subdirectory("Singles")
 
 message("Visual-Algorithm: ----- ----- ----- ----- -----")

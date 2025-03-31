@@ -97,6 +97,11 @@ public:
 	{
 		return std::to_string(this->get_cvalue());
 	}
+
+	_NumberType gcd(_NumberType right) const noexcept
+	{
+		return std::gcd(this->get_cvalue(), right.get_cvalue());
+	}
 };
 
 namespace internal

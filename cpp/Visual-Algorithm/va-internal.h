@@ -7,6 +7,8 @@ using namespace convention_kit;
 
 static double delay = 0.001;
 static bool is_lowstep = false;
+constexpr int constexpr_upboundary = 10;
+constexpr int constexpr_arraysize = 10;
 inline void wait()
 {
 	if (delay == 0)
@@ -31,12 +33,15 @@ void InsertSort();
 void InsertSort2();
 void CountingSort();
 
+void GenerateParenthesis();
+
 static map<string, descriptive_indicator<function<void(void)>>> algorithms = {
 	make_algorithm(SelectSort, "sorting/select"),
 	make_algorithm(BubbleSort, "sorting/bubble"),
 	make_algorithm(InsertSort, "sorting/insert"),
 	make_algorithm(InsertSort2, "sorting/insert-o"),
-	make_algorithm(CountingSort, "sorting/count")
+	make_algorithm(CountingSort, "sorting/count"),
+	make_algorithm(GenerateParenthesis, "others/GenerateParenthesis")
 };
 
 #pragma endregion
@@ -55,9 +60,9 @@ void config_make_helper(instance<config_indicator::tag>& config)
 	) << endl;
 	cout << config.make_manual(
 		"sorting arguments:",
-		make_descriptive("-arraysize", "numbers size, default 10"),
+		make_descriptive("-arraysize", Combine("numbers size, default ", constexpr_arraysize).c_str()),
 		make_descriptive("-fillsize", "the higher the value, the greater the horizontal tabulation width"),
-		make_descriptive("-upboundary", "number up boundary, default 10")
+		make_descriptive("-upboundary", Combine("number up boundary, default ", constexpr_upboundary).c_str())
 	) << endl;
 }
 void config_checker(instance<config_indicator::tag>& config)
@@ -65,52 +70,64 @@ void config_checker(instance<config_indicator::tag>& config)
 	SetConsoleTitleA("Visual Algorithm");
 	srand(time(0));
 	global_config = config;
-	if (config.is_contains_helper_command() || config.vec().size() == 1)
+	if constexpr (platform_indicator::is_release)
 	{
-		config_make_helper(config);
-		exit(0);
-	}
-	if (config.is_contains_version_command())
-	{
-		cout << config.version();
-		exit(0);
-	}
-	config("s", delay);
-	is_lowstep = config.contains("lowstep");
-	for (auto&& a_va : config.list("a"))
-	{
-		system("cls");
-		if (a_va == "foreach")
+		if (config.is_contains_helper_command() || config.vec().size() == 1)
 		{
-			for (auto&& algorithm : algorithms)
-			{
-				SetConsoleTitleA(algorithm.first.c_str());
-				system("cls");
-				algorithm.second.target();
-				Sleep(1000);
-			}
+			config_make_helper(config);
+			exit(0);
 		}
-		else
+		if (config.is_contains_version_command())
 		{
-			if (algorithms.count(a_va))
+			cout << config.version();
+			exit(0);
+		}
+		config("s", delay);
+		is_lowstep = config.contains("lowstep");
+		for (auto&& a_va : config.list("a"))
+		{
+			system("cls");
+			if (a_va == "foreach")
 			{
-				SetConsoleTitleA(a_va.c_str());
-				system("cls");
-				algorithms[a_va].target();
+				for (auto&& algorithm : algorithms)
+				{
+					SetConsoleTitleA(algorithm.first.c_str());
+					system("cls");
+					algorithm.second.target();
+					Sleep(1000);
+				}
 			}
 			else
 			{
-				cout << a_va << " is not found" << endl;
+				if (algorithms.count(a_va))
+				{
+					SetConsoleTitleA(a_va.c_str());
+					system("cls");
+					algorithms[a_va].target();
+				}
+				else
+				{
+					cout << a_va << " is not found" << endl;
+				}
+				cout << "pause to continue" << endl;
+				while (platform_indicator::keyboard_input() == -1);
 			}
-			cout << "pause to continue" << endl;
-			while (platform_indicator::keyboard_input() == -1);
 		}
+		SetConsoleTitleA("");
+		cout << "\n";
+		for (auto&& [key, name] : global_config.try_get_histroy)
+			cout << Combine("-", key, "[", name, "] ");
+		cout << endl;
 	}
-	SetConsoleTitleA("");
-	cout << "\n";
-	for (auto&& [key, name] : global_config.try_get_histroy)
-		cout << Combine("-", key, "[", name, "] ");
-	cout << endl;
+	else
+	{
+		string a_va = "GenerateParenthesis";
+		is_lowstep = true;
+		delay = 0.0000000000000001;
+		SetConsoleTitleA(a_va.c_str());
+		system("cls");
+		algorithms[a_va].target();
+	}
 }
 void config_algorithm(instance<config_indicator::tag>& config, function<void(void)> algorithm)
 {
@@ -242,8 +259,8 @@ void current_sorting_array_numbers(
 void SelectSort()
 {
 	vector<int> numbers;
-	int upboundary = global_config.try_int_value("upboundary", 10);
-	for (int i = 0, e = global_config.try_int_value("arraysize", 10); i < e; i++)
+	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
+	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
 		numbers.push_back(rand() % upboundary);
 	current_sorting_array_numbers(numbers, {});
 	for (int i = 0, e = numbers.size(); i < e; i++)
@@ -298,9 +315,9 @@ void SelectSort()
 }
 void BubbleSort()
 {
-	int upboundary = global_config.try_int_value("upboundary", 10);
+	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
 	vector<int> numbers;
-	for (int i = 0, e = global_config.try_int_value("arraysize", 10); i < e; i++)
+	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
 		numbers.push_back(rand() % upboundary);
 	bool flag = true;
 	while (flag)
@@ -343,9 +360,9 @@ void BubbleSort()
 }
 void InsertSort()
 {
-	int upboundary = global_config.try_int_value("upboundary", 10);
+	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
 	vector<int> numbers;
-	for (int i = 0, e = global_config.try_int_value("arraysize", 10); i < e; i++)
+	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
 		numbers.push_back(rand() % upboundary);
 	for (int i = 1,e= numbers.size(); i < e; ++i)
 	{
@@ -386,8 +403,8 @@ void InsertSort()
 void InsertSort2() 
 {
 	vector<int> numbers;
-	int upboundary = global_config.try_int_value("upboundary", 10);
-	for (int i = 0, e = global_config.try_int_value("arraysize", 10); i < e; i++)
+	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
+	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
 		numbers.push_back(rand() % upboundary);
 	for (int i = 1,e=numbers.size(); i != e; ++i) 
 	{
@@ -418,8 +435,8 @@ void InsertSort2()
 void CountingSort()
 {
 	vector<int> numbers;
-	int upboundary = global_config.try_int_value("upboundary", 10);
-	for (int i = 0, e = global_config.try_int_value("arraysize", 10); i < e; i++)
+	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
+	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
 		numbers.push_back(rand() % upboundary);
 	int w = *max_element(numbers.begin(), numbers.end())+1;
 	vector<int> cnt(w, 0);
@@ -497,4 +514,50 @@ void CountingSort()
 
 
 #pragma endregion
+
+#pragma region DFS Algorithms
+
+void __generateParenthesis(int left, int right, int depth, string str, vector<int>& drawbuffer)
+{
+	drawbuffer[0] = left;
+	drawbuffer[1] = right;
+	drawbuffer[2] = depth;
+	if (is_lowstep)
+	{
+		current_sorting_array_numbers(drawbuffer,
+			{
+				make_pair(0, ConsoleBackgroundColor::Green),
+				make_pair(1, ConsoleBackgroundColor::Red)
+			});
+		cout << str << string(100, ' ');
+	}
+	if (left > 0)
+		__generateParenthesis(left - 1, right + 1, depth - 1, str + '(', drawbuffer);
+	if (right > 0)
+		__generateParenthesis(left, right - 1, depth - 1, str + ')', drawbuffer);
+	if (left + right == 0)
+	{
+		current_sorting_array_numbers(drawbuffer,
+			{
+				make_pair(0, ConsoleBackgroundColor::Green),
+				make_pair(1, ConsoleBackgroundColor::Red)
+			});
+		cout << str << string(100, ' ');
+	}
+}
+void GenerateParenthesis()
+{
+	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
+	vector<int> drawbuffer = { 0, 0 ,0 };
+	__generateParenthesis(upboundary, 0, upboundary * 2, "", drawbuffer);
+	cout << "\n" <<
+		"if (left > 0)" << "\n" <<
+		"	dfs(left - 1, right + 1, str + '(', results);" << "\n" <<
+		"if (right > 0)" << "\n" <<
+		"	dfs(left, right - 1, str + ')', results);" << "\n" <<
+		"if (left + right == 0) result.push_back(str);" << endl;
+}
+
+#pragma endregion
+
 

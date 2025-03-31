@@ -56,4 +56,6 @@ auto enumerate_until_not(
 	return begin;
 }
 
+
+
 #endif // !__FILE_ALGORITHM
