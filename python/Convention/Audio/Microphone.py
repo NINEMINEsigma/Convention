@@ -1,8 +1,22 @@
-import sounddevice  as     sd
-import numpy        as     np
-import wave
-import keyboard
+from ..Internal import *
 from ..File.Core      import tool_file
+
+try:
+    import sounddevice  as     sd
+except ImportError:
+    InternalImportingThrow("Microphone", ["sounddevice"])
+try:
+    import numpy        as     np
+except ImportError:
+    InternalImportingThrow("Microphone", ["numpy"])
+try:
+    import wave
+except ImportError:
+    InternalImportingThrow("Microphone", ["wave"])
+try:
+    import keyboard
+except ImportError:
+    InternalImportingThrow("Microphone", ["keyboard"])
 
 class light_microphone:
     def __init__(self, sample_rate=44100, channels=2):

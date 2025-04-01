@@ -1,4 +1,9 @@
-import speech_recognition as sr
+from ..Internal import *
+
+try:
+    import speech_recognition as sr
+except ImportError:
+    InternalImportingThrow("Audio", ["SpeechRecognition"])
 
 class light_vocal:
     def __init__(self):

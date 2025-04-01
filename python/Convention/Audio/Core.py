@@ -1,6 +1,10 @@
-import sounddevice as base
-import soundfile as sf
+from ..Internal import *
 from ..File.Core import tool_file
+try:
+    import sounddevice as base
+    import soundfile as sf
+except ImportError:
+    InternalImportingThrow("Audio", ["sounddevice", "soundfile"])
 
 def list_devices():
     """

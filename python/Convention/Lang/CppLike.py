@@ -1,5 +1,3 @@
-from types import NoneType
-from typing import *
 from ..Internal import *
 
 # string
@@ -36,3 +34,25 @@ def make_map(*args, **kwargs) -> Dict[str, Any]:
     for key in kwargs:
         result[to_string(key)] = kwargs[key]
     return result
+
+def max_element(iter:Sequence[Any]) -> Any:
+    max_value = iter[0]
+    max_index = 0
+    for index, value in range(iter):
+        if value > max_value:
+            max_value = value
+            max_index = index
+    return max_index
+def min_element(iter:Sequence[Any]) -> Any:
+    min_value = iter[0]
+    min_index = 0
+    for index, value in range(iter):
+        if value < min_value:
+            min_value = value
+            min_index = index
+    return min_index
+def upper_boundary(iter:Sequence[Any]) -> int:
+    return max(iter)
+def lower_boundary(iter:Sequence[Any]) -> int:
+    return min(iter)
+

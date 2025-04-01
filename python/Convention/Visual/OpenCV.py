@@ -1,13 +1,18 @@
-from typing             import *
 from ..Internal     import *
 
-import cv2              as     base
-import cv2.data         as     BaseData
-from ..MathEx.Core  import *
-from PIL                import ImageFile, Image
+try:
+    import cv2          as     base
+    import cv2.data     as     BaseData
+except ImportError:
+    InternalImportingThrow("OpenCV", ["opencv-python"])
+try:
+    from PIL            import ImageFile, Image
+except ImportError:
+    InternalImportingThrow("OpenCV", ["Pillow"])
 
-#from ..Str.Core     import UnWrapper as Unwrapper2Str
-#from ..File.Core    import tool_file, Wrapper as Wrapper2File, tool_file_or_str, loss_file
+from ..MathEx.Core  import *
+from ..Str.Core     import UnWrapper as Unwrapper2Str
+from ..File.Core    import tool_file, Wrapper as Wrapper2File, tool_file_or_str, loss_file
 
 # OpenCV Image format is BGR
 # PIL Image format is RBG
@@ -634,6 +639,14 @@ class ImageObject(left_np_ndarray_reference):
     def both_flip(self):
         """双向翻转图片"""
         return self.flip(-1)
+
+    # 合并序列
+    def horizontal_stack(self, *images:Self):
+        """水平合并图片"""
+        return ImageObject(base.hconcat(self.image, *[image.image for image in images]))
+    def vertical_stack(self, *images:Self):
+        """垂直合并图片"""
+        return ImageObject(base.vconcat(self.image, *[image.image for image in images]))
 
     # 色彩空间猜测
     def guess_color_space(self) -> str:

@@ -2,7 +2,6 @@ from types          import TracebackType
 from typing         import *
 from abc            import *
 import                     sys
-from pydantic       import BaseModel
 import                     threading
 import                     traceback
 import                     datetime
@@ -54,6 +53,11 @@ def ReleaseFailed2Requirements():
         return
     with open("requirements.txt", 'w') as f:
         f.write("\n".join(ImportingFailedSet))
+
+try:
+    from pydantic import BaseModel
+except ImportError:
+    InternalImportingThrow("Internal", ["pydantic"])
 
 def virtual(func:Callable) -> Callable:
     try:

@@ -1,10 +1,18 @@
-from ...Internal import *
 from ...MathEx.Core import *
 from ...Visual.OpenCV import ImageObject, Wrapper as Wrapper2ImageObject
-import cv2
-import numpy as np
-import networkx as base
-from networkx.classes.reportviews import NodeView, EdgeView
+try:
+    import cv2
+except ImportError:
+    InternalImportingThrow("Algorithm.Graph", ["OpenCV"])
+try:
+    import numpy as np
+except ImportError:
+    InternalImportingThrow("Algorithm.Graph", ["numpy"])
+try:
+    import networkx as base
+    from networkx.classes.reportviews import NodeView, EdgeView
+except ImportError:
+    InternalImportingThrow("Algorithm.Graph", ["networkx"])
 
 type graph_node_type = Any
 type data_type = dict[str, Any]
