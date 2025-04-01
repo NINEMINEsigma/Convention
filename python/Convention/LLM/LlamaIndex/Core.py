@@ -65,6 +65,7 @@ from llama_index.core.base.base_query_engine    import BaseQueryEngine
 from llama_index.core.base.response.schema      import RESPONSE_TYPE
 from llama_index.core.base.llms.types           import LLMMetadata
 from llama_index.core.vector_stores.types       import MetadataFilters, VectorStoreQueryMode
+from llama_index.core.agent.runner.base         import AgentRunner
 
 # https://zhuanlan.zhihu.com/p/16349452850
 # Prompt -- Reader -- Index -- Retriever -- Query Engine -- Agent --Workflow
@@ -1733,7 +1734,22 @@ def make_function_tool(func:Callable, **kwargs) -> FunctionTool:
 # End Layer
 
 # Agent Layer - 代理层
-class ReActAgentCore(left_value_reference[ReActAgent]):
+class CustomAgentCore[_AgentRunner:AgentRunner](left_value_reference[_AgentRunner]):
+    """
+    基础代理类，用于管理代理相关的操作。
+    """
+    def __init__(
+        self,
+        agent_or_tools_and_llm: AgentRunner|Tuple[List[BaseTool], Optional[LLM]]|List[BaseTool],
+    ) -> None:
+        if isinstance(agent_or_tools_and_llm, AgentRunner):
+            super().__init__(agent_or_tools_and_llm)
+        elif isinstance(agent_or_tools_and_llm, tuple) and len(agent_or_tools_and_llm) == 2:
+            tools = agent_or_tools_and_llm[0]
+            c_llm = agent_or_tools_and_llm[1] if len(agent_or_tools_and_llm) > 1 else None
+            super().__init__(AgentRunner.from_tools())
+
+class ReActAgentCore(CustomAgentCore[ReActAgent]):
     """
     反应式代理核心类，用于管理反应式代理相关的操作。
     """
@@ -1811,7 +1827,7 @@ class ReActAgentCore(left_value_reference[ReActAgent]):
             )
         )
 
-class FunctionCallAgentCore(left_value_reference[FunctionCallingAgent]):
+class FunctionCallAgentCore(CustomAgentCore[FunctionCallingAgent]):
     """
     函数调用代理核心类，用于管理函数调用代理相关的操作。
     """
