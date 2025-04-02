@@ -23,7 +23,7 @@ namespace Convention.Workflow
         public string typeIndicator;
         public bool IsInmappingSlot;
 
-        public GraphNodeSlotInfo TemplateClone()
+        public virtual GraphNodeSlotInfo TemplateClone()
         {
             return new()
             {
@@ -47,6 +47,10 @@ namespace Convention.Workflow
             {
                 throw new InvalidOperationException($"{left} and {right} has different type indicator");
             }
+            if (left.info.targetNodeID == right.info.targetNodeID)
+            {
+                throw new InvalidOperationException($"{left} and {right} has same target node id");
+            }
             left.info.targetSlot = right;
             right.info.targetSlot = left;
 
@@ -61,6 +65,21 @@ namespace Convention.Workflow
 
             left.SetDirty();
             right.SetDirty();
+        }
+        public static void Unlink(GraphNodeSlot slot)
+        {
+            var targetSlot = slot.info.targetSlot;
+            slot.info.targetSlot = null;
+            slot.info.targetNode = null;
+            slot.info.targetNodeID = -1;
+            if(targetSlot != null)
+            {
+                targetSlot.info.targetSlot = null; 
+                targetSlot.info.targetNode = null;
+                targetSlot.info.targetNodeID = -1;
+                targetSlot.SetDirty();
+            }
+            slot.SetDirty();
         }
 
         public static GraphNodeSlot CurrentHighLightSlot { get; private set; }
@@ -153,6 +172,7 @@ namespace Convention.Workflow
         public void UpdateLineImmediate()
         {
             LineRenderer.positionCount = Points.Length;
+            title = info.slotName;
             LineRenderer.SetPositions(Points);
         }
 

@@ -6,6 +6,7 @@ import                     threading
 import                     traceback
 import                     datetime
 import                     platform
+import                     time
 if platform.system() == "Windows":
     from colorama       import Fore as ConsoleFrontColor, Back as ConsoleBackgroundColor, Style as ConsoleStyle
 
@@ -60,6 +61,9 @@ except ImportError:
     InternalImportingThrow("Internal", ["pydantic"])
 
 def virtual(func:Callable) -> Callable:
+    '''
+    你拥有覆写这个函数的权力, 这使得函数成为一个虚函数
+    '''
     try:
         if not hasattr(func, "__is_sealed__"):
             func.__is_virtual__ = True
@@ -69,6 +73,9 @@ def virtual(func:Callable) -> Callable:
         pass
     return func
 def sealed(func:Callable) -> Callable:
+    '''
+    密封这个函数, 这使得函数不可被@virtual装饰
+    '''
     try:
         if not hasattr(func, "__is_virtual__"):
             func.__is_sealed__ = True
@@ -78,6 +85,9 @@ def sealed(func:Callable) -> Callable:
         pass
     return func
 def final(func:Callable) -> Callable:
+    '''
+    取消该函数的虚函数特性, 这使得函数不可被继承
+    '''
     try:
         if hasattr(func, "__is_virtual__"):
             func.__is_final__ = True
@@ -87,10 +97,31 @@ def final(func:Callable) -> Callable:
     except AttributeError:
         pass
     return func
-
-
-false = False
-true = True
+def noexcept(func:Callable) -> Callable:
+    '''
+    该函数将不会抛出异常, 无论发生什么
+    '''
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            return None
+    return wrapper
+def throw(func:Callable, *args:Exception) -> Callable:
+    '''
+    该函数抛出的异常如果不在预期内, 将终止整个程序,
+    预期异常列表为空时, 也视为该函数不应抛出异常
+    '''
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            if e not in args:
+                print_colorful(ConsoleFrontColor.RED, f"Unexpected exception: {e}")
+                sys.exit(-1)
+            else:
+                return None
+    return wrapper
 
 type Typen[_T] = type
 
@@ -677,13 +708,62 @@ def nowf() -> str:
     '''
     return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-if __name__ == "__main__":
-    ref = left_value_reference[int](5.5)
-    print(ref.ToString())
-    print(ref.GetType())
-    print(ref.SymbolName())
-    print(ref.ref_value)
-    print(ref)
+__All_BaseBehavior:List['BaseBehavior'] = []
+class BaseBehavior(any_class):
+    @virtual
+    def OnUpdate(self) -> None:
+        '''
+        尽可能的在每一个逻辑tick中调用
+        '''
+        pass
+    @virtual
+    def OnFixedUpdate(self) -> None:
+        '''
+        尽可能的在每一个定时的物理tick中调用
+        '''
+        pass
+    @virtual
+    def OnLateUpdate(self) -> None:
+        '''
+        尽可能的在每一个逻辑tick的末尾调用
+        '''
+        pass
+    def __init__(self):
+        pass
+__BehaviorThread:Optional[thread_instance] = None
+__BehaviorThread_FixedUpdateDeltaTime:float = 1/60
+def AwakeBehaviorThread(*, fixedUpdateDeltaTime:float=1/60):
+    '''
+    唤醒一个线程用于运行所有BaseBehavior的生命周期方法,
+    try OnFixedUpdate -- OnUpdate -- try OnFixedUpdate -- OnLateUpdate -- 循环
+    OnFixedUpdate会尝试总在固定的时间间隔后进行调用
 
-
+    返回:
+        thread_instance, 该线程不会自动结束, 需要手动结束
+    '''
+    global __BehaviorThread
+    global __BehaviorThread_FixedUpdateDeltaTime
+    if __BehaviorThread is not None:
+        raise RuntimeError("BehaviorThread already exists")
+    def runner():
+        clock: left_value_reference[float] = time.time()
+        def try_fixed_update():
+            if time.time() - clock.ref_value >= __BehaviorThread_FixedUpdateDeltaTime:
+                for behavior in __All_BaseBehavior:
+                    behavior.OnFixedUpdate()
+                clock.ref_value = time.time()
+        while True:
+            for behavior in __All_BaseBehavior:
+                behavior.OnUpdate()
+            try_fixed_update()
+            for behavior in __All_BaseBehavior:
+                behavior.OnLateUpdate()
+            try_fixed_update()
+    __BehaviorThread = thread_instance(runner, is_del_join=False)
+    __BehaviorThread_FixedUpdateDeltaTime = fixedUpdateDeltaTime
+def StopBehaviorThread():
+    global __BehaviorThread
+    if __BehaviorThread is not None:
+        __BehaviorThread.join()
+        __BehaviorThread = None
 

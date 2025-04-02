@@ -536,6 +536,8 @@ def UnWrapper(from_) -> str:
         return str(from_)
     elif isinstance(from_, IO):
         return from_.name
+    elif isinstance(from_, left_value_reference) and isinstance(from_.ref_value, str):
+        return from_.ref_value
 
     ReEx = light_reflection(from_)
     if ReEx.contains_method("to_string"):

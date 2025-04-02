@@ -90,10 +90,14 @@ class PermissionError(FileOperationError):
 
 class tool_file(any_class):
 
-    __datas_lit_key:    Literal["model"] = "model"
+    __datas_lit_key:    Literal["model"]    = "model"
+    __file_path:        str                 = None
+    __file:             IO[Any]             = None
+    data:               Any                 = None
+    datas:              Dict[str, Any]      = {}
 
     def __init__(
-        self, 
+        self,
         file_path:          Union[str, Self],
         file_mode:          str = None,
         *args, **kwargs
@@ -598,10 +602,10 @@ class tool_file(any_class):
         """
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         if output_path is None:
             output_path = self.get_path() + ('.zip' if format == 'zip' else '.tar')
-            
+
         try:
             if format == 'zip':
                 with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -621,7 +625,7 @@ class tool_file(any_class):
                         tarf.add(self.get_path(), arcname=self.get_filename())
             else:
                 raise CompressionError(f"Unsupported compression format: {format}")
-                
+
             return tool_file(output_path)
         except Exception as e:
             raise CompressionError(f"Compression failed: {str(e)}")
@@ -636,10 +640,10 @@ class tool_file(any_class):
         """
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         if output_path is None:
             output_path = self.get_path() + '_extracted'
-            
+
         try:
             if self.get_extension() == 'zip':
                 with zipfile.ZipFile(self.get_path(), 'r') as zipf:
@@ -649,7 +653,7 @@ class tool_file(any_class):
                     tarf.extractall(output_path)
             else:
                 raise CompressionError(f"Unsupported archive format: {self.get_extension()}")
-                
+
             return tool_file(output_path)
         except Exception as e:
             raise CompressionError(f"Decompression failed: {str(e)}")
@@ -668,7 +672,7 @@ class tool_file(any_class):
         from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         try:
             # 生成加密密钥
             salt = os.urandom(16)
@@ -679,22 +683,22 @@ class tool_file(any_class):
                 iterations=100000,
             )
             key = base64.urlsafe_b64encode(kdf.derive(key.encode()))
-            
+
             # 创建加密器
             f = Fernet(key)
-            
+
             # 读取文件内容
             with open(self.get_path(), 'rb') as file:
                 file_data = file.read()
-            
+
             # 加密数据
             encrypted_data = f.encrypt(file_data)
-            
+
             # 保存加密后的文件
             encrypted_path = self.get_path() + '.encrypted'
             with open(encrypted_path, 'wb') as file:
                 file.write(salt + encrypted_data)
-                
+
             return tool_file(encrypted_path)
         except Exception as e:
             raise EncryptionError(f"Encryption failed: {str(e)}")
@@ -713,16 +717,16 @@ class tool_file(any_class):
         from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         try:
             # 读取加密文件
             with open(self.get_path(), 'rb') as file:
                 file_data = file.read()
-            
+
             # 提取salt和加密数据
             salt = file_data[:16]
             encrypted_data = file_data[16:]
-            
+
             # 生成解密密钥
             kdf = PBKDF2HMAC(
                 algorithm=hashes.SHA256(),
@@ -731,18 +735,18 @@ class tool_file(any_class):
                 iterations=100000,
             )
             key = base64.urlsafe_b64encode(kdf.derive(key.encode()))
-            
+
             # 创建解密器
             f = Fernet(key)
-            
+
             # 解密数据
             decrypted_data = f.decrypt(encrypted_data)
-            
+
             # 保存解密后的文件
             decrypted_path = self.get_path() + '.decrypted'
             with open(decrypted_path, 'wb') as file:
                 file.write(decrypted_data)
-                
+
             return tool_file(decrypted_path)
         except Exception as e:
             raise EncryptionError(f"Decryption failed: {str(e)}")
@@ -758,21 +762,21 @@ class tool_file(any_class):
         """
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         try:
             # 获取哈希算法
             hash_algo = getattr(hashlib, algorithm.lower())
             if not hash_algo:
                 raise HashError(f"Unsupported hash algorithm: {algorithm}")
-                
+
             # 创建哈希对象
             hasher = hash_algo()
-            
+
             # 分块读取文件并更新哈希值
             with open(self.get_path(), 'rb') as f:
                 while chunk := f.read(chunk_size):
                     hasher.update(chunk)
-                    
+
             return hasher.hexdigest()
         except Exception as e:
             raise HashError(f"Hash calculation failed: {str(e)}")
@@ -788,7 +792,7 @@ class tool_file(any_class):
         """
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         try:
             actual_hash = self.calculate_hash(algorithm)
             return actual_hash.lower() == expected_hash.lower()
@@ -806,19 +810,19 @@ class tool_file(any_class):
         """
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         try:
             # 计算哈希值
             hash_value = self.calculate_hash(algorithm)
-            
+
             # 生成输出路径
             if output_path is None:
                 output_path = self.get_path() + f'.{algorithm}'
-                
+
             # 保存哈希值
             with open(output_path, 'w') as f:
                 f.write(f"{hash_value} *{self.get_filename()}")
-                
+
             return tool_file(output_path)
         except Exception as e:
             raise HashError(f"Hash saving failed: {str(e)}")
@@ -845,7 +849,7 @@ class tool_file(any_class):
         from watchdog.events   import FileSystemEventHandler
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         try:
             class EventHandler(FileSystemEventHandler):
                 def __init__(self, callback, ignore_patterns, ignore_directories, case_sensitive):
@@ -853,30 +857,30 @@ class tool_file(any_class):
                     self.ignore_patterns = ignore_patterns or []
                     self.ignore_directories = ignore_directories
                     self.case_sensitive = case_sensitive
-                    
+
                 def should_ignore(self, path: str) -> bool:
                     if self.ignore_directories and os.path.isdir(path):
                         return True
                     if not self.case_sensitive:
                         path = path.lower()
                     return any(pattern in path for pattern in self.ignore_patterns)
-                    
+
                 def on_created(self, event):
                     if not self.should_ignore(event.src_path):
                         self.callback('created', event.src_path)
-                        
+
                 def on_modified(self, event):
                     if not self.should_ignore(event.src_path):
                         self.callback('modified', event.src_path)
-                        
+
                 def on_deleted(self, event):
                     if not self.should_ignore(event.src_path):
                         self.callback('deleted', event.src_path)
-                        
+
                 def on_moved(self, event):
                     if not self.should_ignore(event.src_path):
                         self.callback('moved', f"{event.src_path} -> {event.dest_path}")
-            
+
             # 创建事件处理器
             event_handler = EventHandler(
                 callback=callback,
@@ -884,16 +888,16 @@ class tool_file(any_class):
                 ignore_directories=ignore_directories,
                 case_sensitive=case_sensitive
             )
-            
+
             # 创建观察者
             observer = Observer()
             observer.schedule(event_handler, self.get_path(), recursive=recursive)
-            
+
             # 启动监控
             observer.start()
             if is_log:
                 print(f"Started monitoring {self.get_path()}")
-            
+
             try:
                 while True:
                     time.sleep(1)
@@ -901,9 +905,9 @@ class tool_file(any_class):
                 observer.stop()
                 if is_log:
                     print("Stopped monitoring")
-                
+
             observer.join()
-            
+
         except Exception as e:
             raise FileMonitorError(f"Failed to start monitoring: {str(e)}")
 
@@ -926,18 +930,18 @@ class tool_file(any_class):
         """
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         try:
             # 生成备份目录
             if backup_dir is None:
                 backup_dir = os.path.join(self.get_dir(), '.backup')
             backup_dir:Self = tool_file(backup_dir)
             backup_dir.must_exists_path()
-            
+
             # 生成备份文件名
             timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
             backup_name = f"{self.get_filename()}_{timestamp}"
-            
+
             # 创建备份
             if backup_format == 'zip':
                 backup_path = backup_dir | f"{backup_name}.zip"
@@ -959,7 +963,7 @@ class tool_file(any_class):
                         tarf.add(self.get_path(), arcname=self.get_filename())
             else:
                 raise BackupError(f"Unsupported backup format: {backup_format}")
-            
+
             # 添加元数据
             if include_metadata:
                 metadata = {
@@ -972,16 +976,16 @@ class tool_file(any_class):
                 metadata_path = backup_dir | f"{backup_name}.meta.json"
                 with open(metadata_path.get_path(), 'w') as f:
                     json.dump(metadata, f, indent=4)
-            
+
             # 清理旧备份
             if max_backups > 0:
                 backups = backup_dir.find_file(lambda f: tool_file(f).get_filename().startswith(self.get_filename() + '_'))
                 backups.sort(key=lambda f: f.get_filename(), reverse=True)
                 for old_backup in backups[max_backups:]:
                     old_backup.remove()
-            
+
             return backup_path
-            
+
         except Exception as e:
             raise BackupError(f"Backup failed: {str(e)}")
 
@@ -1002,16 +1006,16 @@ class tool_file(any_class):
         """
         if not isinstance(backup_file, tool_file):
             backup_file:Self = tool_file(backup_file)
-            
+
         if not backup_file.exists():
             raise FileNotFoundError(f"Backup file not found: {backup_file.get_path()}")
-            
+
         try:
             # 确定恢复路径
             if restore_path is None:
                 restore_path = self.get_path()
             restore_path:Self = tool_file(restore_path)
-            
+
             # 解压备份
             if backup_file.get_extension() == 'zip':
                 with zipfile.ZipFile(backup_file.get_path(), 'r') as zipf:
@@ -1021,7 +1025,7 @@ class tool_file(any_class):
                     tarf.extractall(restore_path.get_path())
             else:
                 raise BackupError(f"Unsupported backup format: {backup_file.get_extension()}")
-            
+
             # 验证哈希值
             if verify_hash:
                 metadata_path = backup_file.get_path()[:-len(backup_file.get_extension())-1] + '.meta.json'
@@ -1031,9 +1035,9 @@ class tool_file(any_class):
                     restored_file = tool_file(restore_path.get_path())
                     if restored_file.calculate_hash() != metadata['hash']:
                         raise BackupError("Hash verification failed")
-            
+
             return restore_path
-            
+
         except Exception as e:
             raise BackupError(f"Restore failed: {str(e)}")
 
@@ -1045,16 +1049,16 @@ class tool_file(any_class):
         """
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         try:
             backup_dir:Self = tool_file(os.path.join(self.get_dir(), '.backup'))
             if not backup_dir.exists():
                 return []
-                
+
             backups = backup_dir.find_file(lambda f: tool_file(f).get_filename().startswith(self.get_filename() + '_'))
             backups.sort(key=lambda f: tool_file(f).get_filename(), reverse=True)
             return backups
-            
+
         except Exception as e:
             raise BackupError(f"Failed to list backups: {str(e)}")
 
@@ -1070,7 +1074,7 @@ class tool_file(any_class):
         """
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         try:
             mode = os.stat(self.get_path()).st_mode
             return {
@@ -1103,33 +1107,33 @@ class tool_file(any_class):
         """
         if not self.exists():
             raise FileNotFoundError(f"File not found: {self.get_path()}")
-            
+
         try:
             # 获取当前权限
             current_perms = os.stat(self.get_path()).st_mode
-            
+
             # 设置新权限
             if read is not None:
                 if read:
                     current_perms |= stat.S_IRUSR
                 else:
                     current_perms &= ~stat.S_IRUSR
-                    
+
             if write is not None:
                 if write:
                     current_perms |= stat.S_IWUSR
                 else:
                     current_perms &= ~stat.S_IWUSR
-                    
+
             if execute is not None:
                 if execute:
                     current_perms |= stat.S_IXUSR
                 else:
                     current_perms &= ~stat.S_IXUSR
-                    
+
             # 应用权限
             os.chmod(self.get_path(), current_perms)
-            
+
             # 设置隐藏属性
             if hidden is not None:
                 if os.name == 'nt':  # Windows
@@ -1145,7 +1149,7 @@ class tool_file(any_class):
                     else:
                         if self.get_filename().startswith('.'):
                             self.rename(self.get_filename()[1:])
-            
+
             # 递归设置目录权限
             if recursive and self.is_dir():
                 for root, _, files in os.walk(self.get_path()):
@@ -1166,9 +1170,9 @@ class tool_file(any_class):
                                 os.chmod(file_path, os.stat(file_path).st_mode | stat.S_IXUSR)
                             else:
                                 os.chmod(file_path, os.stat(file_path).st_mode & ~stat.S_IXUSR)
-            
+
             return self
-            
+
         except Exception as e:
             raise PermissionError(f"Failed to set permissions: {str(e)}")
 

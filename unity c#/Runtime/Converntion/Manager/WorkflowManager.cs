@@ -47,7 +47,7 @@ namespace Convention.Workflow
         private RectTransform focusObject;
         private List<SharedModule.CallbackData> callbackDatas = new();
 
-        public void SetupWorkflowGraphNodeTypes(string label, [In] GraphNodeInfo template)
+        public void SetupWorkflowGraphNodeType(string label, [In] GraphNodeInfo template)
         {
             callbackDatas.Add(new(label, x =>
                 {
@@ -107,6 +107,7 @@ namespace Convention.Workflow
         public GraphNode CreateGraphNode([In] GraphNodeInfo info)
         {
             var node = GameObject.Instantiate(GraphNodePrefab, ContentPlane).GetComponent<GraphNode>();
+            workflow.Nodes.Add(node);
             node.SetupFromInfo(info);
             return node;
         }
@@ -137,11 +138,9 @@ namespace Convention.Workflow
                 throw new FileNotFoundException($"{parent} is not exist");
             var currentWorkflow = workflow;
             currentWorkflow.Datas.Clear();
-            for (int i = 0, e = currentWorkflow.Nodes.Count; i != e; i++)
+            foreach(var node in currentWorkflow.Nodes)
             {
-                var node = currentWorkflow.Nodes[i];
-                var info = currentWorkflow.Datas[i];
-                info.position = node.transform.position;
+                node.info.CopyFromNode(node);
                 currentWorkflow.Datas.Add(node.info);
             }
             local.data = currentWorkflow;
