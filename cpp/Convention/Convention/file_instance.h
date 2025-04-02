@@ -3,6 +3,7 @@
 
 #include "Convention/Interface.h"
 #include <filesystem>
+#include <optional>
 #include "Convention/stream_instance.h"
 
 extern bool is_binary_file(const std::filesystem::path& path);
@@ -355,8 +356,32 @@ public:
 		this->stream = _Stream(std::forward<_Args>(args)...);
 		return *this;
 	}
-	
 
+	using monitor_callback = std::function<void(const std::string&, const path&)>;
+	instance& compress(const path& output_path = "", const std::string& format = "cab");
+	instance& decompress(const path& output_path = "");
+	instance& encrypt(const std::string& key, const std::string& algorithm = "AES");
+	instance& decrypt(const std::string& key, const std::string& algorithm = "AES");
+	std::string calculate_hash(const std::string& algorithm = "md5");
+	void start_monitoring(
+		monitor_callback callback,
+		bool recursive = false,
+		const std::vector<std::string>& ignore_patterns = {},
+		bool ignore_directories = false
+	);
+	instance create_backup(
+		const path& backup_dir = "",
+		size_t max_backups = 5,
+		const std::string& backup_format = "bak",
+		bool include_metadata = true
+	);
+	std::map<std::string, bool> get_permissions();
+	instance& set_permissions(
+		std::optional<bool> read = std::nullopt,
+		std::optional<bool> write = std::nullopt,
+		std::optional<bool> execute = std::nullopt,
+		bool recursive = false
+	);
 private:
 
 };

@@ -34,14 +34,16 @@ void InsertSort2();
 void CountingSort();
 
 void GenerateParenthesis();
+void TwoWayPrefixAnd();
 
 static map<string, descriptive_indicator<function<void(void)>>> algorithms = {
-	make_algorithm(SelectSort, "sorting/select"),
-	make_algorithm(BubbleSort, "sorting/bubble"),
-	make_algorithm(InsertSort, "sorting/insert"),
-	make_algorithm(InsertSort2, "sorting/insert-o"),
-	make_algorithm(CountingSort, "sorting/count"),
-	make_algorithm(GenerateParenthesis, "others/GenerateParenthesis")
+	make_algorithm(SelectSort, "sorting/选择"),
+	make_algorithm(BubbleSort, "sorting/冒泡"),
+	make_algorithm(InsertSort, "sorting/插入"),
+	make_algorithm(InsertSort2, "sorting/插入-优化"),
+	make_algorithm(CountingSort, "sorting/计数"),
+	make_algorithm(GenerateParenthesis, "回溯/生成括号对"),
+	make_algorithm(TwoWayPrefixAnd,"前缀和/接雨水")
 };
 
 #pragma endregion
@@ -121,7 +123,7 @@ void config_checker(instance<config_indicator::tag>& config)
 	}
 	else
 	{
-		string a_va = "GenerateParenthesis";
+		string a_va = "TwoWayPrefixAnd";
 		is_lowstep = true;
 		delay = 0.0000000000000001;
 		SetConsoleTitleA(a_va.c_str());
@@ -153,13 +155,7 @@ void config_algorithm(instance<config_indicator::tag>& config, function<void(voi
 	cout << endl;
 }
 
-#pragma region Enumerate Algorithms
-
-
-
-#pragma endregion
-
-#pragma region Sorting Algorithms
+#pragma region Draw
 
 string draw_single_label(
 	string label,
@@ -255,6 +251,123 @@ void current_sorting_array_numbers(
 	cout << buffer << endl;
 	wait();
 }
+
+string draw_colorful_line(
+	int i, int fill_size,
+	vector<int>& numbers,
+	const map<int, map<int, ConsoleBackgroundColor>>& indexs
+)
+{
+	string buffer;
+	//numbers
+	buffer += " | ";
+	buffer += GetBackgroundColorCodeA(ConsoleBackgroundColor::White);
+	int current = i < numbers.size() ? numbers[i] : 0;
+	int max_number = *max_element(numbers.begin(), numbers.end());
+	if (max_number < fill_size)
+	{
+		int pos = 0;
+		if(indexs.count(i))
+			for (auto&& [e, color] : indexs.find(i)->second)
+			{
+				if (e > current)
+				{
+					buffer += GetBackgroundColorCodeA(color) + string(current - pos, ' ');
+					pos = current;
+					break;
+				}
+				buffer += GetBackgroundColorCodeA(color) + string(e - pos, ' ');
+				pos = e;
+			}
+		buffer += GetBackgroundColorCodeA(ConsoleBackgroundColor::White);
+		buffer += string(std::max(0, current - pos), ' ');
+		buffer += GetColorCodeA(ConsoleColor::None) + GetBackgroundColorCodeA(ConsoleBackgroundColor::None);
+		buffer += string(std::max(0, fill_size - 1 - current), ' ');
+	}
+	else
+	{
+		int numberxx = std::log10(current);
+		int front_size = std::max(0, current * fill_size / max_number - numberxx - 1);
+		if (current != 0)
+		{
+			int pos = 0;
+			if(indexs.count(i))
+				for (auto&& tup : indexs.find(i)->second)
+				{
+					int e = std::log10(get<0>(tup));
+					auto&& color = get<1>(tup);
+					if (e > numberxx)
+					{
+						buffer += GetBackgroundColorCodeA(color) + string(numberxx - pos, ' ');
+						pos = numberxx;
+						break;
+					}
+					buffer += GetBackgroundColorCodeA(color) + string(e - pos, ' ');
+					pos = e;
+				}
+			buffer += GetBackgroundColorCodeA(ConsoleBackgroundColor::White);
+			buffer += string(std::max(0, current - pos), ' ');
+			buffer += GetColorCodeA(ConsoleColor::Black) + to_string(current);
+		}
+		buffer += GetColorCodeA(ConsoleColor::None) + GetBackgroundColorCodeA(ConsoleBackgroundColor::None);
+		buffer += string(std::max(0, fill_size - front_size - numberxx - 1), ' ');
+	}
+	return buffer;
+}
+void current_colorful_array_numbers(
+	vector<int>& numbers,
+	const map<int, map<int, ConsoleBackgroundColor>>& indexs
+)
+{
+	string buffer;
+	buffer.reserve(4096);
+	size_t fill_size = global_config.try_int_value("fillsize", *max_element(numbers.begin(), numbers.end()) + 3);
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), COORD{ 0,0 });
+	for (int i = 0, e = numbers.size(); i < e; i++)
+	{
+		buffer += draw_colorful_line(i, fill_size, numbers, indexs) + "\n";
+	}
+	cout << buffer << endl;
+	wait();
+}
+void current_colorful_array_numbers(
+	vector<string> label_list,
+	vector<vector<int>*> numbers_list,
+	vector<map<int, map<int, ConsoleBackgroundColor>>> indexs_list
+)
+{
+	string buffer;
+	buffer.reserve(4096);
+	size_t fill_size = global_config.try_int_value("fillsize", *max_element(numbers_list[0]->begin(), numbers_list[0]->end()) + 3);
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), COORD{ 0,0 });
+	for (int i = 0, e = label_list.size(); i != e; i++)
+		buffer += draw_single_label(label_list[i], fill_size, *numbers_list[i]);
+	buffer += "\n";
+	int e = 0;
+	for (auto&& ptr : numbers_list)
+		e = std::max<int>(e, ptr->size());
+	for (int i = 0; i < e; i++)
+	{
+		//numbers
+		for (int j = 0, je = label_list.size(); j != je; j++)
+			buffer += draw_colorful_line(i, fill_size, *numbers_list[j], indexs_list[j]);
+		buffer += "\n";
+	}
+	cout << buffer << endl;
+	wait();
+}
+
+#pragma endregion
+
+
+#pragma region Enumerate Algorithms
+
+
+
+#pragma endregion
+
+#pragma region Sorting Algorithms
+
 
 void SelectSort()
 {
@@ -512,7 +625,6 @@ void CountingSort()
 		"for (int i = numbers.size() - 1; i > 0; --i) results[cnt[numbers[i]]--] = numbers[i];" << endl;
 }
 
-
 #pragma endregion
 
 #pragma region DFS Algorithms
@@ -548,6 +660,10 @@ void __generateParenthesis(int left, int right, int depth, string str, vector<in
 void GenerateParenthesis()
 {
 	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
+	if (upboundary > 8)
+	{
+		upboundary = 8;
+	}
 	vector<int> drawbuffer = { 0, 0 ,0 };
 	__generateParenthesis(upboundary, 0, upboundary * 2, "", drawbuffer);
 	cout << "\n" <<
@@ -556,6 +672,143 @@ void GenerateParenthesis()
 		"if (right > 0)" << "\n" <<
 		"	dfs(left, right - 1, str + ')', results);" << "\n" <<
 		"if (left + right == 0) result.push_back(str);" << endl;
+}
+
+#pragma endregion
+
+#pragma region PrefixAnd
+
+void TwoWayPrefixAnd()
+{
+	vector<int> height;
+	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
+	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
+	{
+		double x = (rand() % upboundary / (double)upboundary);
+		height.push_back((x * x) * upboundary);
+	}
+	int n = height.size();
+	vector<int> left(n, 0), right(n, 0);
+	vector<int> draw_array(n, 0);
+	map<int, map<int, ConsoleBackgroundColor>> draw_colors;
+	if (is_lowstep)
+	{
+		for (int i = 1; i != n; i++)
+		{
+			draw_colors[i][height[i]] = ConsoleBackgroundColor::Yellow;
+			draw_array[i] = height[i];
+		}
+		draw_colors[0][*draw_array.begin() = *left.begin() = *height.begin()] = ConsoleBackgroundColor::Green;
+		for (int left_i = 1; left_i != n; left_i++)
+		{
+			draw_colors[left_i][left[left_i] = std::max(left[left_i - 1], height[left_i])] = ConsoleBackgroundColor::Green;
+			draw_array[left_i] = std::max(draw_array[left_i], left[left_i]);
+			auto linecolor = make_pair(left_i, map<int, ConsoleBackgroundColor>{make_pair(draw_array[left_i], ConsoleBackgroundColor::Yellow)});
+			current_colorful_array_numbers(
+				{ "graph","left","right","height" },
+				{ &draw_array, &left, &right, &height },
+				{ draw_colors, {linecolor}, {linecolor}, {linecolor} });
+		}
+		draw_colors[n - 1][*draw_array.rbegin() = *right.rbegin() = *height.rbegin()] = ConsoleBackgroundColor::Red;
+		for (int right_i = n - 2; right_i != -1; right_i--)
+		{
+			draw_colors[right_i][right[right_i] = std::max(right[right_i + 1], height[right_i + 1])] = ConsoleBackgroundColor::Red;
+			draw_array[right_i] = std::max(draw_array[right_i], right[right_i]);
+			auto linecolor = make_pair(right_i, map<int, ConsoleBackgroundColor>{make_pair(draw_array[right_i], ConsoleBackgroundColor::Yellow)});
+			current_colorful_array_numbers(
+				{ "graph","left","right","height" },
+				{ &draw_array, &left, &right, &height },
+				{ draw_colors, {linecolor}, {linecolor}, {linecolor} });
+		}
+		int result = 0;
+		wait(), wait(), wait(), wait(), wait();
+		map<int, map<int, ConsoleBackgroundColor>> draw_colors2;
+		map<int, map<int, ConsoleBackgroundColor>> water_color;
+		vector<int> height2 = height;
+		for (int i = 0; i != n; i++)
+		{
+			water_color[i][height[i]] = draw_colors2[i][height[i]] = ConsoleBackgroundColor::Yellow;
+		}
+		for (int i = 0; i != n; i++)
+		{
+			int cheight = std::min(right[i], left[i]);
+			int cur = std::max(0, cheight - height[i]);
+			if (cur > 0)
+			{
+				draw_colors[i][cheight] = ConsoleBackgroundColor::Blue;
+				draw_colors2[i][cheight] = ConsoleBackgroundColor::Blue;
+				height2[i] = std::max(height2[i], cheight);
+				result += cur;
+				water_color[i][cheight] = ConsoleBackgroundColor::Blue;
+				auto linecolor = make_pair(i, map<int, ConsoleBackgroundColor>{make_pair(cheight, ConsoleBackgroundColor::Yellow)});
+				current_colorful_array_numbers(
+					{ "graph","left","right","height&water" },
+					{ &draw_array, &left, &right, &height2 },
+					{ draw_colors2, {linecolor}, {linecolor}, {water_color} });
+				wait(), wait();
+				current_colorful_array_numbers(
+					{ "graph","left","right","height&water" },
+					{ &draw_array, &left, &right, &height2 },
+					{ draw_colors, {linecolor}, {linecolor}, {water_color} });
+				wait(), wait();
+				current_colorful_array_numbers(
+					{ "graph","left","right","height&water" },
+					{ &draw_array, &left, &right, &height2 },
+					{ draw_colors2, {linecolor}, {linecolor}, {water_color} });
+			}
+		}
+	}
+	else
+	{
+		draw_colors[0][*draw_array.begin() = *left.begin() = *height.begin()] = ConsoleBackgroundColor::Green;
+		draw_colors[n - 1][*draw_array.rbegin() = *right.rbegin() = *height.rbegin()] = ConsoleBackgroundColor::Red;
+		for (int i = 1; i != n; i++)
+		{
+			int left_i = i, right_i = n - i - 1;
+			draw_colors[left_i][left[left_i] = std::max(left[left_i - 1], height[left_i])] = ConsoleBackgroundColor::Green;
+			draw_colors[right_i][right[right_i] = std::max(right[right_i + 1], height[right_i + 1])] = ConsoleBackgroundColor::Red;
+			draw_colors[left_i][height[left_i]] = ConsoleBackgroundColor::Yellow;
+			draw_colors[right_i][height[right_i]] = ConsoleBackgroundColor::Yellow;
+
+			draw_array[left_i] = std::max(draw_array[left_i], left[left_i]);
+			draw_array[right_i] = std::max(draw_array[right_i], right[right_i]);
+			current_colorful_array_numbers(
+				{ "graph","left","right","height" },
+				{ &draw_array, &left, &right, &height },
+				{ draw_colors,{}, {}, {} });
+		}
+		int result = 0;
+		for (int i = 0; i != n; i++)
+		{
+			int cheight = std::min(right[i], left[i]) - height[i];
+			int cur = std::max(0, cheight - height[i]);
+			if (cur > 0)
+			{
+				draw_colors[i][cheight] = ConsoleBackgroundColor::Blue;
+				result += cur;
+				current_colorful_array_numbers(
+					{ "graph","left","right","height" },
+					{ &draw_array, &left, &right, &height },
+					{ draw_colors,{}, {}, {} });
+			}
+		}
+	}
+	current_colorful_array_numbers(
+		{ "graph","left","right","height" },
+		{ &draw_array, &left, &right, &height },
+		{ draw_colors,{}, {}, {} });
+	cout << "\n" <<
+		"int n = height.size();" << "\n" <<
+		"vector<int> left(n, 0), right(n, 0);" << "\n" <<
+		"*left.begin() = *height.begin();" << "\n" <<
+		"for (int i = 1; i != n; i++)" << "\n" <<
+		"	left[i] = std::max(left[i - 1], height[i]);" << "\n" <<
+		"*right.rbegin() = *height.rbegin();" << "\n" <<
+		"for (int i = n - 2; i != -1; i--)" << "\n" <<
+		"	right[i] = std::max(right[i + 1], height[i]);" << "\n" <<
+		"int result = 0;" << "\n" <<
+		"for (int i = 0; i != n; i++)" << "\n" <<
+		"	result += std::max(0, std::min(right[i], left[i]) - height[i]);" << endl;
 }
 
 #pragma endregion
