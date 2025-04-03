@@ -1686,10 +1686,13 @@ def make_base_document_tool(
     return FunctionTool.from_defaults(
     )
 def function_tool(
-    func:           Callable,
+    fn:             Optional[Callable]          = None,
+    *,
     return_direct:  bool                        = False,
     fn_schema:      Optional[type[BaseModel]]   = None,
-    tool_metadata:  Optional[ToolMetadata]      = None
+    tool_metadata:  Optional[ToolMetadata]      = None,
+    fn_name:        Optional[str]               = None,
+    fn_description: Optional[str]               = None,
     ) -> Callable:
     '''
     装饰器,用于将函数转换为FunctionTool
@@ -1706,16 +1709,30 @@ def function_tool(
 
     目前只支持非异步函数
     '''
-    try:
-        func.__function_tool_status__           = True
-        func.__function_tool_name__             = func.__name__
-        func.__function_tool_description__      = func.__doc__
-        func.__function_tool_return_direct__    = return_direct
-        func.__function_tool_fn_schema__        = fn_schema
-        func.__function_tool_tool_metadata__    = tool_metadata
-    except AttributeError:
-        pass
-    return func
+    if fn is None:
+        def wrapper(func:Callable):
+            try:
+                func.__function_tool_status__           = True
+                func.__function_tool_name__             = fn_name or func.__name__
+                func.__function_tool_description__      = fn_description or func.__doc__
+                func.__function_tool_return_direct__    = return_direct
+                func.__function_tool_fn_schema__        = fn_schema
+                func.__function_tool_tool_metadata__    = tool_metadata
+            except AttributeError:
+                pass
+            return func
+        return wrapper
+    else:
+        try:
+            fn.__function_tool_status__           = True
+            fn.__function_tool_name__             = fn_name or fn.__name__
+            fn.__function_tool_description__      = fn_description or fn.__doc__
+            fn.__function_tool_return_direct__    = return_direct
+            fn.__function_tool_fn_schema__        = fn_schema
+            fn.__function_tool_tool_metadata__    = tool_metadata
+        except AttributeError:
+            pass
+        return fn
 def make_function_tool(func:Callable, **kwargs) -> FunctionTool:
     config = {}
     if func.__function_tool_status__:

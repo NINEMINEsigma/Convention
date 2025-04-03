@@ -37,20 +37,20 @@ action_name:Literal["action"] = "action" # 动作名称
 工作流的整个构建流程如下:
 ---
     开始节点(只有输出映射, 自身能够加载本地或云端资源或实例作为输出参数初始化上下文参数)
-        
+
     上游步骤节点(输入映射可选, 有输出映射, 通过获取上游节点的参数, 调用函数, 输出并更新上下文,
             没有输入的步骤节点与开始节点等同, 但是自身不能加载资源或实例, 只能通过函数的返回值生成输出)
 
     下游步骤节点(有输入映射与输出映射, 通过获取上游节点的参数, 调用函数, 输出并更新上下文)
 
     终止节点(只有输入映射, 获取上游节点的参数, 汇总后生成本节点的内容, 本节点将展示最终输出结果)
-    
+
 工作流的整个命令与事件传递流程如下:
 ---
     终止节点:
         开始尝试获取上游节点参数, 广播StartEvent, 接收到全部参数后构建最终结果,
         当全部终止节点都完成后广播StopEvent
-    
+
     上游步骤节点:
         相关的输出槽被获取时, 开始获取上游节点参数, 接收到全部参数后, 调用函数, 广播StepEvent, 输出并更新上下文,
         接收到StopEvent后, 停止
@@ -269,7 +269,7 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
     @sealed
     async def GetParameter(self) -> context_value_type:
         '''
-        异步函数, 获取参数, 
+        异步函数, 获取参数,
         输出槽:
             当参数还未被节点设置时触发节点, 等待擦参数被设置
         输入槽:
@@ -302,7 +302,7 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
         清除参数, 接收到StopEvent后调用
         '''
         self.__parameter = None
-    
+
 class Node(left_value_reference[NodeInfo], BaseBehavior):
     """
     节点
@@ -313,7 +313,7 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
 
     __m_Inmapping:Dict[str, NodeSlot] = {}
     __m_Outmapping:Dict[str, NodeSlot] = {}
-    
+
     @sealed
     def ClearLink(self) -> None:
         self.__m_Inmapping.clear()
@@ -321,7 +321,7 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     @sealed
     def BuildLink(self) -> None:
         for slot_name, info in self.info.inmapping.items():
-            
+
             self.__m_Inmapping[slot_name] = NodeSlot(info.TemplateClone())
         for slot_name, info in self.info.outmapping.items():
             self.__m_Outmapping[slot_name] = NodeSlot(info.TemplateClone())
@@ -410,14 +410,14 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     @virtual
     async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
         raise NotImplementedError(f"节点类型<{self.__class__.__name__}>未实现_run_step方法")
-        
+
 class Workflow(BaseModel, any_class):
     """
     工作流信息
     """
     Datas:        List[NodeInfo] = Field(description="节点信息", default=[])
     Nodes:        List[Node]     = Field(description="节点, 此变量需要手动同步, nodeID的懒加载目标", default=[], exclude=True)
-    
+
     @classmethod
     def CreateTemplate(cls) -> Self:
         return cls(
@@ -473,7 +473,7 @@ class WorkflowManager(left_value_reference[Workflow]):
         self.workflow.Nodes.append(node)
         node.SetupFromInfo(info)
         return node
-    
+
     def DestroyNode(self, node:Node) -> None:
         self.workflow.Nodes.remove(node)
 
@@ -570,16 +570,16 @@ class WorkflowManager(left_value_reference[Workflow]):
         try:
             self.__state = WorkflowState()
             self.__state.start_time = time.time()
-            
+
             # 启动工作流
             await EndNode.Start()
-            
+
             # 等待完成或超时
             while not self.__state.is_completed:
                 if time.time() - self.__state.start_time > self.__timeout:
                     raise WorkflowTimeoutError(f"工作流执行超时: {self.__timeout}秒")
                 await asyncio.sleep(0.1)
-                
+
         except Exception as e:
             self.__state.error = str(e)
             self.__state.end_time = time.time()
@@ -604,7 +604,7 @@ class StartNode(Node):
     @override
     async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
         raise NotImplementedError(f"开始节点<{self.__class__.__name__}>未实现_DoRunStep方法")
-    
+
 class StartNodeInfo(NodeInfo):
     """
     开始节点信息, 属于开始节点, 用于开始工作流
@@ -623,15 +623,15 @@ class StepNode(Node):
     async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
         func = WorkflowActionWrapper.GetActionWrapper(self.info.funcname)
         return func(**self.GetParameters())
-    
+
 class StepNodeInfo(NodeInfo):
     """
     步骤节点, 在工作流中触发
     """
     funcname:action_label_type = Field(description="函数键名", default="unknown")
-    
+
     def __init__(
-        self, 
+        self,
         funcname:action_label_type,
         ) -> None:
         '''
@@ -659,7 +659,7 @@ class EndNode(Node):
     @override
     async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
         return await self.GetParameters()
-    
+
     @override
     def OnStartEvent(self, event:Any) -> None:
         super().OnStartEvent(event)
@@ -670,7 +670,7 @@ class EndNode(Node):
     @override
     def OnStopEvent(self, event:Any) -> None:
         super().OnStopEvent(event)
-    
+
     @classmethod
     async def Start(cls) -> None:
         '''
@@ -679,7 +679,7 @@ class EndNode(Node):
         global __Internal_All_EndNodes
         if len(__Internal_All_EndNodes) == 0:
             return
-        global __Internal_Task_Count    
+        global __Internal_Task_Count
         __Internal_Task_Count = len(__Internal_All_EndNodes)
         __Internal_All_EndNodes[0].Broadcast(WorkflowStartEvent())
         while __Internal_Task_Count > 0:
@@ -692,7 +692,7 @@ class EndNode(Node):
         '''
         global __Internal_Task_Count
         __Internal_Task_Count = 0
-    
+
 class EndNodeInfo(NodeInfo):
     """
     结束节点信息, 属于结束节点, 用于结束工作流
@@ -746,14 +746,14 @@ class WorkflowValidator:
         """验证工作流"""
         # 检查循环
         WorkflowValidator._check_cycles(workflow)
-        
+
         # 检查开始节点和结束节点
         has_end_node = False
-        
+
         for node in workflow.Nodes:
             if isinstance(node, EndNode):
                 has_end_node = True
-                
+
         if not has_end_node:
             raise WorkflowValidationError("工作流缺少结束节点(EndNode)")
 
@@ -817,7 +817,7 @@ class ResourceNodeInfo(StartNodeInfo):
     """
     resource:   str = Field(description="文件地址或url地址", default="unknown")
     def __init__(
-        self, 
+        self,
         resource:str,
         **kwargs
         ) -> None:

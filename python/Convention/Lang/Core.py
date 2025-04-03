@@ -1,3 +1,4 @@
+import multiprocessing.shared_memory
 from ..Internal import *
 import                 threading
 import                 multiprocessing
@@ -137,9 +138,14 @@ class ProcessCore(left_value_reference[multiprocessing.Process]):
     @staticmethod
     def shared_memory(name: str, create: bool = False, size: int = 0) -> multiprocessing.shared_memory.SharedMemory:
         """创建或访问共享内存"""
-        if create:
-            return multiprocessing.shared_memory.SharedMemory(name=name, create=True, size=size)
-        return multiprocessing.shared_memory.SharedMemory(name=name)
+        try:
+            if create:
+                return multiprocessing.shared_memory.SharedMemory(name=name, create=True, size=size)
+            return multiprocessing.shared_memory.SharedMemory(name=name)
+        except FileNotFoundError:
+            raise ValueError(f"找不到共享内存 '{name}'")
+        except Exception as e:
+            raise RuntimeError(f"访问共享内存时出错: {e}")
 
 #一些工具
 def split_elements(

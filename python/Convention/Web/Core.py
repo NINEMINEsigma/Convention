@@ -345,6 +345,16 @@ def http_default_serve_forever(PORT):
         print(f"Serving at port {PORT}")
         httpd.serve_forever()
 
+def build_web_header(url:str) -> Dict[str, str]:
+    return {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+        "Referer": url,
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
+    }
+
 class tool_url(any_class):
     '''
     工具类，用于处理URL相关操作
@@ -620,7 +630,7 @@ class tool_url(any_class):
             return False
 
     async def download_async(
-        self, 
+        self,
         save_path:          str,
         chunk_size:         int = 8192,
         progress_callback:  Callable[[int, int], None] = None
@@ -974,6 +984,108 @@ class tool_url(any_class):
     def __del__(self):
         """析构函数"""
         self.close()
+
+async def web_search(url: str, query: str, num_results: int = 10) -> List[Dict[str, str]]:
+    """
+    在url上执行搜索并返回搜索结果列表。
+    Args:
+        url (str): 搜索的url。
+        query (str): 提交给 Bing 的搜索查询。
+        num_results (int, optional): 要返回的搜索结果数量。默认为 10。
+    Returns:
+        List[Dict[str, str]]:
+            title: 标题
+            url: 链接
+            description: 描述
+    """
+    import urllib.parse
+    import aiohttp
+    from bs4 import BeautifulSoup
+
+    encoded_query = urllib.parse.quote(query)
+    url = f"{url}/search?q={encoded_query}&count={num_results}"
+    headers = build_web_header(url)
+    results:List[Dict[str, str]] = []
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as response:
+                if response.status == 200:
+                    html = await response.text()
+                    soup = BeautifulSoup(html, "html.parser")
+                    # 提取搜索结果
+                    search_results = soup.select("li.b_algo")
+                    count = 0
+                    for result in search_results:
+                        if count >= num_results:
+                            break
+                        # 提取标题和链接
+                        title_element = result.select_one("h2 a")
+                        if not title_element:
+                            continue
+                        title = title_element.get_text(strip=True)
+                        link = title_element.get("href", "")
+                        # 提取描述
+                        abstract = ""
+                        abstract_element = result.select_one(".b_caption p")
+                        if abstract_element:
+                            abstract = abstract_element.get_text(strip=True)
+                        results.append({
+                            "title": title,
+                            "url": link,
+                            "description": abstract
+                        })
+                        count += 1
+                else:
+                    return [{"title": "搜索失败", "url": "", "description": f"HTTP状态码: {response.status}"}]
+    except Exception as e:
+        return [{"title": "搜索出错", "url": "", "description": str(e)}]
+    return results
+
+def get_webpage_text(url: str) -> str:
+    """
+    获取网页的全部文本内容
+
+    使用示例:
+    ```python
+    text = get_webpage_text("https://example.com")
+    ```
+
+    Args:
+        url (str): 网页URL
+
+    Returns:
+        str: 网页的纯文本内容
+    """
+    import requests
+    from bs4 import BeautifulSoup
+
+    try:
+        # 发送GET请求获取网页内容
+        response = requests.get(url, headers=build_web_header(url))
+        response.raise_for_status()  # 检查请求是否成功
+
+        # 使用BeautifulSoup解析HTML
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # 移除script和style标签
+        for script in soup(["script", "style"]):
+            script.decompose()
+
+        # 获取纯文本
+        text = soup.get_text()
+
+        # 清理文本
+        lines = (line.strip() for line in text.splitlines())
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        text = ' '.join(chunk for chunk in chunks if chunk)
+
+        return text
+
+    except requests.RequestException as e:
+        return f"获取网页内容失败: {str(e)}"
+    except Exception as e:
+        return f"处理网页内容时出错: {str(e)}"
+
 
 #class light_handler(BaseHTTPRequestHandler):
 #    def __init__(self, request, client_address, server, callback):
