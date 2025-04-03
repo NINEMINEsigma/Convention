@@ -2,7 +2,7 @@
 Convention - A comprehensive Python utility library
 """
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 #from . import Algorithm
 #from . import Audio
