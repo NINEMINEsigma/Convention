@@ -84,8 +84,10 @@ namespace Convention.Workflow
 
         public void RefreshImmediate()
         {
-            ClearWorkflowGraph();
-            BuildWorkflowGraph();
+            foreach (var node in workflow.Nodes)
+            {
+                node.RefreshImmediate();
+            }
         }
         public void ClearWorkflowGraph()
         {
@@ -98,9 +100,9 @@ namespace Convention.Workflow
         }
         public void BuildWorkflowGraph()
         {
-            foreach (var node in workflow.Nodes)
+            foreach (var info in workflow.Datas)
             {
-                node.RefreshImmediate();
+                CreateGraphNode(info);
             }
         }
 

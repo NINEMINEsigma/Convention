@@ -417,6 +417,14 @@ class Workflow(BaseModel, any_class):
     """
     Datas:        List[NodeInfo] = Field(description="节点信息", default=[])
     Nodes:        List[Node]     = Field(description="节点, 此变量需要手动同步, nodeID的懒加载目标", default=[], exclude=True)
+    
+    @classmethod
+    def CreateTemplate(cls) -> Self:
+        return cls(
+            Datas=[
+                EndNodeInfo()
+            ]
+        )
 
 class WorkflowActionWrapper(left_value_reference[Callable], invoke_callable):
     def __init__(self, name:action_label_type, action:Callable):
@@ -491,11 +499,14 @@ class WorkflowManager(left_value_reference[Workflow]):
 
     def ClearWorkflow(self) -> Self:
         self.ref_value.Datas.clear()
+        self.ref_value.Nodes.clear()
         return self
 
     def BuildWorkflow(self) -> Self:
         """构建工作流"""
         try:
+            for info in self.ref_value.Datas:
+                self.CreateNode(info)
             WorkflowValidator.validate_workflow(self.workflow)
             return self
         except WorkflowValidationError as e:
@@ -503,8 +514,8 @@ class WorkflowManager(left_value_reference[Workflow]):
             raise
 
     def RefreshImmediate(self) -> Self:
-        self.ClearWorkflow()
-        self.BuildWorkflow()
+        for node in self.ref_value.Nodes:
+            node.RefreshImmediate()
         return None
 
     def ContainsNode(self, id:int) -> bool:
@@ -586,71 +597,23 @@ class WorkflowManager(left_value_reference[Workflow]):
         self.__state = WorkflowState.load(file)
         return self.__state
 
-# 以下为实例化部分
-
-class ResourceNode(Node):
+class StartNode(Node):
     """
-    资源节点, 属于开始节点, 用于加载资源
+    开始节点, 工作流的起点
     """
     @override
     async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
-        resourcesInfo:ResourceNodeInfo = self.info
-        resource:str = resourcesInfo.resource
-        stats = self.is_start and self.GetResult() is None
-        if stats:
-            file = tool_file(resource)
-            if file.exists():
-                return file.load()
-        if stats:
-            url = tool_url(resource)
-            if url.is_valid():
-                if url.is_downloadable():
-                    return await url.download_async()
-        if stats:
-            raise ValueError(f"无法获取的资源<{resource}>")
-        else:
-            return None
-
-class ResourceNodeInfo(NodeInfo):
+        raise NotImplementedError(f"开始节点<{self.__class__.__name__}>未实现_DoRunStep方法")
+    
+class StartNodeInfo(NodeInfo):
     """
-    资源节点信息, 属于开始节点, 用于加载资源
+    开始节点信息, 属于开始节点, 用于开始工作流
     """
-    resource:   str = Field(description="文件地址或url地址", default="unknown")
-    def __init__(
-        self, 
-        resource:str,
-        **kwargs
-        ) -> None:
+    def __init__(self, **kwargs:Any) -> None:
         super().__init__(**kwargs)
-        self.resource = resource
     @override
     def Instantiate(self) -> Node:
-        return ResourceNode(self)
-
-class TextNode(Node):
-    """
-    文本节点, 属于开始节点, 用于加载文本
-    """
-    @override
-    async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
-        info:TextNodeInfo = self.info
-        return info.text
-
-class TextNodeInfo(NodeInfo):
-    """
-    文本节点信息, 属于开始节点, 用于加载文本
-    """
-    text:str = Field(description="文本", default="unknown")
-    def __init__(
-        self,
-        text:str,
-        **kwargs
-        ) -> None:
-        super().__init__(**kwargs)
-        self.text = text
-    @override
-    def Instantiate(self) -> Node:
-        return TextNode(self)
+        raise NotImplementedError(f"开始节点<{self.__class__.__name__}>未实现Instantiate方法")
 
 class StepNode(Node):
     """
@@ -785,17 +748,12 @@ class WorkflowValidator:
         WorkflowValidator._check_cycles(workflow)
         
         # 检查开始节点和结束节点
-        has_start_node = False
         has_end_node = False
         
         for node in workflow.Nodes:
-            if isinstance(node, ResourceNode) or isinstance(node, TextNode):
-                has_start_node = True
-            elif isinstance(node, EndNode):
+            if isinstance(node, EndNode):
                 has_end_node = True
                 
-        if not has_start_node:
-            raise WorkflowValidationError("工作流缺少开始节点(ResourceNode或TextNode)")
         if not has_end_node:
             raise WorkflowValidationError("工作流缺少结束节点(EndNode)")
 
@@ -828,3 +786,68 @@ class WorkflowValidator:
             if node.info.nodeID not in visited:
                 dfs(node.info.nodeID)
 
+# 以下为实例化部分
+
+class ResourceNode(StartNode):
+    """
+    资源节点, 属于开始节点, 用于加载资源
+    """
+    @override
+    async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
+        resourcesInfo:ResourceNodeInfo = self.info
+        resource:str = resourcesInfo.resource
+        stats = self.is_start and self.GetResult() is None
+        if stats:
+            file = tool_file(resource)
+            if file.exists():
+                return file.load()
+        if stats:
+            url = tool_url(resource)
+            if url.is_valid():
+                if url.is_downloadable():
+                    return await url.download_async()
+        if stats:
+            raise ValueError(f"无法获取的资源<{resource}>")
+        else:
+            return None
+
+class ResourceNodeInfo(StartNodeInfo):
+    """
+    资源节点信息, 属于开始节点, 用于加载资源
+    """
+    resource:   str = Field(description="文件地址或url地址", default="unknown")
+    def __init__(
+        self, 
+        resource:str,
+        **kwargs
+        ) -> None:
+        super().__init__(**kwargs)
+        self.resource = resource
+    @override
+    def Instantiate(self) -> Node:
+        return ResourceNode(self)
+
+class TextNode(StartNode):
+    """
+    文本节点, 属于开始节点, 用于加载文本
+    """
+    @override
+    async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
+        info:TextNodeInfo = self.info
+        return info.text
+
+class TextNodeInfo(StartNodeInfo):
+    """
+    文本节点信息, 属于开始节点, 用于加载文本
+    """
+    text:str = Field(description="文本", default="unknown")
+    def __init__(
+        self,
+        text:str,
+        **kwargs
+        ) -> None:
+        super().__init__(**kwargs)
+        self.text = text
+    @override
+    def Instantiate(self) -> Node:
+        return TextNode(self)
