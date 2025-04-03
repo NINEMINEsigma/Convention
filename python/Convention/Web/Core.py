@@ -619,16 +619,19 @@ class tool_url(any_class):
             print(f"Download failed: {str(e)}")
             return False
 
-    def download_async(self, save_path: str, chunk_size: int = 8192,
-                      progress_callback: Callable[[int, int], None] = None) -> bool:
+    async def download_async(
+        self, 
+        save_path:          str,
+        chunk_size:         int = 8192,
+        progress_callback:  Callable[[int, int], None] = None
+        ) -> bool:
         """异步下载URL指向的资源"""
         import aiohttp
         import asyncio
         import os
 
-        async def download():
-            try:
-                async with aiohttp.ClientSession() as session:
+        try:
+            async with aiohttp.ClientSession() as session:
                     async with session.get(self.__url) as response:
                         response.raise_for_status()
 
@@ -643,12 +646,10 @@ class tool_url(any_class):
                                     downloaded += len(chunk)
                                     if progress_callback:
                                         progress_callback(downloaded, total_size)
-                return True
-            except Exception as e:
-                print(f"Async download failed: {str(e)}")
-                return False
-
-        return asyncio.run(download())
+            return True
+        except Exception as e:
+            print(f"Async download failed: {str(e)}")
+            return False
 
     def download_with_resume(self, save_path: str, chunk_size: int = 8192) -> bool:
         """支持断点续传的下载"""

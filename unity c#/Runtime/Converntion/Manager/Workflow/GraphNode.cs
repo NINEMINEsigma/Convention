@@ -139,6 +139,7 @@ namespace Convention.Workflow
 
         public void RefreshImmediate()
         {
+            //TODO要在断连之前保存连接信息, 在重建后重新连接
             ClearLink();
             RefreshPosition();
             BuildLink();
@@ -174,13 +175,16 @@ namespace Convention.Workflow
                 InSlotCount--;
                 var slot = InSlots[InSlotCount].ref_value.GetComponent<GraphNodeSlot>();
                 m_Inmapping.Add(key, slot);
-                slot.SetupFromInfo(new()
-                {
-                    parentNode = slotInfo.parentNode,
-                    slot = slot,
-                    slotName = slotInfo.slotName,
-                    typeIndicator = slotInfo.typeIndicator
-                });
+                //slot.SetupFromInfo(new()
+                //{
+                //    parentNode = slotInfo.parentNode,
+                //    slot = slot,
+                //    slotName = slotInfo.slotName,
+                //    typeIndicator = slotInfo.typeIndicator
+                //});
+                var info = slotInfo.TemplateClone();
+                info.parentNode = this;
+                slot.SetupFromInfo(info);
             }
             int OutSlotCount = info.outmapping.Count;
             OutSlots = CreateGraphNodeSlots(OutSlotCount);
@@ -189,13 +193,16 @@ namespace Convention.Workflow
                 OutSlotCount--;
                 var slot = OutSlots[OutSlotCount].ref_value.GetComponent<GraphNodeSlot>();
                 m_Outmapping.Add(key, slot);
-                slot.SetupFromInfo(new()
-                {
-                    parentNode = slotInfo.parentNode,
-                    slot = slot,
-                    slotName = slotInfo.slotName,
-                    typeIndicator = slotInfo.typeIndicator
-                });
+                //slot.SetupFromInfo(new()
+                //{
+                //    parentNode = slotInfo.parentNode,
+                //    slot = slot,
+                //    slotName = slotInfo.slotName,
+                //    typeIndicator = slotInfo.typeIndicator
+                //});
+                var info = slotInfo.TemplateClone();
+                info.parentNode = this;
+                slot.SetupFromInfo(info);
             }
             InoutContainerPlane.AdjustSizeToContainsChilds();
         }

@@ -728,6 +728,14 @@ class BaseBehavior(any_class):
         尽可能的在每一个逻辑tick的末尾调用
         '''
         pass
+    @sealed
+    def Broadcast(self, event:Any, funcname:str) -> None:
+        '''
+        向所有Behavior广播事件
+        '''
+        for behavior in __All_BaseBehavior:
+            if hasattr(behavior, funcname):
+                getattr(behavior, funcname)(event)
     def __init__(self):
         pass
 __BehaviorThread:Optional[thread_instance] = None

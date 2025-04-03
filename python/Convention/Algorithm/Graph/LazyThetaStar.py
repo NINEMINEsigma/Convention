@@ -2,7 +2,7 @@ import heapq
 import math
 import numpy as np
 from ...Internal import *
-from .Core import QuadTree, Octree, graph_core
+from .Core import QuadTree, Octree, GraphCore
 
 class Vector3D(any_class):
     """表示3D空间中的一个点"""
@@ -629,12 +629,12 @@ class LazyThetaStarPathFinder(any_class):
         return None
 
 # 创建一个包装类，将LazyThetaStar与graph_core集成
-class LazyThetaStarGraph(left_value_reference[graph_core]):
+class LazyThetaStarGraph(left_value_reference[GraphCore]):
     """将LazyThetaStar与graph_core集成的包装类"""
 
-    def __init__(self, graph: graph_core = None):
+    def __init__(self, graph: GraphCore = None):
         """初始化LazyThetaStarGraph"""
-        super().__init__(graph if graph is not None else graph_core())
+        super().__init__(graph if graph is not None else GraphCore())
         self.pathfinder = LazyThetaStarPathFinder(self.ref_value)
 
     def create_quadtree_from_graph(self, boundary: Tuple[float, float, float, float], capacity: int = 4) -> QuadTree:
@@ -700,7 +700,7 @@ class LazyThetaStarGraph(left_value_reference[graph_core]):
         }
 
 def find_path_lazy_theta_star_2d(
-    graph:                  graph_core,
+    graph:                  GraphCore,
     start:                  Tuple[float, float],
     end:                    Tuple[float, float],
     boundary:               Tuple[float, float, float, float],
@@ -737,7 +737,7 @@ def find_path_lazy_theta_star_2d(
         return lazy_theta_star.find_path_2d(quadtree, start, end, neighbor_distance)
 
 def find_path_lazy_theta_star_3d(
-    graph:                  graph_core,
+    graph:                  GraphCore,
     start:                  Tuple[float, float, float],
     end:                    Tuple[float, float, float],
     boundary:               Tuple[float, float, float, float, float, float],

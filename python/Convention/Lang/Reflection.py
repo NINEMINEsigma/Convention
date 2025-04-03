@@ -16,7 +16,7 @@ type_symbols = {
     'NoneType' : type(None),
     }
 
-def get_type_from_string(type_string:str):
+def get_type_from_string(type_string:str) -> type:
         """根据字符串生成类型"""
         if type_string in type_symbols:
             return type_symbols[type_string]

@@ -276,7 +276,7 @@ class Octree(any_class):
         """查询范围内的点"""
         return self.root.query(range_box)
 
-class graph_core(left_value_reference[base.Graph]):
+class GraphCore(left_value_reference[base.Graph]):
     def __init__(self, graph:Optional[base.Graph] = None, is_directed:bool = False):
         if graph is None and is_directed:
             graph = base.DiGraph()
@@ -581,9 +581,9 @@ class graph_core(left_value_reference[base.Graph]):
         """
         return Octree(boundary, capacity)
 
-def QuadTree2Graph(tree:QuadTree) -> graph_core:
+def QuadTree2Graph(tree:QuadTree) -> GraphCore:
         """将四叉树转换为图"""
-        G = graph_core()
+        G = GraphCore()
 
         # 使用BFS遍历四叉树并构建图
         queue = [tree.root]
@@ -606,7 +606,7 @@ def QuadTree2Graph(tree:QuadTree) -> graph_core:
 
         return G
 
-def Graph3QuadTree(G: graph_core) -> QuadTree:
+def Graph3QuadTree(G: GraphCore) -> QuadTree:
         """从图构建四叉树
 
         Parameters
@@ -675,9 +675,9 @@ def Graph3QuadTree(G: graph_core) -> QuadTree:
 
         return tree
 
-def Octree2Graph(tree:Octree) -> graph_core:
+def Octree2Graph(tree:Octree) -> GraphCore:
         """将八叉树转换为图"""
-        G = graph_core()
+        G = GraphCore()
 
         # 使用BFS遍历八叉树并构建图
         queue = [tree.root]
@@ -705,7 +705,7 @@ def Octree2Graph(tree:Octree) -> graph_core:
 
         return G
 
-def Graph2Octree(G: graph_core) -> Octree:
+def Graph2Octree(G: GraphCore) -> Octree:
         """从图构建八叉树
 
         Parameters
