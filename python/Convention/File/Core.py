@@ -267,7 +267,15 @@ class tool_file(any_class):
     def load_as_json(self) -> pd.DataFrame:
         if self.is_open() is False or 'w' in self.__file.mode:
             self.open('r')
-        self.data = json.load(self.__file)
+        json_data = json.load(self.__file)
+        try:
+            from pydantic import BaseModel
+            if "__type" in json_data and "pydantic.BaseModel" in json_data["__type"]:
+                del json_data["__type"]
+                json_data = BaseModel.model_validate(json_data)
+        except:
+            pass
+        self.data = json_data
         return self.data
     def load_as_csv(self) -> pd.DataFrame:
         if self.is_open() is False or 'w' in self.__file.mode:
@@ -313,6 +321,8 @@ class tool_file(any_class):
         return self.data
     def load_as_unknown(self, suffix:str) -> Any:
         return self.load_as_text()
+    def load_as_model(self, model:type[BaseModel]) -> BaseModel:
+        return model.model_validate(self.load_as_json())
 
     def save(self, path:Optional[str]=None):
         if path is None and self.__file_path is None:
@@ -344,10 +354,18 @@ class tool_file(any_class):
             self.save_as_unknown(path)
         return self
     def save_as_json(self, path:Optional[str]=None):
+        json_data = self.data
+        try:
+            from pydantic import BaseModel
+            if isinstance(json_data, BaseModel):
+                json_data = json_data.model_dump()
+                json_data["__type"] = f"{self.data.__class__.__name__}, pydantic.BaseModel"
+        except:
+            pass
         path = path if path is not None else self.__file_path
         self.close()
         with open(path, 'w', encoding='utf-8') as f:
-            json.dump(self.data, f, indent=4)
+            json.dump(json_data, f, indent=4)
         return self
     def save_as_csv(self, path:Optional[str]=None):
         path = path if path is not None else self.__file_path
@@ -401,6 +419,8 @@ class tool_file(any_class):
         return self
     def save_as_unknown(self, path:Optional[str]=None):
         self.save_as_text(path)
+    def save_as_model(self, model:type[BaseModel], path:Optional[str]=None):
+        self.save_as_json(path)
 
     def get_size(self) -> int:
         '''

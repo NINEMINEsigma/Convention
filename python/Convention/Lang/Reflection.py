@@ -3,7 +3,7 @@ import inspect
 import types
 from typing import *
 from ..Internal import *
-
+from pydantic import BaseModel, Field
 type_symbols = {
     'int' : int,
     'float' : float,
@@ -46,7 +46,6 @@ def get_type_from_string(type_string:str) -> type:
                 print("second check in:{}".format(globals()))
                 print("third check in:{}".format(dir(__import__(__name__))))
                 raise TypeError(f"Cannot find type '{type_string}', type_string is <{type_string}>") from ex
-
 
 class light_reflection(any_class):
     def __init__(self, obj:object, type_str:str=None, *args, **kwargs):
@@ -138,20 +137,121 @@ class light_reflection(any_class):
 
         return typen(**init_args)
 
-# 示例使用
-if __name__ == "__main__":
-    reflection = light_reflection(None)
+class MemberInfo(BaseModel, any_class):
+    MemberName:   str = Field(default="", description="名称")
+    ParentType:   type = Field(default_factory=type, description="所属类型")
 
-    # 创建内置类型的实例
-    int_instance = reflection.create_instance_ex("int", 42)
-    print(int_instance)  # 输出：42
+class FieldInfo(BaseModel, any_class):
+    FieldName:    str = Field(default="", description="字段名")
+    FieldType:    type = Field(default_factory=type, description="字段类型")
+    ParentType:   type = Field(default_factory=type, description="所属类型")
 
-    # 创建当前模块中的类型的实例
-    reflection_instance = reflection.create_instance_ex("light_reflection", {'obj':None})
-    print(reflection_instance)  # 输出：<__main__.light_reflection object at 0x...>
+    def GetValue(self, obj:object) -> object:
+        return getattr(obj, self.FieldName)
+    def SetValue(self, obj:object, value:object) -> None:
+        if not isinstance(value, self.FieldType):
+            raise TypeError(f"Value type mismatch, expected {self.FieldType}, got {type(value)}")
+        setattr(obj, self.FieldName, value)
 
-    # 尝试创建不存在的类型的实例
-    try:
-        unknown_instance = reflection.create_instance_ex("non_existent_type", params={})
-    except TypeError as e:
-        print(e)  # 输出：Cannot find type 'non_existent_type'
+class RefType(BaseModel, any_class):
+    _RealType:      type = Field(default_factory=type, description="类型")
+    _IsPrimitive:   bool = Field(default=False, description="是否为基本类型")
+    _IsValueType:   bool = Field(default=False, description="是否为值类型")
+    _IsCollection:  bool = Field(default=False, description="是否为容器")
+    _IsDictionary:  bool = Field(default=False, description="是否为字典")
+    _IsTuple:       bool = Field(default=False, description="是否为元组")
+    _IsSet:         bool = Field(default=False, description="是否为集合")
+    _IsList:        bool = Field(default=False, description="是否为列表")
+    _IsUnsupported: bool = Field(default=False, description="是否为不支持的类型")
+
+    _FieldInfo:     List[FieldInfo] = Field(default_factory=list, description="字段信息")
+
+    @property
+    def RealType(self) -> type:
+        return self._RealType
+    @property
+    def IsCollection(self) -> bool:
+        return self._IsCollection
+    @property
+    def IsPrimitive(self) -> bool:
+        return self._IsPrimitive
+    @property
+    def IsValueType(self) -> bool:
+        return self._IsValueType
+    @property
+    def IsDictionary(self) -> bool:
+        return self._IsDictionary
+    @property
+    def IsTuple(self) -> bool:
+        return self._IsTuple
+    @property
+    def IsSet(self) -> bool:
+        return self._IsSet
+    @property
+    def IsList(self) -> bool:
+        return self._IsList
+
+    def __init__(self, type:type):
+        self._RealType = type
+        BaseModel.__init__(self)
+        any_class.__init__(self)
+
+        self._IsPrimitive = (
+            issubclass(type, int) or
+            issubclass(type, float) or
+            issubclass(type, str) or
+            issubclass(type, bool) or
+            issubclass(type, complex) or
+            issubclass(type, tuple) or
+            issubclass(type, set) or
+            issubclass(type, list) or
+            issubclass(type, dict)
+            )
+        self._IsValueType = (
+            issubclass(type, int) or
+            issubclass(type, float) or
+            issubclass(type, str) or
+            issubclass(type, bool) or
+            issubclass(type, complex)
+            )
+        self._IsCollection = (
+            issubclass(type, list) or
+            issubclass(type, dict) or
+            issubclass(type, tuple) or
+            issubclass(type, set)
+            )
+        self._IsDictionary = (
+            issubclass(type, dict)
+            )
+        self._IsTuple = (
+            issubclass(type, tuple)
+            )
+        self._IsSet = (
+            issubclass(type, set)
+            )
+        self._IsList = (
+            issubclass(type, list)
+            )
+
+
+
+
+_Internal_TypeManager:Optional['TypeManager'] = None
+
+class TypeManager(BaseModel, any_class):
+    _RefTypes:Dict[type, RefType] = Field(default_factory=dict, description="全体类型")
+
+    @classmethod
+    def GetInstance(cls) -> Self:
+        global _Internal_TypeManager
+        if _Internal_TypeManager is None:
+            _Internal_TypeManager = cls()
+        return _Internal_TypeManager
+
+    def CreateOrGetRefType(self, type:type) -> RefType:
+        if type in self._RefTypes:
+            return self._RefTypes[type]
+        else:
+            ref_type = RefType(type)
+            self._RefTypes[type] = ref_type
+            return ref_type

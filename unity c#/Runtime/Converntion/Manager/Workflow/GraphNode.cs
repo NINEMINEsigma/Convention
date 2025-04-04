@@ -53,6 +53,14 @@ namespace Convention.Workflow
             nodeID = WorkflowManager.instance.GetGraphNodeID(node);
             title = node.title;
             position = node.transform.position;
+            foreach (var (key, inslot) in node.m_Inmapping)
+            {
+                inmapping[key] = inslot.info;
+            }
+            foreach (var (key, outslot) in node.m_Outmapping)
+            {
+                outmapping[key] = outslot.info;
+            }
         }
     }
     public class StartEvent : AnyClass
@@ -93,8 +101,8 @@ namespace Convention.Workflow
 
         private List<PropertiesWindow.ItemEntry> InSlots, OutSlots;
 
-        private Dictionary<string, GraphNodeSlot> m_Inmapping = new();
-        private Dictionary<string, GraphNodeSlot> m_Outmapping = new();
+        internal Dictionary<string, GraphNodeSlot> m_Inmapping = new();
+        internal Dictionary<string, GraphNodeSlot> m_Outmapping = new();
 
         [Resources, SerializeField, OnlyNotNullMode] private BaseWindowPlane InoutContainerPlane;
 

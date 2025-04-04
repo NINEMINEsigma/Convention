@@ -11,8 +11,11 @@ if platform.system() == "Windows":
     from colorama       import Fore as ConsoleFrontColor, Back as ConsoleBackgroundColor, Style as ConsoleStyle
 
 INTERNAL_DEBUG = False
+def SetInternalDebug(mode:bool):
+    global INTERNAL_DEBUG
+    INTERNAL_DEBUG = mode
 
-def print_colorful(color:str, *args, is_reset:bool=False, **kwargs):
+def print_colorful(color:str, *args, is_reset:bool=True, **kwargs):
     if is_reset:
         print(color,*args,ConsoleStyle.RESET_ALL, **kwargs)
     else:
@@ -189,7 +192,7 @@ def format_traceback_info():
     return ''.join(traceback.format_stack()[:-1])
 
 class type_class:
-    generate_trackback: str = None
+    generate_trackback: Optional[str] = None
     def __init__(self):
         self.generate_trackback = format_traceback_info()
     def GetType(self):
@@ -302,10 +305,12 @@ class base_value_reference[_T](type_class):
             action(self)
         return self
 
+    @virtual
     def __repr__(self):
         if self._ref_value is None:
             return f"{self.GetRealType()}<None>"
         return f"{self.GetRealType()}&"
+    @virtual
     def __str__(self):
         if self._ref_value is None:
             return "None"
@@ -729,10 +734,12 @@ class BaseBehavior(any_class):
         '''
         pass
     @sealed
-    def Broadcast(self, event:Any, funcname:str) -> None:
+    def Broadcast(self, event:Any, funcname:Optional[str] = None) -> None:
         '''
         向所有Behavior广播事件
         '''
+        if funcname is None:
+            funcname = f"On{event.__class__.__name__}"
         for behavior in _all_base_behavior:
             if hasattr(behavior, funcname):
                 getattr(behavior, funcname)(event)
@@ -745,6 +752,13 @@ class BaseBehavior(any_class):
 
 _behavior_thread:Optional[thread_instance] = None
 _behavior_thread_fixed_update_delta_time:float = 1/60
+_behavior_thread_is_running:bool = False
+
+_behavior_debug_hook:Optional[Action[None]] = None
+
+def SetBehaviorDebugHook(hook:Optional[Action[Exception]]):
+    global _behavior_debug_hook
+    _behavior_debug_hook = hook
 
 def AwakeBehaviorThread(*, fixedUpdateDeltaTime:float=1/60):
     '''
@@ -757,29 +771,46 @@ def AwakeBehaviorThread(*, fixedUpdateDeltaTime:float=1/60):
     '''
     global _behavior_thread
     global _behavior_thread_fixed_update_delta_time
+    global _behavior_thread_is_running
     if _behavior_thread is not None:
         raise RuntimeError("BehaviorThread already exists")
     def runner():
-        clock: left_value_reference[float] = time.time()
+        clock: left_value_reference[float] = left_value_reference[float](time.time())
         global _all_base_behavior
         def try_fixed_update():
             if time.time() - clock.ref_value >= _behavior_thread_fixed_update_delta_time:
                 for behavior in _all_base_behavior:
                     behavior.OnFixedUpdate()
                 clock.ref_value = time.time()
-        while True:
-            for behavior in _all_base_behavior:
-                behavior.OnUpdate()
-            try_fixed_update()
-            for behavior in _all_base_behavior:
-                behavior.OnLateUpdate()
-            try_fixed_update()
+        while _behavior_thread_is_running:
+            try:
+                for behavior in _all_base_behavior:
+                    behavior.OnUpdate()
+                try_fixed_update()
+                for behavior in _all_base_behavior:
+                    behavior.OnLateUpdate()
+                try_fixed_update()
+            except InterruptedError:
+                break
+            except Exception as e:
+                if _behavior_debug_hook is not None:
+                    _behavior_debug_hook(e)
+                else:
+                    print_colorful(e)
+    global INTERNAL_DEBUG
+    if INTERNAL_DEBUG:
+        print_colorful(ConsoleFrontColor.GREEN, "唤醒生命周期线程")
+    _behavior_thread_is_running = True
     _behavior_thread = thread_instance(runner, is_del_join=False)
     _behavior_thread_fixed_update_delta_time = fixedUpdateDeltaTime
 
 def StopBehaviorThread():
     global _behavior_thread
+    global _behavior_thread_is_running
+    global INTERNAL_DEBUG
+    if INTERNAL_DEBUG:
+        print_colorful(ConsoleFrontColor.GREEN, "停止生命周期线程")
+    _behavior_thread_is_running = False
     if _behavior_thread is not None:
         _behavior_thread.join()
         _behavior_thread = None
-

@@ -1,4 +1,0 @@
-gguf
-torch
-http
-transformers
