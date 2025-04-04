@@ -318,10 +318,10 @@ class left_value_reference[_T](base_value_reference):
         return self._ref_value
     @ref_value.setter
     def ref_value(self, value) -> _T:
-        if value is None or isinstance(value, self.GetRealType()):
-            self._ref_value = value
-        elif self.GetRealType() == type(None):
+        if self.GetRealType() is None:
             self._reinit_ref_value(value)
+        elif value is None or isinstance(value, self.GetRealType()):
+            self._ref_value = value
         else:
             raise TypeError(f"Cannot assign {type(value)} to {self.GetRealType()}")
         return value
@@ -708,7 +708,7 @@ def nowf() -> str:
     '''
     return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-__All_BaseBehavior:List['BaseBehavior'] = []
+_all_base_behavior:List['BaseBehavior'] = []
 class BaseBehavior(any_class):
     @virtual
     def OnUpdate(self) -> None:
@@ -733,13 +733,19 @@ class BaseBehavior(any_class):
         '''
         向所有Behavior广播事件
         '''
-        for behavior in __All_BaseBehavior:
+        for behavior in _all_base_behavior:
             if hasattr(behavior, funcname):
                 getattr(behavior, funcname)(event)
     def __init__(self):
-        pass
-__BehaviorThread:Optional[thread_instance] = None
-__BehaviorThread_FixedUpdateDeltaTime:float = 1/60
+        global _all_base_behavior
+        _all_base_behavior.append(self)
+    def __del__(self):
+        global _all_base_behavior
+        _all_base_behavior.remove(self)
+
+_behavior_thread:Optional[thread_instance] = None
+_behavior_thread_fixed_update_delta_time:float = 1/60
+
 def AwakeBehaviorThread(*, fixedUpdateDeltaTime:float=1/60):
     '''
     唤醒一个线程用于运行所有BaseBehavior的生命周期方法,
@@ -749,29 +755,31 @@ def AwakeBehaviorThread(*, fixedUpdateDeltaTime:float=1/60):
     返回:
         thread_instance, 该线程不会自动结束, 需要手动结束
     '''
-    global __BehaviorThread
-    global __BehaviorThread_FixedUpdateDeltaTime
-    if __BehaviorThread is not None:
+    global _behavior_thread
+    global _behavior_thread_fixed_update_delta_time
+    if _behavior_thread is not None:
         raise RuntimeError("BehaviorThread already exists")
     def runner():
         clock: left_value_reference[float] = time.time()
+        global _all_base_behavior
         def try_fixed_update():
-            if time.time() - clock.ref_value >= __BehaviorThread_FixedUpdateDeltaTime:
-                for behavior in __All_BaseBehavior:
+            if time.time() - clock.ref_value >= _behavior_thread_fixed_update_delta_time:
+                for behavior in _all_base_behavior:
                     behavior.OnFixedUpdate()
                 clock.ref_value = time.time()
         while True:
-            for behavior in __All_BaseBehavior:
+            for behavior in _all_base_behavior:
                 behavior.OnUpdate()
             try_fixed_update()
-            for behavior in __All_BaseBehavior:
+            for behavior in _all_base_behavior:
                 behavior.OnLateUpdate()
             try_fixed_update()
-    __BehaviorThread = thread_instance(runner, is_del_join=False)
-    __BehaviorThread_FixedUpdateDeltaTime = fixedUpdateDeltaTime
+    _behavior_thread = thread_instance(runner, is_del_join=False)
+    _behavior_thread_fixed_update_delta_time = fixedUpdateDeltaTime
+
 def StopBehaviorThread():
-    global __BehaviorThread
-    if __BehaviorThread is not None:
-        __BehaviorThread.join()
-        __BehaviorThread = None
+    global _behavior_thread
+    if _behavior_thread is not None:
+        _behavior_thread.join()
+        _behavior_thread = None
 

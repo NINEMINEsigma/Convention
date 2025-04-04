@@ -1041,6 +1041,16 @@ async def web_search(url: str, query: str, num_results: int = 10) -> List[Dict[s
         return [{"title": "搜索出错", "url": "", "description": str(e)}]
     return results
 
+def get_webpage_html(url: str) -> str:
+    """
+    获取网页的HTML内容
+    """
+    import requests
+    response = requests.get(url, headers=build_web_header(url))
+    response.raise_for_status()  # 检查请求是否成功
+    response.encoding = 'utf-8'
+    return response.text
+
 def get_webpage_text(url: str) -> str:
     """
     获取网页的全部文本内容
@@ -1060,19 +1070,22 @@ def get_webpage_text(url: str) -> str:
     from bs4 import BeautifulSoup
 
     try:
-        # 发送GET请求获取网页内容
-        response = requests.get(url, headers=build_web_header(url))
-        response.raise_for_status()  # 检查请求是否成功
-
         # 使用BeautifulSoup解析HTML
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(get_webpage_html(url), 'html.parser')
 
         # 移除script和style标签
-        for script in soup(["script", "style"]):
+        for script in soup.find_all(["script", "style"]):
             script.decompose()
-
-        # 获取纯文本
-        text = soup.get_text()
+        # 获取纯文本，并处理编码问题
+        text = soup.get_text(separator='\n', strip=True)
+        # 处理可能的编码问题
+        try:
+            text = text.encode('utf-8').decode('utf-8')
+        except UnicodeEncodeError:
+            try:
+                text = text.encode('gbk').decode('gbk')
+            except UnicodeEncodeError:
+                text = text.encode('gb2312').decode('gb2312')
 
         # 清理文本
         lines = (line.strip() for line in text.splitlines())

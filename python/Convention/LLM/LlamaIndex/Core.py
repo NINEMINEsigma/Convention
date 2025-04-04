@@ -1686,16 +1686,20 @@ def make_base_document_tool(
     return FunctionTool.from_defaults(
     )
 def function_tool(
-    fn:             Optional[Callable]          = None,
+    fn_name:        Optional[str]               = None,
+    fn_description: Optional[str]               = None,
     *,
+    fn_async:       bool                        = False,
     return_direct:  bool                        = False,
     fn_schema:      Optional[type[BaseModel]]   = None,
     tool_metadata:  Optional[ToolMetadata]      = None,
-    fn_name:        Optional[str]               = None,
-    fn_description: Optional[str]               = None,
+    callback:       Optional[Union[
+        Callable[[Any], Any],
+        Callable[[Any], Awaitable[Any]]
+        ]]                                      = None,
     ) -> Callable:
     '''
-    装饰器,用于将函数转换为FunctionTool
+    将函数转换为FunctionTool
     ---
     参数:
         func: Callable
@@ -1706,46 +1710,68 @@ def function_tool(
             函数参数的类型检查
         tool_metadata: ToolMetadata
             工具的元数据
-
-    目前只支持非异步函数
     '''
-    if fn is None:
-        def wrapper(func:Callable):
-            try:
-                func.__function_tool_status__           = True
-                func.__function_tool_name__             = fn_name or func.__name__
-                func.__function_tool_description__      = fn_description or func.__doc__
-                func.__function_tool_return_direct__    = return_direct
-                func.__function_tool_fn_schema__        = fn_schema
-                func.__function_tool_tool_metadata__    = tool_metadata
-            except AttributeError:
-                pass
-            return func
-        return wrapper
-    else:
+    def wrapper(func:Callable):
         try:
-            fn.__function_tool_status__           = True
-            fn.__function_tool_name__             = fn_name or fn.__name__
-            fn.__function_tool_description__      = fn_description or fn.__doc__
-            fn.__function_tool_return_direct__    = return_direct
-            fn.__function_tool_fn_schema__        = fn_schema
-            fn.__function_tool_tool_metadata__    = tool_metadata
+            func.__function_tool_status__           = True
+            func.__function_tool_name__             = fn_name or func.__name__
+            func.__function_tool_description__      = fn_description or func.__doc__
+            func.__function_tool_return_direct__    = return_direct
+            func.__function_tool_fn_schema__        = fn_schema
+            func.__function_tool_tool_metadata__    = tool_metadata
+            func.__function_tool_async__            = fn_async
+            func.__function_tool_callback__         = callback
         except AttributeError:
             pass
-        return fn
-def make_function_tool(func:Callable, **kwargs) -> FunctionTool:
-    config = {}
+        return func
+    return wrapper
+def make_function_tool(func:Callable, *flags:Optional[Literal["async"]], **kwargs) -> FunctionTool:
+    """
+    将函数转换为FunctionTool工具
+    
+    参数:
+        func: 要转换的函数
+        *flags: 可选标志,目前支持"async"表示异步函数
+        **kwargs: 其他配置参数
+        
+    返回:
+        FunctionTool: 转换后的工具对象
+    """
+    # 初始化基础配置
+    config = {
+        "fn":func,
+    }
+    # 检查是否为异步函数
+    is_async = "async" in flags
+    
+    # 如果函数已经被@function_tool装饰过
     if func.__function_tool_status__:
+        # 使用装饰器设置的配置
         config = {
-            "name":func.__function_tool_name__,
-            "description":func.__function_tool_description__,
-            "return_direct":func.__function_tool_return_direct__,
-            "fn_schema":func.__function_tool_fn_schema__,
-            "tool_metadata":func.__function_tool_tool_metadata__,
+            "name":func.__function_tool_name__,  # 工具名称
+            "description":func.__function_tool_description__,  # 工具描述
+            "return_direct":func.__function_tool_return_direct__,  # 是否直接返回结果
+            "fn_schema":func.__function_tool_fn_schema__,  # 函数参数类型检查
+            "tool_metadata":func.__function_tool_tool_metadata__,  # 工具元数据
         }
+        # 强制使用装饰器设置的异步标志
+        is_async = func.__function_tool_async__
+        
+        # 根据是否异步设置不同的配置
+        if is_async:
+            config["async_fn"] = func  # 异步函数
+            del config["fn"]
+            config["callback"] = func.__function_tool_callback__  # 异步回调
+        else:
+            config["fn"] = func  # 同步函数
+            del config["async_fn"]
+            config["async_callback"] = func.__function_tool_callback__  # 同步回调
+            
+    # 更新额外配置
     config.update(kwargs)
+    
+    # 创建并返回FunctionTool实例
     return FunctionTool.from_defaults(
-        fn=func,
         **config
     )
 # End Layer
@@ -1773,6 +1799,7 @@ class ReActAgentCore(CustomAgentCore[ReActAgent]):
     def __init__(
         self,
         agent_or_tools_and_llm: ReActAgent|Tuple[List[BaseTool], Optional[LLM]]|List[BaseTool],
+        verbose: bool = False,
         **kwargs:Any,
         ) -> None:
         if isinstance(agent_or_tools_and_llm, ReActAgent):
@@ -1783,32 +1810,60 @@ class ReActAgentCore(CustomAgentCore[ReActAgent]):
             super().__init__(ReActAgent.from_tools(
                 tools=tools,
                 llm=c_llm,
+                verbose=verbose,
                 **kwargs,
             ))
         elif isinstance(agent_or_tools_and_llm, list):
             super().__init__(ReActAgent.from_tools(
                 tools=agent_or_tools_and_llm,
+                verbose=verbose,
                 **kwargs,
             ))
-    def chat(self, message:str, **kwargs:Any) -> ChatResponse:
+    
+    def chat(self, message:str, is_must_use_tool:bool = True, **kwargs:Any) -> ChatResponse:
         """聊天方法。
 
         参数:
             message: 本条消息。
+            is_must_use_tool: 是否必须使用工具。
             **kwargs: 其他参数。
 
         返回:
             ChatResponse: 聊天响应。
         """
-        return self.ref_value.chat(message, **kwargs)
-    def achat(self, message:str, **kwargs:Any) -> AgentChatResponse:
+        if is_must_use_tool:
+            context_str = "Tools information is given you.\n"\
+            "Work with tools and given the answer without prior knowledge, "\
+            "answer the query.\n"\
+            f"Query: {message}\n"\
+            "Answer: "
+        else:
+            context_str = f"{message}"
+        
+        return self.ref_value.chat(
+            context_str,
+            **kwargs)
+    def achat(self, message:str, is_must_use_tool:bool = True, **kwargs:Any) -> AgentChatResponse:
         """异步聊天方法。
 
         参数:
             message: 本条消息。
+            is_must_use_tool: 是否必须使用工具。
             **kwargs: 其他参数。
         """
-        return self.ref_value.achat(message, **kwargs)
+        
+        if is_must_use_tool:
+            context_str = "Tools information is given you.\n"\
+            "Work with tools and given the answer without prior knowledge, "\
+            "answer the query.\n"\
+            f"Query: {message}\n"\
+            "Answer: "
+        else:
+            context_str = f"{message}"
+        
+        return self.ref_value.achat(
+            context_str,
+            **kwargs)
 
     def get_prompt(self) -> str:
         return self.ref_value.get_prompts()
