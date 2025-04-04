@@ -2,7 +2,8 @@ from ..Internal import *
 
 # Import CppLike.py
 try:
-    from ..Lang.CppLike import *
+    pass
+    #from ..Lang.CppLike import *
 except ImportError as ex:
     ImportingThrow(ex, "CppLike", [])
 
@@ -10,6 +11,6 @@ except ImportError as ex:
 try:
     import importlib as _
     import inspect as _
-    from ..Lang.Reflection import *
+    #from ..Lang.Reflection import *
 except ImportError as ex:
     ImportingThrow(ex, "Reflection", ["importlib", "inspect"])

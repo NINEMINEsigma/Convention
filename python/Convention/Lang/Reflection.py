@@ -3,7 +3,7 @@ import inspect
 import types
 from typing import *
 from ..Internal import *
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, PrivateAttr
 type_symbols = {
     'int' : int,
     'float' : float,
@@ -138,33 +138,42 @@ class light_reflection(any_class):
         return typen(**init_args)
 
 class MemberInfo(BaseModel, any_class):
-    MemberName:   str = Field(default="", description="名称")
-    ParentType:   type = Field(default_factory=type, description="所属类型")
+    _MemberName:    str  = PrivateAttr(default="")
+    _ParentType:    type = PrivateAttr(default_factory=type)
+    _IsStatic:      bool = PrivateAttr(default=False)
+    _IsPublic:      bool = PrivateAttr(default=False)
 
-class FieldInfo(BaseModel, any_class):
-    FieldName:    str = Field(default="", description="字段名")
-    FieldType:    type = Field(default_factory=type, description="字段类型")
-    ParentType:   type = Field(default_factory=type, description="所属类型")
+    def __init__(self, name:str, ctype:type, is_static:bool=False, is_public:bool=True):
+        BaseModel.__init__(self)
+        any_class.__init__(self)
+        self._MemberName = name
+        self._ParentType = ctype
+        self._IsStatic = is_static
+        self._IsPublic = is_public
 
-    def GetValue(self, obj:object) -> object:
-        return getattr(obj, self.FieldName)
-    def SetValue(self, obj:object, value:object) -> None:
-        if not isinstance(value, self.FieldType):
-            raise TypeError(f"Value type mismatch, expected {self.FieldType}, got {type(value)}")
-        setattr(obj, self.FieldName, value)
+    @property
+    def MemberName(self) -> str:
+        return self._MemberName
+    @property
+    def ParentType(self) -> type:
+        return self._ParentType
+    @property
+    def IsStatic(self) -> bool:
+        return self._IsStatic
+    @property
+    def IsPublic(self) -> bool:
+        return self._IsPublic
 
-class RefType(BaseModel, any_class):
-    _RealType:      type = Field(default_factory=type, description="类型")
-    _IsPrimitive:   bool = Field(default=False, description="是否为基本类型")
-    _IsValueType:   bool = Field(default=False, description="是否为值类型")
-    _IsCollection:  bool = Field(default=False, description="是否为容器")
-    _IsDictionary:  bool = Field(default=False, description="是否为字典")
-    _IsTuple:       bool = Field(default=False, description="是否为元组")
-    _IsSet:         bool = Field(default=False, description="是否为集合")
-    _IsList:        bool = Field(default=False, description="是否为列表")
-    _IsUnsupported: bool = Field(default=False, description="是否为不支持的类型")
-
-    _FieldInfo:     List[FieldInfo] = Field(default_factory=list, description="字段信息")
+class ValueInfo(BaseModel, any_class):
+    _RealType:      Optional[type]  = PrivateAttr(default=None)
+    _IsPrimitive:   bool            = PrivateAttr(default=False)
+    _IsValueType:   bool            = PrivateAttr(default=False)
+    _IsCollection:  bool            = PrivateAttr(default=False)
+    _IsDictionary:  bool            = PrivateAttr(default=False)
+    _IsTuple:       bool            = PrivateAttr(default=False)
+    _IsSet:         bool            = PrivateAttr(default=False)
+    _IsList:        bool            = PrivateAttr(default=False)
+    _IsUnsupported: bool            = PrivateAttr(default=False)
 
     @property
     def RealType(self) -> type:
@@ -190,56 +199,217 @@ class RefType(BaseModel, any_class):
     @property
     def IsList(self) -> bool:
         return self._IsList
+    @property
+    def IsUnsupported(self) -> bool:
+        return self._IsUnsupported
 
-    def __init__(self, type:type):
-        self._RealType = type
+    def __init__(self, type_:type):
         BaseModel.__init__(self)
         any_class.__init__(self)
-
+        self._RealType = type_
         self._IsPrimitive = (
-            issubclass(type, int) or
-            issubclass(type, float) or
-            issubclass(type, str) or
-            issubclass(type, bool) or
-            issubclass(type, complex) or
-            issubclass(type, tuple) or
-            issubclass(type, set) or
-            issubclass(type, list) or
-            issubclass(type, dict)
+            issubclass(type_, int) or
+            issubclass(type_, float) or
+            issubclass(type_, str) or
+            issubclass(type_, bool) or
+            issubclass(type_, complex) or
+            issubclass(type_, tuple) or
+            issubclass(type_, set) or
+            issubclass(type_, list) or
+            issubclass(type_, dict)
             )
         self._IsValueType = (
-            issubclass(type, int) or
-            issubclass(type, float) or
-            issubclass(type, str) or
-            issubclass(type, bool) or
-            issubclass(type, complex)
+            issubclass(type_, int) or
+            issubclass(type_, float) or
+            issubclass(type_, str) or
+            issubclass(type_, bool) or
+            issubclass(type_, complex)
             )
         self._IsCollection = (
-            issubclass(type, list) or
-            issubclass(type, dict) or
-            issubclass(type, tuple) or
-            issubclass(type, set)
+            issubclass(type_, list) or
+            issubclass(type_, dict) or
+            issubclass(type_, tuple) or
+            issubclass(type_, set)
             )
         self._IsDictionary = (
-            issubclass(type, dict)
+            issubclass(type_, dict)
             )
         self._IsTuple = (
-            issubclass(type, tuple)
+            issubclass(type_, tuple)
             )
         self._IsSet = (
-            issubclass(type, set)
+            issubclass(type_, set)
             )
         self._IsList = (
-            issubclass(type, list)
+            issubclass(type_, list)
             )
 
+class FieldInfo(MemberInfo, ValueInfo):
 
+    def __init__(self, fieldType:type, name:str, ctype:type, is_static:bool, is_public:bool):
+        MemberInfo.__init__(self, name, ctype, is_static, is_public)
+        ValueInfo.__init__(self, fieldType)
+
+    @property
+    def FieldName(self) -> str:
+        '''
+        字段名称
+        '''
+        return self.MemberName
+    @property
+    def FieldType(self) -> type:
+        '''
+        字段类型
+        '''
+        return self.RealType
+
+    @virtual
+    def GetValue(self, obj:object) -> object:
+        if self.IsStatic:
+            return getattr(self.ParentType, self.MemberName)
+        else:
+            if not isinstance(obj, self.ParentType):
+                raise TypeError(f"Parent type mismatch, expected {self.ParentType}, got {type(obj)}")
+            return getattr(obj, self.MemberName)
+    @virtual
+    def SetValue(self, obj:object, value:object) -> None:
+        if self.IsStatic:
+            setattr(self.ParentType, self.MemberName, value)
+        else:
+            if not isinstance(obj, self.ParentType):
+                raise TypeError(f"Parent type mismatch, expected {self.ParentType}, got {type(obj)}")
+            if not isinstance(value, self.RealType):
+                raise TypeError(f"Value type mismatch, expected {self.RealType}, got {type(value)}")
+            setattr(obj, self.MemberName, value)
+
+class ParameterInfo(ValueInfo):
+    _ParameterName: str  = PrivateAttr(default="")
+    _IsOptional:    bool = PrivateAttr(default=False)
+    _DefaultValue:  Any  = PrivateAttr(default=None)
+
+    def __init__(self, type:type, name:str, is_optional:bool, default_value:Any):
+        ValueInfo.__init__(self, type)
+        self._ParameterName = name
+        self._IsOptional = is_optional
+        self._DefaultValue = default_value
+
+    @property
+    def ParameterName(self) -> str:
+        return self._ParameterName
+    @property
+    def IsOptional(self) -> bool:
+        return self._IsOptional
+    @property
+    def DefaultValue(self) -> Any:
+        return self._DefaultValue
+
+class MethodInfo(MemberInfo):
+    _ReturnType:            type                = PrivateAttr(default_factory=type)
+    _Parameters:            List[ParameterInfo] = PrivateAttr(default_factory=list)
+    _PositionalParameters:  List[ParameterInfo] = PrivateAttr(default_factory=list)
+    _KeywordParameters:     List[ParameterInfo] = PrivateAttr(default_factory=list)
+
+    def __init__(
+        self,
+        return_type:            type,
+        parameters:             List[ParameterInfo],
+        positional_parameters:  List[ParameterInfo],
+        keyword_parameters:     List[ParameterInfo],
+        name:                   str,
+        ctype:                  type,
+        is_static:              bool,
+        is_public:              bool,
+        ):
+        MemberInfo.__init__(self, name, ctype, is_static, is_public)
+        self._ReturnType = return_type
+        self._Parameters = parameters
+        self._PositionalParameters = positional_parameters
+        self._KeywordParameters = keyword_parameters
+
+    @property
+    def ReturnType(self) -> type:
+        return self._ReturnType
+    @property
+    def Parameters(self) -> List[ParameterInfo]:
+        return self._Parameters
+    @property
+    def PositionalParameters(self) -> List[ParameterInfo]:
+        return self._PositionalParameters
+    @property
+    def KeywordParameters(self) -> List[ParameterInfo]:
+        return self._KeywordParameters
+
+class RefType(ValueInfo):
+    _FieldInfos:    List[FieldInfo]  = PrivateAttr(default_factory=list)
+    _MethodInfos:   List[MethodInfo] = PrivateAttr(default_factory=list)
+
+    def __init__(self, type:type):
+        super().__init__(type)
+        self._FieldInfos = []
+        self._MethodInfos = []
+
+        # 获取所有成员变量
+        for name, value in type.__dict__.items():
+            if not name.startswith('_'):
+                field_type = type(value)
+                is_static = isinstance(value, (int, float, str, bool, complex, list, dict, tuple, set))
+                field_info = FieldInfo(field_type, name, type, is_static, True)
+                self._FieldInfos.append(field_info)
+
+        # 获取所有方法
+        for name, method in inspect.getmembers(type):
+            if not name.startswith('_') and inspect.isfunction(method):
+                # 获取方法签名
+                sig = inspect.signature(method)
+
+                # 构建参数列表
+                parameters = []
+                positional_parameters = []
+                keyword_parameters = []
+
+                for param_name, param in sig.parameters.items():
+                    if param_name == 'self':
+                        continue
+
+                    param_info = ParameterInfo(
+                        param.annotation if param.annotation != inspect.Parameter.empty else Any,
+                        param_name,
+                        param.default != inspect.Parameter.empty,
+                        param.default if param.default != inspect.Parameter.empty else None
+                    )
+
+                    parameters.append(param_info)
+                    if param.kind == inspect.Parameter.POSITIONAL_ONLY or param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                        positional_parameters.append(param_info)
+                    elif param.kind == inspect.Parameter.KEYWORD_ONLY:
+                        keyword_parameters.append(param_info)
+
+                # 构建方法信息
+                method_info = MethodInfo(
+                    sig.return_annotation if sig.return_annotation != inspect.Signature.empty else Any,
+                    parameters,
+                    positional_parameters,
+                    keyword_parameters,
+                    name,
+                    type,
+                    False,
+                    True
+                )
+                self._MethodInfos.append(method_info)
+
+
+    def GetFields(self) -> List[FieldInfo]:
+        return self._FieldInfos
+    def GetMethods(self) -> List[MethodInfo]:
+        return self._MethodInfos
+    def GetMembers(self) -> List[MemberInfo]:
+        return self._FieldInfos + self._MethodInfos
 
 
 _Internal_TypeManager:Optional['TypeManager'] = None
 
 class TypeManager(BaseModel, any_class):
-    _RefTypes:Dict[type, RefType] = Field(default_factory=dict, description="全体类型")
+    _RefTypes:Dict[type, RefType] = PrivateAttr(default_factory=dict)
 
     @classmethod
     def GetInstance(cls) -> Self:
