@@ -1,6 +1,7 @@
 import importlib
 import inspect
 import types
+from enum import Enum, IntFlag
 from typing import *
 from ..Internal import *
 from pydantic import BaseModel, Field, PrivateAttr
@@ -137,15 +138,19 @@ class light_reflection(any_class):
 
         return typen(**init_args)
 
-class MemberInfo(BaseModel, any_class):
+class BaseInfo(BaseModel, any_class):
+    def __init__(self, **kwargs):
+        BaseModel.__init__(self, **kwargs)
+        any_class.__init__(self)
+
+class MemberInfo(BaseInfo):
     _MemberName:    str             = PrivateAttr(default="")
     _ParentType:    Optional[type]  = PrivateAttr(default=None)
     _IsStatic:      bool            = PrivateAttr(default=False)
     _IsPublic:      bool            = PrivateAttr(default=False)
 
-    def __init__(self, name:str, ctype:type, is_static:bool=False, is_public:bool=True):
-        BaseModel.__init__(self)
-        any_class.__init__(self)
+    def __init__(self, name:str, ctype:type, is_static:bool, is_public:bool, **kwargs):
+        BaseInfo.__init__(self, **kwargs)
         self._MemberName = name
         self._ParentType = ctype
         self._IsStatic = is_static
@@ -166,16 +171,16 @@ class MemberInfo(BaseModel, any_class):
 
     @override
     def __repr__(self) -> str:
-        return f"MemberInfo<name={self.MemberName}, ctype={self.ParentType}, " \
-               f"{'static' if self.IsStatic else 'instance'}, {'public' if self.IsPublic else 'private'}>"
+        return f"<{self.MemberName}>"
     @override
     def SymbolName(self) -> str:
         return "MemberInfo"
     @override
     def ToString(self) -> str:
-        return self.__repr__()
+        return f"MemberInfo<name={self.MemberName}, ctype={self.ParentType}, " \
+               f"{'static' if self.IsStatic else 'instance'}, {'public' if self.IsPublic else 'private'}>"
 
-class ValueInfo(BaseModel, any_class):
+class ValueInfo(BaseInfo):
     _RealType:      Optional[type]  = PrivateAttr(default=None)
     _IsPrimitive:   bool            = PrivateAttr(default=False)
     _IsValueType:   bool            = PrivateAttr(default=False)
@@ -214,9 +219,8 @@ class ValueInfo(BaseModel, any_class):
     def IsUnsupported(self) -> bool:
         return self._IsUnsupported
 
-    def __init__(self, type_:type):
-        BaseModel.__init__(self)
-        any_class.__init__(self)
+    def __init__(self, type_:type, **kwargs):
+        BaseInfo.__init__(self, **kwargs)
         self._RealType = type_
         self._IsPrimitive = (
             issubclass(type_, int) or
@@ -267,8 +271,13 @@ class ValueInfo(BaseModel, any_class):
 
 class FieldInfo(MemberInfo, ValueInfo):
     def __init__(self, fieldType:type, name:str, ctype:type, is_static:bool, is_public:bool):
-        MemberInfo.__init__(self, name, ctype, is_static, is_public)
-        ValueInfo.__init__(self, fieldType)
+        super().__init__(
+            name = name, 
+            ctype = ctype, 
+            is_static = is_static, 
+            is_public = is_public, 
+            fieldType = fieldType,
+            )
 
     @property
     def FieldName(self) -> str:
@@ -303,15 +312,11 @@ class FieldInfo(MemberInfo, ValueInfo):
             setattr(obj, self.MemberName, value)
 
     @override
-    def __repr__(self) -> str:
-        return f"FieldInfo<name={self.MemberName}, type={self.RealType}, ctype={self.ParentType}, " \
-               f"{'static' if self.IsStatic else 'instance'}, {'public' if self.IsPublic else 'private'}>"
-    @override
     def SymbolName(self) -> str:
         return "FieldInfo"
     @override
     def ToString(self) -> str:
-        return f"FieldInfo<name={self.MemberName}, type={self.RealType}, ctype={self.ParentType}>" \
+        return f"FieldInfo<name={self.MemberName}, type={self.RealType}, ctype={self.ParentType}, " \
                f"{'static' if self.IsStatic else 'instance'}, {'public' if self.IsPublic else 'private'}>"
 
 class ParameterInfo(ValueInfo):
@@ -320,7 +325,7 @@ class ParameterInfo(ValueInfo):
     _DefaultValue:  Any  = PrivateAttr(default=None)
 
     def __init__(self, type:type, name:str, is_optional:bool, default_value:Any):
-        ValueInfo.__init__(self, type)
+        super().__init__(type)
         self._ParameterName = name
         self._IsOptional = is_optional
         self._DefaultValue = default_value
@@ -337,14 +342,13 @@ class ParameterInfo(ValueInfo):
 
     @override
     def __repr__(self) -> str:
-        return f"ParameterInfo<name={self.ParameterName}, type={self.RealType}, " \
-               f"{'optional' if self.IsOptional else 'required'}, default={self.DefaultValue}>"
+        return f"<{self.ParameterName}>"
     @override
     def SymbolName(self) -> str:
         return "ParameterInfo"
     @override
     def ToString(self) -> str:
-        return f"ParameterInfo<name={self.ParameterName}, type={self.RealType}>" \
+        return f"ParameterInfo<name={self.ParameterName}, type={self.RealType}, " \
                f"{'optional' if self.IsOptional else 'required'}, default={self.DefaultValue}>"
 
 class MethodInfo(MemberInfo):
@@ -384,29 +388,38 @@ class MethodInfo(MemberInfo):
         return self._KeywordParameters
 
     @override
-    def __repr__(self) -> str:
-        return f"MethodInfo<name={self.MemberName}, return={self.ReturnType}, ctype={self.ParentType}, " \
-               f"{'static' if self.IsStatic else 'instance'}, {'public' if self.IsPublic else 'private'}, " \
-               f"p{len(self.Parameters)}>"
-    @override
     def SymbolName(self) -> str:
         return "MethodInfo"
     @override
     def ToString(self) -> str:
-        return f"MethodInfo<name={self.MemberName}, return={self.ReturnType}, ctype={self.ParentType}>" \
+        return f"MethodInfo<name={self.MemberName}, return={self.ReturnType}, ctype={self.ParentType}, " \
                f"{'static' if self.IsStatic else 'instance'}, {'public' if self.IsPublic else 'private'}, " \
                f"p{len(self.Parameters)}>"
+
+class RefTypeFlag(IntFlag):
+    Static:int = 0b00000001
+    Instance:int = 0b00000010
+    Public:int = 0b00000100
+    Private:int = 0b00001000
+    Default:int = 0b00010000
+    Method:int = 0b00100000
+    Field:int = 0b01000000
+    Special:int = 0b10000000
+    All:int = 0b11111111
 
 class RefType(ValueInfo):
     _FieldInfos:    List[FieldInfo]  = PrivateAttr(default_factory=list)
     _MethodInfos:   List[MethodInfo] = PrivateAttr(default_factory=list)
 
-    def __init__(self, type:type):
-        super().__init__(type)
+    def __init__(self, type_:type):
+        super().__init__(type_)
         self._FieldInfos = []
         self._MethodInfos = []
-
-        for name, member in inspect.getmembers(type):
+        
+        class_var = type_.__dict__
+        annotations:Dict[str, type_] = get_type_hints(type_)
+        
+        for name, member in inspect.getmembers(type_):
             if inspect.ismethod(member) or inspect.isfunction(member):
                 # 获取方法签名
                 sig = inspect.signature(member)
@@ -424,19 +437,21 @@ class RefType(ValueInfo):
                 for param_name, param in sig.parameters.items():
                     if param_name == 'self':
                         continue
+                
+                ptype = param.annotation if param.annotation != inspect.Parameter.empty else Any
+                ptype = ptype if isinstance(ptype, type) else Any
+                param_info = ParameterInfo(
+                    type = ptype,
+                    name = param_name,
+                    is_optional = param.default != inspect.Parameter.empty,
+                    default_value = param.default if param.default != inspect.Parameter.empty else None
+                )
 
-                    param_info = ParameterInfo(
-                        type = param.annotation if param.annotation != inspect.Parameter.empty else Any,
-                        name = param_name,
-                        is_optional = param.default != inspect.Parameter.empty,
-                        default_value = param.default if param.default != inspect.Parameter.empty else None
-                    )
-
-                    parameters.append(param_info)
-                    if param.kind == inspect.Parameter.POSITIONAL_ONLY or param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
-                        positional_parameters.append(param_info)
-                    elif param.kind == inspect.Parameter.KEYWORD_ONLY:
-                        keyword_parameters.append(param_info)
+                parameters.append(param_info)
+                if param.kind == inspect.Parameter.POSITIONAL_ONLY or param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                    positional_parameters.append(param_info)
+                elif param.kind == inspect.Parameter.KEYWORD_ONLY:
+                    keyword_parameters.append(param_info)
 
                 # 构建方法信息
                 method_info = MethodInfo(
@@ -445,32 +460,81 @@ class RefType(ValueInfo):
                     positional_parameters = positional_parameters,
                     keyword_parameters = keyword_parameters,
                     name = name,
-                    ctype = type,
+                    ctype = type_,
                     is_static = is_static,
                     is_public = is_public
                 )
                 self._MethodInfos.append(method_info)
-            else:
-                is_static = False#TODO: 需要判断是否是静态变量
-                is_not_static = False#TODO: 需要判断是否是实例变量
-                if is_static == is_not_static:
-                    raise ValueError(f"Field {name} is both static and not static")
-                is_public = True#TODO: 需要判断是否是公有变量
+        if issubclass(type_, BaseModel):
+            for field_name, model_field in type_.__pydantic_fields__.items():
                 field_info = FieldInfo(
-                    field_type = type(member),
-                    name = name,
-                    ctype = type,
-                    is_static = is_static,
-                    is_public = is_public
+                    fieldType=model_field.annotation if model_field.annotation is not None else Any,
+                    name=field_name,
+                    ctype=type_,
+                    is_public=True,
+                    is_static=False,
                 )
                 self._FieldInfos.append(field_info)
+        else:
+            for name, member in inspect.getmembers(type_):
+                if inspect.ismethod(member) or inspect.isfunction(member):
+                    continue
+                else:
+                    is_static = name in class_var
+                    is_public = (name.startswith('__') and name.endswith('__')) or not name.startswith('_')
+                    fieldType = annotations.get(name, Any)
+                    field_info = FieldInfo(
+                        fieldType = fieldType,
+                        name = name,
+                        ctype = type_,
+                        is_static = is_static,
+                        is_public = is_public
+                    )
+                    self._FieldInfos.append(field_info)
 
-    def GetFields(self) -> List[FieldInfo]:
+    def _where_member(self, member:MemberInfo, flag:RefTypeFlag) -> bool:
+        stats = True
+        if member.IsStatic:
+            stats &= (flag & RefTypeFlag.Static != 0)
+        else:
+            stats &= (flag & RefTypeFlag.Instance != 0)
+        if member.IsPublic:
+            stats &= (flag & RefTypeFlag.Public != 0)
+        else:
+            stats &= (flag & RefTypeFlag.Private != 0)
+        if isinstance(member, MethodInfo):
+            stats &= (flag & RefTypeFlag.Method != 0)
+        elif isinstance(member, FieldInfo):
+            stats &= (flag & RefTypeFlag.Field != 0)
+        if member.MemberName.startswith('__') and member.MemberName.endswith('__'):
+            stats &= (flag & RefTypeFlag.Special != 0)
+        return stats
+
+    def GetFields(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[FieldInfo]:
+        if flag == RefTypeFlag.Default:
+            return [field for field in self._FieldInfos 
+                    if self._where_member(field, RefTypeFlag.Field|RefTypeFlag.Public|RefTypeFlag.Instance)]
+        else:
+            return [field for field in self._FieldInfos if self._where_member(field, flag)]
+    def GetAllFields(self) -> List[FieldInfo]:
         return self._FieldInfos
-    def GetMethods(self) -> List[MethodInfo]:
+    def GetMethods(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MethodInfo]:
+        if flag == RefTypeFlag.Default:
+            return [method for method in self._MethodInfos 
+                    if self._where_member(method, RefTypeFlag.Method|RefTypeFlag.Public|RefTypeFlag.Instance)]
+        else:
+            return [method for method in self._MethodInfos if self._where_member(method, flag)]
+    def GetAllMethods(self) -> List[MethodInfo]:
         return self._MethodInfos
-    def GetMembers(self) -> List[MemberInfo]:
+    def GetMembers(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MemberInfo]:
+        if flag == RefTypeFlag.Default:
+            return [member for member in self._FieldInfos + self._MethodInfos 
+                    if self._where_member(member, RefTypeFlag.Public|RefTypeFlag.Instance|RefTypeFlag.Field|RefTypeFlag.Method)]
+        else:
+            return [member for member in self._FieldInfos + self._MethodInfos if self._where_member(member, flag)]
+    def GetAllMembers(self) -> List[MemberInfo]:
         return self._FieldInfos + self._MethodInfos
+
 
     @override
     def __repr__(self) -> str:
@@ -482,6 +546,8 @@ class RefType(ValueInfo):
     def ToString(self) -> str:
         return f"RefType<type={self.RealType}>"
 
+_Internal_TypeManager:Optional['TypeManager'] = None
+
 class TypeManager(BaseModel, any_class):
     _RefTypes:Dict[type, RefType] = PrivateAttr(default_factory=dict)
 
@@ -492,10 +558,10 @@ class TypeManager(BaseModel, any_class):
             _Internal_TypeManager = cls()
         return _Internal_TypeManager
 
-    def CreateOrGetRefType(self, type:type) -> RefType:
-        if type in self._RefTypes:
-            return self._RefTypes[type]
+    def CreateOrGetRefType(self, type_:type) -> RefType:
+        if type_ in self._RefTypes:
+            return self._RefTypes[type_]
         else:
-            ref_type = RefType(type)
-            self._RefTypes[type] = ref_type
+            ref_type = RefType(type_)
+            self._RefTypes[type_] = ref_type
             return ref_type
