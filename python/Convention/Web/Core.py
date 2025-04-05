@@ -6,7 +6,11 @@ import os
 import json
 import urllib.parse
 from typing import Dict, Callable, Any, Optional
-import websockets
+try:
+    #from websockets import WebSocketClientProtocol
+    pass
+except ImportError:
+    ImportingThrow("Web", ["websockets"])
 import asyncio
 import threading
 import mimetypes
@@ -529,7 +533,7 @@ class tool_url(any_class):
     def __retry_request(self, method: str, *args, **kwargs) -> WebResponse:
         """带重试机制的请求"""
         import time
-        import requests.exceptions
+        import requests
 
         for attempt in range(self.__max_retries):
             try:
@@ -575,14 +579,14 @@ class tool_url(any_class):
         """发送PATCH请求"""
         return self.__retry_request('patch', self.__url, data=data, json=json, headers=headers, timeout=timeout)
 
-    def connect_websocket(self, message_handler: Callable[[websockets.WebSocketClientProtocol], None]) -> None:
+    def connect_websocket(self, message_handler: Callable[['WebSocketClientProtocol'], None]) -> None:
         """建立WebSocket连接"""
         import asyncio
-        import websockets
+        from websockets import connect
 
         async def connect():
             try:
-                async with websockets.connect(self.__url) as websocket:
+                async with connect(self.__url) as websocket:
                     await message_handler(websocket)
             except Exception as e:
                 print(f"WebSocket connection failed: {str(e)}")

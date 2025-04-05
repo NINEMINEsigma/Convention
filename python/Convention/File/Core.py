@@ -1,3 +1,4 @@
+from ..Internal         import *
 import                         json
 import                         shutil
 import pandas           as     pd
@@ -16,16 +17,16 @@ from pathlib            import Path
 try:
     from pydub              import AudioSegment
 except ImportError:
-    InternalImportingThrow("File", ["pydub"])
+    ImportingThrow("File", ["pydub"])
 try:
     from PIL                import Image, ImageFile
 except ImportError:
-    InternalImportingThrow("File", ["Pillow"])
+    ImportingThrow("File", ["Pillow"])
 try:
     from docx               import Document
     from docx.document      import Document as DocumentObject
 except ImportError:
-    InternalImportingThrow("File", ["python-docx"])
+    ImportingThrow("File", ["python-docx"])
 
 from ..Internal         import *
 from ..Str.Core         import UnWrapper, list_byte_to_string

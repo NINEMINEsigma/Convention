@@ -56,7 +56,7 @@ def get_type_from_string(type_string:str) -> type:
                 #print("third check in:{}".format(dir(__import__(__name__))))
                 raise TypeError(f"Cannot find type '{type_string}', type_string is <{type_string}>") from ex
 
-def get_type_from_string_with_module(type_string:str, module_name:str) -> type:
+def get_type_from_string_with_module(type_string:str, module_name:str) -> type|None:
     '''
     根据字符串生成类型
     '''
@@ -67,7 +67,7 @@ def get_type_from_string_with_module(type_string:str, module_name:str) -> type:
     elif type_string in dir(types):
         return getattr(types, type_string)
     else:
-        raise NotImplementedError(f"未知的类型: {type_string}")
+        return None
 
 # 获取泛型参数
 def get_generic_args(type_hint: type | Any) -> tuple[type | None, tuple[type, ...] | None]:
@@ -81,14 +81,43 @@ def get_generic_args(type_hint: type | Any) -> tuple[type | None, tuple[type, ..
 def is_generic(type_hint: type | Any) -> bool:
     return "__origin__" in dir(type_hint)
 
-def decay_type(type_:type) -> type|List[type]:
-    if "__origin__" in dir(type_):
-        if "__args__" in dir(type_):
-            return list(decay_type(arg) for arg in type_.__args__)
+def to_type(typen:type|Any|str) -> type:
+    if isinstance(typen, type):
+        return typen
+    elif isinstance(typen, str):
+        import sys
+        type_components = typen.split(".")
+        type_module = ".".join(type_components[:-1]) if len(type_components) > 1 else None
+        type_final = type_components[-1]
+        if type_module is not None:
+            return sys.modules[type_module].__dict__[type_final]
         else:
-            return decay_type(type_.__origin__)
+            for module in sys.modules.values():
+                if type_final in module.__dict__:
+                    return module.__dict__[type_final]
+            return get_type_from_string(typen)
     else:
-        return type_
+        return type(typen)
+
+def decay_type(type_hint:type|Any) -> type|List[type]:
+    type_dir = dir(type_hint)
+    if "__forward_arg__" in type_dir:
+        return to_type(type_hint.__forward_arg__)
+    if type_hint is type:
+        return type_hint
+    elif "__origin__" in type_dir:
+        print(type_dir.__origin__)
+        if "__args__" in type_dir:
+            result = list(decay_type(arg) for arg in type_hint.__args__)
+            result = [t for t in result if t is not type(None)]
+            if len(result) == 1:
+                return result[0]
+            else:
+                return result
+        else:
+            return decay_type(type_hint.__origin__)
+    else:
+        return type_hint
 
 class light_reflection(any_class):
     def __init__(self, obj:object, type_str:str=None, *args, **kwargs):
@@ -290,6 +319,8 @@ class ValueInfo(BaseInfo):
             else:
                 type_ = self._UnionTypes[0]
         if not self._IsUnion:
+            if GetInternalDebug() and type_ is not Any:
+                print_colorful(ConsoleFrontColor.RED, f"Current RealType: {type_} {self._UnionTypes}")
             self._IsUnion = False
             self._UnionTypes = []
             self._RealType = type_
@@ -329,7 +360,7 @@ class ValueInfo(BaseInfo):
             self._IsList = (
                 issubclass(type_, list)
                 )
-
+    
     def Verify(self, valueType:type) -> bool:
         if self.IsUnion:
             return any(issubclass(valueType, typeitem) for typeitem in self.UnionTypes)
@@ -610,7 +641,7 @@ class RefType(ValueInfo):
         if issubclass(type_, BaseModel):
             for field_name, model_field in type_.__pydantic_fields__.items():
                 #fieldType = decay_type(model_field.annotation) if model_field.annotation is not None else Any
-                fieldType = model_field.annotation if model_field.annotation is not None else Any
+                fieldType = decay_type(model_field.annotation if model_field.annotation is not None else Any)
                 if GetInternalDebug():
                     print_colorful(ConsoleFrontColor.RED, f"Current Make FieldInfo: {type_}.{field_name} {fieldType} ")
                 field_info = FieldInfo(
@@ -627,7 +658,7 @@ class RefType(ValueInfo):
                 if not inspect.ismethod(member) and not inspect.isfunction(member):
                     is_static = name in class_var
                     is_public = (name.startswith('__') and name.endswith('__')) or not name.startswith('_')
-                    fieldType = annotations.get(name, Any)
+                    fieldType = decay_type(annotations.get(name, Any))
                     field_info = FieldInfo(
                         fieldType = fieldType,
                         name = name,
@@ -649,6 +680,7 @@ class RefType(ValueInfo):
                 )
                 self._FieldInfos.append(field_info)
                 self._MemberNames.append(name)
+    
     def _where_member(self, member:MemberInfo, flag:RefTypeFlag) -> bool:
         stats = True
         if member.IsStatic:
