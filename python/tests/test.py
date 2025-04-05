@@ -14,32 +14,34 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 #     vis.run()
 
 from Convention.Lang.Reflection import *
+from Convention.Lang.EasySave import *
 
 class itest(BaseModel):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
     _a:int = PrivateAttr(default=0)
 class jtest(BaseModel):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
     _b:int = PrivateAttr(default=0)
 class ctest(itest, jtest):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
     _c:int = PrivateAttr(default=0)
-    
+
     d:str = Field(default="")
+    e:int = Field(default=255)
+
+    def test_invoke(self) -> str:
+        return f"test_invoke: {self.d}-{self.e}"
+
+    @staticmethod
+    def test_invoke2(a:int, b:int) -> int:
+        return a + b
+
+    @classmethod
+    def test_invoke3(cls, a:int, b:int) -> int:
+        return a + b
 
 
 def main():
-    ctestxx = ctest()
-    print_colorful(ConsoleFrontColor.RED, ctest.__pydantic_fields__)
-    print_colorful(ConsoleFrontColor.YELLOW, ctestxx.model_dump())
-    rtype = TypeManager.GetInstance().CreateOrGetRefType(ctest)
-    print_colorful(ConsoleFrontColor.RED, rtype.GetFields(
-        RefTypeFlag.Field|RefTypeFlag.Instance|RefTypeFlag.Private|RefTypeFlag.Public|RefTypeFlag.Special))
-    
-
+    SetInternalDebug(True)
+    from Convention.Workflow.Core import Workflow
+    print(TypeManager.GetInstance().CreateOrGetRefType(Workflow).tree())
 
 if __name__ == "__main__":
     main()

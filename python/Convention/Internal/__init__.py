@@ -14,6 +14,9 @@ INTERNAL_DEBUG = False
 def SetInternalDebug(mode:bool):
     global INTERNAL_DEBUG
     INTERNAL_DEBUG = mode
+def GetInternalDebug() -> bool:
+    global INTERNAL_DEBUG
+    return INTERNAL_DEBUG
 
 def print_colorful(color:str, *args, is_reset:bool=True, **kwargs):
     if is_reset:

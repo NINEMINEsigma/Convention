@@ -2,6 +2,7 @@ from ..Internal         import *
 from ..Lang.Core        import run_until_complete
 from pydantic           import BaseModel, Field, GetCoreSchemaHandler
 from pydantic_core      import core_schema
+from ..Lang.EasySave    import EasySave
 from ..Str.Core         import UnWrapper as Unwrapper2Str
 from ..File.Core        import (
     tool_file_or_str    as     tool_file_or_str,
@@ -148,6 +149,10 @@ class NodeInfo(BaseModel, any_class):
             raise ValueError(f"节点的typename不能被指定")
         BaseModel.__init__(self, **kwargs)
         any_class.__init__(self)
+
+    @virtual
+    def __repr__(self) -> str:
+        return f"{self.GetType().__name__}<typename={self.typename}, title={self.title}>"
 
     @virtual
     def TemplateClone(self) -> Self:
@@ -633,9 +638,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         for node in currentWorkflow.Nodes:
             node.info.CopyFromNode(node)
             currentWorkflow.Datas.append(node.info)
-        file.data = currentWorkflow
-        file.save_as_json()
-        return file
+        return EasySave.Write(currentWorkflow, file)
 
     def LoadWorkflow(self, workflow_:tool_file_or_str|Workflow) -> Workflow:
         if isinstance(workflow_, Workflow):
@@ -645,7 +648,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
             workflow_ = Wrapper2File(workflow_)
             if not workflow_.exists():
                 raise Exception(f"{workflow_} 不存在")
-            workflow:Workflow = workflow_.load_as_model(Workflow)
+            workflow:Workflow = EasySave.Read(workflow_, rtype=Workflow)
             self.ClearWorkflow()
         # 排序及检查
         workflow.Datas.sort(key=lambda x: x.nodeID)

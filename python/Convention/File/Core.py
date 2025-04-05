@@ -88,6 +88,14 @@ class PermissionError(FileOperationError):
     """权限操作异常"""
     pass
 
+try:
+    from pydantic import BaseModel, GetCoreSchemaHandler
+    from pydantic_core import core_schema
+except ImportError:
+    type BaseModel = Any
+    type GetCoreSchemaHandler = Any
+    type core_schema = Any
+
 class tool_file(any_class):
 
     __datas_lit_key:    Literal["model"]    = "model"
@@ -95,6 +103,22 @@ class tool_file(any_class):
     __file:             IO[Any]             = None
     data:               Any                 = None
     datas:              Dict[str, Any]      = {}
+
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls,
+        _source_type: Any,
+        _handler: GetCoreSchemaHandler,
+    ) -> core_schema.CoreSchema:
+        return core_schema.no_info_after_validator_function(
+            cls,
+            core_schema.any_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda instance: None
+            ),
+        )
+
 
     def __init__(
         self,
