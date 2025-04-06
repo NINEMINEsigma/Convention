@@ -11,5 +11,13 @@ def main():
     from Convention.Workflow.Core import Workflow
     print(TypeManager.GetInstance().CreateOrGetRefType(Workflow).tree())
 
+_T = TypeVar("_T")
+
+def test():
+    print(_T.__class__)
+
 if __name__ == "__main__":
     main()
+    #test()
+    
+print(TypeManager.GetInstance().AllRefTypes())

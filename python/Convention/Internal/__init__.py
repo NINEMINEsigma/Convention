@@ -245,13 +245,13 @@ class type_class:
 
 class base_value_reference[_T](type_class):
     _ref_value:     Optional[_T]        = None
-    __real_type:    Optional[type]      = None
+    _real_type:    Optional[type]      = None
     def __init__(self, ref_value:_T):
         super().__init__()
         self._reinit_ref_value(ref_value)
     def _reinit_ref_value(self, value:_T):
         self._ref_value = value
-        self.__real_type = type(value)
+        self._real_type = type(value)
     #def __getattr__(self, name):
     #    try:
     #        return super().__getattr__(name)
@@ -266,7 +266,7 @@ class base_value_reference[_T](type_class):
         self._ref_value = None
     @override
     def GetRealType(self):
-        return self.__real_type
+        return self._real_type
     @override
     def SymbolName(self) -> str:
         if self._ref_value is None:

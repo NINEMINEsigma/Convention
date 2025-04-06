@@ -21,18 +21,18 @@ _Internal_GetNodeID: Callable[['Node'], int] = lambda node: _workflow_manager_in
 _Internal_GetNode: Callable[[int], 'Node'] = lambda id: _workflow_manager_instance.GetNode(id)
 _Internal_ContainsNode: Callable[[int], bool] = lambda id: _workflow_manager_instance.ContainsNode(id)
 
-type context_type = Dict[str, Any]
-type context_key_type = str
-type context_value_type = Any
-type context_keyword = Literal["result", "error"]
+context_type = Dict[str, Any]
+context_key_type = str
+context_value_type = Any
+context_keyword = Literal["result", "error"]
 '''
 上下文中特殊的键值对:
     result: 步骤的输出结果(当步骤执行结果不是一个字典时, 结果将被保存到此键值对上)
     error: 步骤的错误信息(当步骤执行失败时, 错误信息将被保存到此键值对上)
 '''
-type input_mapping_type = Dict[str, str]
-type output_mapping_type = Dict[str, str]
-type action_label_type = str
+input_mapping_type = Dict[str, str]
+output_mapping_type = Dict[str, str]
+action_label_type = str
 
 action_name:Literal["action"] = "action" # 动作名称
 
@@ -92,15 +92,17 @@ class NodeSlotInfo(BaseModel, any_class):
     """
     插槽信息
     """
-    parentNode:     'Node'                  = Field(description="所属的父节点", default=None, exclude=True)
-    slot:           'NodeSlot'              = Field(description="所属的插槽", default=None, exclude=True)
-    slotName:       str                     = Field(description="插槽名称", default="unknown")
-    targetNode:     'Node'                  = Field(description="目标节点, 此变量需要手动同步, targetNodeID的懒加载目标", default=None, exclude=True)
-    targetSlot:     'NodeSlot'              = Field(description="目标插槽, 此变量需要手动同步, targetSlotName的懒加载目标", default=None, exclude=True)
-    targetNodeID:   int                     = Field(description="目标节点ID", default=-1)
-    targetSlotName: str                     = Field(description="目标插槽名称", default="unknown")
-    typeIndicator:  str                     = Field(description="类型指示器, 此插槽的类型", default="unknown")
-    IsInmappingSlot:bool                    = Field(description="是否为输入映射插槽", default=False)
+    parentNode:         'Node'     = Field(description="所属的父节点", default=None, exclude=True)
+    slot:               'NodeSlot' = Field(description="所属的插槽", default=None, exclude=True)
+    slotName:           str        = Field(description="插槽名称", default="unknown")
+    targetNode:         'Node'     = Field(description="目标节点, 此变量需要手动同步, targetNodeID的懒加载目标",
+                                           default=None, exclude=True)
+    targetSlot:         'NodeSlot' = Field(description="目标插槽, 此变量需要手动同步, targetSlotName的懒加载目标", 
+                                           default=None, exclude=True)
+    targetNodeID:       int        = Field(description="目标节点ID", default=-1)
+    targetSlotName:     str        = Field(description="目标插槽名称", default="unknown")
+    typeIndicator:      str        = Field(description="类型指示器, 此插槽的类型", default="unknown")
+    IsInmappingSlot:    bool       = Field(description="是否为输入映射插槽", default=False)
 
     @virtual
     def TemplateClone(self) -> Self:
