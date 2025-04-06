@@ -97,7 +97,7 @@ class NodeSlotInfo(BaseModel, any_class):
     slotName:           str        = Field(description="插槽名称", default="unknown")
     targetNode:         'Node'     = Field(description="目标节点, 此变量需要手动同步, targetNodeID的懒加载目标",
                                            default=None, exclude=True)
-    targetSlot:         'NodeSlot' = Field(description="目标插槽, 此变量需要手动同步, targetSlotName的懒加载目标", 
+    targetSlot:         'NodeSlot' = Field(description="目标插槽, 此变量需要手动同步, targetSlotName的懒加载目标",
                                            default=None, exclude=True)
     targetNodeID:       int        = Field(description="目标节点ID", default=-1)
     targetSlotName:     str        = Field(description="目标插槽名称", default="unknown")
@@ -650,7 +650,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
             workflow_ = Wrapper2File(workflow_)
             if not workflow_.exists():
                 raise Exception(f"{workflow_} 不存在")
-            workflow:Workflow = EasySave.Read(workflow_, rtype=Workflow)
+            workflow:Workflow = EasySave.Read(Workflow, workflow_)
             self.ClearWorkflow()
         # 排序及检查
         workflow.Datas.sort(key=lambda x: x.nodeID)

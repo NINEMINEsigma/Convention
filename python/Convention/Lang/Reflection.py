@@ -3,6 +3,7 @@ import                  inspect
 import                  types
 from enum        import Enum, IntFlag
 from typing      import *
+import                  typing
 from ..Internal  import *
 from pydantic    import BaseModel, Field, PrivateAttr
 import                  json
@@ -20,7 +21,7 @@ type_symbols = {
 
 class ReflectionException(Exception):
     def __init__(self, message:str):
-        self.message = message
+        self.message = f"{ConsoleFrontColor.RED}{message}{ConsoleFrontColor.RESET}"
         super().__init__(self.message)
 
 def get_type_from_string(type_string:str) -> type:
@@ -81,17 +82,46 @@ def get_generic_args(type_hint: type | Any) -> tuple[type | None, tuple[type, ..
 def is_generic(type_hint: type | Any) -> bool:
     return "__origin__" in dir(type_hint)
 
+class _SpecialIndictaor:
+    pass
+
+class ListIndictaor(_SpecialIndictaor):
+    elementType:type
+    def __init__(self, elementType:type):
+        self.elementType = elementType
+
+class DictIndictaor(_SpecialIndictaor):
+    keyType:type
+    valueType:type
+    def __init__(self, keyType:type, valueType:type):
+        self.keyType = keyType
+        self.valueType = valueType
+
+class TupleIndictaor(_SpecialIndictaor):
+    elementTypes:tuple[type, ...]
+    def __init__(self, *elementTypes:type):
+        self.elementTypes = elementTypes
+
+class SetIndictaor(_SpecialIndictaor):
+    elementType:type
+    def __init__(self, elementType:type):
+        self.elementType = elementType
+
 def to_type(
-    typen:          type|Any|str, 
+    typen:          type|Any|str,
     *,
     module_name:    str|None=None
-    ) -> type:
+    ) -> type|List[type]|_SpecialIndictaor:
     if isinstance(typen, type):
+        return typen
+    elif isinstance(typen, _SpecialIndictaor):
         return typen
     elif isinstance(typen, str):
         import sys
+        if not all(c.isalnum() or c == '.' for c in typen):
+            raise ValueError(f"Invalid type string: {typen}, only alphanumeric characters and dots are allowed")
         type_components = typen.split(".")
-        type_module = module_name or ".".join(type_components[:-1]) if len(type_components) > 1 else None
+        type_module = module_name or (".".join(type_components[:-1]) if len(type_components) > 1 else None)
         type_final = type_components[-1]
         if type_module is not None:
             return sys.modules[type_module].__dict__[type_final]
@@ -100,42 +130,79 @@ def to_type(
                 if type_final in module.__dict__:
                     return module.__dict__[type_final]
             return get_type_from_string(typen)
+    elif is_union(typen):
+        uTypes = get_union_types(typen)
+        uTypes = [uType for uType in uTypes if uType is not type(None)]
+        if len(uTypes) == 1:
+            return uTypes[0]
+        elif len(uTypes) == 0:
+            return type(None)
+        else:
+            return uTypes
+    elif hasattr(typen, '__origin__'):
+        oType = get_origin(typen)
+        if oType is list:
+            return ListIndictaor(get_args(typen)[0])
+        elif oType is dict:
+            return DictIndictaor(get_args(typen)[0], get_args(typen)[1])
+        elif oType is tuple:
+            return TupleIndictaor(*get_args(typen))
+        elif oType is set:
+            return SetIndictaor(get_args(typen)[0])
+        else:
+            return oType
     else:
         return type(typen)
 
+def try_to_type(typen:type|Any|str, *, module_name:str|None=None) -> type|List[type]|_SpecialIndictaor|None:
+    try:
+        return to_type(typen, module_name=module_name)
+    except Exception:
+        return None
+
+def is_union(type_hint: type | Any) -> bool:
+    return "__origin__" in dir(type_hint) and type_hint.__origin__ == Union
+
+def get_union_types(type_hint: type | Any) -> List[type]:
+    return [t for t in type_hint.__args__ if t is not type(None)]
+
 class TypeVarIndictaor:
+    pass
+
+class AnyVarIndicator:
     pass
 
 def decay_type(
     type_hint:      type|Any,
     *,
     module_name:    str|None=None
-    ) -> type|List[type]:
+    ) -> type|List[type]|_SpecialIndictaor:
+    if GetInternalDebug():
+        print_colorful(ConsoleFrontColor.YELLOW, f"Decay: {type_hint}")
     type_dir = dir(type_hint)
-    if "__forward_arg__" in type_dir:
-        return decay_type(to_type(type_hint.__forward_arg__, module_name=module_name), module_name=module_name)
-    if type_hint is type:
+    result:type|List[type] = None
+    if isinstance(type_hint, _SpecialIndictaor):
         return type_hint
-    elif "__origin__" in type_dir:
-        if "__args__" in type_dir:
-            result: List[type] = []
-            for arg in type_hint.__args__:
-                type_or_typelist = decay_type(arg, module_name=module_name)
-                if isinstance(type_or_typelist, list):
-                    result.extend(type_or_typelist)
-                else:
-                    result.append(type_or_typelist)
-            result = [t for t in result if t is not type(None)]
-            if len(result) == 1:
-                return result[0]
-            else:
-                return result
-        else:
-            return decay_type(type_hint.__origin__, module_name=module_name)
+    elif isinstance(type_hint, str):
+        try:
+            result = to_type(type_hint, module_name=module_name)
+        except TypeError:
+            result = Any
+    elif "__forward_arg__" in type_dir:
+        result = to_type(type_hint.__forward_arg__, module_name=module_name)
+    elif type_hint is type:
+        result = type_hint
+    elif is_union(type_hint):
+        result = get_union_types(type_hint)
     elif isinstance(type_hint, TypeVar):
-        return TypeVarIndictaor
+        result = TypeVarIndictaor
+    elif type_hint is type:
+        result = type_hint
     else:
-        return type_hint
+        raise ReflectionException(f"Invalid type: {type_hint}<{type_hint.__class__}>")
+    if GetInternalDebug():
+        print_colorful(ConsoleFrontColor.YELLOW, f"Result: {result}")
+    return result
 
 class light_reflection(any_class):
     def __init__(self, obj:object, type_str:str=None, *args, **kwargs):
@@ -273,18 +340,22 @@ class MemberInfo(BaseInfo):
                f"{'static' if self.IsStatic else 'instance'}, {'public' if self.IsPublic else 'private'}>"
 
 class ValueInfo(BaseInfo):
-    _RealType:      Optional[type]  = PrivateAttr(default=None)
-    _IsPrimitive:   bool            = PrivateAttr(default=False)
-    _IsValueType:   bool            = PrivateAttr(default=False)
-    _IsCollection:  bool            = PrivateAttr(default=False)
-    _IsDictionary:  bool            = PrivateAttr(default=False)
-    _IsTuple:       bool            = PrivateAttr(default=False)
-    _IsSet:         bool            = PrivateAttr(default=False)
-    _IsList:        bool            = PrivateAttr(default=False)
-    _IsUnsupported: bool            = PrivateAttr(default=False)
+    _RealType:      Optional[Any] = PrivateAttr(default=None)
+    _IsPrimitive:   bool          = PrivateAttr(default=False)
+    _IsValueType:   bool          = PrivateAttr(default=False)
+    _IsCollection:  bool          = PrivateAttr(default=False)
+    _IsDictionary:  bool          = PrivateAttr(default=False)
+    _IsTuple:       bool          = PrivateAttr(default=False)
+    _IsSet:         bool          = PrivateAttr(default=False)
+    _IsList:        bool          = PrivateAttr(default=False)
+    _IsUnsupported: bool          = PrivateAttr(default=False)
+    _GenericArgs:   List[type]    = PrivateAttr(default=[])
 
     @property
-    def RealType(self) -> type:
+    def IsUnion(self) -> bool:
+        return is_union(self._RealType)
+    @property
+    def RealType(self):
         return self._RealType
     @property
     def IsCollection(self) -> bool:
@@ -317,19 +388,22 @@ class ValueInfo(BaseInfo):
     def ModuleName(self) -> str:
         return self.RealType.__module__
 
-    def __init__(self, metaType:type, **kwargs):
+    def __init__(self, metaType:type|Any, generic_args:Optional[List[type]]=None, **kwargs) -> None:
         super().__init__(**kwargs)
         self._RealType = metaType
+        self._GenericArgs = generic_args
+        if not isinstance(metaType, type):
+            return
         self._IsPrimitive = (
             issubclass(metaType, int) or
             issubclass(metaType, float) or
             issubclass(metaType, str) or
             issubclass(metaType, bool) or
-            issubclass(metaType, complex) or
-            issubclass(metaType, tuple) or
-            issubclass(metaType, set) or
-            issubclass(metaType, list) or
-            issubclass(metaType, dict)
+            issubclass(metaType, complex) #or
+            # issubclass(metaType, tuple) or
+            # issubclass(metaType, set) or
+            # issubclass(metaType, list) or
+            # issubclass(metaType, dict)
             )
         self._IsValueType = (
             issubclass(metaType, int) or
@@ -360,103 +434,93 @@ class ValueInfo(BaseInfo):
     def Verify(self, valueType:type) -> bool:
         if self.IsUnsupported:
             raise ReflectionException(f"Unsupported type: {self.RealType}")
-        return issubclass(valueType, self.RealType)
+        if self.IsUnion:
+            return any(ValueInfo(uType).Verify(valueType) for uType in get_union_types(self.RealType))
+        elif self.RealType is Any:
+            return True
+        elif self.RealType is type(None):
+            return valueType is None or valueType is type(None)
+        else:
+            return issubclass(valueType, self.RealType)
+
+    def DecayToList(self) -> List[Self]:
+        result:List[Self] = []
+        if self.IsUnion:
+            for uType in get_union_types(self.RealType):
+                result.extend(ValueInfo(uType).DecayToList())
+        else:
+            result.append(self)
+        result = list(dict.fromkeys(result).keys())
+        return result
 
     @override
     def __repr__(self) -> str:
-        return f"ValueInfo<{self.RealType.__name__}>"
+        generic_args = ", ".join(self._GenericArgs)
+        return f"ValueInfo<{self.RealType}{f'[{generic_args}]' if generic_args else ''}>"
     @override
     def SymbolName(self) -> str:
         return "ValueInfo"
     @override
     def ToString(self) -> str:
-        return f"<{self.RealType.__module__}.{self.RealType.__name__}>"
+        generic_args = ", ".join(self._GenericArgs)
+        return f"<{self.RealType}{f'[{generic_args}]' if generic_args else ''}>"
 
-class UnionValueInfo(BaseInfo):
-    _UnionTypes:    List[ValueInfo] = PrivateAttr(default=[])
-
-    def __init__(self, metaType:type|Sequence[type]|Any, module_name:str|None=None, **kwargs):
-        '''
-        module_name is lost arg
-        '''
-        super().__init__(**kwargs)
-        self._UnionTypes = []
+    @staticmethod
+    def Create(
+        metaType:       type|Any,
+        generic_args:   Optional[List[type]] = None,
+        *,
+        module_name:    Optional[str] = None,
+        SelfType:       type|Any|None        = None,
+        **kwargs
+        ) -> Self:
+        if GetInternalDebug():
+            print_colorful(ConsoleFrontColor.BLUE, f"Current ValueInfo.Create Frame: "\
+                f"metaType={metaType}, generic_args={generic_args}, SelfType={SelfType}")
         if isinstance(metaType, type):
-            self._UnionTypes.append(ValueInfo(metaType))
-        elif isinstance(metaType, Sequence):
-            for vType in metaType:
-                # not use module_name
-                type_or_typelist = decay_type(vType)
-                if isinstance(type_or_typelist, list):
-                    self._UnionTypes.extend(ValueInfo(t) for t in type_or_typelist)
-                else:
-                    self._UnionTypes.append(ValueInfo(type_or_typelist))
-        elif is_generic(metaType):
-            generic_args = get_generic_args(metaType)
-            for vType in generic_args[1]:
-                # not use module_name
-                type_or_typelist = decay_type(vType)
-                if isinstance(type_or_typelist, list):
-                    self._UnionTypes.extend(ValueInfo(t) for t in type_or_typelist)
-                else:
-                    self._UnionTypes.append(ValueInfo(type_or_typelist))
+            return ValueInfo(metaType, generic_args, **kwargs)
+        elif isinstance(metaType, str):
+            type_ = try_to_type(metaType, module_name=module_name)
+            if type_ is None:
+                return ValueInfo(metaType, generic_args, **kwargs)
+            else:
+                return ValueInfo(type_, generic_args, **kwargs)
+        elif metaType is Self:
+            if SelfType is None:
+                raise ReflectionException("SelfType is required when metaType is <Self>")
+            return ValueInfo.Create(SelfType, **kwargs)
+        elif isinstance(metaType, TypeVar):
+            return TypeVarIndictaor
         else:
-            raise ReflectionException(f"Invalid union type: {metaType}")
-
-    @property
-    def UnionTypes(self) -> Tuple[ValueInfo, ...]:
-        return tuple(vType.RealType for vType in self._UnionTypes)
-    @property
-    def RealType(self) -> Sequence[type]:
-        return tuple(vType.RealType for vType in self._UnionTypes)
-    
-    @override
-    def Verify(self, valueType:type) -> bool:
-        return any(vType.Verify(valueType) for vType in self._UnionTypes)
-    
-    @override
-    def __repr__(self) -> str:
-        return f"UnionValueInfo<{', '.join(vType.RealType.__name__ for vType in self._UnionTypes)}>"
-    @override
-    def SymbolName(self) -> str:
-        return "UnionValueInfo"
-    @override
-    def ToString(self) -> str:
-        return f"<{', '.join(vType.RealType.__module__ + '.' + vType.RealType.__name__ for vType in self._UnionTypes)}>"
+            return ValueInfo(metaType, generic_args, **kwargs)
 
 class FieldInfo(MemberInfo):
-    _MetaType:      Optional[ValueInfo|UnionValueInfo] = PrivateAttr(default=None)
-    
+    _MetaType:      Optional[ValueInfo] = PrivateAttr(default=None)
+
     def __init__(
         self,
-        metaType:       Any, 
-        name:           str, 
+        metaType:       Any,
+        name:           str,
         ctype:          type,
-        is_static:      bool, 
+        is_static:      bool,
         is_public:      bool,
         module_name:    Optional[str] = None
         ):
         if GetInternalDebug():
-            print_colorful(ConsoleFrontColor.RED, f"Current Make FieldInfo: {ctype}.{name} {metaType} ")
+            print_colorful(ConsoleFrontColor.LIGHTBLUE_EX, f"Current Make FieldInfo: {ctype}.{name} {metaType} ")
         super().__init__(
             name = name,
             ctype = ctype,
             is_static = is_static,
             is_public = is_public,
             )
-        d_metaType =  decay_type(metaType, module_name=module_name)
-        if isinstance(d_metaType, list):
-            if GetInternalDebug():
-                print_colorful(ConsoleFrontColor.RED, f"Current RealType: {d_metaType}")
-            self._MetaType = UnionValueInfo(d_metaType, module_name=module_name)
-        else:
-            if GetInternalDebug():
-                print_colorful(ConsoleFrontColor.RED, f"Current RealType: {d_metaType}")
-            self._MetaType = ValueInfo(d_metaType, module_name=module_name)
+        self._MetaType = ValueInfo.Create(metaType, module_name=module_name)
+        if GetInternalDebug():
+            print_colorful(ConsoleFrontColor.LIGHTBLUE_EX, f"Current RealType: {self._MetaType.RealType}")
 
     @property
-    def MetaType(self) -> ValueInfo|UnionValueInfo:
-        return self._MetaType
+    def IsUnion(self) -> bool:
+        return self._MetaType.IsUnion
     @property
     def FieldName(self) -> str:
         '''
@@ -464,14 +528,17 @@ class FieldInfo(MemberInfo):
         '''
         return self.MemberName
     @property
-    def FieldType(self) -> type|List[type]:
+    def ValueType(self):
+        return self._MetaType
+    @property
+    def FieldType(self):
         '''
         字段类型
         '''
-        return self.MetaType.RealType
+        return self._MetaType.RealType
 
     def Verify(self, valueType:type) -> bool:
-        return self.MetaType.Verify(valueType)
+        return self._MetaType.Verify(valueType)
 
     @virtual
     def GetValue(self, obj:Any) -> Any:
@@ -479,7 +546,9 @@ class FieldInfo(MemberInfo):
             return getattr(self.ParentType, self.MemberName)
         else:
             if not isinstance(obj, self.ParentType):
-                raise TypeError(f"Parent type mismatch, expected {self.ParentType}, got {type(obj)}")
+                raise TypeError(f"{ConsoleFrontColor.RED}Field {ConsoleFrontColor.LIGHTBLUE_EX}{self.MemberName}"\
+                    f"{ConsoleFrontColor.RED} , parent type mismatch, expected {self.ParentType}, got {type(obj)}"\
+                    f"{ConsoleFrontColor.RESET}")
             return getattr(obj, self.MemberName)
     @virtual
     def SetValue(self, obj:Any, value:Any) -> None:
@@ -494,8 +563,18 @@ class FieldInfo(MemberInfo):
             if self.Verify(type(value)):
                 setattr(obj, self.MemberName, value)
             else:
-                raise TypeError(f"Value type mismatch, expected {self.MetaType}, got {type(value)}")
+                if isinstance(self.FieldType, str):
+                    raise TypeError(f"{ConsoleFrontColor.RED}Field {ConsoleFrontColor.LIGHTBLUE_EX}{self.MemberName}"\
+                        f"{ConsoleFrontColor.RED} , value type mismatch, expected \"{self.FieldType}\""\
+                        f", got {type(value)}{ConsoleFrontColor.RESET}")
+                else:
+                    raise TypeError(f"{ConsoleFrontColor.RED}Field {ConsoleFrontColor.LIGHTBLUE_EX}{self.MemberName}"\
+                        f"{ConsoleFrontColor.RED} , value type mismatch, expected {self.FieldType}"\
+                        f", got {type(value)}{ConsoleFrontColor.RESET}")
 
+    @override
+    def __repr__(self) -> str:
+        return f"<{self.MemberName} type={self.FieldType}>"
     @override
     def SymbolName(self) -> str:
         return "FieldInfo"
@@ -505,7 +584,7 @@ class FieldInfo(MemberInfo):
                f"{'static' if self.IsStatic else 'instance'}, {'public' if self.IsPublic else 'private'}>"
 
 class ParameterInfo(BaseInfo):
-    _MetaType:      Optional[ValueInfo|UnionValueInfo] = PrivateAttr(default=None)
+    _MetaType:      Optional[ValueInfo] = PrivateAttr(default=None)
     _ParameterName: str  = PrivateAttr(default="")
     _IsOptional:    bool = PrivateAttr(default=False)
     _DefaultValue:  Any  = PrivateAttr(default=None)
@@ -523,27 +602,26 @@ class ParameterInfo(BaseInfo):
         self._ParameterName = name
         self._IsOptional = is_optional
         self._DefaultValue = default_value
-        d_metaType =  decay_type(metaType, module_name=module_name)
-        if isinstance(d_metaType, list):
-            self._MetaType = UnionValueInfo(d_metaType, module_name=module_name)
-        else:
-            self._MetaType = ValueInfo(d_metaType, module_name=module_name)
+        self._MetaType = ValueInfo.Create(metaType, module_name=module_name)
 
     @property
-    def MetaType(self) -> ValueInfo|UnionValueInfo:
+    def ValueType(self):
         return self._MetaType
     @property
     def ParameterName(self) -> str:
         return self._ParameterName
     @property
-    def ParameterType(self) -> type|List[type]:
-        return self.MetaType.RealType
+    def ParameterType(self):
+        return self._MetaType.RealType
     @property
     def IsOptional(self) -> bool:
         return self._IsOptional
     @property
     def DefaultValue(self) -> Any:
         return self._DefaultValue
+
+    def Verify(self, valueType:type) -> bool:
+        return self._MetaType.Verify(valueType)
 
     @override
     def __repr__(self) -> str:
@@ -557,7 +635,7 @@ class ParameterInfo(BaseInfo):
                f"{'optional' if self.IsOptional else 'required'}, default={self.DefaultValue}>"
 
 class MethodInfo(MemberInfo):
-    _ReturnType:            Optional[type]      = PrivateAttr(default=None)
+    _ReturnType:            Optional[ValueInfo] = PrivateAttr(default=None)
     _Parameters:            List[ParameterInfo] = PrivateAttr(default=[])
     _PositionalParameters:  List[ParameterInfo] = PrivateAttr(default=[])
     _KeywordParameters:     List[ParameterInfo] = PrivateAttr(default=[])
@@ -565,7 +643,7 @@ class MethodInfo(MemberInfo):
 
     def __init__(
         self,
-        return_type:            type,
+        return_type:            Any,
         parameters:             List[ParameterInfo],
         positional_parameters:  List[ParameterInfo],
         keyword_parameters:     List[ParameterInfo],
@@ -575,15 +653,18 @@ class MethodInfo(MemberInfo):
         is_public:              bool,
         is_class_method:        bool,
         ):
+        if GetInternalDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"Current Make MethodInfo: "\
+                f"{return_type} {ctype}.{name}({', '.join([p.ParameterName for p in parameters])})")
         MemberInfo.__init__(self, name, ctype, is_static, is_public)
-        self._ReturnType = return_type
+        self._ReturnType = ValueInfo.Create(return_type, SelfType=self.ParentType)
         self._Parameters = parameters
         self._PositionalParameters = positional_parameters
         self._KeywordParameters = keyword_parameters
         self._IsClassMethod = is_class_method
     @property
-    def ReturnType(self) -> type:
-        return self._ReturnType
+    def ReturnType(self) -> ValueInfo:
+        return self._ReturnType.RealType
     @property
     def Parameters(self) -> List[ParameterInfo]:
         return self._Parameters
@@ -664,112 +745,158 @@ class RefType(ValueInfo):
     _MethodInfos:   List[MethodInfo] = PrivateAttr()
     _MemberNames:   List[str]        = PrivateAttr()
 
-    def __init__(self, metaType:type):
-        if is_generic(metaType):
-            raise NotImplementedError("Generic type is not supported")
-        super().__init__(metaType)
-        self._FieldInfos = []
-        self._MethodInfos = []
-        self._MemberNames = []
+    def __init__(self, metaType:type|_SpecialIndictaor):
 
-        class_var = metaType.__dict__
-        annotations:Dict[str, metaType] = get_type_hints(metaType)
-
-        for name, member in inspect.getmembers(metaType):
-            if inspect.ismethod(member) or inspect.isfunction(member):
-                # 获取方法签名
-                sig = inspect.signature(member)
-                is_static = isinstance(member, staticmethod)
-                is_class_method = isinstance(member, classmethod)
-                is_public = (name.startswith("__") and name.endswith("__")) or not name.startswith('_')
-
-                # 构建参数列表
-                parameters = []
-                positional_parameters = []
-                keyword_parameters = []
-
-                for param_name, param in sig.parameters.items():
-                    if param_name == 'self':
-                        continue
-                    if param_name == 'cls':
-                        continue
-                    ptype = param.annotation if param.annotation != inspect.Parameter.empty else Any
-                    ptype = ptype if isinstance(ptype, type) else Any
-                    param_info = ParameterInfo(
-                        metaType = ptype,
-                        name = param_name,
-                        is_optional = param.default != inspect.Parameter.empty,
-                        default_value = param.default if param.default != inspect.Parameter.empty else None,
-                        module_name = self.ModuleName
-                    )
-                    parameters.append(param_info)
-
-                    if param.kind == inspect.Parameter.POSITIONAL_ONLY or param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
-                        positional_parameters.append(param_info)
-                    elif param.kind == inspect.Parameter.KEYWORD_ONLY:
-                        keyword_parameters.append(param_info)
-
-                # 构建方法信息
-                if GetInternalDebug():
-                    print_colorful(ConsoleFrontColor.RED, f"Current Make MethodInfo: {metaType}.{name}")
-                method_info = MethodInfo(
-                    return_type = sig.return_annotation if sig.return_annotation != inspect.Signature.empty else Any,
-                    parameters = parameters,
-                    positional_parameters = positional_parameters,
-                    keyword_parameters = keyword_parameters,
-                    name = name,
+        extensionFields:List[FieldInfo] = []
+        if isinstance(metaType, ListIndictaor):
+            extensionFields.append(FieldInfo(
+                metaType = metaType.elementType,
+                name = "elementType",
+                ctype = metaType,
+                is_static = False,
+                is_public = True
+            ))
+            metaType = list
+        elif isinstance(metaType, DictIndictaor):
+            extensionFields.append(FieldInfo(
+                metaType = metaType.keyType,
+                name = "keyType",
+                ctype = metaType,
+                is_static = False,
+                is_public = True
+            ))
+            extensionFields.append(FieldInfo(
+                metaType = metaType.valueType,
+                name = "valueType",
+                ctype = metaType,
+                is_static = False,
+                is_public = True
+            ))
+            metaType = dict
+        elif isinstance(metaType, TupleIndictaor):
+            for i, elementType in enumerate(metaType.elementTypes):
+                extensionFields.append(FieldInfo(
+                    metaType = elementType,
+                    name = f"elementType_{i}",
                     ctype = metaType,
-                    is_static = is_static,
-                    is_public = is_public,
-                    is_class_method = is_class_method
-                )
-                self._MethodInfos.append(method_info)
-                self._MemberNames.append(name)
+                    is_static = False,
+                    is_public = True
+                ))
+            metaType = tuple
+        elif isinstance(metaType, SetIndictaor):
+            extensionFields.append(FieldInfo(
+                metaType = metaType.elementType,
+                name = "elementType",
+                ctype = metaType,
+                is_static = False,
+                is_public = True
+            ))
+            metaType = set
+        elif is_generic(metaType):
+            raise NotImplementedError("Generic type is not supported")
 
-        if issubclass(metaType, BaseModel):
-            for field_name, model_field in metaType.__pydantic_fields__.items():
-                metaType = model_field.annotation if model_field.annotation is not None else Any
-                if GetInternalDebug():
-                    print_colorful(ConsoleFrontColor.RED, f"Current Make FieldInfo: {metaType}.{field_name} {metaType} ")
-                field_info = FieldInfo(
-                    metaType=metaType,
-                    name=field_name,
-                    ctype=metaType,
-                    is_public=True,
-                    is_static=False,
-                    module_name = self.ModuleName
-                )
-                self._FieldInfos.append(field_info)
-                self._MemberNames.append(field_name)
-        else:
+        if True:
+            super().__init__(metaType)
+
+            self._FieldInfos = extensionFields
+            self._MethodInfos = []
+            self._MemberNames = []
+
+            class_var = metaType.__dict__
+            annotations:Dict[str, metaType] = get_type_hints(metaType)
+
             for name, member in inspect.getmembers(metaType):
-                if not inspect.ismethod(member) and not inspect.isfunction(member):
-                    is_static = name in class_var
-                    is_public = (name.startswith('__') and name.endswith('__')) or not name.startswith('_')
-                    metaType = annotations.get(name, Any)
-                    field_info = FieldInfo(
-                        metaType = metaType,
+                if inspect.ismethod(member) or inspect.isfunction(member):
+                    # 获取方法签名
+                    sig = inspect.signature(member)
+                    is_static = isinstance(member, staticmethod)
+                    is_class_method = isinstance(member, classmethod)
+                    is_public = (name.startswith("__") and name.endswith("__")) or not name.startswith('_')
+
+                    # 构建参数列表
+                    parameters:List[ParameterInfo] = []
+                    positional_parameters:List[ParameterInfo] = []
+                    keyword_parameters:List[ParameterInfo] = []
+
+                    for param_name, param in sig.parameters.items():
+                        if param_name == 'self':
+                            continue
+                        if param_name == 'cls':
+                            continue
+                        ptype = param.annotation if param.annotation != inspect.Parameter.empty else Any
+                        ptype = ptype if isinstance(ptype, type) else Any
+                        param_info = ParameterInfo(
+                            metaType = ptype,
+                            name = param_name,
+                            is_optional = param.default != inspect.Parameter.empty,
+                            default_value = param.default if param.default != inspect.Parameter.empty else None,
+                            module_name = self.ModuleName
+                        )
+                        parameters.append(param_info)
+
+                        if param.kind == inspect.Parameter.POSITIONAL_ONLY or param.kind == inspect.Parameter.POSITIONAL_OR_KEYWORD:
+                            positional_parameters.append(param_info)
+                        elif param.kind == inspect.Parameter.KEYWORD_ONLY:
+                            keyword_parameters.append(param_info)
+
+                    # 构建方法信息
+                    method_info = MethodInfo(
+                        return_type = sig.return_annotation if sig.return_annotation != inspect.Signature.empty else Any,
+                        parameters = parameters,
+                        positional_parameters = positional_parameters,
+                        keyword_parameters = keyword_parameters,
                         name = name,
                         ctype = metaType,
                         is_static = is_static,
                         is_public = is_public,
+                        is_class_method = is_class_method
+                    )
+                    self._MethodInfos.append(method_info)
+                    self._MemberNames.append(name)
+
+            if issubclass(metaType, BaseModel):
+                for field_name, model_field in metaType.__pydantic_fields__.items():
+                    fieldType = model_field.annotation if model_field.annotation is not None else Any
+                    is_public = not model_field.exclude
+                    field_info = FieldInfo(
+                        metaType=fieldType,
+                        name=field_name,
+                        ctype=metaType,
+                        is_public=is_public,
+                        is_static=False,
                         module_name = self.ModuleName
+                    )
+                    self._FieldInfos.append(field_info)
+                    self._MemberNames.append(field_name)
+            else:
+                for name, member in inspect.getmembers(metaType):
+                    if not inspect.ismethod(member) and not inspect.isfunction(member):
+                        is_static = name in class_var
+                        is_public = (name.startswith('__') and name.endswith('__')) or not name.startswith('_')
+                        fieldType = annotations.get(name, Any)
+                        field_info = FieldInfo(
+                            metaType = fieldType,
+                            name = name,
+                            ctype = metaType,
+                            is_static = is_static,
+                            is_public = is_public,
+                            module_name = self.ModuleName
+                        )
+                        self._FieldInfos.append(field_info)
+                        self._MemberNames.append(name)
+
+            for name, annotation in annotations.items():
+                if name not in self._MemberNames:
+                    field_info = FieldInfo(
+                        metaType = decay_type(annotation),
+                        name = name,
+                        ctype = metaType,
+                        is_static = False,
+                        is_public = not name.startswith('_')
                     )
                     self._FieldInfos.append(field_info)
                     self._MemberNames.append(name)
 
-        for name, annotation in annotations.items():
-            if name not in self._MemberNames:
-                field_info = FieldInfo(
-                    fieldType = decay_type(annotation),
-                    name = name,
-                    ctype = metaType,
-                    is_static = False,
-                    is_public = not name.startswith('_')
-                )
-                self._FieldInfos.append(field_info)
-                self._MemberNames.append(name)
-    
     def _where_member(self, member:MemberInfo, flag:RefTypeFlag) -> bool:
         stats = True
         if member.IsStatic:
@@ -884,27 +1011,30 @@ class RefType(ValueInfo):
                f"{', methods=' if len(methods)!=0 else ''}{', '.join(methods)}{ConsoleFrontColor.RESET}>"
 
     @sealed
-    def tree(self) -> str:
+    def tree(self, indent:int=4) -> str:
         type_set: set = set()
         def dfs(currentType:RefType) -> Dict[str, Dict[str, Any]|Any]:
+            if GetInternalDebug():
+                print_colorful(ConsoleFrontColor.RED, f"Current Tree DFS: "\
+                    f"__type={currentType.RealType} __type.class={currentType.RealType.__class__}")
             if currentType.IsPrimitive:
-                return currentType.RealType.__name__
+                return f"{currentType.RealType}"
             elif currentType.RealType in type_set:
                 return {
-                    "type": currentType.RealType.__name__,
+                    "type": f"{currentType.RealType}",
                     "value": { field.FieldName: f"{field.FieldType}" for field in currentType.GetFields() }
                 }
             else:
                 type_set.add(currentType.RealType)
+                value = {}
+                for field in currentType.GetFields():
+                    value[field.FieldName] = dfs(TypeManager.GetInstance().CreateOrGetRefType(field.FieldType))
                 return {
-                    "type": currentType.RealType.__name__,
-                    "value": {
-                        field.FieldName: dfs(TypeManager.GetInstance().CreateOrGetRefType(field.FieldType))
-                        for field in currentType.GetFields()
-                        }
+                    "type": f"{currentType.RealType}",
+                    "value": value
                 }
 
-        return json.dumps(dfs(self), indent=4)
+        return json.dumps(dfs(self), indent=indent)
 
 type RTypen[_T] = RefType
 '''
@@ -926,23 +1056,35 @@ class TypeManager(BaseModel, any_class):
     def AllRefTypes(self) -> Tuple[RefType, ...]:
         return tuple(self._RefTypes.values())
 
+    @staticmethod
+    def _TurnToType(data:Any, module_name:Optional[str]=None) -> type|_SpecialIndictaor:
+        metaType:type|_SpecialIndictaor = None
+        if isinstance(data, str):
+            if module_name is None:
+                metaType = sys.modules[module_name][data]
+        if metaType is None:
+            metaType = try_to_type(data, module_name=module_name)
+            if metaType is None or isinstance(metaType, list):
+                metaType = data
+        return metaType
+
     @overload
     def CreateOrGetRefType(
         self,
-        type_:          type, 
+        type_:          type,
         module_name:    Optional[str] = None
         ) -> RefType:
         ...
     @overload
     def CreateOrGetRefType(
-        self, 
+        self,
         obj:            object,
         module_name:    Optional[str] = None
         ) -> RefType:
         ...
     @overload
     def CreateOrGetRefType(
-        self,   
+        self,
         type_str:       str,
         module_name:    Optional[str] = None
         ) -> RefType:
@@ -954,30 +1096,19 @@ class TypeManager(BaseModel, any_class):
         ) -> RefType:
         if data is None:
             raise ReflectionException("data is None")
-        
-        metaType:type = None
-        if isinstance(data, str):
-            if module_name is None:
-                metaType = sys.modules[data][data]
-        if metaType is None:
-            metaType = to_type(data)
+
+        metaType:type = TypeManager._TurnToType(data, module_name=module_name)
 
         if metaType in self._RefTypes:
+            print_colorful(ConsoleFrontColor.GREEN, f"Get Existing RefType: {metaType}")
             return self._RefTypes[metaType]
         else:
-            if GetInternalDebug():
-                print_colorful(ConsoleFrontColor.RED, f"Current Create RefType: {data}")
-            try:
-                ref_type = RefType(metaType)
-                self._RefTypes[metaType] = ref_type
-                return ref_type
-            except Exception as e:
-                raise ReflectionException(f"Create RefType failed: {e}") from e
+            return self.CreateRefType(metaType, module_name=module_name)
 
     @overload
     def CreateRefType(
         self,
-        type_:          type, 
+        type_:          type,
         module_name:    Optional[str] = None
         ) -> RefType:
         ...
@@ -1002,22 +1133,25 @@ class TypeManager(BaseModel, any_class):
         ) -> RefType:
         if data is None:
             raise ReflectionException("data is None")
-        
-        metaType:type = None
-        if isinstance(data, str):
-            if module_name is None:
-                metaType = sys.modules[data][data]
-        if metaType is None:
-            metaType = to_type(data)
 
-        if metaType in self._RefTypes:
-            del self._RefTypes[metaType]
+        metaType:type|_SpecialIndictaor = TypeManager._TurnToType(data, module_name=module_name)
+
         if GetInternalDebug():
-            print_colorful(ConsoleFrontColor.RED, f"Current Create RefType: {data}")
+            print_colorful(ConsoleFrontColor.GREEN, f"Create RefType: {metaType}")
         try:
             ref_type = RefType(metaType)
             self._RefTypes[metaType] = ref_type
             return ref_type
         except Exception as e:
             raise ReflectionException(f"Create RefType failed: {e}")
-        
+
+    def CreateOrGetRefTypeFromType(self, type_:type) -> RefType:
+        if type_ in self._RefTypes:
+            return self._RefTypes[type_]
+        else:
+            return self.CreateRefType(type_)
+    def CreateRefTypeFromType(self, type_:type) -> RefType:
+        result = self._RefTypes[type_] = self.CreateRefType(type_)
+        return result
+
+

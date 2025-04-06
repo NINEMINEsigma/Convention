@@ -46,7 +46,6 @@ async def run():
         print(manager.GetNode[EndNode](0))
     except InterruptedError:
         print_colorful(ConsoleFrontColor.RED, "测试中断")
-        raise
     except Exception as e:
         print_colorful(ConsoleFrontColor.RED, "测试中断")
         raise

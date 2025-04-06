@@ -1,5 +1,6 @@
 from .Reflection    import *
 from ..File.Core    import tool_file, tool_file_or_str, UnWrapper as UnwrapperFile2Str
+from ..Str.Core     import limit_str
 
 class EasySaveSetting(BaseModel, any_class):
     # 从目标文件进行序列化/反序列化
@@ -206,7 +207,7 @@ class ESReader(BaseModel, any_class):
             if rtype is None and isinstance(layer, dict) and "__type" in layer:
                 rtype = self.get_rtype_from_typen(layer["__type"])
             if GetInternalDebug():
-                print_colorful(ConsoleFrontColor.RED, f"layer: {layer}, rtype: {rtype.RealType}")
+                print_colorful(ConsoleFrontColor.WHITE, f"layer: {limit_str(str(layer), 100)}, rtype: {rtype.RealType}")
 
             # 处理值类型
             if rtype.IsValueType:
@@ -231,7 +232,8 @@ class ESReader(BaseModel, any_class):
                 if rinstance is None:
                     rinstance = rtype.CreateInstance()
                 else:
-                    raise ValueError(f"rinstance is not None")
+                    raise ValueError(f"rinstance is not None, current context: "\
+                        f"rtype: {rtype.RealType}, rinstance: {rinstance}<{rinstance.__class__}>, layer: {limit_str(str(layer), 100)}")
                 # 递归处理每个字段
                 for field in fields:
                     field.SetValue(
@@ -241,7 +243,7 @@ class ESReader(BaseModel, any_class):
                 return rinstance
 
         # 从根节点开始反序列化
-        result_instance = dfs(rtype, layers["value"], rtype.CreateInstance())
+        result_instance = dfs(rtype, layers["value"], None)#rtype.CreateInstance())
         return result_instance
 
     @sealed
@@ -283,9 +285,34 @@ class EasySave(any_class):
         '''
         return ESWriter(setting=(setting if setting is not None else EasySaveSetting(file=UnwrapperFile2Str(file)))).Write(rinstance)
 
+    @overload
     @staticmethod
-    def Read[T](file:tool_file_or_str=None, *, rtype:Optional[RTypen[T]]=None, setting:Optional[EasySaveSetting]=None) -> T:
+    def Read[T](
+        rtype:      Typen[T],
+        file:       tool_file_or_str            = None,
+        *,
+        setting:    Optional[EasySaveSetting]   = None
+        ) -> T:
+        ...
+    @overload
+    @staticmethod
+    def Read[T](
+        rtype:      RTypen[T],
+        file:       tool_file_or_str            = None,
+        *,
+        setting:    Optional[EasySaveSetting]   = None
+        ) -> T:
+        ...
+    @staticmethod
+    def Read[T](
+        rtype:      RTypen[T]|type,
+        file:       tool_file_or_str            = None,
+        *,
+        setting:    Optional[EasySaveSetting]   = None
+        ) -> T:
         '''
         读取数据
         '''
+        if isinstance(rtype, type):
+            rtype = TypeManager.GetInstance().CreateOrGetRefType(rtype)
         return ESReader(setting=(setting if setting is not None else EasySaveSetting(file=UnwrapperFile2Str(file)))).Read(rtype)

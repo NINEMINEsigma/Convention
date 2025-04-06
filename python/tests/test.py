@@ -10,14 +10,13 @@ def main():
     SetInternalDebug(True)
     from Convention.Workflow.Core import Workflow
     print(TypeManager.GetInstance().CreateOrGetRefType(Workflow).tree())
-
-_T = TypeVar("_T")
-
-def test():
-    print(_T.__class__)
+    #print(TypeManager.GetInstance().CreateOrGetRefType(Workflow).GetAllFields())
 
 if __name__ == "__main__":
+    #print(is_union(Union[int, str]))
     main()
-    #test()
-    
+
 print(TypeManager.GetInstance().AllRefTypes())
+
+
+

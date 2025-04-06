@@ -194,7 +194,7 @@ type ClosuresCallable[_T] = Union[Callable[[Optional[None]], _T], Typen[_T]]
 def format_traceback_info():
     return ''.join(traceback.format_stack()[:-1])
 
-class type_class:
+class type_class(object):
     generate_trackback: Optional[str] = None
     def __init__(self):
         self.generate_trackback = format_traceback_info()
@@ -744,6 +744,8 @@ class BaseBehavior(any_class):
         if funcname is None:
             funcname = f"On{event.__class__.__name__}"
         for behavior in _all_base_behavior:
+            if behavior is self:
+                continue
             if hasattr(behavior, funcname):
                 getattr(behavior, funcname)(event)
     def __init__(self):

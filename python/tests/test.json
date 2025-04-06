@@ -1,0 +1,129 @@
+{
+    "__type": "Convention.Workflow.Core.Workflow, Workflow",
+    "value": {
+        "__type": "Convention.Workflow.Core.Workflow, Workflow",
+        "value": {
+            "generate_trackback": null,
+            "Datas": [
+                {
+                    "__type": "Convention.Workflow.Core.EndNodeInfo, EndNodeInfo",
+                    "value": {
+                        "generate_trackback": "  File \"e:\\Convention Unity\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 58, in <module>\n    asyncio.run(run())\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 194, in run\n    return runner.run(main)\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 673, in run_until_complete\n    self.run_forever()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\windows_events.py\", line 322, in run_forever\n    super().run_forever()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 640, in run_forever\n    self._run_once()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 1992, in _run_once\n    handle._run()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\events.py\", line 88, in _run\n    self._context.run(self._callback, *self._args)\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 26, in run\n    EndNodeInfo(inmapping={\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\Convention\\Workflow\\Core.py\", line 153, in __init__\n    any_class.__init__(self)\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 353, in __init__\n    super().__init__()\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 200, in __init__\n    self.generate_trackback = format_traceback_info()\n",
+                        "nodeID": 0,
+                        "typename": "EndNodeInfo",
+                        "title": "EndNodeInfo",
+                        "inmapping": {
+                            "answer": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "generate_trackback": null,
+                                    "slotName": "answer",
+                                    "targetNodeID": 1,
+                                    "targetSlotName": "answer",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": true
+                                }
+                            }
+                        },
+                        "outmapping": {
+                            "query": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "generate_trackback": null,
+                                    "slotName": "query",
+                                    "targetNodeID": 1,
+                                    "targetSlotName": "unknown",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": true
+                                }
+                            }
+                        },
+                        "position": [
+                            0,
+                            0
+                        ]
+                    }
+                },
+                {
+                    "__type": "Convention.Workflow.Core.StepNodeInfo, StepNodeInfo",
+                    "value": {
+                        "generate_trackback": "  File \"e:\\Convention Unity\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 58, in <module>\n    asyncio.run(run())\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 194, in run\n    return runner.run(main)\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 673, in run_until_complete\n    self.run_forever()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\windows_events.py\", line 322, in run_forever\n    super().run_forever()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 640, in run_forever\n    self._run_once()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 1992, in _run_once\n    handle._run()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\events.py\", line 88, in _run\n    self._context.run(self._callback, *self._args)\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 29, in run\n    StepNodeInfo(funcname=\"query\",\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\Convention\\Workflow\\Core.py\", line 153, in __init__\n    any_class.__init__(self)\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 353, in __init__\n    super().__init__()\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 200, in __init__\n    self.generate_trackback = format_traceback_info()\n",
+                        "nodeID": 1,
+                        "typename": "StepNodeInfo",
+                        "title": "StepNodeInfo",
+                        "inmapping": {
+                            "user_msg": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "generate_trackback": null,
+                                    "slotName": "user_msg",
+                                    "targetNodeID": 2,
+                                    "targetSlotName": "query",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": true
+                                }
+                            }
+                        },
+                        "outmapping": {
+                            "answer": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "generate_trackback": null,
+                                    "slotName": "result",
+                                    "targetNodeID": 0,
+                                    "targetSlotName": "answer",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": false
+                                }
+                            },
+                            "query": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "generate_trackback": null,
+                                    "slotName": "query",
+                                    "targetNodeID": 1,
+                                    "targetSlotName": "unknown",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": true
+                                }
+                            }
+                        },
+                        "position": [
+                            0,
+                            0
+                        ],
+                        "funcname": "query"
+                    }
+                },
+                {
+                    "__type": "Convention.Workflow.Core.TextNodeInfo, TextNodeInfo",
+                    "value": {
+                        "generate_trackback": "  File \"e:\\Convention Unity\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 58, in <module>\n    asyncio.run(run())\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 194, in run\n    return runner.run(main)\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 673, in run_until_complete\n    self.run_forever()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\windows_events.py\", line 322, in run_forever\n    super().run_forever()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 640, in run_forever\n    self._run_once()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 1992, in _run_once\n    handle._run()\n  File \"E:\\ProgramData\\Anaconda3\\envs\\liubai\\Lib\\asyncio\\events.py\", line 88, in _run\n    self._context.run(self._callback, *self._args)\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 36, in run\n    TextNodeInfo(text=\"\u4f60\u662f\u8c01\",\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\Convention\\Workflow\\Core.py\", line 153, in __init__\n    any_class.__init__(self)\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 353, in __init__\n    super().__init__()\n  File \"e:\\Convention Unity\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 200, in __init__\n    self.generate_trackback = format_traceback_info()\n",
+                        "nodeID": 2,
+                        "typename": "TextNodeInfo",
+                        "title": "TextNodeInfo",
+                        "inmapping": {},
+                        "outmapping": {
+                            "query": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "generate_trackback": null,
+                                    "slotName": "query",
+                                    "targetNodeID": 1,
+                                    "targetSlotName": "unknown",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": true
+                                }
+                            }
+                        },
+                        "position": [
+                            0,
+                            0
+                        ],
+                        "text": "\u4f60\u662f\u8c01"
+                    }
+                }
+            ]
+        }
+    }
+}

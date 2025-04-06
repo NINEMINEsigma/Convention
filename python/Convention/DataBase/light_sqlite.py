@@ -17,6 +17,33 @@ class light_core(abs_db):
     def name(self):
         return self.__my_database_name
 
+    def insert(self, table_name:str, data:dict) -> base.Cursor:
+        """插入数据"""
+        cursor = self.connection.cursor()
+        cursor.execute(f"INSERT INTO {table_name} ({', '.join(data.keys())}) VALUES ({', '.join([f"'{data[key]}'" for key in data.keys()])})")
+        self.connection.commit()
+        return cursor
+
+    def update(self, table_name:str, data:dict) -> base.Cursor:
+        """更新数据"""
+        cursor = self.connection.cursor()
+        cursor.execute(f"UPDATE {table_name} SET {', '.join([f"{key} = '{data[key]}'" for key in data.keys()])})")
+        self.connection.commit()
+        return cursor
+
+    def delete(self, table_name:str, data:dict) -> base.Cursor:
+        """删除数据"""
+        cursor = self.connection.cursor()
+        cursor.execute(f"DELETE FROM {table_name} WHERE {', '.join([f"{key} = '{data[key]}'" for key in data.keys()])})")
+        self.connection.commit()
+        return cursor
+
+    def select(self, table_name:str, data:dict) -> base.Cursor:
+        """查询数据"""
+        cursor = self.connection.cursor()
+        cursor.execute(f"SELECT * FROM {table_name} WHERE {', '.join([f"{key} = '{data[key]}'" for key in data.keys()])})")
+        return cursor
+
     def connect(self):
         """连接到数据库"""
         self.connection = base.connect(self.__my_database_name)
