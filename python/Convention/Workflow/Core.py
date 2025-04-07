@@ -135,7 +135,8 @@ class NodeInfo(BaseModel, any_class):
     """
     节点信息
     """
-    node:           'Node'                  = Field(description="节点, 此变量需要手动同步, nodeID的懒加载目标", default=None, exclude=True)
+    node:           'Node'                  = Field(description="节点, 此变量需要手动同步, nodeID的懒加载目标",
+                                                    default=None, exclude=True)
     nodeID:         int                     = Field(description="节点ID", default=-1)
     typename:       str                     = Field(description="节点类型", default="unknown")
     title:          str                     = Field(description="节点标题", default="unknown")
@@ -467,6 +468,11 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     def unlink_outslot(self, slotName:str) -> None:
         NodeSlot.Unlink(self.info.outmapping[slotName])
 
+    def _debuging_slot(self):
+        if len(self.Internal_Inmapping.keys()) != len(self.info.inmapping.keys()):
+            raise ValueError(f"节点<{self.info.title}>的输入槽数量{len(self.info.inmapping.keys())}"\
+                f"与实际{self.info.typename}输入槽数量{len(self.Internal_Inmapping.keys())}不一致")
+        
     _is_start:bool = False
     @virtual
     def OnStartEvent(self, event:any_class) -> None:
@@ -500,8 +506,7 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
         '''
         parameters = {}
         # TODO 节点即使原本有输入槽, 此时也会消失, 正在寻找原因
-        #if len(self.Internal_Inmapping.keys()) == 0:
-        #    self.RefreshImmediate()
+        self._debuging_slot()
         if GetInternalWorkflowDebug():
             print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                 f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>拥有输入槽:{ConsoleFrontColor.WHITE}"\
@@ -730,6 +735,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         return EasySave.Write(currentWorkflow, file)
 
     def LoadWorkflow(self, workflow_:tool_file_or_str|Workflow) -> Workflow:
+        workflow:Workflow = None
         if isinstance(workflow_, Workflow):
             self.ClearWorkflow()
             workflow = workflow_
@@ -747,7 +753,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         # 以复制的形式重建
         self.ref_value = Workflow()
         for info in workflow.Datas:
-            self.CreateNode(info)
+            node = self.CreateNode(info)
         return self.workflow
 
     @property
@@ -825,14 +831,6 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}"
 
-    # def SaveState(self, file: tool_file_or_str) -> tool_file:
-    #     """保存工作流状态"""
-    #     return self.__state.save(file)
-
-    # def LoadState(self, file: tool_file_or_str) -> 'WorkflowState':
-    #     """加载工作流状态"""
-    #     self.__state = WorkflowState.load(file)
-    #     return self.__state
 
 class DynamicNode(Node):
     """

@@ -3,17 +3,9 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from Convention.Internal import *
-
-from Convention.LLM.LlamaIndex.Core import *
-from Convention.LLM.LlamaIndex.Extensions import *
 from Convention.Workflow.Core import *
-
-llm = LLMObject(HttpLlamaCPP("http://10.10.230.60:61111", 120))
-llm.set_as_global_llm()
-
 def query(user_msg:str) -> str:
-    print(f"query: {user_msg}")
-    return llm.predict_and_call(user_msg, verbose=True)
+    return f"query: {user_msg}"
 query_wrapper = WorkflowActionWrapper("query", query)
 
 async def run():
