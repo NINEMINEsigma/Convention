@@ -7,6 +7,7 @@ from Convention.Internal import *
 from Convention.LLM.LlamaIndex.Core import *
 from Convention.LLM.LlamaIndex.Extensions import *
 from Convention.Workflow.Core import *
+from Convention.Lang.Reflection import TypeManager
 
 llm = LLMObject(HttpLlamaCPP("http://10.10.230.60:61111", 120))
 llm.set_as_global_llm()
@@ -54,6 +55,12 @@ async def run():
 
 if __name__ == "__main__":
     SetInternalDebug(True)
+    SetInternalEasySaveDebug(True)
     AwakeBehaviorThread()
-    asyncio.run(run())
+    try:
+        asyncio.run(run())
+    except Exception as e:
+        raise
+    finally:
+        print(TypeManager.GetInstance().AllRefTypes())
 

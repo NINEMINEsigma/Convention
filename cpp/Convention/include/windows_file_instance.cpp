@@ -339,10 +339,10 @@ std::map<std::string, bool> instance<std::filesystem::path, true>::get_permissio
 }
 
 instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::set_permissions(
-    std::optional<bool> read = std::nullopt,
-    std::optional<bool> write = std::nullopt,
-    std::optional<bool> execute = std::nullopt,
-    bool recursive = false
+    std::optional<bool> read,
+    std::optional<bool> write,
+    std::optional<bool> execute,
+    bool recursive
 )
 {
     DWORD attributes = GetFileAttributes(this->get()->c_str());

@@ -37,11 +37,11 @@ void GenerateParenthesis();
 void TwoWayPrefixAnd();
 
 static map<string, descriptive_indicator<function<void(void)>>> algorithms = {
-	make_algorithm(SelectSort, "sorting/选择"),
-	make_algorithm(BubbleSort, "sorting/冒泡"),
-	make_algorithm(InsertSort, "sorting/插入"),
-	make_algorithm(InsertSort2, "sorting/插入-优化"),
-	make_algorithm(CountingSort, "sorting/计数"),
+	make_algorithm(SelectSort, "排序/选择"),
+	make_algorithm(BubbleSort, "排序/冒泡"),
+	make_algorithm(InsertSort, "排序/插入"),
+	make_algorithm(InsertSort2, "排序/插入-优化"),
+	make_algorithm(CountingSort, "排序/计数"),
 	make_algorithm(GenerateParenthesis, "回溯/生成括号对"),
 	make_algorithm(TwoWayPrefixAnd,"前缀和/接雨水")
 };
@@ -66,24 +66,30 @@ void config_make_helper(instance<config_indicator::tag>& config)
 		make_descriptive("-fillsize", "the higher the value, the greater the horizontal tabulation width"),
 		make_descriptive("-upboundary", Combine("number up boundary, default ", constexpr_upboundary).c_str())
 	) << endl;
+	cout << endl;
+	cout << "for alorithms:" << endl;
+	for (auto&& [algorithm, descriptive] : algorithms)
+	{
+		cout << algorithm << ": " << descriptive.description << endl;
+	}
 }
 void config_checker(instance<config_indicator::tag>& config)
 {
 	SetConsoleTitleA("Visual Algorithm");
 	srand(time(0));
 	global_config = config;
+	if (config.is_contains_helper_command() || config.vec().size() == 1)
+	{
+		config_make_helper(config);
+		exit(0);
+	}
+	if (config.is_contains_version_command())
+	{
+		cout << config.version();
+		exit(0);
+	}
 	if constexpr (platform_indicator::is_release)
 	{
-		if (config.is_contains_helper_command() || config.vec().size() == 1)
-		{
-			config_make_helper(config);
-			exit(0);
-		}
-		if (config.is_contains_version_command())
-		{
-			cout << config.version();
-			exit(0);
-		}
 		config("s", delay);
 		is_lowstep = config.contains("lowstep");
 		for (auto&& a_va : config.list("a"))

@@ -195,9 +195,10 @@ def format_traceback_info():
     return ''.join(traceback.format_stack()[:-1])
 
 class type_class(object):
-    generate_trackback: Optional[str] = None
+    #generate_trackback: Optional[str] = None
     def __init__(self):
-        self.generate_trackback = format_traceback_info()
+        if GetInternalDebug():
+            self.generate_trackback = format_traceback_info()
     def GetType(self):
         return type(self)
     @virtual

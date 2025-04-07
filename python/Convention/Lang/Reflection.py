@@ -19,6 +19,13 @@ type_symbols = {
     'NoneType' : type(None),
     }
 
+_Internal_Reflection_Debug:bool = False
+def GetInternalReflectionDebug() -> bool:
+    return _Internal_Reflection_Debug and GetInternalDebug()
+def SetInternalReflectionDebug(debug:bool) -> None:
+    global _Internal_Reflection_Debug
+    _Internal_Reflection_Debug = debug and GetInternalDebug()
+
 class ReflectionException(Exception):
     def __init__(self, message:str):
         self.message = f"{ConsoleFrontColor.RED}{message}{ConsoleFrontColor.RESET}"
@@ -164,7 +171,7 @@ def is_union(type_hint: type | Any) -> bool:
     return "__origin__" in dir(type_hint) and type_hint.__origin__ == Union
 
 def get_union_types(type_hint: type | Any) -> List[type]:
-    return [t for t in type_hint.__args__ if t is not type(None)]
+    return [t for t in type_hint.__args__]
 
 class TypeVarIndictaor:
     pass
@@ -177,7 +184,7 @@ def decay_type(
     *,
     module_name:    str|None=None
     ) -> type|List[type]|_SpecialIndictaor:
-    if GetInternalDebug():
+    if GetInternalReflectionDebug():
         print_colorful(ConsoleFrontColor.YELLOW, f"Decay: {type_hint}")
     type_dir = dir(type_hint)
     result:type|List[type] = None
@@ -200,7 +207,7 @@ def decay_type(
         result = type_hint
     else:
         raise ReflectionException(f"Invalid type: {type_hint}<{type_hint.__class__}>")
-    if GetInternalDebug():
+    if GetInternalReflectionDebug():
         print_colorful(ConsoleFrontColor.YELLOW, f"Result: {result}")
     return result
 
@@ -382,15 +389,21 @@ class ValueInfo(BaseInfo):
     def IsUnsupported(self) -> bool:
         return self._IsUnsupported
     @property
+    def GenericArgs(self) -> List[type]:
+        return self._GenericArgs
+    @property
     def Module(self) -> Optional[Dict[str, type]]:
         return sys.modules[self.RealType.__module__]
     @property
     def ModuleName(self) -> str:
         return self.RealType.__module__
 
-    def __init__(self, metaType:type|Any, generic_args:Optional[List[type]]=None, **kwargs) -> None:
+    def __init__(self, metaType:type|Any, generic_args:List[type]=[], **kwargs) -> None:
         super().__init__(**kwargs)
         self._RealType = metaType
+        if len(generic_args) > 0:
+            print_colorful(ConsoleFrontColor.YELLOW, f"Current ValueInfo Debug Frame: "\
+                f"metaType={metaType}, generic_args={generic_args}")
         self._GenericArgs = generic_args
         if not isinstance(metaType, type):
             return
@@ -441,7 +454,10 @@ class ValueInfo(BaseInfo):
         elif self.RealType is type(None):
             return valueType is None or valueType is type(None)
         else:
-            return issubclass(valueType, self.RealType)
+            try:
+                return issubclass(valueType, self.RealType)
+            except Exception as e:
+                raise ReflectionException(f"Verify type {valueType} with {self.RealType}: \n{e}") from e
 
     def DecayToList(self) -> List[Self]:
         result:List[Self] = []
@@ -468,31 +484,39 @@ class ValueInfo(BaseInfo):
     @staticmethod
     def Create(
         metaType:       type|Any,
-        generic_args:   Optional[List[type]] = None,
         *,
         module_name:    Optional[str] = None,
         SelfType:       type|Any|None        = None,
         **kwargs
         ) -> Self:
-        if GetInternalDebug():
+        if GetInternalReflectionDebug():
             print_colorful(ConsoleFrontColor.BLUE, f"Current ValueInfo.Create Frame: "\
                 f"metaType={metaType}, generic_args={generic_args}, SelfType={SelfType}")
         if isinstance(metaType, type):
-            return ValueInfo(metaType, generic_args, **kwargs)
+            return ValueInfo(metaType, **kwargs)
         elif isinstance(metaType, str):
             type_ = try_to_type(metaType, module_name=module_name)
             if type_ is None:
-                return ValueInfo(metaType, generic_args, **kwargs)
+                return ValueInfo(metaType, **kwargs)
             else:
-                return ValueInfo(type_, generic_args, **kwargs)
+                return ValueInfo(type_, **kwargs)
         elif metaType is Self:
             if SelfType is None:
                 raise ReflectionException("SelfType is required when metaType is <Self>")
             return ValueInfo.Create(SelfType, **kwargs)
         elif isinstance(metaType, TypeVar):
             return TypeVarIndictaor
-        else:
-            return ValueInfo(metaType, generic_args, **kwargs)
+        elif hasattr(metaType, '__origin__'):
+            oType = get_origin(metaType)
+            if oType is list:
+                return ValueInfo(list, [get_args(metaType)[0]])
+            elif oType is dict:
+                return ValueInfo(dict, [get_args(metaType)[0], get_args(metaType)[1]])
+            elif oType is tuple:
+                return ValueInfo(tuple, to_list(get_args(metaType)))
+            elif oType is set:
+                return ValueInfo(set, [get_args(metaType)[0]])
+        return ValueInfo(metaType, **kwargs)
 
 class FieldInfo(MemberInfo):
     _MetaType:      Optional[ValueInfo] = PrivateAttr(default=None)
@@ -504,9 +528,10 @@ class FieldInfo(MemberInfo):
         ctype:          type,
         is_static:      bool,
         is_public:      bool,
-        module_name:    Optional[str] = None
+        module_name:    Optional[str] = None,
+        selfType:       type|Any|None = None
         ):
-        if GetInternalDebug():
+        if GetInternalReflectionDebug():
             print_colorful(ConsoleFrontColor.LIGHTBLUE_EX, f"Current Make FieldInfo: {ctype}.{name} {metaType} ")
         super().__init__(
             name = name,
@@ -514,8 +539,8 @@ class FieldInfo(MemberInfo):
             is_static = is_static,
             is_public = is_public,
             )
-        self._MetaType = ValueInfo.Create(metaType, module_name=module_name)
-        if GetInternalDebug():
+        self._MetaType = ValueInfo.Create(metaType, module_name=module_name, SelfType=selfType)
+        if GetInternalReflectionDebug():
             print_colorful(ConsoleFrontColor.LIGHTBLUE_EX, f"Current RealType: {self._MetaType.RealType}")
 
     @property
@@ -596,13 +621,14 @@ class ParameterInfo(BaseInfo):
         is_optional:    bool,
         default_value:  Any,
         module_name:    Optional[str] = None,
+        selfType:       type|Any|None = None,
         **kwargs
         ):
         super().__init__(**kwargs)
         self._ParameterName = name
         self._IsOptional = is_optional
         self._DefaultValue = default_value
-        self._MetaType = ValueInfo.Create(metaType, module_name=module_name)
+        self._MetaType = ValueInfo.Create(metaType, module_name=module_name, SelfType=selfType)
 
     @property
     def ValueType(self):
@@ -653,7 +679,7 @@ class MethodInfo(MemberInfo):
         is_public:              bool,
         is_class_method:        bool,
         ):
-        if GetInternalDebug():
+        if GetInternalReflectionDebug():
             print_colorful(ConsoleFrontColor.YELLOW, f"Current Make MethodInfo: "\
                 f"{return_type} {ctype}.{name}({', '.join([p.ParameterName for p in parameters])})")
         MemberInfo.__init__(self, name, ctype, is_static, is_public)
@@ -744,6 +770,7 @@ class RefType(ValueInfo):
     _FieldInfos:    List[FieldInfo]  = PrivateAttr()
     _MethodInfos:   List[MethodInfo] = PrivateAttr()
     _MemberNames:   List[str]        = PrivateAttr()
+    _BaseTypes:     List[Self]    = PrivateAttr()
 
     def __init__(self, metaType:type|_SpecialIndictaor):
 
@@ -754,7 +781,8 @@ class RefType(ValueInfo):
                 name = "elementType",
                 ctype = metaType,
                 is_static = False,
-                is_public = True
+                is_public = True,
+                selfType=list
             ))
             metaType = list
         elif isinstance(metaType, DictIndictaor):
@@ -763,14 +791,16 @@ class RefType(ValueInfo):
                 name = "keyType",
                 ctype = metaType,
                 is_static = False,
-                is_public = True
+                is_public = True,
+                selfType=dict
             ))
             extensionFields.append(FieldInfo(
                 metaType = metaType.valueType,
                 name = "valueType",
                 ctype = metaType,
                 is_static = False,
-                is_public = True
+                is_public = True,
+                selfType=dict
             ))
             metaType = dict
         elif isinstance(metaType, TupleIndictaor):
@@ -780,7 +810,8 @@ class RefType(ValueInfo):
                     name = f"elementType_{i}",
                     ctype = metaType,
                     is_static = False,
-                    is_public = True
+                    is_public = True,
+                    selfType=tuple
                 ))
             metaType = tuple
         elif isinstance(metaType, SetIndictaor):
@@ -789,7 +820,8 @@ class RefType(ValueInfo):
                 name = "elementType",
                 ctype = metaType,
                 is_static = False,
-                is_public = True
+                is_public = True,
+                selfType=set
             ))
             metaType = set
         elif is_generic(metaType):
@@ -830,7 +862,8 @@ class RefType(ValueInfo):
                             name = param_name,
                             is_optional = param.default != inspect.Parameter.empty,
                             default_value = param.default if param.default != inspect.Parameter.empty else None,
-                            module_name = self.ModuleName
+                            module_name = self.ModuleName,
+                            selfType=metaType
                         )
                         parameters.append(param_info)
 
@@ -864,7 +897,8 @@ class RefType(ValueInfo):
                         ctype=metaType,
                         is_public=is_public,
                         is_static=False,
-                        module_name = self.ModuleName
+                        module_name = self.ModuleName,
+                        selfType=metaType
                     )
                     self._FieldInfos.append(field_info)
                     self._MemberNames.append(field_name)
@@ -880,7 +914,8 @@ class RefType(ValueInfo):
                             ctype = metaType,
                             is_static = is_static,
                             is_public = is_public,
-                            module_name = self.ModuleName
+                            module_name = self.ModuleName,
+                            selfType=metaType
                         )
                         self._FieldInfos.append(field_info)
                         self._MemberNames.append(name)
@@ -892,7 +927,9 @@ class RefType(ValueInfo):
                         name = name,
                         ctype = metaType,
                         is_static = False,
-                        is_public = not name.startswith('_')
+                        is_public = not name.startswith('_'),
+                        module_name = self.ModuleName,
+                        selfType=metaType
                     )
                     self._FieldInfos.append(field_info)
                     self._MemberNames.append(name)
@@ -1014,7 +1051,7 @@ class RefType(ValueInfo):
     def tree(self, indent:int=4) -> str:
         type_set: set = set()
         def dfs(currentType:RefType) -> Dict[str, Dict[str, Any]|Any]:
-            if GetInternalDebug():
+            if GetInternalReflectionDebug():
                 print_colorful(ConsoleFrontColor.RED, f"Current Tree DFS: "\
                     f"__type={currentType.RealType} __type.class={currentType.RealType.__class__}")
             if currentType.IsPrimitive:
@@ -1100,7 +1137,8 @@ class TypeManager(BaseModel, any_class):
         metaType:type = TypeManager._TurnToType(data, module_name=module_name)
 
         if metaType in self._RefTypes:
-            print_colorful(ConsoleFrontColor.GREEN, f"Get Existing RefType: {metaType}")
+            if GetInternalReflectionDebug():
+                print_colorful(ConsoleFrontColor.GREEN, f"Get Existing RefType: {metaType}")
             return self._RefTypes[metaType]
         else:
             return self.CreateRefType(metaType, module_name=module_name)
@@ -1136,7 +1174,7 @@ class TypeManager(BaseModel, any_class):
 
         metaType:type|_SpecialIndictaor = TypeManager._TurnToType(data, module_name=module_name)
 
-        if GetInternalDebug():
+        if GetInternalReflectionDebug():
             print_colorful(ConsoleFrontColor.GREEN, f"Create RefType: {metaType}")
         try:
             ref_type = RefType(metaType)

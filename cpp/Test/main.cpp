@@ -13,39 +13,33 @@
 using namespace std;
 //using namespace convention_kit;
 
-class Solution 
+class Solution
 {
 public:
-    int trap(vector<int>& height) 
+    vector<int> corpFlightBookings(vector<vector<int>>& bookings, int n)
     {
-        int n = height.size();
-        vector<int> left(n, 0), right(n, 0);
-        *left.begin() = *height.begin();
-        for (int i = 1; i != n; i++)
+        vector<int> ds(n + 1, 0);
+        vector<int> result(n + 1, 0);
+        for (auto&& line : bookings)
         {
-            left[i] = std::max(left[i - 1], height[i]);
+            ds[line[0] - 1] += line[2];
+            ds[line[1]] -= line[2];
         }
-        *right.rbegin() = *height.rbegin();
-        for (int i = n-2; i !=-1; i--)
+        for (int i = 0; i < n; i++)
         {
-            right[i] = std::max(right[i + 1], height[i]);
+            result[i + 1] = result[i] += ds[i];
         }
-        int result = 0;
-        for (int i = 0; i != n; i++)
-        {
-            result += std::max(0, std::min(right[i], left[i]) - height[i]);
-        }
+        result.pop_back();
         return result;
     }
 };
 
 int main()
 {
-    map<int, int> a;
-    a[1] = 1;
-    a[2] = 2;
-    for (auto [key, b] : a)
-    {
-        cout << key << ": " << b << endl;
-    }
+    vector<vector<int>> bookings = {
+        {1,2,10},
+        {2,3,20},
+        {2,5,25}
+    };
+    Solution().corpFlightBookings(bookings, 5);
 }

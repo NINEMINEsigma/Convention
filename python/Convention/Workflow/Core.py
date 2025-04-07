@@ -2,7 +2,7 @@ from ..Internal         import *
 from ..Lang.Core        import run_until_complete
 from pydantic           import BaseModel, Field, GetCoreSchemaHandler
 from pydantic_core      import core_schema
-from ..Lang.EasySave    import EasySave
+from ..Lang.EasySave    import EasySave, SetInternalEasySaveDebug
 from ..Str.Core         import UnWrapper as Unwrapper2Str
 from ..File.Core        import (
     tool_file_or_str    as     tool_file_or_str,
