@@ -1,9 +1,9 @@
 from ..Internal         import *
-from ..Lang.Core        import run_until_complete
+from ..Lang.Core        import run_async_coroutine
 from pydantic           import BaseModel, Field, GetCoreSchemaHandler
 from pydantic_core      import core_schema
-from ..Lang.EasySave    import EasySave, SetInternalEasySaveDebug
-from ..Str.Core         import UnWrapper as Unwrapper2Str
+from ..Lang.EasySave    import EasySave, SetInternalEasySaveDebug, SetInternalDebug, SetInternalReflectionDebug
+from ..Str.Core         import UnWrapper as Unwrapper2Str, limit_str
 from ..File.Core        import (
     tool_file_or_str    as     tool_file_or_str,
     tool_file           as     tool_file,
@@ -15,7 +15,13 @@ from ..Web.Core         import (
 import                         time
 import                         asyncio
 
-# 将全局变量声明移到文件顶部
+_InternalWorkflowDebug:bool = False
+def SetInternalWorkflowDebug(debug:bool):
+    global _InternalWorkflowDebug
+    _InternalWorkflowDebug = debug
+def GetInternalWorkflowDebug() -> bool:
+    return _InternalWorkflowDebug and GetInternalDebug()
+
 _workflow_manager_instance: Optional['WorkflowManager'] = None
 _Internal_GetNodeID: Callable[['Node'], int] = lambda node: _workflow_manager_instance.GetNodeID(node)
 _Internal_GetNode: Callable[[int], 'Node'] = lambda id: _workflow_manager_instance.GetNode(id)
@@ -105,6 +111,11 @@ class NodeSlotInfo(BaseModel, any_class):
     IsInmappingSlot:    bool       = Field(description="是否为输入映射插槽", default=False)
 
     @virtual
+    def __repr__(self) -> str:
+        return f"{self.GetType().__name__}<name={self.slotName}, type={self.typeIndicator}, " \
+               f"{'Input' if self.IsInmappingSlot else 'Output'}>"
+
+    @virtual
     def TemplateClone(self) -> Self:
         return NodeSlotInfo(
             slotName=self.slotName,
@@ -179,7 +190,8 @@ class NodeInfo(BaseModel, any_class):
         return f"{self.GetType().__name__}<typename={self.typename}, title={self.title}>"
     @virtual
     def Instantiate(self) -> 'Node':
-        raise NotImplementedError(f"节点类型<{self.GetType().__name__}, typename={self.typename}, trackback={self.generate_trackback}>未实现Instantiate方法")
+        raise NotImplementedError(f"节点类型<{self.GetType().__name__}, typename={self.typename}"\
+            f", trackback={self.generate_trackback}>未实现Instantiate方法")
 
 class WorkflowEvent(BaseModel, any_class):
     @override
@@ -327,14 +339,36 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
             获取上游输出槽的参数, 当上游参数还未被设置时应等待
         '''
         if self.info.IsInmappingSlot:
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"节点<{self.info.parentNode.SymbolName()}, "\
+                    f"id={_Internal_GetNodeID(self.info.parentNode)}, "\
+                    f"title={self.info.parentNode.info.title}>的输入槽<{self.info.slotName}>"\
+                    f"从上游输出槽<{self.info.targetSlotName}>获取参数")
             return await self.info.targetSlot.GetParameter()
         else:
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"节点<{self.info.parentNode.SymbolName()}, "\
+                    f"id={_Internal_GetNodeID(self.info.parentNode)}, "\
+                    f"title={self.info.parentNode.info.title}>的输出槽<{self.info.slotName}>"\
+                    f"等待父节点<type={self.info.parentNode.SymbolName()}, "\
+                    f"id={_Internal_GetNodeID(self.info.parentNode)}, "\
+                    f"title={self.info.parentNode.info.title}>执行Step")
             await self.info.parentNode.RunStep()
             while self.__parameter is None and self.__is_start:
                 await asyncio.sleep(0.1)
             if self.__is_start:
+                if GetInternalWorkflowDebug():
+                    print_colorful(ConsoleFrontColor.YELLOW, f"节点<{self.info.parentNode.SymbolName()}, "\
+                        f"id={_Internal_GetNodeID(self.info.parentNode)}, "\
+                        f"title={self.info.parentNode.info.title}>的输出槽<{self.info.slotName}>"\
+                        f" 输出为{limit_str(self.__parameter.ref_value, 100)}")
                 return self.__parameter.ref_value
             else:
+                if GetInternalWorkflowDebug():
+                    print_colorful(ConsoleFrontColor.YELLOW, f"节点<{self.info.parentNode.SymbolName()}, "\
+                        f"id={_Internal_GetNodeID(self.info.parentNode)}, "\
+                        f"title={self.info.parentNode.info.title}>的输出槽<{self.info.slotName}>"\
+                        f"任务未开始, 任务取消")
                 return None
     @sealed
     def SetParameter(self, value:Optional[context_value_type]) -> None:
@@ -364,6 +398,7 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     """
     def __init__(self, info:NodeInfo) -> None:
         super().__init__(info)
+        self.SetupFromInfo(info)
 
     @property
     def info(self) -> NodeInfo:
@@ -388,10 +423,16 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
 
     @sealed
     def ClearLink(self) -> None:
+        if GetInternalWorkflowDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>ClearLink")
         self.Internal_Inmapping.clear()
         self.Internal_Outmapping.clear()
     @sealed
     def BuildLink(self) -> None:
+        if GetInternalWorkflowDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>BuildLink")
         for slot_name, info in self.info.inmapping.items():
             self.Internal_Inmapping[slot_name] = NodeSlot(info.TemplateClone())
         for slot_name, info in self.info.outmapping.items():
@@ -403,6 +444,14 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
         self.BuildLink()
 
     def SetupFromInfo(self, info:NodeInfo) -> None:
+        if GetInternalWorkflowDebug():
+            if self.info is not None:
+                print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                    f"<info={self.info.SymbolName()}, title={self.info.title}>"\
+                    f"SetupFromInfo(info={info.SymbolName()}, title={info.title})")
+            else:
+                print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                    f"SetupFromInfo(info={info.SymbolName()}, title={info.title})")
         self.ClearLink()
         self.ref_value = info
         self.info.nodeID = _Internal_GetNodeID(self)
@@ -418,24 +467,26 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     def unlink_outslot(self, slotName:str) -> None:
         NodeSlot.Unlink(self.info.outmapping[slotName])
 
-    __is_start:bool = False
+    _is_start:bool = False
     @virtual
     def OnStartEvent(self, event:any_class) -> None:
         if isinstance(event, WorkflowStartEvent):
-            self.__is_start = True
+            self._is_start = True
             if event.verbose:
-                print_colorful(ConsoleFrontColor.GREEN, f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> catch event: {event.GetType()}")
+                print_colorful(ConsoleFrontColor.GREEN, f"{self.__class__.__name__}"\
+                    f"<id={_Internal_GetNodeID(self)}> catch event: {event.GetType()}")
     @virtual
     def OnStopEvent(self, event:any_class) -> None:
         if isinstance(event, WorkflowStopEvent):
-            self.__is_start = False
+            self._is_start = False
             self.ClearResult()
             self.ClearParameters()
             if event.verbose:
-                print_colorful(ConsoleFrontColor.GREEN, f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> catch event: {event.GetType()}")
+                print_colorful(ConsoleFrontColor.GREEN, f"{self.__class__.__name__}"\
+                    f"<id={_Internal_GetNodeID(self)}> catch event: {event.GetType()}")
     @property
     def is_start(self) -> bool:
-        return self.__is_start
+        return self._is_start
 
     __parameters:Optional[Dict[str, context_value_type]] = None
     __results:Optional[Dict[str, context_value_type]]|context_value_type = None
@@ -448,15 +499,35 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
         异步函数, 从inslots中构建参数
         '''
         parameters = {}
+        # TODO 节点即使原本有输入槽, 此时也会消失, 正在寻找原因
+        #if len(self.Internal_Inmapping.keys()) == 0:
+        #    self.RefreshImmediate()
+        if GetInternalWorkflowDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>拥有输入槽:{ConsoleFrontColor.WHITE}"\
+                f"{self.Internal_Inmapping.keys()}{ConsoleFrontColor.YELLOW}")
         for slot_name, slot in self.Internal_Inmapping.items():
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>位于<{slot_name}>的槽开始获取参数")
             value = await slot.GetParameter()
             parameters[slot_name] = value
+        if GetInternalWorkflowDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>参数构建完成:{ConsoleFrontColor.WHITE}"\
+                f"{limit_str(self.__parameters, 100)}{ConsoleFrontColor.YELLOW}")
         self.__parameters = parameters
     @sealed
     async def GetParameters(self) -> Dict[str, context_value_type]:
-        if not self.__is_start:
+        if not self._is_start:
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>任务未开始")
             return {}
         if self.__parameters is None:
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>开始构建参数")
             await self.BuildParameter()
         return self.__parameters
     @sealed
@@ -468,8 +539,15 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     @sealed
     async def RunStep(self) -> None:
         if self.__results is not None:
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>结果"\
+                    f"<{limit_str(self.__results, 100)}>已存在")
             return
         try:
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>开始执行")
             parameters = await self.GetParameters()
             self.__results = await self._DoRunStep(parameters)
             if isinstance(self.__results, dict):
@@ -485,11 +563,15 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
 
     @virtual
     async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
-        raise NotImplementedError(f"节点类型<{self.__class__.__name__}>未实现_run_step方法")
+        raise NotImplementedError(f"节点类型<{self.__class__.__name__}>未实现_DoRunStep方法")
 
     @override
     def __repr__(self) -> str:
         return f"Node<{self.info.title}, id={_Internal_GetNodeID(self)}>"
+
+    @override
+    def SymbolName(self) -> str:
+        return self.GetType().__name__
 
 class Workflow(BaseModel, any_class):
     """
@@ -542,7 +624,7 @@ class WorkflowActionWrapper(left_value_reference[Callable], invoke_callable):
         return name in __all__workflow_action_wrappers__
 
 _Internal_All_EndNodes:List['EndNode'] = []
-_Internal_Task_Count:int = 0
+_Internal_Task_Count:atomic[int] = atomic(0, threading.Lock())
 
 class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
     """
@@ -561,9 +643,12 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
     __callbackDatas:List[Tuple[str, Callable[[dict], None]]] = []
 
     def CreateNode(self, info:NodeInfo) -> Node:
+        if GetInternalWorkflowDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"节点{info.title}<{info.__class__.__name__}>创建")
         node:Node = info.Instantiate()
         self.workflow.Nodes.append(node)
-        node.SetupFromInfo(info)
+        if node.info is None:
+            node.SetupFromInfo(info)
         return node
 
     def DestroyNode(self, node:Node) -> None:
@@ -629,6 +714,8 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
     def GetNodeID(self, node:Optional[Node]) -> int:
         if node is None:
             return -1
+        if node not in self.workflow.Nodes:
+            return -1
         return self.workflow.Nodes.index(node)
 
     def SaveWorkflow(self, file:tool_file_or_str) -> tool_file:
@@ -677,23 +764,35 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         '''
         global _Internal_All_EndNodes
         if len(_Internal_All_EndNodes) == 0:
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, "工作流为空")
             return
         global _Internal_Task_Count
-        _Internal_Task_Count = len(_Internal_All_EndNodes)
+        _Internal_Task_Count.store(len(_Internal_All_EndNodes))
+        if GetInternalWorkflowDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"工作流开始, 任务数量: {_Internal_Task_Count}, 开始时间: {time.time()}")
         self.Broadcast(WorkflowStartEvent(verbose=verbose), "OnStartEvent")
-        while _Internal_Task_Count > 0:
+        while _Internal_Task_Count.load() > 0:
             await asyncio.sleep(0.1)
         self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
+        if GetInternalWorkflowDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"工作流结束, 结束事件: {time.time()}")
+        self.__state.is_completed = True
 
     async def RunWorkflow(self, verbose:bool=False) -> None:
         """运行工作流"""
-        print_colorful(ConsoleFrontColor.BLUE, "运行工作流")
+        if verbose:
+            print_colorful(ConsoleFrontColor.BLUE, "运行工作流")
         try:
             self.__state = WorkflowState()
             self.__state.start_time = time.time()
 
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"_DoStart尝试启动")
             # 启动工作流
             await self._DoStart(verbose)
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"_DoStart完成")
 
             # 等待完成或超时
             while not self.__state.is_completed:
@@ -709,7 +808,9 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         finally:
             self.__state.end_time = time.time()
             self.__state.is_completed = True
-        print_colorful(ConsoleFrontColor.BLUE, f"工作流完成, 用时: {time.time() - self.__state.start_time}秒, 异常状态: {self.__state.error}")
+        if verbose:
+            print_colorful(ConsoleFrontColor.BLUE, f"工作流完成, 用时: "\
+                f"{time.time() - self.__state.start_time}秒, 异常状态: {self.__state.error}")
 
     def StopWorkflow(self, file: Optional[tool_file_or_str]=None) -> None:
         '''
@@ -718,7 +819,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         # if file is not None:
         #     self.SaveState(file)
         global _Internal_Task_Count
-        _Internal_Task_Count = 0
+        _Internal_Task_Count.store(0)
 
     @override
     def __repr__(self) -> str:
@@ -858,6 +959,9 @@ class EndNode(Node):
 
     @override
     async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
+        if GetInternalWorkflowDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                f"<id={_Internal_GetNodeID(self)}>结束节点开始获取结果")
         self.end_result = await self.GetParameters()
         if len(self.end_result) == 1:
             self.end_result = self.end_result[0]
@@ -865,18 +969,23 @@ class EndNode(Node):
             self.end_result = None
         return self.end_result
 
+    async def _BeginGetParameters(self) -> None:
+        global _Internal_Task_Count
+        if GetInternalWorkflowDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                f"<id={_Internal_GetNodeID(self)}>开始获取结果, 当前任务数量: {_Internal_Task_Count}")
+        await self.GetParameters()
+        self._is_start = False
+        _Internal_Task_Count.fetch_sub(1)
+        if GetInternalWorkflowDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                f"<id={_Internal_GetNodeID(self)}>任务结束, 当前任务数量: {_Internal_Task_Count}")
+
     @override
-    def OnStartEvent(self, event:Any) -> None:
-        super().OnStartEvent(event)
-        if isinstance(event, WorkflowStartEvent):
-            async def _get_params():
-                await self.GetParameters()
-                global _Internal_Task_Count
-                _Internal_Task_Count -= 1
-            asyncio.create_task(_get_params())
-    @override
-    def OnStopEvent(self, event:Any) -> None:
-        super().OnStopEvent(event)
+    def OnLateUpdate(self) -> None:
+        super().OnLateUpdate()
+        if self.is_start:
+            run_async_coroutine(self._BeginGetParameters())
 
     def add_slot(self, name:str, typeIndicator:str|type) -> bool:
         if name in self.info.inmapping:
@@ -899,7 +1008,7 @@ class EndNode(Node):
         return f"{self.end_result}"
     @override
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}<result={self.end_result}, id={_Internal_GetNodeID(self)}>"
+        return f"{self.GetType()}>"
 
 class EndNodeInfo(NodeInfo):
     """

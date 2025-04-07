@@ -19,10 +19,11 @@ def GetInternalDebug() -> bool:
     return INTERNAL_DEBUG
 
 def print_colorful(color:str, *args, is_reset:bool=True, **kwargs):
-    if is_reset:
-        print(color,*args,ConsoleStyle.RESET_ALL, **kwargs)
-    else:
-        print(color,*args, **kwargs)
+    with lock_guard():
+        if is_reset:
+            print(color,*args,ConsoleStyle.RESET_ALL, **kwargs)
+        else:
+            print(color,*args, **kwargs)
 
 ImportingFailedSet:Set[str] = set()
 def ImportingThrow(
@@ -195,7 +196,7 @@ def format_traceback_info():
     return ''.join(traceback.format_stack()[:-1])
 
 class type_class(object):
-    #generate_trackback: Optional[str] = None
+    generate_trackback: Optional[str] = None
     def __init__(self):
         if GetInternalDebug():
             self.generate_trackback = format_traceback_info()
@@ -652,6 +653,20 @@ class atomic[_T](any_class):
             self.__value = value
         raise NotImplementedError("This method can only be called within a with statement")
 
+    def __iadd__(self, value):
+        self.fetch_add(value)
+        return self
+    def __isub__(self, value):
+        self.fetch_sub(value)
+        return self
+    def __str__(self) -> str:
+        return str(self.load())
+    def __repr__(self) -> str:
+        return repr(self.load())
+
+    def SymbolName(self) -> str:
+        return "atomic"
+
 # region end
 
 def create_py_file(path:str):
@@ -718,6 +733,7 @@ def nowf() -> str:
     return datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 _all_base_behavior:List['BaseBehavior'] = []
+_LazyBroadcostEvent: Dict[str, List[Any]] = {}
 class BaseBehavior(any_class):
     @virtual
     def OnUpdate(self) -> None:
@@ -738,17 +754,28 @@ class BaseBehavior(any_class):
         '''
         pass
     @sealed
-    def Broadcast(self, event:Any, funcname:Optional[str] = None) -> None:
+    def Broadcast(self, event:Any, funcname:str|Literal["OnEvent"] = "OnEvent") -> None:
         '''
         向所有Behavior广播事件
+
+        Args:
+            event: 事件
+            funcname: 函数名
         '''
-        if funcname is None:
-            funcname = f"On{event.__class__.__name__}"
-        for behavior in _all_base_behavior:
-            if behavior is self:
-                continue
-            if hasattr(behavior, funcname):
-                getattr(behavior, funcname)(event)
+        if GetInternalDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"广播事件: {funcname}, 事件类型: {type(event)}")
+        global _LazyBroadcostEvent
+        if funcname in _LazyBroadcostEvent:
+            _LazyBroadcostEvent[funcname].append(event)
+        else:
+            _LazyBroadcostEvent[funcname] = [event]
+
+    @virtual
+    def OnEvent(self, event:Any) -> None:
+        '''
+        处理事件使用的默认函数, 该函数无法保证调用顺序因此不要在其中执行逻辑
+        '''
+        pass
     def __init__(self):
         global _all_base_behavior
         _all_base_behavior.append(self)
@@ -759,12 +786,23 @@ class BaseBehavior(any_class):
 _behavior_thread:Optional[thread_instance] = None
 _behavior_thread_fixed_update_delta_time:float = 1/60
 _behavior_thread_is_running:bool = False
+def _GetBehaviorThreadIsRunningStats() -> bool:
+    global _behavior_thread_is_running
+    return _behavior_thread_is_running
+def _SetBehaviorThreadIsRunningStats(is_running:bool):
+    global _behavior_thread_is_running
+    _behavior_thread_is_running = is_running
 
 _behavior_debug_hook:Optional[Action[None]] = None
+_behavior_exception_hook:Optional[Action[Exception]] = None
 
-def SetBehaviorDebugHook(hook:Optional[Action[Exception]]):
+def SetBehaviorDebugHook(hook:Optional[Action[None]]):
     global _behavior_debug_hook
     _behavior_debug_hook = hook
+
+def SetBehaviorExceptionHook(hook:Optional[Action[Exception]]):
+    global _behavior_exception_hook
+    _behavior_exception_hook = hook
 
 def AwakeBehaviorThread(*, fixedUpdateDeltaTime:float=1/60):
     '''
@@ -777,7 +815,7 @@ def AwakeBehaviorThread(*, fixedUpdateDeltaTime:float=1/60):
     '''
     global _behavior_thread
     global _behavior_thread_fixed_update_delta_time
-    global _behavior_thread_is_running
+
     if _behavior_thread is not None:
         raise RuntimeError("BehaviorThread already exists")
     def runner():
@@ -785,38 +823,77 @@ def AwakeBehaviorThread(*, fixedUpdateDeltaTime:float=1/60):
         global _all_base_behavior
         def try_fixed_update():
             if time.time() - clock.ref_value >= _behavior_thread_fixed_update_delta_time:
-                for behavior in _all_base_behavior:
-                    behavior.OnFixedUpdate()
                 clock.ref_value = time.time()
-        while _behavior_thread_is_running:
-            try:
                 for behavior in _all_base_behavior:
+                    try:
+                        behavior.OnFixedUpdate()
+                    except Exception as e:
+                        if _behavior_debug_hook is not None:
+                            _behavior_debug_hook(e)
+                        if _behavior_exception_hook is not None:
+                            _behavior_exception_hook(e)
+                        else:
+                            _SetBehaviorThreadIsRunningStats(False)
+                            raise
+        def broadcast_events():
+            current_broadcast_events = _LazyBroadcostEvent.copy()
+            if GetInternalDebug() and len(current_broadcast_events) > 0:
+                print_colorful(ConsoleFrontColor.YELLOW, f"以下事件正在广播: {current_broadcast_events}")
+            _LazyBroadcostEvent.clear()
+            for funcname, events in current_broadcast_events.items():
+                for event in events:
+                    for behavior in _all_base_behavior:
+                        try:
+                            if hasattr(behavior, funcname):
+                                getattr(behavior, funcname)(event)
+                        except Exception as e:
+                            if _behavior_debug_hook is not None:
+                                _behavior_debug_hook(e)
+                            if _behavior_exception_hook is not None:
+                                _behavior_exception_hook(e)
+                            else:
+                                _SetBehaviorThreadIsRunningStats(False)
+                                raise
+        while _GetBehaviorThreadIsRunningStats():
+            for behavior in _all_base_behavior:
+                try:
                     behavior.OnUpdate()
-                try_fixed_update()
-                for behavior in _all_base_behavior:
+                except Exception as e:
+                    if _behavior_debug_hook is not None:
+                        _behavior_debug_hook(e)
+                    if _behavior_exception_hook is not None:
+                        _behavior_exception_hook(e)
+                    else:
+                        _SetBehaviorThreadIsRunningStats(False)
+                        raise
+            try_fixed_update()
+            for behavior in _all_base_behavior:
+                try:
                     behavior.OnLateUpdate()
-                try_fixed_update()
-            except InterruptedError:
-                break
-            except Exception as e:
-                if _behavior_debug_hook is not None:
-                    _behavior_debug_hook(e)
-                else:
-                    print_colorful(e)
+                except Exception as e:
+                    if _behavior_debug_hook is not None:
+                        _behavior_debug_hook(e)
+                    if _behavior_exception_hook is not None:
+                        _behavior_exception_hook(e)
+                    else:
+                        _SetBehaviorThreadIsRunningStats(False)
+                        raise
+            try_fixed_update()
+            # 延迟执行广播事件
+            broadcast_events()
     global INTERNAL_DEBUG
     if INTERNAL_DEBUG:
         print_colorful(ConsoleFrontColor.GREEN, "唤醒生命周期线程")
-    _behavior_thread_is_running = True
+    _SetBehaviorThreadIsRunningStats(True)
     _behavior_thread = thread_instance(runner, is_del_join=False)
     _behavior_thread_fixed_update_delta_time = fixedUpdateDeltaTime
 
 def StopBehaviorThread():
     global _behavior_thread
-    global _behavior_thread_is_running
     global INTERNAL_DEBUG
     if INTERNAL_DEBUG:
         print_colorful(ConsoleFrontColor.GREEN, "停止生命周期线程")
-    _behavior_thread_is_running = False
+    _SetBehaviorThreadIsRunningStats(False)
     if _behavior_thread is not None:
         _behavior_thread.join()
         _behavior_thread = None

@@ -24,7 +24,7 @@ def GetInternalReflectionDebug() -> bool:
     return _Internal_Reflection_Debug and GetInternalDebug()
 def SetInternalReflectionDebug(debug:bool) -> None:
     global _Internal_Reflection_Debug
-    _Internal_Reflection_Debug = debug and GetInternalDebug()
+    _Internal_Reflection_Debug = debug
 
 class ReflectionException(Exception):
     def __init__(self, message:str):

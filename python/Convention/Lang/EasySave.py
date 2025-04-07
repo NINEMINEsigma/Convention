@@ -7,7 +7,7 @@ def GetInternalEasySaveDebug() -> bool:
     return _Internal_EasySave_Debug and GetInternalDebug()
 def SetInternalEasySaveDebug(debug:bool) -> None:
     global _Internal_EasySave_Debug
-    _Internal_EasySave_Debug = debug and GetInternalDebug()
+    _Internal_EasySave_Debug = debug
 
 class EasySaveSetting(BaseModel, any_class):
     # 从目标文件进行序列化/反序列化
