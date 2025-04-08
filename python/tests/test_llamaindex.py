@@ -4,8 +4,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from Convention.Internal import *
 from Convention.Workflow.Core import *
+
 def query(user_msg:str) -> str:
-    return f"query: {user_msg}"
+    from Convention.LLM.LlamaIndex.Core import LLMObject
+    return LLMObject.using_LlamaCPP_from_url("http://10.10.230.60:61111").predict_and_call([],user_msg)
 query_wrapper = WorkflowActionWrapper("query", query)
 
 async def run():

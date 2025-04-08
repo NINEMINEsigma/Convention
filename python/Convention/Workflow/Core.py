@@ -623,12 +623,14 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
             self.__results = await self._DoRunStep()
             if isinstance(self.__results, dict):
                 for key, value in self.__results.items():
-                    self.info.outmapping[key].slot.SetParameter(value)
+                    self.Internal_Outmapping[key].SetParameter(value)
             else:
-                if len(self.info.outmapping.items()) == 1:
-                    self.info.outmapping[next(iter(self.info.outmapping.keys()))].slot.SetParameter(self.__results)
+                if len(self.Internal_Outmapping.items()) == 1:
+                    self.Internal_Outmapping[next(iter(self.Internal_Outmapping.keys()))].SetParameter(self.__results)
+                elif len(self.Internal_Outmapping.items()) == 0:
+                    pass
                 else:
-                    self.info.outmapping["result"].slot.SetParameter(self.__results)
+                    self.Internal_Outmapping["result"].SetParameter(self.__results)
         except Exception as e:
             #self.Broadcast(WorkflowErrorEvent(error=e, from_=self), "OnStopEvent")
             raise
@@ -998,7 +1000,13 @@ class StepNode(Node):
         if self._verbose:
             print(f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> start func: {self.info.funcname}")
         try:
-            result = await func(**await self.GetParameters())
+            current_parameters = await self.GetParameters()
+            coroutine_or_result = func(**current_parameters)
+            result:Any = None
+            if isinstance(coroutine_or_result, Coroutine):
+                result = await coroutine_or_result
+            else:
+                result = coroutine_or_result
             if self._verbose:
                 print(f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> end func: {self.info.funcname}, result: {result}")
             return result
@@ -1034,9 +1042,9 @@ class EndNode(Node):
         if GetInternalWorkflowDebug():
             print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                 f"<id={_Internal_GetNodeID(self)}>结束节点开始获取结果")
-        self.end_result = await self.GetParameters()
+        self.end_result:Dict[str, context_value_type] = await self.GetParameters()
         if len(self.end_result) == 1:
-            self.end_result = self.end_result[0]
+            self.end_result = next(iter(self.end_result.values()))
         elif len(self.end_result) == 0:
             self.end_result = None
         return self.end_result
@@ -1046,7 +1054,7 @@ class EndNode(Node):
         if GetInternalWorkflowDebug():
             print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                 f"<id={_Internal_GetNodeID(self)}>开始获取结果, 当前任务数量: {_Internal_Task_Count}")
-        await self.GetParameters()
+        await self.RunStep()
         self._is_start = False
         _Internal_Task_Count.fetch_sub(1)
         if GetInternalWorkflowDebug():
