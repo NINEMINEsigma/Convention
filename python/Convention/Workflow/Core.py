@@ -97,6 +97,8 @@ __all__workflow_action_wrappers__:Dict[action_label_type, 'WorkflowActionWrapper
 class NodeSlotInfo(BaseModel, any_class):
     """
     插槽信息
+
+    初始化的Link由Node执行, 并且两个槽必须互相连接
     """
     parentNode:         'Node'     = Field(description="所属的父节点", default=None, exclude=True)
     slot:               'NodeSlot' = Field(description="所属的插槽", default=None, exclude=True)
@@ -306,9 +308,9 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
             self.UpdateImmediate()
 
     def __init__(
-        self, 
-        info:   NodeSlotInfo, 
-        *, 
+        self,
+        info:   NodeSlotInfo,
+        *,
         parent: Optional['Node'] = None,
         target: Optional[Tuple['Node', 'NodeSlot']] = None,
         ):
@@ -374,7 +376,7 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
                     print_colorful(ConsoleFrontColor.YELLOW, f"节点<{self.info.parentNode.SymbolName()}, "\
                         f"id={_Internal_GetNodeID(self.info.parentNode)}, title={self.info.parentNode.info.title}>"\
                         f"的输出槽{ConsoleFrontColor.RESET}<{self.info.slotName}>{ConsoleFrontColor.YELLOW}"\
-                        f" 输出为{limit_str(self.__parameter.ref_value, 100)}")
+                        f"输出为{ConsoleFrontColor.GREEN}{limit_str(self.__parameter.ref_value, 100)}{ConsoleFrontColor.YELLOW}")
                 return self.__parameter.ref_value
             else:
                 if GetInternalWorkflowDebug():
@@ -441,7 +443,7 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     @property
     def Internal_Outmapping(self) -> Dict[str, NodeSlot]:
         return self._Internal_Outmapping
-    
+
     @sealed
     def ClearLink(self) -> None:
         '''
@@ -665,10 +667,16 @@ class Workflow(BaseModel, any_class):
             ]
         )
     @classmethod
-    def Create(cls, *args:NodeInfo|List[NodeInfo]) -> Self:
-        return cls(
+    def Create(cls, *args:NodeInfo|List[NodeInfo], is_auto_id:bool=True) -> Self:
+        workflow = cls(
             Datas=to_list(args)
         )
+        if is_auto_id:
+            index = 0
+            for info in workflow.Datas:
+                info.nodeID = index
+                index += 1
+        return workflow
 
 class WorkflowActionWrapper(left_value_reference[Callable], invoke_callable):
     def __init__(self, name:action_label_type, action:Callable):
@@ -1008,7 +1016,8 @@ class StepNode(Node):
             else:
                 result = coroutine_or_result
             if self._verbose:
-                print(f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> end func: {self.info.funcname}, result: {result}")
+                print(f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> "\
+                    f"end func: {self.info.funcname}, result: {ConsoleFrontColor.GREEN}{limit_str(result, 100)}{ConsoleFrontColor.YELLOW}")
             return result
         except Exception as e:
             if self._verbose:
@@ -1262,6 +1271,29 @@ class TextNodeInfo(StartNodeInfo):
     文本节点信息, 属于开始节点, 用于加载文本
     """
     text:str = Field(description="文本", default="unknown")
+
+    def __init__(
+        self,
+        *,
+        text:               str = "",
+        outmappingName:     str = "text",
+        targetNodeID:       int = -1,
+        targetSlotName:     str = "text",
+        **kwargs:Any
+        ) -> None:
+        super().__init__(**kwargs)
+        self.text = text
+        self.inmapping = {}
+        self.outmapping = {
+            outmappingName: NodeSlotInfo(
+                slotName=outmappingName,
+                typeIndicator="str",
+                IsInmappingSlot=False,
+                targetNodeID=targetNodeID,
+                targetSlotName=targetSlotName
+                )
+        }
+
     @override
     def Instantiate(self) -> Node:
         return TextNode(self)
