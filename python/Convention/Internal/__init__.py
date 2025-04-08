@@ -328,7 +328,7 @@ class left_value_reference[_T](base_value_reference):
         return self._ref_value
     @ref_value.setter
     def ref_value(self, value) -> _T:
-        if self.GetRealType() is None:
+        if self.GetRealType() is None or self.GetRealType() == type(None):
             self._reinit_ref_value(value)
         elif value is None or isinstance(value, self.GetRealType()):
             self._ref_value = value

@@ -25,7 +25,7 @@ async def run():
                              }, nodeID=1),
             TextNodeInfo(text="你是谁",
                          outmapping={
-                             "query": NodeSlotInfo(slotName="query", targetNodeID=1, targetSlotName="user_msg", typeIndicator="str", IsInmappingSlot=True)
+                             "query": NodeSlotInfo(slotName="query", targetNodeID=1, targetSlotName="user_msg", typeIndicator="str", IsInmappingSlot=False)
                              }, nodeID=2),
         ))
         await manager.RunWorkflow(verbose=True)
@@ -42,6 +42,10 @@ if __name__ == "__main__":
     SetInternalReflectionDebug(True)
     SetInternalEasySaveDebug(True)
     SetInternalWorkflowDebug(True)
+    def error_handler(e:Exception):
+        WorkflowManager.GetInstance().StopWorkflow()
+        raise
+    SetBehaviorExceptionHook(error_handler)
     AwakeBehaviorThread()
     asyncio.run(run())
 

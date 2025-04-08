@@ -218,9 +218,8 @@ class WorkflowErrorEvent(WorkflowStopEvent):
     def SymbolName(self) -> str:
         return "ErrorEvent"
 
-    def __init__(self, error:Exception, from_:any_class):
-        self.error = error
-        self.from_ = from_
+    error:  Any   = Field(description="错误")
+    from_:  Any   = Field(description="错误来源")
 
 class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
     """
@@ -254,8 +253,10 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
             raise ValueError(f"相同映射的插槽<{left.info.slotName}>和<{right.info.slotName}>不能连接")
         if left.info.typeIndicator!=right.info.typeIndicator:
             raise ValueError(f"类型不匹配的插槽<{left.info.slotName}>和<{right.info.slotName}>不能连接")
-        if left.info.targetNodeID==right.info.targetNodeID:
-            raise ValueError(f"目标节点ID相同的插槽<{left.info.slotName}>和<{right.info.slotName}>不能连接")
+        if left.info.parentNode==right.info.parentNode:
+            raise ValueError(f"父节点相同的插槽<node={left.info.parentNode.SymbolName()}, id={_Internal_GetNodeID(left.info.parentNode)}>"\
+                f"<name={left.info.slotName}, type={left.info.typeIndicator}>和"\
+                f"<name={right.info.slotName}, type={right.info.typeIndicator}>不能连接")
 
         left.info.targetSlot = right
         right.info.targetSlot = left
@@ -304,8 +305,19 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
         if self.__IsDirty:
             self.UpdateImmediate()
 
-    def __init__(self, info:NodeSlotInfo):
+    def __init__(
+        self, 
+        info:   NodeSlotInfo, 
+        *, 
+        parent: Optional['Node'] = None,
+        target: Optional[Tuple['Node', 'NodeSlot']] = None,
+        ):
         super().__init__(info)
+        if parent is not None:
+            self.info.parentNode = parent
+        if target is not None:
+            self.info.targetNode = target[0]
+            self.info.targetSlot = target[1]
 
     @override
     def ToString(self) -> str:
@@ -342,15 +354,15 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
         if self.info.IsInmappingSlot:
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, f"节点<{self.info.parentNode.SymbolName()}, "\
-                    f"id={_Internal_GetNodeID(self.info.parentNode)}, "\
-                    f"title={self.info.parentNode.info.title}>的输入槽<{self.info.slotName}>"\
-                    f"从上游输出槽<{self.info.targetSlotName}>获取参数")
+                    f"id={_Internal_GetNodeID(self.info.parentNode)}, title={self.info.parentNode.info.title}>"\
+                    f"的输入槽{ConsoleFrontColor.RESET}<{self.info.slotName}>{ConsoleFrontColor.YELLOW}"\
+                    f"从上游输出槽{ConsoleFrontColor.RESET}<{self.info.targetSlotName}>{ConsoleFrontColor.YELLOW}获取参数")
             return await self.info.targetSlot.GetParameter()
         else:
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, f"节点<{self.info.parentNode.SymbolName()}, "\
-                    f"id={_Internal_GetNodeID(self.info.parentNode)}, "\
-                    f"title={self.info.parentNode.info.title}>的输出槽<{self.info.slotName}>"\
+                    f"id={_Internal_GetNodeID(self.info.parentNode)}, title={self.info.parentNode.info.title}>"\
+                    f"的输出槽{ConsoleFrontColor.RESET}<{self.info.slotName}>{ConsoleFrontColor.YELLOW}"\
                     f"等待父节点<type={self.info.parentNode.SymbolName()}, "\
                     f"id={_Internal_GetNodeID(self.info.parentNode)}, "\
                     f"title={self.info.parentNode.info.title}>执行Step")
@@ -360,15 +372,15 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
             if self.__is_start:
                 if GetInternalWorkflowDebug():
                     print_colorful(ConsoleFrontColor.YELLOW, f"节点<{self.info.parentNode.SymbolName()}, "\
-                        f"id={_Internal_GetNodeID(self.info.parentNode)}, "\
-                        f"title={self.info.parentNode.info.title}>的输出槽<{self.info.slotName}>"\
+                        f"id={_Internal_GetNodeID(self.info.parentNode)}, title={self.info.parentNode.info.title}>"\
+                        f"的输出槽{ConsoleFrontColor.RESET}<{self.info.slotName}>{ConsoleFrontColor.YELLOW}"\
                         f" 输出为{limit_str(self.__parameter.ref_value, 100)}")
                 return self.__parameter.ref_value
             else:
                 if GetInternalWorkflowDebug():
                     print_colorful(ConsoleFrontColor.YELLOW, f"节点<{self.info.parentNode.SymbolName()}, "\
-                        f"id={_Internal_GetNodeID(self.info.parentNode)}, "\
-                        f"title={self.info.parentNode.info.title}>的输出槽<{self.info.slotName}>"\
+                        f"id={_Internal_GetNodeID(self.info.parentNode)}, title={self.info.parentNode.info.title}>"\
+                        f"的输出槽{ConsoleFrontColor.RESET}<{self.info.slotName}>{ConsoleFrontColor.YELLOW}"\
                         f"任务未开始, 任务取消")
                 return None
     @sealed
@@ -398,7 +410,9 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     节点
     """
     def __init__(self, info:NodeInfo) -> None:
-        super().__init__(info)
+        super().__init__(None)
+        self._Internal_Inmapping:Dict[str, NodeSlot] = {}
+        self._Internal_Outmapping:Dict[str, NodeSlot] = {}
         self.SetupFromInfo(info)
 
     @property
@@ -419,30 +433,84 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
             ),
         )
 
-    Internal_Inmapping:Dict[str, NodeSlot] = {}
-    Internal_Outmapping:Dict[str, NodeSlot] = {}
-
+    _Internal_Inmapping:Dict[str, NodeSlot] = {}
+    _Internal_Outmapping:Dict[str, NodeSlot] = {}
+    @property
+    def Internal_Inmapping(self) -> Dict[str, NodeSlot]:
+        return self._Internal_Inmapping
+    @property
+    def Internal_Outmapping(self) -> Dict[str, NodeSlot]:
+        return self._Internal_Outmapping
+    
     @sealed
     def ClearLink(self) -> None:
+        '''
+        清除所有连接
+        '''
+        for slot in self.Internal_Inmapping.values():
+            slot.info.targetNode = None
+            slot.info.targetSlot = None
+            slot.SetDirty()
+        for slot in self.Internal_Outmapping.values():
+            slot.info.targetNode = None
+            slot.info.targetSlot = None
+            slot.SetDirty()
+    @sealed
+    def ClearSlots(self) -> None:
+        '''
+        清空所有槽的实例
+        '''
+        if self.info is None:
+            return
         if GetInternalWorkflowDebug():
-            print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
-                f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>ClearLink")
+            print_colorful(ConsoleFrontColor.BLUE, f"{self.SymbolName()}"\
+                f"<id={_Internal_GetNodeID(self)}, title={self.info.title if self.info is not None else '<no info>'}>ClearLink")
         self.Internal_Inmapping.clear()
         self.Internal_Outmapping.clear()
     @sealed
-    def BuildLink(self) -> None:
+    def BuildSlots(self) -> None:
+        '''
+        从info中构建槽的实例
+        '''
+        if self.info is None:
+            raise ValueError(f"节点<{self.SymbolName()}>未设置info")
         if GetInternalWorkflowDebug():
-            print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+            print_colorful(ConsoleFrontColor.BLUE, f"{self.SymbolName()}"\
                 f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>BuildLink")
         for slot_name, info in self.info.inmapping.items():
-            self.Internal_Inmapping[slot_name] = NodeSlot(info.TemplateClone())
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.BLUE, f"{self.SymbolName()}"\
+                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>BuildLink"\
+                    f"在<{slot_name}>处创建输入槽")
+            self.Internal_Inmapping[slot_name] = NodeSlot(info.TemplateClone(), parent=self)
         for slot_name, info in self.info.outmapping.items():
-            self.Internal_Outmapping[slot_name] = NodeSlot(info.TemplateClone())
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.BLUE, f"{self.SymbolName()}"\
+                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>BuildLink"\
+                    f"在<{slot_name}>处创建输出槽")
+            self.Internal_Outmapping[slot_name] = NodeSlot(info.TemplateClone(), parent=self)
+    @sealed
+    def BuildLink(self,*,info:Optional[NodeInfo]=None) -> None:
+        '''
+        从指定或本身的info中构建连接
+        '''
+        if info is None:
+            info = self.info
+        for slot_name, slot_info in info.inmapping.items():
+            targetNode = _Internal_GetNode(slot_info.targetNodeID)
+            if targetNode is not None:
+                NodeSlot.Link(self.Internal_Inmapping[slot_name], targetNode.Internal_Outmapping[slot_info.targetSlotName])
+            else:
+                NodeSlot.Unlink(self.Internal_Inmapping[slot_name])
+        for slot_name, slot_info in info.outmapping.items():
+            targetNode = _Internal_GetNode(slot_info.targetNodeID)
+            if targetNode is not None:
+                NodeSlot.Link(self.Internal_Outmapping[slot_name], targetNode.Internal_Inmapping[slot_info.targetSlotName])
+            else:
+                NodeSlot.Unlink(self.Internal_Outmapping[slot_name])
     @sealed
     def RefreshImmediate(self) -> None:
-        # TODO 在断连之前需要保存连接信息, 在重建时恢复连接
-        self.ClearLink()
-        self.BuildLink()
+        pass
 
     def SetupFromInfo(self, info:NodeInfo) -> None:
         if GetInternalWorkflowDebug():
@@ -453,26 +521,24 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
             else:
                 print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                     f"SetupFromInfo(info={info.SymbolName()}, title={info.title})")
-        self.ClearLink()
+        self.ClearSlots()
         self.ref_value = info
-        self.info.nodeID = _Internal_GetNodeID(self)
-        self.info.node = self
-        self.BuildLink()
+        if _Internal_GetNodeID(self) != -1:
+            self.info.nodeID = _Internal_GetNodeID(self)
+            self.info.node = self
+            self.BuildSlots()
+        else:
+            self.info.node = self
 
     def link_inslot_to_other_node_outslot(self, other:Self, slotName:str, targetSlotName:str) -> None:
-        NodeSlot.Link(self.info.outmapping[slotName], other.info.inmapping[targetSlotName])
+        NodeSlot.Link(self.Internal_Outmapping[slotName], other.Internal_Inmapping[targetSlotName])
     def link_outslot_to_other_node_inslot(self, other:Self, slotName:str, targetSlotName:str) -> None:
-        NodeSlot.Link(self.info.inmapping[slotName], other.info.outmapping[targetSlotName])
+        NodeSlot.Link(self.Internal_Inmapping[slotName], other.Internal_Outmapping[targetSlotName])
     def unlink_inslot(self, slotName:str) -> None:
-        NodeSlot.Unlink(self.info.inmapping[slotName])
+        NodeSlot.Unlink(self.Internal_Inmapping[slotName])
     def unlink_outslot(self, slotName:str) -> None:
-        NodeSlot.Unlink(self.info.outmapping[slotName])
+        NodeSlot.Unlink(self.Internal_Outmapping[slotName])
 
-    def _debuging_slot(self):
-        if len(self.Internal_Inmapping.keys()) != len(self.info.inmapping.keys()):
-            raise ValueError(f"节点<{self.info.title}>的输入槽数量{len(self.info.inmapping.keys())}"\
-                f"与实际{self.info.typename}输入槽数量{len(self.Internal_Inmapping.keys())}不一致")
-        
     _is_start:bool = False
     @virtual
     def OnStartEvent(self, event:any_class) -> None:
@@ -505,8 +571,6 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
         异步函数, 从inslots中构建参数
         '''
         parameters = {}
-        # TODO 节点即使原本有输入槽, 此时也会消失, 正在寻找原因
-        self._debuging_slot()
         if GetInternalWorkflowDebug():
             print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                 f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>拥有输入槽:{ConsoleFrontColor.WHITE}"\
@@ -514,7 +578,8 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
         for slot_name, slot in self.Internal_Inmapping.items():
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
-                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>位于<{slot_name}>的槽开始获取参数")
+                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>位于"\
+                    f"{ConsoleFrontColor.RESET}<{slot_name}>{ConsoleFrontColor.YELLOW}的槽开始获取参数")
             value = await slot.GetParameter()
             parameters[slot_name] = value
         if GetInternalWorkflowDebug():
@@ -553,8 +618,9 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                     f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>开始执行")
-            parameters = await self.GetParameters()
-            self.__results = await self._DoRunStep(parameters)
+            # 使用本地属性__parameters接收了参数
+            await self.GetParameters()
+            self.__results = await self._DoRunStep()
             if isinstance(self.__results, dict):
                 for key, value in self.__results.items():
                     self.info.outmapping[key].slot.SetParameter(value)
@@ -564,7 +630,8 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
                 else:
                     self.info.outmapping["result"].slot.SetParameter(self.__results)
         except Exception as e:
-            self.Broadcast(WorkflowErrorEvent(e, self))
+            #self.Broadcast(WorkflowErrorEvent(error=e, from_=self), "OnStopEvent")
+            raise
 
     @virtual
     async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
@@ -652,8 +719,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
             print_colorful(ConsoleFrontColor.YELLOW, f"节点{info.title}<{info.__class__.__name__}>创建")
         node:Node = info.Instantiate()
         self.workflow.Nodes.append(node)
-        if node.info is None:
-            node.SetupFromInfo(info)
+        node.BuildSlots()
         return node
 
     def DestroyNode(self, node:Node) -> None:
@@ -706,7 +772,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
             return False
         return any(node.nodeID == id for node in self.ref_value.Datas)
 
-    def GetNode[NodeT:Node](self, id:int) -> NodeT:
+    def GetNode(self, id:int) -> Node:
         if id < 0:
             return None
         return self.workflow.Nodes[id]
@@ -750,10 +816,13 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         for i, info in enumerate(workflow.Datas):
             if info.nodeID != i:
                 raise ValueError(f"异常的工作流: 索引与节点ID不匹配")
-        # 以复制的形式重建
+        # 以复制的形式新建节点
         self.ref_value = Workflow()
         for info in workflow.Datas:
             node = self.CreateNode(info)
+        # 新建节点后手动将其连接
+        for node in self.workflow.Nodes:
+            node.BuildLink()
         return self.workflow
 
     @property
@@ -910,6 +979,11 @@ class StepNode(Node):
     """
     def __init__(self, info:NodeInfo) -> None:
         super().__init__(info)
+
+    @override
+    @property
+    def info(self) -> 'StepNodeInfo':
+        return self.ref_value
 
     _verbose:bool = False
 
@@ -1076,6 +1150,8 @@ class WorkflowValidator:
         recursion_stack = set()
 
         def dfs(node_id: int) -> None:
+            if node_id == -1:
+                raise WorkflowCycleError(f"异常节点: {node_id}")
             if node_id in recursion_stack:
                 raise WorkflowCycleError(f"检测到循环依赖: {node_id}")
             if node_id in visited:
@@ -1084,12 +1160,12 @@ class WorkflowValidator:
             visited.add(node_id)
             recursion_stack.add(node_id)
 
-            node = next((n for n in workflow.Nodes if n.info.nodeID == node_id), None)
+            node = next((n for n in workflow.Nodes if _Internal_GetNodeID(n) == node_id), None)
             if node:
                 # 只检查已连接的输出插槽
-                for slot_info in node.info.outmapping.values():
-                    if slot_info.targetNodeID != -1:  # 只检查已连接的插槽
-                        dfs(slot_info.targetNodeID)
+                for slot in node.Internal_Outmapping.values():
+                    if slot.info.targetNode != None:  # 只检查已连接的插槽
+                        dfs(_Internal_GetNodeID(slot.info.targetNode))
 
             recursion_stack.remove(node_id)
 
