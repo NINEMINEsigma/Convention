@@ -89,3 +89,28 @@ class LLMLoaderNodeInfo(StepNodeInfo):
     @override
     def Instantiate(self) -> Node:
         return LLMLoaderNode(self)
+
+_inject_function_call_funcname:Literal["__inject_function_call"] = "__inject_function_call"
+def __inject_function_call(
+    *,
+    llm:                        Optional[LLMObject] = None,
+    function_tools:             List[FunctionTool]  = [],
+    function_tools_str_forms:   Optional[str]       = None,
+    **kwargs
+) -> str:
+    if llm is None:
+        llm = LlamaIndexSettings.llm
+    if function_tools_str_forms is None:
+        pass
+    else:
+        pass
+
+class FunctionCallNode(StepNode):
+    def __init__(self, info: 'FunctionCallNodeInfo'):
+        super().__init__(info)
+
+class FunctionCallNodeInfo(StepNodeInfo):
+    '''
+    函数调用节点
+    '''
+    
