@@ -4,6 +4,7 @@ using System.IO;
 using Convention.WindowsUI;
 using Convention.WindowsUI.Variant;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Convention.Workflow
 {
@@ -109,31 +110,43 @@ namespace Convention.Workflow
         {
             if (Context == null)
                 Context = this.GetOrAddComponent<BehaviourContextManager>();
-            Context.OnPointerDownEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnPointerDownEvent, _ =>
+            Context.OnPointerDownEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnPointerDownEvent, OnPointerDown);
+            Context.OnDragEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnDragEvent, OnDrag);
+        }
+
+        public void OnPointerDown(PointerEventData _)
+        {
+            if (this.info != null)
+                InspectorWindow.instance.SetTarget(this.info, null);
+            else
+                Debug.LogError($"GraphNode<{this.GetType()}>={this}'s info is not setup", this);
+        }
+
+        public void OnDrag(PointerEventData _)
+        {
+            foreach (var info in m_Inmapping)
             {
-                if (this.info != null)
-                    InspectorWindow.instance.SetTarget(this.info, null);
-                else
-                    Debug.LogError($"GraphNode<{this.GetType()}>={this}'s info is not setup", this);
-            });
-            Context.OnDragEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnDragEvent, _ =>
-            {
-                foreach (var info in m_Inmapping)
-                {
-                    if (info.Value != null)
-                        info.Value.SetDirty();
-                }
-            });
+                if (info.Value != null)
+                    info.Value.SetDirty();
+            }
         }
 
         public void SetupFromInfo([In] NodeInfo value)
         {
             ClearLink();
             info = value;
-            value.nodeID = WorkflowManager.instance.GetGraphNodeID(this);
-            value.node = this;
+            int nodeID = WorkflowManager.instance.GetGraphNodeID(this);
+            if (nodeID < 0)
+            {
+                this.info.node = this;
+            }
+            else
+            {
+                value.nodeID = nodeID;
+                value.node = this;
+                BuildLink();
+            }
             RefreshPosition();
-            BuildLink();
         }
 
         public void RefreshImmediate()
@@ -149,17 +162,31 @@ namespace Convention.Workflow
         }
         public void ClearLink()
         {
-            m_Inmapping.Clear();
-            m_Outmapping.Clear();
-            foreach (var slot in InSlots)
+            foreach (var (name, slot) in this.m_Inmapping)
             {
-                slot.Release();
+                NodeSlot.Unlink(slot);
+                slot.SetDirty();
             }
-            foreach (var slot in OutSlots)
+            foreach (var (name,slot) in m_Outmapping)
             {
-                slot.Release();
+                NodeSlot.Unlink(slot);
+                slot.SetDirty();
             }
-            InoutContainerPlane.AdjustSizeToContainsChilds();
+        }
+        public void ClearSlots()
+        {
+            if(this.info==null)
+            {
+                return;
+            }
+            foreach (var slot in this.InSlots)
+                slot.Release();
+            foreach (var slot in this.OutSlots)
+                slot.Release();
+            InSlots.Clear();
+            OutSlots.Clear();
+            this.m_Inmapping.Clear();
+            this.m_Outmapping.Clear();
         }
         private List<PropertiesWindow.ItemEntry> CreateGraphNodeSlots(int count)
         {

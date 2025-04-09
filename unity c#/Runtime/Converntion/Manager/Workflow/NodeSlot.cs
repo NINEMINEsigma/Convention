@@ -61,7 +61,7 @@ namespace Convention.Workflow
 
     public class NodeSlot : WindowUIModule, ITitle
     {
-        public static void Link(NodeSlot left, NodeSlot right)
+        public static void Link([In]NodeSlot left,[In] NodeSlot right)
         {
             if(left.info.IsInmappingSlot==right.info.IsInmappingSlot)
             {
@@ -94,7 +94,7 @@ namespace Convention.Workflow
                 right.SetDirty();
             }
         }
-        public static void Unlink(NodeSlot slot)
+        public static void Unlink([In] NodeSlot slot)
         {
             var targetSlot = slot.info.targetSlot;
             slot.info.targetSlot = null;
@@ -108,6 +108,13 @@ namespace Convention.Workflow
                 targetSlot.SetDirty();
             }
             slot.SetDirty();
+        }
+        public void LinkTo([In,Opt]NodeSlot slot)
+        {
+            if (slot != null)
+                Link(this, slot);
+            else
+                Unlink(this);
         }
 
         public static NodeSlot CurrentHighLightSlot { get; private set; }
@@ -188,7 +195,10 @@ namespace Convention.Workflow
             if (IsKeepDrag == false && OthersideKeepDrag == false && IsDirty)
             {
                 UpdateLineImmediate();
-                IsDirty = false;
+            }
+            else if(IsDirty)
+            {
+                LineRenderer.SetPositions(Points);
             }
         }
 
@@ -200,13 +210,27 @@ namespace Convention.Workflow
         public void UpdateLineImmediate()
         {
             LineRenderer.positionCount = Points.Length;
-            title = info.slotName;
+#if UNITY_EDITOR
+            if (info != null)
+#endif
+            {
+                title = info.slotName;
+            }
             LineRenderer.SetPositions(Points);
+            IsDirty = false;
         }
 
         public void BeginDragLine(PointerEventData _)
         {
             IsKeepDrag = true;
+#if UNITY_EDITOR
+            if(info==null)
+            {
+                Points = zeroVecs;
+                this.SetDirty();
+                return;
+            }
+#endif
             if (info.targetNode != null)
             {
                 info.targetSlot.Points = zeroVecs;
@@ -218,6 +242,7 @@ namespace Convention.Workflow
         public void DragLine(PointerEventData pointer)
         {
             LineRenderer.positionCount = 2;
+            // 这个坐标是错的
             Points = new Vector3[] { Anchor.localPosition, pointer.pointerCurrentRaycast.worldPosition - Anchor.position + Anchor.localPosition };
             SetDirty();
         }

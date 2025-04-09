@@ -319,7 +319,7 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
         self,
         info:   NodeSlotInfo,
         *,
-        parent: Optional['Node'] = None,
+        parent: Optional['Node']                    = None,
         target: Optional[Tuple['Node', 'NodeSlot']] = None,
         ):
         super().__init__(info)
@@ -458,12 +458,14 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
         清除所有连接
         '''
         for slot in self.Internal_Inmapping.values():
-            slot.info.targetNode = None
-            slot.info.targetSlot = None
+            #slot.info.targetNode = None
+            #slot.info.targetSlot = None
+            NodeSlot.Unlink(slot)
             slot.SetDirty()
         for slot in self.Internal_Outmapping.values():
-            slot.info.targetNode = None
-            slot.info.targetSlot = None
+            #slot.info.targetNode = None
+            #slot.info.targetSlot = None
+            NodeSlot.Unlink(slot)
             slot.SetDirty()
     @sealed
     def ClearSlots(self) -> None:
