@@ -17,8 +17,8 @@ import uvicorn
 
 app = FastAPI()
 
-@app.get("/test/")
-async def run(query:str):
+@app.put("/test/")
+async def run(query:str, model:str):
     print_colorful(ConsoleFrontColor.GREEN, "测试开始")
     manager = WorkflowManager.GetInstance()
     try:
@@ -57,7 +57,7 @@ async def run(query:str):
                               outmapping_llm_nodeID=1,
                               outmapping_raw_llm_nodeID=-1),
             TextNodeInfo(text="llm", outmappingName="llm_name", targetNodeID=3, targetSlotName="llm_name", nodeID=4),
-            TextNodeInfo(text="http://10.10.230.60:61111", outmappingName="url_or_path", targetNodeID=3, targetSlotName="url_or_path", nodeID=5),
+            TextNodeInfo(text=model, outmappingName="url_or_path", targetNodeID=3, targetSlotName="url_or_path", nodeID=5),
         is_auto_id=False))
         await manager.RunWorkflow(verbose=True)
         print_colorful(ConsoleFrontColor.WHITE, f"测试结果: {manager.GetNode(0).end_result}")
