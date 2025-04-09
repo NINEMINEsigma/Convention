@@ -6,7 +6,7 @@
             {
                 "__type": "Convention.Workflow.Core.EndNodeInfo, EndNodeInfo",
                 "value": {
-                    "generate_trackback": "  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 61, in <module>\n    asyncio.run(run())\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 194, in run\n    return runner.run(main)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 673, in run_until_complete\n    self.run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\windows_events.py\", line 322, in run_forever\n    super().run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 640, in run_forever\n    self._run_once()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 1992, in _run_once\n    handle._run()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\events.py\", line 88, in _run\n    self._context.run(self._callback, *self._args)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 27, in run\n    EndNodeInfo(inmapping={\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Workflow\\Core.py\", line 153, in __init__\n    any_class.__init__(self)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 353, in __init__\n    super().__init__()\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 200, in __init__\n    self.generate_trackback = format_traceback_info()\n",
+                    "generate_trackback": "  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 53, in <module>\n    asyncio.run(run())\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 194, in run\n    return runner.run(main)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 673, in run_until_complete\n    self.run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\windows_events.py\", line 322, in run_forever\n    super().run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 640, in run_forever\n    self._run_once()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 1992, in _run_once\n    handle._run()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\events.py\", line 88, in _run\n    self._context.run(self._callback, *self._args)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 18, in run\n    EndNodeInfo(inmapping={\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Workflow\\Core.py\", line 165, in __init__\n    any_class.__init__(self)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 355, in __init__\n    super().__init__()\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 202, in __init__\n    self.generate_trackback = format_traceback_info()\n",
                     "nodeID": 0,
                     "typename": "EndNodeInfo",
                     "title": "EndNodeInfo",
@@ -16,26 +16,14 @@
                             "value": {
                                 "generate_trackback": null,
                                 "slotName": "answer",
-                                "targetNodeID": 1,
-                                "targetSlotName": "answer",
+                                "targetNodeID": 0,
+                                "targetSlotName": "result",
                                 "typeIndicator": "str",
                                 "IsInmappingSlot": true
                             }
                         }
                     },
-                    "outmapping": {
-                        "query": {
-                            "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
-                            "value": {
-                                "generate_trackback": null,
-                                "slotName": "query",
-                                "targetNodeID": 1,
-                                "targetSlotName": "unknown",
-                                "typeIndicator": "str",
-                                "IsInmappingSlot": true
-                            }
-                        }
-                    },
+                    "outmapping": {},
                     "position": [
                         0,
                         0
@@ -45,7 +33,7 @@
             {
                 "__type": "Convention.Workflow.Core.StepNodeInfo, StepNodeInfo",
                 "value": {
-                    "generate_trackback": "  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 61, in <module>\n    asyncio.run(run())\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 194, in run\n    return runner.run(main)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 673, in run_until_complete\n    self.run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\windows_events.py\", line 322, in run_forever\n    super().run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 640, in run_forever\n    self._run_once()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 1992, in _run_once\n    handle._run()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\events.py\", line 88, in _run\n    self._context.run(self._callback, *self._args)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 30, in run\n    StepNodeInfo(funcname=\"query\",\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Workflow\\Core.py\", line 153, in __init__\n    any_class.__init__(self)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 353, in __init__\n    super().__init__()\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 200, in __init__\n    self.generate_trackback = format_traceback_info()\n",
+                    "generate_trackback": "  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 53, in <module>\n    asyncio.run(run())\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 194, in run\n    return runner.run(main)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 673, in run_until_complete\n    self.run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\windows_events.py\", line 322, in run_forever\n    super().run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 640, in run_forever\n    self._run_once()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 1992, in _run_once\n    handle._run()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\events.py\", line 88, in _run\n    self._context.run(self._callback, *self._args)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 21, in run\n    StepNodeInfo(funcname=\"query\",\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Workflow\\Core.py\", line 165, in __init__\n    any_class.__init__(self)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 355, in __init__\n    super().__init__()\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 202, in __init__\n    self.generate_trackback = format_traceback_info()\n",
                     "nodeID": 1,
                     "typename": "StepNodeInfo",
                     "title": "StepNodeInfo",
@@ -55,7 +43,7 @@
                             "value": {
                                 "generate_trackback": null,
                                 "slotName": "user_msg",
-                                "targetNodeID": 2,
+                                "targetNodeID": 1,
                                 "targetSlotName": "query",
                                 "typeIndicator": "str",
                                 "IsInmappingSlot": true
@@ -73,17 +61,6 @@
                                 "typeIndicator": "str",
                                 "IsInmappingSlot": false
                             }
-                        },
-                        "query": {
-                            "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
-                            "value": {
-                                "generate_trackback": null,
-                                "slotName": "query",
-                                "targetNodeID": 1,
-                                "targetSlotName": "unknown",
-                                "typeIndicator": "str",
-                                "IsInmappingSlot": true
-                            }
                         }
                     },
                     "position": [
@@ -96,7 +73,7 @@
             {
                 "__type": "Convention.Workflow.Core.TextNodeInfo, TextNodeInfo",
                 "value": {
-                    "generate_trackback": "  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 61, in <module>\n    asyncio.run(run())\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 194, in run\n    return runner.run(main)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 673, in run_until_complete\n    self.run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\windows_events.py\", line 322, in run_forever\n    super().run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 640, in run_forever\n    self._run_once()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 1992, in _run_once\n    handle._run()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\events.py\", line 88, in _run\n    self._context.run(self._callback, *self._args)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 37, in run\n    TextNodeInfo(text=\"\u4f60\u662f\u8c01\",\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Workflow\\Core.py\", line 153, in __init__\n    any_class.__init__(self)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 353, in __init__\n    super().__init__()\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 200, in __init__\n    self.generate_trackback = format_traceback_info()\n",
+                    "generate_trackback": "  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 53, in <module>\n    asyncio.run(run())\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 194, in run\n    return runner.run(main)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\runners.py\", line 118, in run\n    return self._loop.run_until_complete(task)\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 673, in run_until_complete\n    self.run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\windows_events.py\", line 322, in run_forever\n    super().run_forever()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 640, in run_forever\n    self._run_once()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\base_events.py\", line 1992, in _run_once\n    handle._run()\n  File \"C:\\Users\\admin\\miniconda3\\envs\\liubai\\Lib\\asyncio\\events.py\", line 88, in _run\n    self._context.run(self._callback, *self._args)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\tests\\test_llamaindex.py\", line 28, in run\n    TextNodeInfo(text=\"\u4f60\u662f\u8c01\",\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Workflow\\Core.py\", line 165, in __init__\n    any_class.__init__(self)\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 355, in __init__\n    super().__init__()\n  File \"d:\\ConventionCS\\Assets\\Convention\\python\\Convention\\Internal\\__init__.py\", line 202, in __init__\n    self.generate_trackback = format_traceback_info()\n",
                     "nodeID": 2,
                     "typename": "TextNodeInfo",
                     "title": "TextNodeInfo",
@@ -108,9 +85,9 @@
                                 "generate_trackback": null,
                                 "slotName": "query",
                                 "targetNodeID": 1,
-                                "targetSlotName": "unknown",
+                                "targetSlotName": "user_msg",
                                 "typeIndicator": "str",
-                                "IsInmappingSlot": true
+                                "IsInmappingSlot": false
                             }
                         }
                     },

@@ -491,7 +491,7 @@ class ValueInfo(BaseInfo):
         ) -> Self:
         if GetInternalReflectionDebug():
             print_colorful(ConsoleFrontColor.BLUE, f"Current ValueInfo.Create Frame: "\
-                f"metaType={metaType}, generic_args={generic_args}, SelfType={SelfType}")
+                f"metaType={metaType}, SelfType={SelfType}")
         if isinstance(metaType, type):
             return ValueInfo(metaType, **kwargs)
         elif isinstance(metaType, str):
