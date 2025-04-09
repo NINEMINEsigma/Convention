@@ -12,10 +12,16 @@ def query(llm:LLMObject, user_msg:str) -> str:
     return ReActAgentCore(([], llm.ref_value), True).chat(user_msg, False)
 query_wrapper = WorkflowActionWrapper("query", query)
 
-async def run():
+from fastapi import FastAPI
+import uvicorn
+
+app = FastAPI()
+
+@app.get("/test/")
+async def run(query:str):
     print_colorful(ConsoleFrontColor.GREEN, "测试开始")
+    manager = WorkflowManager.GetInstance()
     try:
-        manager = WorkflowManager.GetInstance()
         manager.LoadWorkflow(Workflow.Create(
             EndNodeInfo(inmapping={
                 "answer": NodeSlotInfo(slotName="answer",
@@ -44,7 +50,7 @@ async def run():
                                                       typeIndicator="str",
                                                       IsInmappingSlot=True)
                              }, nodeID=1),
-            TextNodeInfo(text="11的阶乘是多少", outmappingName="query", nodeID=2, targetNodeID=1, targetSlotName="user_msg"),
+            TextNodeInfo(text=query, outmappingName="query", nodeID=2, targetNodeID=1, targetSlotName="user_msg"),
             LLMLoaderNodeInfo(nodeID=3,
                               llm_name_data=(4, "llm_name"),
                               url_or_path_data=(5, "url_or_path"),
@@ -60,7 +66,7 @@ async def run():
         raise
     finally:
         print_colorful(ConsoleFrontColor.GREEN, "测试结束")
-        StopBehaviorThread()
+    return manager.GetNode(0).end_result
 
 if __name__ == "__main__":
     SetInternalDebug(True)
@@ -72,5 +78,5 @@ if __name__ == "__main__":
         raise
     SetBehaviorExceptionHook(error_handler)
     AwakeBehaviorThread()
-    asyncio.run(run())
-
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+    StopBehaviorThread()

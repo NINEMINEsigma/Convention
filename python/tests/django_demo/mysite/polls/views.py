@@ -9,7 +9,6 @@ from .models import Question, Choice
 class IndexView(generic.ListView):
     """
     首页视图
-    显示最新的5个问题
     """
     template_name = 'polls/index.html'
     context_object_name = 'latest_question_list'
