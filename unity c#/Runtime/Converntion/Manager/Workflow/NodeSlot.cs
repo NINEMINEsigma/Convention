@@ -1,5 +1,4 @@
 using System;
-using System.Security.Cryptography;
 using Convention.WindowsUI;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -7,23 +6,48 @@ using UnityEngine.EventSystems;
 namespace Convention.Workflow
 {
     [Serializable, ArgPackage]
-    public class GraphNodeSlotInfo
+    public class NodeSlotInfo : AnyClass
     {
-        [Ignore, NonSerialized] public GraphNode parentNode;
-        [Ignore, NonSerialized] public GraphNodeSlot slot;
-        public string slotName;
-
+        /// <summary>
+        /// 所属的父节点
+        /// </summary>
+        [Ignore, NonSerialized] public Node parentNode = null;
+        /// <summary>
+        /// 所属的插槽
+        /// </summary>
+        [Ignore, NonSerialized] public NodeSlot slot = null;
+        /// <summary>
+        /// 插槽名称
+        /// </summary>
+        public string slotName = "unknown";
+        /// <summary>
+        /// 目标节点, 对于输入槽而言这是连接的上游输出节点, 对于输出槽而言这是最后一个连接到此的输入节点
+        /// </summary>
         [Ignore, NonSerialized, Description("This is a lazy variable that needs to be taken care of manually syncing the value of the " + nameof(targetNodeID))]
-        public GraphNode targetNode;
+        public Node targetNode = null;
+        /// <summary>
+        /// 目标槽, 对于输入槽而言这是连接的上游输出槽, 对于输出槽而言这是最后一个连接到此的输入槽
+        /// </summary>
         [Ignore, NonSerialized, Description("This is a lazy variable that needs to be taken care of manually syncing the value of the " + nameof(targetSlotName))]
-        public GraphNodeSlot targetSlot;
-        public int targetNodeID;
-        public string targetSlotName;
-
+        public NodeSlot targetSlot = null;
+        /// <summary>
+        /// 目标节点ID
+        /// </summary>
+        public int targetNodeID = -1;
+        /// <summary>
+        /// 目标插槽名称
+        /// </summary>
+        public string targetSlotName = "unknown";
+        /// <summary>
+        /// 类型指示器
+        /// </summary>
         public string typeIndicator;
+        /// <summary>
+        /// 是否为输入映射插槽
+        /// </summary>
         public bool IsInmappingSlot;
 
-        public virtual GraphNodeSlotInfo TemplateClone()
+        public virtual NodeSlotInfo TemplateClone()
         {
             return new()
             {
@@ -35,9 +59,9 @@ namespace Convention.Workflow
         }
     }
 
-    public class GraphNodeSlot : WindowUIModule, ITitle
+    public class NodeSlot : WindowUIModule, ITitle
     {
-        public static void Link(GraphNodeSlot left, GraphNodeSlot right)
+        public static void Link(NodeSlot left, NodeSlot right)
         {
             if(left.info.IsInmappingSlot==right.info.IsInmappingSlot)
             {
@@ -47,34 +71,38 @@ namespace Convention.Workflow
             {
                 throw new InvalidOperationException($"{left} and {right} has different type indicator");
             }
-            if (left.info.targetNodeID == right.info.targetNodeID)
+            if (left.info.parentNode == right.info.parentNode)
             {
-                throw new InvalidOperationException($"{left} and {right} has same target node id");
+                throw new InvalidOperationException($"{left} and {right} has same parent node");
             }
-            left.info.targetSlot = right;
-            right.info.targetSlot = left;
-
-            left.info.targetSlotName = right.info.slotName;
-            right.info.targetSlotName = left.info.slotName;
-
-            left.info.targetNode = right.info.parentNode;
-            right.info.targetNode = right.info.parentNode;
-
-            left.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(right.info.targetNode);
-            right.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(left.info.targetNode);
-
-            left.SetDirty();
-            right.SetDirty();
+            if (left.info.IsInmappingSlot || left.info.targetSlot == right)
+            {
+                Unlink(left);
+                left.info.targetSlot = right;
+                left.info.targetSlotName = right.info.slotName;
+                left.info.targetNode = right.info.parentNode;
+                left.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(right.info.targetNode);
+                left.SetDirty();
+            }
+            if (left.info.IsInmappingSlot && left.info.targetSlot == right)
+            {
+                Unlink(right);
+                right.info.targetSlot = left;
+                right.info.targetSlotName = left.info.slotName;
+                right.info.targetNode = right.info.parentNode;
+                right.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(left.info.targetNode);
+                right.SetDirty();
+            }
         }
-        public static void Unlink(GraphNodeSlot slot)
+        public static void Unlink(NodeSlot slot)
         {
             var targetSlot = slot.info.targetSlot;
             slot.info.targetSlot = null;
             slot.info.targetNode = null;
             slot.info.targetNodeID = -1;
-            if(targetSlot != null)
+            if (targetSlot != null && targetSlot.info.targetSlot == slot)
             {
-                targetSlot.info.targetSlot = null; 
+                targetSlot.info.targetSlot = null;
                 targetSlot.info.targetNode = null;
                 targetSlot.info.targetNodeID = -1;
                 targetSlot.SetDirty();
@@ -82,8 +110,8 @@ namespace Convention.Workflow
             slot.SetDirty();
         }
 
-        public static GraphNodeSlot CurrentHighLightSlot { get; private set; }
-        public static void EnableHighLight(GraphNodeSlot slot)
+        public static NodeSlot CurrentHighLightSlot { get; private set; }
+        public static void EnableHighLight(NodeSlot slot)
         {
             if (CurrentHighLightSlot != null)
             {
@@ -100,7 +128,7 @@ namespace Convention.Workflow
                 CurrentHighLightSlot = null;
             }
         }
-        public static void DisableHighLight(GraphNodeSlot slot)
+        public static void DisableHighLight(NodeSlot slot)
         {
             if (CurrentHighLightSlot == slot)
             {
@@ -111,8 +139,8 @@ namespace Convention.Workflow
 
         public static readonly Vector3[] zeroVecs = new Vector3[0];
 
-        [Content, OnlyPlayMode, Ignore] public GraphNodeSlotInfo info { get;private set; }
-        public void SetupFromInfo(GraphNodeSlotInfo value)
+        [Content, OnlyPlayMode, Ignore] public NodeSlotInfo info { get;private set; }
+        public void SetupFromInfo(NodeSlotInfo value)
         {
             if (info != value)
             {

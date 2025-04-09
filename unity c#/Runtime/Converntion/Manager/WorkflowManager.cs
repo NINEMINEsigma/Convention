@@ -11,8 +11,8 @@ namespace Convention.Workflow
     [Serializable, ArgPackage]
     public class Workflow : AnyClass
     {
-        public List<GraphNodeInfo> Datas;
-        [NonSerialized] public List<GraphNode> Nodes;
+        public List<NodeInfo> Datas;
+        [NonSerialized] public List<Node> Nodes;
     }
 
     public class WorkflowManager : MonoSingleton<WorkflowManager>
@@ -47,7 +47,7 @@ namespace Convention.Workflow
         private RectTransform focusObject;
         private List<SharedModule.CallbackData> callbackDatas = new();
 
-        public void SetupWorkflowGraphNodeType(string label, [In] GraphNodeInfo template)
+        public void SetupWorkflowGraphNodeType(string label, [In] NodeInfo template)
         {
             callbackDatas.Add(new(label, x =>
                 {
@@ -106,9 +106,9 @@ namespace Convention.Workflow
             }
         }
 
-        public GraphNode CreateGraphNode([In] GraphNodeInfo info)
+        public Node CreateGraphNode([In] NodeInfo info)
         {
-            var node = GameObject.Instantiate(GraphNodePrefab, ContentPlane).GetComponent<GraphNode>();
+            var node = GameObject.Instantiate(GraphNodePrefab, ContentPlane).GetComponent<Node>();
             workflow.Nodes.Add(node);
             node.SetupFromInfo(info);
             return node;
@@ -119,13 +119,13 @@ namespace Convention.Workflow
                 return false;
             return workflow.Nodes.Count < id;
         }
-        public GraphNode GetGraphNode(int id)
+        public Node GetGraphNode(int id)
         {
             if (id < 0)
                 return null;
             return workflow.Nodes[id];
         }
-        public int GetGraphNodeID(GraphNode node)
+        public int GetGraphNodeID(Node node)
         {
             if (node == null)
                 return -1;

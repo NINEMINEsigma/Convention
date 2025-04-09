@@ -103,9 +103,11 @@ class NodeSlotInfo(BaseModel, any_class):
     parentNode:         'Node'     = Field(description="所属的父节点", default=None, exclude=True)
     slot:               'NodeSlot' = Field(description="所属的插槽", default=None, exclude=True)
     slotName:           str        = Field(description="插槽名称", default="unknown")
-    targetNode:         'Node'     = Field(description="目标节点, 此变量需要手动同步, targetNodeID的懒加载目标",
+    targetNode:         'Node'     = Field(description="目标节点, 此变量需要手动同步, targetNodeID的懒加载目标,"\
+        "对于输入节点而言, 这个节点是唯一的目标节点, 对于输出节点而言, 这个节点是最后被连接的目标节点",
                                            default=None, exclude=True)
-    targetSlot:         'NodeSlot' = Field(description="目标插槽, 此变量需要手动同步, targetSlotName的懒加载目标",
+    targetSlot:         'NodeSlot' = Field(description="目标插槽, 此变量需要手动同步, targetSlotName的懒加载目标,"\
+        "对于输入节点而言, 这个插槽是唯一的目标插槽, 对于输出节点而言, 这个插槽是最后被连接的目标插槽",
                                            default=None, exclude=True)
     targetNodeID:       int        = Field(description="目标节点ID", default=-1)
     targetSlotName:     str        = Field(description="目标插槽名称", default="unknown")
@@ -172,7 +174,12 @@ class NodeInfo(BaseModel, any_class):
 
     @virtual
     def TemplateClone(self) -> Self:
-        result:NodeInfo = NodeInfo(nodeID=self.nodeID, typename=self.typename, title=self.title, position=self.position)
+        result:NodeInfo = NodeInfo(
+            nodeID=self.nodeID,
+            typename=self.typename,
+            title=self.title,
+            position=self.position
+            )
         for key, value in self.inmapping.items():
             result.inmapping[key] = value.TemplateClone()
         for key, value in self.outmapping.items():
@@ -260,27 +267,28 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
                 f"<name={left.info.slotName}, type={left.info.typeIndicator}>和"\
                 f"<name={right.info.slotName}, type={right.info.typeIndicator}>不能连接")
 
-        left.info.targetSlot = right
-        right.info.targetSlot = left
-
-        left.info.targetSlotName = right.info.slotName
-        right.info.targetSlotName = left.info.slotName
-
-        left.info.targetNode = right.info.parentNode
-        right.info.targetNode = right.info.parentNode
-
-        left.info.targetNodeID = _Internal_GetNodeID(right.info.targetNode)
-        right.info.targetNodeID = _Internal_GetNodeID(left.info.targetNode)
-
-        left.SetDirty()
-        right.SetDirty()
+        if left.info.IsInmappingSlot or left.info.targetSlot == right:
+            cls.Unlink(left)
+            left.info.targetSlot = right
+            left.info.targetSlotName = right.info.slotName
+            left.info.targetNode = right.info.parentNode
+            left.info.targetNodeID = _Internal_GetNodeID(right.info.targetNode)
+            left.SetDirty()
+        if right.info.IsInmappingSlot or right.info.targetSlot == left:
+            cls.Unlink(right)
+            right.info.targetSlot = left
+            right.info.targetSlotName = left.info.slotName
+            right.info.targetNode = left.info.parentNode
+            right.info.targetNodeID = _Internal_GetNodeID(left.info.targetNode)
+            right.SetDirty()
     @classmethod
     def Unlink(cls, slot:Self) -> None:
         targetSlot:Optional[NodeSlot] = slot.info.targetSlot
         slot.info.targetSlot = None
         slot.info.targetNode = None
         slot.info.targetNodeID = -1
-        if targetSlot is not None:
+        # 输出槽存在多连接, 因此如果不统一的话可以不被断连
+        if targetSlot is not None and targetSlot.info.targetSlot == slot:
             targetSlot.info.targetSlot = None
             targetSlot.info.targetNode = None
             targetSlot.info.targetNodeID = -1
@@ -708,6 +716,21 @@ class WorkflowActionWrapper(left_value_reference[Callable], invoke_callable):
 _Internal_All_EndNodes:List['EndNode'] = []
 _Internal_Task_Count:atomic[int] = atomic(0, threading.Lock())
 
+class NodeResult(BaseModel):
+    """
+    工作流结果
+    """
+    nodeID:     int          = Field(description="节点ID")
+    nodeTitle:  str          = Field(description="节点标题")
+    result:     context_type = Field(description="节点结果", default={})
+
+class ContextResult(BaseModel):
+    """
+    上下文结果
+    """
+    hashID:     str              = Field(description="结果哈希")
+    results:    List[NodeResult] = Field(description="节点结果", default=[])
+
 class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
     """
     工作流管理器
@@ -910,6 +933,13 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}"
 
+    def GetLastContext(self) -> ContextResult:
+        """获取最后一个上下文, 也就是上次的结果"""
+        result:List[NodeResult] = []
+        for index, node in enumerate(self.workflow.Nodes):
+            if isinstance(node, EndNode):
+                result.append(NodeResult(nodeID=index, nodeTitle=node.info.title, result=node.end_result))
+        return result
 
 class DynamicNode(Node):
     """

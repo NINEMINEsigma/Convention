@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using Convention.WindowsUI;
 using Convention.WindowsUI.Variant;
@@ -10,29 +8,50 @@ using UnityEngine;
 namespace Convention.Workflow
 {
     [Serializable, ArgPackage]
-    public class GraphNodeInfo : AnyClass
+    public class NodeInfo : AnyClass
     {
-        [Setting, Ignore, NonSerialized] public GraphNode node = null;
+        /// <summary>
+        /// 节点
+        /// </summary>
+        [Setting, Ignore, NonSerialized] public Node node = null;
+        /// <summary>
+        /// 节点ID
+        /// </summary>
         [Setting] public int nodeID = -1;
+        /// <summary>
+        /// 节点类型
+        /// </summary>
+        [InspectorDraw(InspectorDrawType.Text, false, false, name: "GraphNodeType")]
+        [Setting] public string typename;
+        /// <summary>
+        /// 节点标题
+        /// </summary>
+        [Content] public string title = "";
+        /// <summary>
+        /// 输入映射
+        /// </summary>
+        [Setting] public Dictionary<string, NodeSlotInfo> inmapping = new();
+        /// <summary>
+        /// 输出映射
+        /// </summary>
+        [Setting] public Dictionary<string, NodeSlotInfo> outmapping = new();
+        /// <summary>
+        /// 节点位置
+        /// </summary>
+        [Content] public Vector2 position = Vector2.zero;
 
         [InspectorDraw(InspectorDrawType.Text, name: "GraphNodeTitle")]
         public string GraphNodeTitle
         {
-            get => WorkflowManager.instance.GetGraphNode(nodeID).title;
-            set => WorkflowManager.instance.GetGraphNode(nodeID).title = value;
+            get => node.title;
+            set => this.title = node.title = value;
         }
-        [InspectorDraw(InspectorDrawType.Text, false, false, name: "GraphNodeType")]
-        [Setting] public string typename;
-        [Content] public string title = "";
-        [Setting] public Dictionary<string, GraphNodeSlotInfo> inmapping = new();
-        [Setting] public Dictionary<string, GraphNodeSlotInfo> outmapping = new();
-        [Content] public Vector2 position = Vector2.zero;
 
-        public virtual GraphNodeInfo TemplateClone()
+        public virtual NodeInfo TemplateClone()
         {
-            GraphNodeInfo result = new()
+            NodeInfo result = new()
             {
-                nodeID = -1,
+                nodeID = nodeID,
                 typename = typename,
                 title = title,
                 position = Vector2.zero
@@ -48,7 +67,7 @@ namespace Convention.Workflow
             return result;
         }
 
-        public virtual void CopyFromNode([In] GraphNode node)
+        public virtual void CopyFromNode([In] Node node)
         {
             nodeID = WorkflowManager.instance.GetGraphNodeID(node);
             title = node.title;
@@ -63,36 +82,8 @@ namespace Convention.Workflow
             }
         }
     }
-    public class StartEvent : AnyClass
-    {
 
-    }
-
-    [Serializable, ArgPackage]
-    public class StartNodeInfo: GraphNodeInfo
-    {
-        [InspectorDraw(InspectorDrawType.Text, name: "Content")]
-        [Setting] public string content;
-
-        [Setting, OnlyPlayMode]
-        public static ToolFile LoadFromLocal(params string[] fileTypes)
-        {
-            string content = null;
-            PluginExtenion.SelectFileOnSystem(x => content = x, "*", "*", fileTypes);
-            var file = new ToolFile(content);
-            if (file.IsExist == false)
-                throw new FileNotFoundException($"{content} not found");
-            return file;
-        }
-        [Setting,OnlyPlayMode]
-        public static ToolURL LoadFromURL(string content)
-        {
-            return new(content);
-        }
-
-    }
-
-    public class GraphNode : WindowsComponent, IOnlyFocusThisOnInspector, ITitle
+    public class Node : WindowsComponent, IOnlyFocusThisOnInspector, ITitle
     {
         [HideInInspector] public BehaviourContextManager Context;
         [Resources, OnlyNotNullMode, SerializeField] private Text Title;
@@ -101,8 +92,8 @@ namespace Convention.Workflow
 
         private List<PropertiesWindow.ItemEntry> InSlots, OutSlots;
 
-        internal Dictionary<string, GraphNodeSlot> m_Inmapping = new();
-        internal Dictionary<string, GraphNodeSlot> m_Outmapping = new();
+        internal Dictionary<string, NodeSlot> m_Inmapping = new();
+        internal Dictionary<string, NodeSlot> m_Outmapping = new();
 
         [Resources, SerializeField, OnlyNotNullMode] private BaseWindowPlane InoutContainerPlane;
 
@@ -112,7 +103,7 @@ namespace Convention.Workflow
             set => ((ITitle)this.Title).title = value;
         }
 
-        [HideInInspector] public GraphNodeInfo info { get; private set; }
+        [HideInInspector] public NodeInfo info { get; private set; }
 
         protected virtual void Start()
         {
@@ -135,7 +126,7 @@ namespace Convention.Workflow
             });
         }
 
-        public void SetupFromInfo([In] GraphNodeInfo value)
+        public void SetupFromInfo([In] NodeInfo value)
         {
             ClearLink();
             info = value;
@@ -181,7 +172,7 @@ namespace Convention.Workflow
             foreach (var (key, slotInfo) in info.inmapping)
             {
                 InSlotCount--;
-                var slot = InSlots[InSlotCount].ref_value.GetComponent<GraphNodeSlot>();
+                var slot = InSlots[InSlotCount].ref_value.GetComponent<NodeSlot>();
                 m_Inmapping.Add(key, slot);
                 //slot.SetupFromInfo(new()
                 //{
@@ -199,7 +190,7 @@ namespace Convention.Workflow
             foreach (var (key, slotInfo) in info.outmapping)
             {
                 OutSlotCount--;
-                var slot = OutSlots[OutSlotCount].ref_value.GetComponent<GraphNodeSlot>();
+                var slot = OutSlots[OutSlotCount].ref_value.GetComponent<NodeSlot>();
                 m_Outmapping.Add(key, slot);
                 //slot.SetupFromInfo(new()
                 //{
@@ -216,26 +207,26 @@ namespace Convention.Workflow
         }
 
         public void LinkInslotToOtherNodeOutslot(
-            [In, IsInstantiated(true)] GraphNode other,
+            [In, IsInstantiated(true)] Node other,
             [In] string slotName,
             [In] string targetSlotName)
         {
-            GraphNodeSlot.Link(this.m_Inmapping[slotName], other.m_Outmapping[targetSlotName]);
+            NodeSlot.Link(this.m_Inmapping[slotName], other.m_Outmapping[targetSlotName]);
         }
         public void LinkOutslotToOtherNodeInslot(
-            [In, IsInstantiated(true)] GraphNode other,
+            [In, IsInstantiated(true)] Node other,
             [In] string slotName,
             [In] string targetSlotName)
         {
-            GraphNodeSlot.Link(this.m_Outmapping[slotName], other.m_Inmapping[targetSlotName]);
+            NodeSlot.Link(this.m_Outmapping[slotName], other.m_Inmapping[targetSlotName]);
         }
         public void UnlinkInslot([In] string slotName)
         {
-            GraphNodeSlot.Unlink(this.m_Inmapping[slotName]);
+            NodeSlot.Unlink(this.m_Inmapping[slotName]);
         }
         public void UnlinkOutslot( [In] string slotName)
         {
-            GraphNodeSlot.Unlink(this.m_Outmapping[slotName]);
+            NodeSlot.Unlink(this.m_Outmapping[slotName]);
         }
     }
 
