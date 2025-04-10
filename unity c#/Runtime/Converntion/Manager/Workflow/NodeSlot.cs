@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using Convention.WindowsUI;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -9,41 +9,41 @@ namespace Convention.Workflow
     public class NodeSlotInfo : AnyClass
     {
         /// <summary>
-        /// ËùÊôµÄ¸¸½Úµã
+        /// æ‰€å±çš„çˆ¶èŠ‚ç‚¹
         /// </summary>
         [Ignore, NonSerialized] public Node parentNode = null;
         /// <summary>
-        /// ËùÊôµÄ²å²Û
+        /// æ‰€å±çš„æ’æ§½
         /// </summary>
         [Ignore, NonSerialized] public NodeSlot slot = null;
         /// <summary>
-        /// ²å²ÛÃû³Æ
+        /// æ’æ§½åç§°
         /// </summary>
         public string slotName = "unknown";
         /// <summary>
-        /// Ä¿±ê½Úµã, ¶ÔÓÚÊäÈë²Û¶øÑÔÕâÊÇÁ¬½ÓµÄÉÏÓÎÊä³ö½Úµã, ¶ÔÓÚÊä³ö²Û¶øÑÔÕâÊÇ×îºóÒ»¸öÁ¬½Óµ½´ËµÄÊäÈë½Úµã
+        /// ç›®æ ‡èŠ‚ç‚¹, å¯¹äºè¾“å…¥æ§½è€Œè¨€è¿™æ˜¯è¿æ¥çš„ä¸Šæ¸¸è¾“å‡ºèŠ‚ç‚¹, å¯¹äºè¾“å‡ºæ§½è€Œè¨€è¿™æ˜¯æœ€åä¸€ä¸ªè¿æ¥åˆ°æ­¤çš„è¾“å…¥èŠ‚ç‚¹
         /// </summary>
         [Ignore, NonSerialized, Description("This is a lazy variable that needs to be taken care of manually syncing the value of the " + nameof(targetNodeID))]
         public Node targetNode = null;
         /// <summary>
-        /// Ä¿±ê²Û, ¶ÔÓÚÊäÈë²Û¶øÑÔÕâÊÇÁ¬½ÓµÄÉÏÓÎÊä³ö²Û, ¶ÔÓÚÊä³ö²Û¶øÑÔÕâÊÇ×îºóÒ»¸öÁ¬½Óµ½´ËµÄÊäÈë²Û
+        /// ç›®æ ‡æ§½, å¯¹äºè¾“å…¥æ§½è€Œè¨€è¿™æ˜¯è¿æ¥çš„ä¸Šæ¸¸è¾“å‡ºæ§½, å¯¹äºè¾“å‡ºæ§½è€Œè¨€è¿™æ˜¯æœ€åä¸€ä¸ªè¿æ¥åˆ°æ­¤çš„è¾“å…¥æ§½
         /// </summary>
         [Ignore, NonSerialized, Description("This is a lazy variable that needs to be taken care of manually syncing the value of the " + nameof(targetSlotName))]
         public NodeSlot targetSlot = null;
         /// <summary>
-        /// Ä¿±ê½ÚµãID
+        /// ç›®æ ‡èŠ‚ç‚¹ID
         /// </summary>
         public int targetNodeID = -1;
         /// <summary>
-        /// Ä¿±ê²å²ÛÃû³Æ
+        /// ç›®æ ‡æ’æ§½åç§°
         /// </summary>
         public string targetSlotName = "unknown";
         /// <summary>
-        /// ÀàĞÍÖ¸Ê¾Æ÷
+        /// ç±»å‹æŒ‡ç¤ºå™¨
         /// </summary>
         public string typeIndicator;
         /// <summary>
-        /// ÊÇ·ñÎªÊäÈëÓ³Éä²å²Û
+        /// æ˜¯å¦ä¸ºè¾“å…¥æ˜ å°„æ’æ§½
         /// </summary>
         public bool IsInmappingSlot;
 
@@ -222,6 +222,7 @@ namespace Convention.Workflow
 
         public void BeginDragLine(PointerEventData _)
         {
+            Unlink(this);
             IsKeepDrag = true;
 #if UNITY_EDITOR
             if(info==null)
@@ -242,17 +243,19 @@ namespace Convention.Workflow
         public void DragLine(PointerEventData pointer)
         {
             LineRenderer.positionCount = 2;
-            // Õâ¸ö×ø±êÊÇ´íµÄ
-            Points = new Vector3[] { Anchor.localPosition, pointer.pointerCurrentRaycast.worldPosition - Anchor.position + Anchor.localPosition };
+            // ä½èƒ½Item Canvaså…·æœ‰0.01çš„ç¼©æ”¾, è¿™é‡Œè¡¥å›æ¥
+            Points = new Vector3[] { Anchor.localPosition, (pointer.pointerCurrentRaycast.worldPosition - Anchor.position) * 100 + Anchor.localPosition };
             SetDirty();
         }
         public void EndDragLine(PointerEventData _)
         {
             IsKeepDrag = false;
+            Points = zeroVecs;
             if (CurrentHighLightSlot != null && CurrentHighLightSlot.info.IsInmappingSlot != this.info.IsInmappingSlot)
             {
                 Link(this, CurrentHighLightSlot);
             }
+            SetDirty();
             DisableAllHighLight();
         }
     }

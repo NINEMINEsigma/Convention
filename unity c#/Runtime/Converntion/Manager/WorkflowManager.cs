@@ -38,31 +38,36 @@ namespace Convention.Workflow
         private RegisterWrapper<WorkflowManager> m_RegisterWrapper;
         [Resources, OnlyNotNullMode, SerializeField] private Transform m_CameraTransform;
         [Setting] public float ScrollSpeed = 1;
+        [Setting, OnlyNotNullMode] public ScriptableObject GraphNodePrefabs;
 
-        [Resources, SerializeField, OnlyNotNullMode, Header("Prefabs")]
-        private GameObject GraphNodePrefab;
+        //[Resources, SerializeField, OnlyNotNullMode, Header("Prefabs")]
+        //private GameObject GraphNodePrefab;
         [Resources, SerializeField, OnlyNotNullMode, Header("Content")]
         private RectTransform ContentPlane;
         [Resources, SerializeField, OnlyNotNullMode, Header("Mouse Click")]
         private RectTransform focusObject;
         private List<SharedModule.CallbackData> callbackDatas = new();
 
-        public void SetupWorkflowGraphNodeType(string label, [In] NodeInfo template)
+        public void SetupWorkflowGraphNodeType([In] string label, [In] NodeInfo template, Action<Vector3> generater)
         {
-            callbackDatas.Add(new(label, x =>
-                {
-                    var info = template.TemplateClone();
-                    var node = CreateGraphNode(info);
-                    node.transform.position = x;
-                }
-            ));
+            callbackDatas.Add(new(label, generater));
+        }
+        public void SetupWorkflowGraphNodeType([In] string label, [In] NodeInfo template)
+        {
+            SetupWorkflowGraphNodeType(label, template, x =>
+            {
+                var info = template.TemplateClone();
+                var node = CreateGraphNode(info);
+                node.transform.position = x;
+            });
         }
 
         private void Start()
         {
             m_RegisterWrapper = new(() =>
             {
-
+                if (GraphNodePrefabs == null)
+                    GraphNodePrefabs = Resources.Load<ScriptableObject>("Workflow/Nodes");
             }, typeof(GraphInputWindow), typeof(GraphInspector));
         }
 
@@ -108,10 +113,19 @@ namespace Convention.Workflow
 
         public Node CreateGraphNode([In] NodeInfo info)
         {
-            var node = GameObject.Instantiate(GraphNodePrefab, ContentPlane).GetComponent<Node>();
+            var node = info.Instantiate();
             workflow.Nodes.Add(node);
-            node.SetupFromInfo(info);
+            node.BuildSlots();
             return node;
+        }
+        public bool DestroyNode(Node node)
+        {
+            int id = this.GetGraphNodeID(node);
+            if (id >= 0)
+            {
+                workflow.Nodes.RemoveAt(id);
+            }
+            return workflow.Nodes.Remove(node);
         }
         public bool ContainsNode(int id)
         {
@@ -149,19 +163,34 @@ namespace Convention.Workflow
             local.SaveAsJson();
             return local;
         }
+        public Workflow LoadWorkflow(Workflow workflow)
+        {
+            ClearWorkflowGraph();
+            workflow.Datas.Sort((x, y) => x.nodeID.CompareTo(y.nodeID));
+            for (int i = 0; i < workflow.Datas.Count; i++)
+            {
+                if (workflow.Datas[i].nodeID != i)
+                    throw new InvalidOperationException("Bad workflow: nodeID != node index");
+            }    
+            this.m_workflow = new();
+            foreach (var info in workflow.Datas)
+            {
+                CreateGraphNode(info);
+            }
+            foreach (var node in workflow.Nodes)
+            {
+                node.BuildLink();
+            }
+            return this.workflow;
+
+        }
         public Workflow LoadWorkflow(string workflowPath)
         {
             ToolFile local = new(workflowPath);
             if (local.IsExist == false)
                 throw new FileNotFoundException($"{local} is not exist");
             var loadedWorkflow = (Workflow)local.LoadAsJson();
-            ClearWorkflowGraph();
-            this.m_workflow = new();
-            foreach (var info in loadedWorkflow.Datas)
-            {
-                workflow.Nodes.Add(CreateGraphNode(info));
-            }
-            return workflow;
+            return LoadWorkflow(loadedWorkflow);
         }
 
         public void OpenMenu(PointerEventData data)
@@ -176,5 +205,7 @@ namespace Convention.Workflow
                 SharedModule.instance.OpenCustomMenu(focusObject, callbackDatas.ToArray());
             }
         }
+
+
     }
 }

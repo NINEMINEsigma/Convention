@@ -82,6 +82,15 @@ namespace Convention.Workflow
                 outmapping[key] = outslot.info;
             }
         }
+
+        public virtual Node Instantiate()
+        {
+            //throw new NotImplementedException("Node.Instantiate not implemented");
+            string key = this.GetType().Name;
+            if (key.EndsWith("Info"))
+                key = key[..-4];
+            return (WorkflowManager.instance.GraphNodePrefabs.Datas[key].uobjectValue as GameObject).GetComponent<Node>();
+        }
     }
 
     public class Node : WindowsComponent, IOnlyFocusThisOnInspector, ITitle
@@ -192,7 +201,7 @@ namespace Convention.Workflow
         {
             return InSlotPropertiesWindow.CreateRootItemEntries(count);
         }
-        public void BuildLink()
+        public void BuildSlots()
         {
             int InSlotCount = info.inmapping.Count;
             InSlots = CreateGraphNodeSlots(InSlotCount);
@@ -201,13 +210,6 @@ namespace Convention.Workflow
                 InSlotCount--;
                 var slot = InSlots[InSlotCount].ref_value.GetComponent<NodeSlot>();
                 m_Inmapping.Add(key, slot);
-                //slot.SetupFromInfo(new()
-                //{
-                //    parentNode = slotInfo.parentNode,
-                //    slot = slot,
-                //    slotName = slotInfo.slotName,
-                //    typeIndicator = slotInfo.typeIndicator
-                //});
                 var info = slotInfo.TemplateClone();
                 info.parentNode = this;
                 slot.SetupFromInfo(info);
@@ -219,18 +221,38 @@ namespace Convention.Workflow
                 OutSlotCount--;
                 var slot = OutSlots[OutSlotCount].ref_value.GetComponent<NodeSlot>();
                 m_Outmapping.Add(key, slot);
-                //slot.SetupFromInfo(new()
-                //{
-                //    parentNode = slotInfo.parentNode,
-                //    slot = slot,
-                //    slotName = slotInfo.slotName,
-                //    typeIndicator = slotInfo.typeIndicator
-                //});
                 var info = slotInfo.TemplateClone();
                 info.parentNode = this;
                 slot.SetupFromInfo(info);
             }
             InoutContainerPlane.AdjustSizeToContainsChilds();
+        }
+        public void BuildLink()
+        {
+            foreach (var (slot_name,slot_info) in info.inmapping)
+            {
+                var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
+                if (targetNode != null)
+                {
+                    NodeSlot.Link(m_Inmapping[slot_name], targetNode.m_Outmapping[slot_info.targetSlotName]);
+                }
+                else
+                {
+                    NodeSlot.Unlink(m_Inmapping[slot_name]);
+                }
+            }
+            foreach (var (slot_name, slot_info) in info.outmapping)
+            {
+                var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
+                if (targetNode != null)
+                {
+                    NodeSlot.Link(m_Outmapping[slot_name], targetNode.m_Inmapping[slot_info.targetSlotName]);
+                }
+                else
+                {
+                    NodeSlot.Unlink(m_Outmapping[slot_name]);
+                }
+            }
         }
 
         public void LinkInslotToOtherNodeOutslot(
@@ -257,4 +279,42 @@ namespace Convention.Workflow
         }
     }
 
+    [Serializable, ArgPackage]
+    public class NodeResult : AnyClass
+    {
+        public int nodeID = -1;
+        public string nodeTitle = "";
+        public Dictionary<string, object> result = new();
+    }
+
+    [Serializable, ArgPackage]
+    public class ContextResult : AnyClass
+    {
+        public string hashID = "";
+        public List<NodeResult> results = new();
+    }
+
+    [Serializable, ArgPackage]
+    class DynamicNodeInfo:NodeInfo
+    {
+
+    }
+
+    [Serializable, ArgPackage]
+    class StartNodeInfo : NodeInfo
+    {
+
+    }
+
+    [Serializable, ArgPackage]
+    class StepNodeInfo : NodeInfo
+    {
+        public string funcname = "unknown";
+    }
+
+    [Serializable, ArgPackage]
+    class EndNodeInfo : NodeInfo
+    {
+
+    }
 }

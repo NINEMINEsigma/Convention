@@ -169,7 +169,8 @@ class ESReader(BaseModel, any_class):
         print_colorful(ConsoleFrontColor.YELLOW, f"Prase __type label: {ConsoleFrontColor.RESET}{type_label}"\
             f"{ConsoleFrontColor.YELLOW}, module_name: {ConsoleFrontColor.RESET}{module_name}"\
             f"{ConsoleFrontColor.YELLOW}, class_name: {ConsoleFrontColor.RESET}{class_name}")
-        return TypeManager.GetInstance().CreateOrGetRefType(to_type(class_name, module_name=module_name))
+        typen_to = try_to_type(class_name, module_name=module_name) or to_type(class_name)
+        return TypeManager.GetInstance().CreateOrGetRefType(typen_to)
 
     @sealed
     def _DoJsonDeserialize(self, read_file:tool_file, rtype:Optional[RTypen[Any]] = None) -> Any:

@@ -937,10 +937,11 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
 
     def GetLastContext(self) -> ContextResult:
         """获取最后一个上下文, 也就是上次的结果"""
-        result:List[NodeResult] = []
+        result:ContextResult = ContextResult()
         for index, node in enumerate(self.workflow.Nodes):
             if isinstance(node, EndNode):
-                result.append(NodeResult(nodeID=index, nodeTitle=node.info.title, result=node.end_result))
+                result.results.append(NodeResult(nodeID=index, nodeTitle=node.info.title, result=node.end_result))
+        result.hashID = str(hash(self.workflow))
         return result
 
 class DynamicNode(Node):
