@@ -1,6 +1,6 @@
-from Convention.Workflow.Core import Node
+from typing import Coroutine, Dict
 from .Core              import *
-from ...Workflow.Core   import StepNode, StepNodeInfo, WorkflowActionWrapper, NodeSlotInfo
+from ...Workflow.Core   import *
 
 _Internal_WorkflowLLM:Dict[str, LLMObject] = {}
 def AddLLM(name: str, llm: LLMObject):
@@ -113,4 +113,85 @@ class FunctionCallNodeInfo(StepNodeInfo):
     '''
     函数调用节点
     '''
-    
+
+class GlobalSettingNode(Node):
+    def __init__(self, info: 'GlobalSettingNodeInfo'):
+        super().__init__(info)
+
+    @override
+    async def _DoRunStep(self) -> Coroutine[Any, Any, Dict[str, Any] | Any]:
+        parameters = await self.GetParameters()
+        if "llm" in parameters:
+            LlamaIndexSettings.llm = parameters["llm"]
+        if "embed_model" in parameters:
+            LlamaIndexSettings.embed_model = parameters["embed_model"]
+        if "callback_manager" in parameters:
+            LlamaIndexSettings.callback_manager = parameters["callback_manager"]
+        if "chunk_overlap" in parameters:
+            LlamaIndexSettings.chunk_overlap = parameters["chunk_overlap"]
+        if "chunk_size" in parameters:
+            LlamaIndexSettings.chunk_size = parameters["chunk_size"]
+        if "context_window" in parameters:
+            LlamaIndexSettings.context_window = parameters["context_window"]
+        if "node_parser" in parameters:
+            LlamaIndexSettings.node_parser = parameters["node_parser"]
+        if "num_output" in parameters:
+            LlamaIndexSettings.num_output = parameters["num_output"]
+        if "prompt_helper" in parameters:
+            LlamaIndexSettings.prompt_helper = parameters["prompt_helper"]
+        if "text_splitter" in parameters:
+            LlamaIndexSettings.text_splitter = parameters["text_splitter"]
+        if "prompt_helper" in parameters:
+            LlamaIndexSettings.prompt_helper = parameters["prompt_helper"]
+        return {}
+
+class GlobalSettingNodeInfo(NodeInfo):
+    '''
+    全局设置节点
+    '''
+    @override
+    def Instantiate(self) -> GlobalSettingNode:
+        return GlobalSettingNode(self)
+
+__step_function_wrappers = [
+    WorkflowActionWrapper(make_directory_reader.__name__, make_directory_reader),
+    WorkflowActionWrapper(test_health.__name__, test_health),
+    WorkflowActionWrapper(make_gpt_model_prompt.__name__, make_gpt_model_prompt),
+    WorkflowActionWrapper(make_gpt_model_prompt_zh.__name__, make_gpt_model_prompt_zh),
+    WorkflowActionWrapper(make_retriever.__name__, make_retriever),
+    WorkflowActionWrapper(make_query_engine_with_keywords.__name__, make_query_engine_with_keywords),
+    WorkflowActionWrapper(make_text_node.__name__, make_text_node),
+    WorkflowActionWrapper(make_image_node_from_local_file.__name__, make_image_node_from_local_file),
+    WorkflowActionWrapper(make_image_node_from_url.__name__, make_image_node_from_url),
+    WorkflowActionWrapper(make_system_message.__name__, make_system_message),
+    WorkflowActionWrapper(make_user_message.__name__, make_user_message),
+    WorkflowActionWrapper(make_assistant_message.__name__, make_assistant_message),
+]
+
+class FunctionToolsLoaderNode(DynamicNode):
+    def __init__(self, info: 'FunctionToolsLoaderNodeInfo'):
+        super().__init__(info)
+
+    @override
+    async def _DoRunStep(self) -> Coroutine[Any, Any, Dict[str, Any] | Any]:
+        parameters:Dict[str, Any] = await self.GetParameters()
+        function_tools:Dict[str, FunctionTool] = {}
+        for name, tool in parameters.items():
+            if isinstance(tool, FunctionTool):
+                function_tools[name] = tool
+            elif isinstance(tool, Callable):
+                function_tools[name] = make_function_tool(tool, name)
+            elif isinstance(tool, str) and WorkflowActionWrapper.ContainsActionWrapper(tool):
+                function_tools[name] = WorkflowActionWrapper.GetActionWrapper(tool)
+            else:
+                raise ValueError(f"Invalid tool: {tool}<{type(tool)}>")
+        return function_tools
+
+class FunctionToolsLoaderNodeInfo(DynamicNodeInfo):
+    '''
+    函数工具加载节点
+    '''
+
+    @override
+    def Instantiate(self) -> FunctionToolsLoaderNode:
+        return FunctionToolsLoaderNode(self)

@@ -50,6 +50,14 @@ namespace Convention.Workflow
         [SerializeField, OnlyNotNullMode] private RectTransform UIFocusObject;
         private List<SharedModule.CallbackData> callbackDatas = new();
 
+        public HashSet<string> CallableFunctionNames = new();
+
+
+        public void RegisterFunctionName([In]string name)
+        {
+            CallableFunctionNames.Add(name);
+        }
+
         public string Transformer([In] string str)
         {
             if (TextLabels == null)
