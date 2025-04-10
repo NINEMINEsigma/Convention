@@ -169,7 +169,7 @@ namespace Convention.Workflow
         {
             this.transform.position = info.position;
         }
-        public void ClearLink()
+        public virtual void ClearLink()
         {
             foreach (var (name, slot) in this.m_Inmapping)
             {
@@ -182,7 +182,7 @@ namespace Convention.Workflow
                 slot.SetDirty();
             }
         }
-        public void ClearSlots()
+        public virtual void ClearSlots()
         {
             if(this.info==null)
             {
@@ -197,11 +197,11 @@ namespace Convention.Workflow
             this.m_Inmapping.Clear();
             this.m_Outmapping.Clear();
         }
-        private List<PropertiesWindow.ItemEntry> CreateGraphNodeSlots(int count)
+        protected List<PropertiesWindow.ItemEntry> CreateGraphNodeSlots(int count)
         {
             return InSlotPropertiesWindow.CreateRootItemEntries(count);
         }
-        public void BuildSlots()
+        public virtual void BuildSlots()
         {
             int InSlotCount = info.inmapping.Count;
             InSlots = CreateGraphNodeSlots(InSlotCount);
@@ -227,7 +227,7 @@ namespace Convention.Workflow
             }
             InoutContainerPlane.AdjustSizeToContainsChilds();
         }
-        public void BuildLink()
+        public virtual void BuildLink()
         {
             foreach (var (slot_name,slot_info) in info.inmapping)
             {
@@ -295,25 +295,25 @@ namespace Convention.Workflow
     }
 
     [Serializable, ArgPackage]
-    class DynamicNodeInfo:NodeInfo
+    public class DynamicNodeInfo:NodeInfo
     {
 
     }
 
     [Serializable, ArgPackage]
-    class StartNodeInfo : NodeInfo
+    public class StartNodeInfo : NodeInfo
     {
 
     }
 
     [Serializable, ArgPackage]
-    class StepNodeInfo : NodeInfo
+    public class StepNodeInfo : NodeInfo
     {
         public string funcname = "unknown";
     }
 
     [Serializable, ArgPackage]
-    class EndNodeInfo : NodeInfo
+    public class EndNodeInfo : NodeInfo
     {
 
     }

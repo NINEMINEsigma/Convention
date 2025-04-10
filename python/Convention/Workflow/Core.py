@@ -134,7 +134,7 @@ class NodeSlotInfo(BaseModel, any_class):
     def SymbolName(self) -> str:
         return f"{self.GetType().__name__}<name={self.slotName}, type={self.typeIndicator}, " \
                f"{'Input' if self.IsInmappingSlot else 'Output'}>"
-
+     
 class NodeInfo(BaseModel, any_class):
     """
     节点信息
@@ -256,17 +256,23 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
     def SetDirty(self) -> None:
         self.__IsDirty = True
 
+    @virtual
+    def LinkVerify(self, other:Self) -> None:
+        if self.info.IsInmappingSlot==other.info.IsInmappingSlot:
+            raise ValueError(f"相同映射的插槽<{self.info.slotName}>和<{other.info.slotName}>不能连接")
+        if self.info.typeIndicator!=other.info.typeIndicator:
+            if ((self.info.typeIndicator == "string" and other.info.typeIndicator == "str") or 
+                (self.info.typeIndicator == "str" and other.info.typeIndicator == "string")):
+                return
+            raise ValueError(f"类型不匹配的插槽<{self.info.slotName}>和<{other.info.slotName}>不能连接")
+        if self.info.parentNode==other.info.parentNode:
+            raise ValueError(f"父节点相同的插槽<node={self.info.parentNode.SymbolName()}, id={_Internal_GetNodeID(self.info.parentNode)}>"\
+                f"<name={self.info.slotName}, type={self.info.typeIndicator}>和"\
+                f"<name={other.info.slotName}, type={other.info.typeIndicator}>不能连接")   
+
     @classmethod
     def Link(cls, left:Self, right:Self) -> None:
-        if left.info.IsInmappingSlot==right.info.IsInmappingSlot:
-            raise ValueError(f"相同映射的插槽<{left.info.slotName}>和<{right.info.slotName}>不能连接")
-        if left.info.typeIndicator!=right.info.typeIndicator:
-            raise ValueError(f"类型不匹配的插槽<{left.info.slotName}>和<{right.info.slotName}>不能连接")
-        if left.info.parentNode==right.info.parentNode:
-            raise ValueError(f"父节点相同的插槽<node={left.info.parentNode.SymbolName()}, id={_Internal_GetNodeID(left.info.parentNode)}>"\
-                f"<name={left.info.slotName}, type={left.info.typeIndicator}>和"\
-                f"<name={right.info.slotName}, type={right.info.typeIndicator}>不能连接")
-
+        left.LinkVerify(right)
         if left.info.IsInmappingSlot or left.info.targetSlot == right:
             cls.Unlink(left)
             left.info.targetSlot = right
@@ -1118,11 +1124,13 @@ class EndNode(Node):
             typeIndicator=f"{typeIndicator}",
             IsInmappingSlot=True
         )
+        self.Internal_Inmapping[name] = NodeSlot(self.info.inmapping[name], parent=self)
         return True
     def delete_slot(self, name:str) -> bool:
         if name not in self.info.inmapping:
             return False
         del self.info.inmapping[name]
+        del self.Internal_Inmapping[name]
         return True
 
     @override

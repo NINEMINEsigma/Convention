@@ -2197,7 +2197,8 @@ MonoBehaviour:
     Datas: []
   m_CameraTransform: {fileID: 2785136268184413821}
   ScrollSpeed: 10
-  GraphNodePrefab: {fileID: 6130785691483815146}
+  GraphNodePrefabs: {fileID: 0}
+  TextLabels: {fileID: 0}
   ContentPlane: {fileID: 7225733823207126825}
   focusObject: {fileID: 7100963408768520451}
 --- !u!1 &5853791197064326209
@@ -3504,11 +3505,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1734320433790600580, guid: a16009d6f48e8d54f87555c221c917b3, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -0.00006175041
+      value: -0.000005722046
       objectReference: {fileID: 0}
     - target: {fileID: 1734320433790600580, guid: a16009d6f48e8d54f87555c221c917b3, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -0.00057088496
+      value: -0.00009084606
       objectReference: {fileID: 0}
     - target: {fileID: 1796705000294821201, guid: a16009d6f48e8d54f87555c221c917b3, type: 3}
       propertyPath: m_AnchorMax.x
@@ -4687,11 +4688,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3410395172121287828, guid: 9d6ed184d3a99cd49b371b22fec6714f, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0.000007867813
+      value: 0.000007390976
       objectReference: {fileID: 0}
     - target: {fileID: 3410395172121287828, guid: 9d6ed184d3a99cd49b371b22fec6714f, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.00000023841858
+      value: 0.000002861023
       objectReference: {fileID: 0}
     - target: {fileID: 3434714639421207617, guid: 9d6ed184d3a99cd49b371b22fec6714f, type: 3}
       propertyPath: m_AnchorMax.x
@@ -6673,11 +6674,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8781068999274584588, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0.000007867813
+      value: 0.000007390976
       objectReference: {fileID: 0}
     - target: {fileID: 8781068999274584588, guid: 14851ab435cb18448974bf76e92d8952, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -0.0000022649765
+      value: 0.000008761883
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects:

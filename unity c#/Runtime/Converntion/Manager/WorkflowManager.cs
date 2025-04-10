@@ -39,6 +39,7 @@ namespace Convention.Workflow
         [Resources, OnlyNotNullMode, SerializeField] private Transform m_CameraTransform;
         [Setting] public float ScrollSpeed = 1;
         [Setting, OnlyNotNullMode] public ScriptableObject GraphNodePrefabs;
+        [Setting, OnlyNotNullMode] public ScriptableObject TextLabels;
 
         //[Resources, SerializeField, OnlyNotNullMode, Header("Prefabs")]
         //private GameObject GraphNodePrefab;
@@ -48,18 +49,28 @@ namespace Convention.Workflow
         private RectTransform focusObject;
         private List<SharedModule.CallbackData> callbackDatas = new();
 
-        public void SetupWorkflowGraphNodeType([In] string label, [In] NodeInfo template, Action<Vector3> generater)
+        public string Transformer([In] string str)
         {
-            callbackDatas.Add(new(label, generater));
+            if (TextLabels.Datas.ContainsKey(str))
+                return TextLabels.Datas[str].stringValue;
+            return str;
         }
-        public void SetupWorkflowGraphNodeType([In] string label, [In] NodeInfo template)
+
+        public void SetupWorkflowGraphNodeType([In] SharedModule.CallbackData callback)
         {
-            SetupWorkflowGraphNodeType(label, template, x =>
+            callbackDatas.Add(callback);
+        }
+        public void SetupWorkflowGraphNodeType([In]string menu, [In] string label, [In] NodeInfo template)
+        {
+            SetupWorkflowGraphNodeType(new(menu, x =>
             {
-                var info = template.TemplateClone();
-                var node = CreateGraphNode(info);
-                node.transform.position = x;
-            });
+                SharedModule.instance.OpenCustomMenu(focusObject, new SharedModule.CallbackData(label, y =>
+                {
+                    var info = template.TemplateClone();
+                    var node = CreateGraphNode(info);
+                    node.transform.position = y;
+                }));
+            }));
         }
 
         private void Start()
@@ -68,6 +79,10 @@ namespace Convention.Workflow
             {
                 if (GraphNodePrefabs == null)
                     GraphNodePrefabs = Resources.Load<ScriptableObject>("Workflow/Nodes");
+                SetupWorkflowGraphNodeType(Transformer(nameof(StartNode)), Transformer(nameof(TextNode)), new TextNodeInfo(Transformer("Text")));
+                SetupWorkflowGraphNodeType(Transformer(nameof(StartNode)), Transformer(nameof(ResourceNode)), new ResourceNodeInfo() { resource = Transformer("Path or URL") });
+                SetupWorkflowGraphNodeType(Transformer(nameof(StepNode)), Transformer(nameof(StepNode)), new StepNodeInfo() { funcname = Transformer("FunctionName") });
+                SetupWorkflowGraphNodeType(Transformer(nameof(EndNode)), Transformer(nameof(EndNode)), new EndNodeInfo());
             }, typeof(GraphInputWindow), typeof(GraphInspector));
         }
 
