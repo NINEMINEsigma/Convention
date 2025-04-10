@@ -7,6 +7,7 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEditor;
 using UnityEngine.Profiling;
+using static UnityEngine.UI.GridLayoutGroup;
 
 namespace Convention
 {
@@ -203,6 +204,25 @@ namespace Convention
             {
                 SetParentAndResizeWithoutNotifyBaseWindowPlane(parent, child, isAdjustSizeToContainsChilds);
             }
+        }
+
+        public static bool IsVisible([In]RectTransform rectTransform, [In,Opt] Camera camera=null)
+        {
+            if (camera == null)
+                camera = Camera.main;
+            Transform camTransform = camera.transform;
+            Vector3[] corners = new Vector3[4];
+            rectTransform.GetWorldCorners(corners);
+            foreach (var worldPos in corners)
+            {
+                Vector2 viewPos = camera.WorldToViewportPoint(worldPos);
+                Vector3 dir = (worldPos - camTransform.position).normalized;
+                float dot = Vector3.Dot(camTransform.forward, dir);
+
+                if (dot <= 0 || viewPos.x < 0 || viewPos.x > 1 || viewPos.y < 0 || viewPos.y > 1)
+                    return false;
+            }
+            return true;
         }
     }
 

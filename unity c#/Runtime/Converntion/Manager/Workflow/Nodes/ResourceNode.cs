@@ -9,6 +9,10 @@ namespace Convention.Workflow
     public class ResourceNodeInfo : StartNodeInfo
     {
         public string resource = "unknown";
+        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        {
+            return new ResourceNodeInfo();
+        }
     }
 
     public class ResourceNode : StartNode

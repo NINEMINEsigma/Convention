@@ -11,8 +11,8 @@ namespace Convention.Workflow
     [Serializable, ArgPackage]
     public class Workflow : AnyClass
     {
-        public List<NodeInfo> Datas;
-        [NonSerialized] public List<Node> Nodes;
+        public List<NodeInfo> Datas = new();
+        [NonSerialized] public List<Node> Nodes = new();
     }
 
     public class WorkflowManager : MonoSingleton<WorkflowManager>
@@ -39,7 +39,7 @@ namespace Convention.Workflow
         [Resources, OnlyNotNullMode, SerializeField] private Transform m_CameraTransform;
         [Setting] public float ScrollSpeed = 1;
         [Setting, OnlyNotNullMode] public ScriptableObject GraphNodePrefabs;
-        [Setting, OnlyNotNullMode] public ScriptableObject TextLabels;
+        [Setting, HopeNotNull] public ScriptableObject TextLabels;
 
         //[Resources, SerializeField, OnlyNotNullMode, Header("Prefabs")]
         //private GameObject GraphNodePrefab;
@@ -47,10 +47,13 @@ namespace Convention.Workflow
         private RectTransform ContentPlane;
         [Resources, SerializeField, OnlyNotNullMode, Header("Mouse Click")]
         private RectTransform focusObject;
+        [SerializeField, OnlyNotNullMode] private RectTransform UIFocusObject;
         private List<SharedModule.CallbackData> callbackDatas = new();
 
         public string Transformer([In] string str)
         {
+            if (TextLabels == null)
+                return str;
             if (TextLabels.Datas.ContainsKey(str))
                 return TextLabels.Datas[str].stringValue;
             return str;
@@ -60,17 +63,21 @@ namespace Convention.Workflow
         {
             callbackDatas.Add(callback);
         }
-        public void SetupWorkflowGraphNodeType([In]string menu, [In] string label, [In] NodeInfo template)
+        public void SetupWorkflowGraphNodeType(params NodeInfo[] templates)
         {
-            SetupWorkflowGraphNodeType(new(menu, x =>
+            foreach (NodeInfo nodeInfo in templates)
             {
-                SharedModule.instance.OpenCustomMenu(focusObject, new SharedModule.CallbackData(label, y =>
+                string label = nodeInfo.GetType().Name;
+                if (label.EndsWith("Info"))
+                    label = label[..^4];
+                SetupWorkflowGraphNodeType(new SharedModule.CallbackData(Transformer(label), x =>
                 {
-                    var info = template.TemplateClone();
-                    var node = CreateGraphNode(info);
-                    node.transform.position = y;
+                    var info = nodeInfo.TemplateClone();
+                    var node = this.CreateGraphNode(info);
+                    var pos = focusObject.position;
+                    node.transform.position = new Vector2(pos.x, pos.y);
                 }));
-            }));
+            }
         }
 
         private void Start()
@@ -80,10 +87,25 @@ namespace Convention.Workflow
                 Debug.Log($"{nameof(WorkflowManager)} registered");
                 if (GraphNodePrefabs == null)
                     GraphNodePrefabs = Resources.Load<ScriptableObject>("Workflow/Nodes");
-                SetupWorkflowGraphNodeType(Transformer(nameof(StartNode)), Transformer(nameof(TextNode)), new TextNodeInfo(Transformer("Text")));
-                SetupWorkflowGraphNodeType(Transformer(nameof(StartNode)), Transformer(nameof(ResourceNode)), new ResourceNodeInfo() { resource = Transformer("Path or URL") });
-                SetupWorkflowGraphNodeType(Transformer(nameof(StepNode)), Transformer(nameof(StepNode)), new StepNodeInfo() { funcname = Transformer("FunctionName") });
-                SetupWorkflowGraphNodeType(Transformer(nameof(EndNode)), Transformer(nameof(EndNode)), new EndNodeInfo());
+                SetupWorkflowGraphNodeType(
+                    new TextNodeInfo(Transformer("Text"))
+                    {
+                        title = Transformer("Text")
+                    },
+                    new ResourceNodeInfo()
+                    {
+                        resource = Transformer("Path or URL"),
+                        title = Transformer("Path or URL")
+                    },
+                    new StepNodeInfo() 
+                    {
+                        funcname = Transformer("FunctionName"), 
+                        title = Transformer("FucntionStep") 
+                    },
+                    new EndNodeInfo()
+                    { 
+                        title = Transformer("End")
+                    });
             }, typeof(GraphInputWindow), typeof(GraphInspector));
         }
 
@@ -130,6 +152,9 @@ namespace Convention.Workflow
         public Node CreateGraphNode([In] NodeInfo info)
         {
             var node = info.Instantiate();
+            node.transform.SetParent(ContentPlane);
+            node.transform.localScale = Vector3.one;
+            node.transform.eulerAngles = Vector3.zero;
             workflow.Nodes.Add(node);
             node.BuildSlots();
             return node;
@@ -211,14 +236,15 @@ namespace Convention.Workflow
 
         public void OpenMenu(PointerEventData data)
         {
-            focusObject.position = Mouse.current.position.ReadValue();
+            focusObject.position = data.pointerCurrentRaycast.worldPosition;
+            UIFocusObject.position = Mouse.current.position.ReadValue();
 #if UNITY_EDITOR
             if (callbackDatas.Count == 0)
-                SharedModule.instance.OpenCustomMenu(focusObject, new SharedModule.CallbackData("Empty", x => Debug.Log(x)));
+                SharedModule.instance.OpenCustomMenu(UIFocusObject, new SharedModule.CallbackData("Empty", x => Debug.Log(x)));
             else
 #endif
             {
-                SharedModule.instance.OpenCustomMenu(focusObject, callbackDatas.ToArray());
+                SharedModule.instance.OpenCustomMenu(UIFocusObject, callbackDatas.ToArray());
             }
         }
 

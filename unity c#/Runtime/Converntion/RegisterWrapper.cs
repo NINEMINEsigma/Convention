@@ -55,13 +55,13 @@ namespace Convention
         }
         public RegisterWrapper(Action callback, params Type[] dependences)
         {
-            callback += callback;
+            RegisterWrapper<Tag>.callback += callback;
             this.dependences = dependences;
             this.map_dependences = dependences.ToHashSet();
             this.map_dependences.RemoveWhere((type) => RegisterBaseWrapperExtension.Registers.ContainsKey(type));
             if (this.map_dependences.Count == 0)
             {
-                callback();
+                RegisterWrapper<Tag>.callback();
                 foreach (var item in RegisterBaseWrapperExtension.Registers)
                 {
                     item.Value.OnceRegister(typeof(Tag));

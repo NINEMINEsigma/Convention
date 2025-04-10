@@ -48,22 +48,29 @@ namespace Convention.Workflow
             set => this.title = node.title = value;
         }
 
+        public NodeInfo()
+        {
+            typename = this.GetType().Name[..^4];
+        }
+
+        protected virtual NodeInfo CreateTemplateNodeInfoBySelfType()
+        {
+            return new NodeInfo();
+        }
         public virtual NodeInfo TemplateClone()
         {
-            NodeInfo result = new()
-            {
-                nodeID = nodeID,
-                typename = typename,
-                title = title,
-                position = Vector2.zero
-            };
+            NodeInfo result = CreateTemplateNodeInfoBySelfType();
+            result.nodeID = nodeID;
+            result.typename = typename;
+            result.title = title;
+            result.position = Vector2.zero;
             foreach (var (key, value) in inmapping)
             {
-                result.inmapping.Add(key, value.TemplateClone());
+                result.inmapping[key] = value.TemplateClone();
             }
-            foreach (var (key,value) in outmapping)
+            foreach (var (key, value) in outmapping)
             {
-                result.outmapping.Add(key, value.TemplateClone());
+                result.outmapping[key] = value.TemplateClone();
             }
             return result;
         }
@@ -83,13 +90,16 @@ namespace Convention.Workflow
             }
         }
 
+        [return: IsInstantiated(true)]
         public virtual Node Instantiate()
         {
             //throw new NotImplementedException("Node.Instantiate not implemented");
             string key = this.GetType().Name;
             if (key.EndsWith("Info"))
-                key = key[..-4];
-            return (WorkflowManager.instance.GraphNodePrefabs.Datas[key].uobjectValue as GameObject).GetComponent<Node>();
+                key = key[..^4];
+            var node = GameObject.Instantiate(WorkflowManager.instance.GraphNodePrefabs.Datas[key].uobjectValue as GameObject).GetComponent<Node>();
+            node.SetupFromInfo(this);
+            return node;
         }
     }
 
@@ -140,6 +150,11 @@ namespace Convention.Workflow
             }
         }
 
+        protected virtual void WhenSetup(NodeInfo info)
+        {
+
+        }
+
         public void SetupFromInfo([In] NodeInfo value)
         {
             ClearLink();
@@ -156,14 +171,14 @@ namespace Convention.Workflow
                 BuildLink();
             }
             RefreshPosition();
+            WhenSetup(info);
         }
 
         public void RefreshImmediate()
         {
-            //TODO要在断连之前保存连接信息, 在重建后重新连接
-            ClearLink();
-            RefreshPosition();
-            BuildLink();
+            //ClearLink();
+            //RefreshPosition();
+            //BuildLink();
         }
         public void RefreshPosition()
         {
@@ -176,7 +191,7 @@ namespace Convention.Workflow
                 NodeSlot.Unlink(slot);
                 slot.SetDirty();
             }
-            foreach (var (name,slot) in m_Outmapping)
+            foreach (var (name, slot) in m_Outmapping)
             {
                 NodeSlot.Unlink(slot);
                 slot.SetDirty();
@@ -184,7 +199,7 @@ namespace Convention.Workflow
         }
         public virtual void ClearSlots()
         {
-            if(this.info==null)
+            if (this.info == null)
             {
                 return;
             }
@@ -229,7 +244,7 @@ namespace Convention.Workflow
         }
         public virtual void BuildLink()
         {
-            foreach (var (slot_name,slot_info) in info.inmapping)
+            foreach (var (slot_name, slot_info) in info.inmapping)
             {
                 var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
                 if (targetNode != null)
@@ -273,7 +288,7 @@ namespace Convention.Workflow
         {
             NodeSlot.Unlink(this.m_Inmapping[slotName]);
         }
-        public void UnlinkOutslot( [In] string slotName)
+        public void UnlinkOutslot([In] string slotName)
         {
             NodeSlot.Unlink(this.m_Outmapping[slotName]);
         }
@@ -295,26 +310,39 @@ namespace Convention.Workflow
     }
 
     [Serializable, ArgPackage]
-    public class DynamicNodeInfo:NodeInfo
+    public class DynamicNodeInfo : NodeInfo
     {
-
+        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        {
+            return new DynamicNodeInfo();
+        }
     }
 
     [Serializable, ArgPackage]
     public class StartNodeInfo : NodeInfo
     {
-
+        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        {
+            return new StartNodeInfo();
+        }
     }
 
     [Serializable, ArgPackage]
     public class StepNodeInfo : NodeInfo
     {
         public string funcname = "unknown";
+        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        {
+            return new StepNodeInfo();
+        }
     }
 
     [Serializable, ArgPackage]
     public class EndNodeInfo : NodeInfo
     {
-
+        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        {
+            return new EndNodeInfo();
+        }
     }
 }
