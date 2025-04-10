@@ -77,6 +77,7 @@ namespace Convention.Workflow
         {
             m_RegisterWrapper = new(() =>
             {
+                Debug.Log($"{nameof(WorkflowManager)} registered");
                 if (GraphNodePrefabs == null)
                     GraphNodePrefabs = Resources.Load<ScriptableObject>("Workflow/Nodes");
                 SetupWorkflowGraphNodeType(Transformer(nameof(StartNode)), Transformer(nameof(TextNode)), new TextNodeInfo(Transformer("Text")));

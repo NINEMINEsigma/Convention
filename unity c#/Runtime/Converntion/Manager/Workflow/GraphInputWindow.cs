@@ -14,6 +14,8 @@ namespace Convention.Workflow
         [Resources, SerializeField, OnlyNotNullMode] private Text Description;
         [Resources, SerializeField, OnlyNotNullMode] private ModernUIButton AddContentInput;
 
+        private RegisterWrapper<GraphInputWindow> RegisterWrapper;
+
         public string title { get => ((ITitle)this.Title).title; set => ((ITitle)this.Title).title = value; }
         public string text { get => ((IText)this.Description).text; set => ((IText)this.Description).text = value; }
 
@@ -23,6 +25,7 @@ namespace Convention.Workflow
             {
                 SharedModule.instance.OpenCustomMenu(this.transform as RectTransform, new SharedModule.CallbackData("test", go => { }));
             });
+            RegisterWrapper = new(() => { });
         }
 
     }
