@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Convention.WindowsUI.Variant;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -9,10 +10,19 @@ using UnityEngine.InputSystem;
 namespace Convention.Workflow
 {
     [Serializable, ArgPackage]
+    public class FunctionModel
+    {
+        public string FunctionName = "unknown";
+        public Dictionary<string, NodeSlotInfo> Parameters = new();
+        public Dictionary<string, NodeSlotInfo> Returns = new();
+    }
+
+    [Serializable, ArgPackage]
     public class Workflow : AnyClass
     {
         public List<NodeInfo> Datas = new();
         [NonSerialized] public List<Node> Nodes = new();
+        public List<FunctionModel> Functions = new();
     }
 
     public class WorkflowManager : MonoSingleton<WorkflowManager>
@@ -46,16 +56,29 @@ namespace Convention.Workflow
         [Resources, SerializeField, OnlyNotNullMode, Header("Content")]
         private RectTransform ContentPlane;
         [Resources, SerializeField, OnlyNotNullMode, Header("Mouse Click")]
-        private RectTransform focusObject;
-        [SerializeField, OnlyNotNullMode] private RectTransform UIFocusObject;
+        public RectTransform focusObject;
+        [SerializeField, OnlyNotNullMode]
+        public RectTransform UIFocusObject;
         private List<SharedModule.CallbackData> callbackDatas = new();
 
-        public HashSet<string> CallableFunctionNames = new();
+        public List<FunctionModel> CallableFunctionModels => workflow.Functions;
 
-
-        public void RegisterFunctionName([In]string name)
+        public void RegisterFunctionModel([In] FunctionModel func)
         {
-            CallableFunctionNames.Add(name);
+            CallableFunctionModels.Add(func);
+        }
+        public List<string> GetAllFunctionName()
+        {
+            return CallableFunctionModels.ConvertAll(x => x.FunctionName);
+        }
+        public bool ContainsFunctionModel(string functionName)
+        {
+            return CallableFunctionModels.Any(x => x.FunctionName == functionName);
+        }
+        [return:ReturnMayNull]
+        public FunctionModel GetFunctionModel(string functionName)
+        {
+            return CallableFunctionModels.FirstOrDefault(x => x.FunctionName == functionName);
         }
 
         public string Transformer([In] string str)
@@ -100,6 +123,10 @@ namespace Convention.Workflow
                     {
                         title = Transformer("Text")
                     },
+                    new ValueNodeInfo(0)
+                    {
+                        title = Transformer("Value")
+                    },
                     new ResourceNodeInfo()
                     {
                         resource = Transformer("Path or URL"),
@@ -115,6 +142,34 @@ namespace Convention.Workflow
                         title = Transformer("End")
                     });
             }, typeof(GraphInputWindow), typeof(GraphInspector));
+#if UNITY_EDITOR
+            this.RegisterFunctionModel(new()
+            {
+                FunctionName = "TestFunction",
+                Parameters =
+                {
+                    {
+                        "In",new NodeSlotInfo()
+                        {
+                            IsInmappingSlot = true,
+                            typeIndicator = "string",
+                            slotName = "In"
+                        }
+                    }
+                },
+                Returns =
+                {
+                    {
+                        "Out", new NodeSlotInfo()
+                        {
+                            IsInmappingSlot = false,
+                            typeIndicator = "string",
+                            slotName = "Out"
+                        }
+                    }
+                }
+            });
+#endif
         }
 
         private void Update()
@@ -126,6 +181,7 @@ namespace Convention.Workflow
                 if (z - t > -100 && z - t < -5)
                     m_CameraTransform.transform.Translate(new Vector3(0, 0, -t), Space.Self);
             }
+            UIFocusObject.position = Mouse.current.position.ReadValue();
         }
 
         private void LateUpdate()
@@ -160,6 +216,7 @@ namespace Convention.Workflow
         public Node CreateGraphNode([In] NodeInfo info)
         {
             var node = info.Instantiate();
+            node.gameObject.SetActive(true);
             node.transform.SetParent(ContentPlane);
             node.transform.localScale = Vector3.one;
             node.transform.eulerAngles = Vector3.zero;
@@ -241,11 +298,9 @@ namespace Convention.Workflow
             var loadedWorkflow = (Workflow)local.LoadAsJson();
             return LoadWorkflow(loadedWorkflow);
         }
-
         public void OpenMenu(PointerEventData data)
         {
             focusObject.position = data.pointerCurrentRaycast.worldPosition;
-            UIFocusObject.position = Mouse.current.position.ReadValue();
 #if UNITY_EDITOR
             if (callbackDatas.Count == 0)
                 SharedModule.instance.OpenCustomMenu(UIFocusObject, new SharedModule.CallbackData("Empty", x => Debug.Log(x)));

@@ -658,6 +658,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Context: {fileID: 0}
   Title: {fileID: 6937548526748263730}
+  SlotHeight: 46
+  TitleHeight: 50
+  ExtensionHeight: 250
   InSlotPropertiesWindow: {fileID: 0}
   OutSlotPropertiesWindow: {fileID: 0}
   InoutContainerPlane: {fileID: 3319224831042127465}
@@ -1044,7 +1047,7 @@ PrefabInstance:
     - target: {fileID: 8550121131508064702, guid: 4e6810693c07dfb4399ed0c7c7a3ce39,
         type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8550121131508064702, guid: 4e6810693c07dfb4399ed0c7c7a3ce39,
         type: 3}
@@ -1054,7 +1057,7 @@ PrefabInstance:
     - target: {fileID: 8550121131508064702, guid: 4e6810693c07dfb4399ed0c7c7a3ce39,
         type: 3}
       propertyPath: m_AnchorMin.x
-      value: 0.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8550121131508064702, guid: 4e6810693c07dfb4399ed0c7c7a3ce39,
         type: 3}
@@ -1064,7 +1067,7 @@ PrefabInstance:
     - target: {fileID: 8550121131508064702, guid: 4e6810693c07dfb4399ed0c7c7a3ce39,
         type: 3}
       propertyPath: m_SizeDelta.x
-      value: 300
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8550121131508064702, guid: 4e6810693c07dfb4399ed0c7c7a3ce39,
         type: 3}

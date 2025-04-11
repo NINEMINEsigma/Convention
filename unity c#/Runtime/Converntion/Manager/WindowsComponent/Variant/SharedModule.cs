@@ -7,7 +7,7 @@ namespace Convention.WindowsUI.Variant
 {
     public class SharedModule : MonoSingleton<SharedModule>, IWindowUIModule
     {
-        [Resources, OnlyNotNullMode, SerializeField] private ModernUIInputField RenameField;
+        [Resources, OnlyNotNullMode, SerializeField] private ModernUIInputField SingleInputField;
         [Resources, OnlyNotNullMode, SerializeField, IsInstantiated(false)] private CustomMenu CustomMenuPrefab;
         [Resources, OnlyNotNullMode, SerializeField, WhenAttribute.Not(nameof(CustomMenuPrefab), null)] private RectTransform CustomMenuPlane;
         [Resources, OnlyNotNullMode, SerializeField, WhenAttribute.Not(nameof(CustomMenuPrefab), null)] private Button CustomMenuRelease;
@@ -16,10 +16,10 @@ namespace Convention.WindowsUI.Variant
 
         private void Start()
         {
-            RenameField.AddListener(x =>
+            SingleInputField.AddListener(x =>
             {
                 RenameCallback(x);
-                RenameField.gameObject.SetActive(false);
+                SingleInputField.gameObject.SetActive(false);
             });
             this.CustomMenuRelease.onClick.AddListener(() =>
             {
@@ -37,11 +37,17 @@ namespace Convention.WindowsUI.Variant
             customMenus.Clear();
         }
 
-        public void Rename([In]string initText, [In]Action<string> callback)
+        public void SingleEditString([In]string title, [In]string initText, [In]Action<string> callback)
         {
-            RenameField.gameObject.SetActive(true);
-            RenameField.text = initText;
+            SingleInputField.gameObject.SetActive(true);
+            SingleInputField.title = title;
+            SingleInputField.text = initText;
             RenameCallback = callback;
+        }
+
+        public void Rename([In] string initText, [In] Action<string> callback)
+        {
+            SingleEditString("Rename", initText, callback);
         }
 
         [ArgPackage]

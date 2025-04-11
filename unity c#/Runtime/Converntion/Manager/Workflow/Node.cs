@@ -105,8 +105,19 @@ namespace Convention.Workflow
 
     public class Node : WindowsComponent, IOnlyFocusThisOnInspector, ITitle
     {
+#if UNITY_EDITOR
+        [Content]
+        public void DebugLogNodeInfo()
+        {
+            Debug.Log(this.info);
+        }
+
+#endif
+
         [HideInInspector] public BehaviourContextManager Context;
         [Resources, OnlyNotNullMode, SerializeField] private Text Title;
+        [Setting]
+        public int SlotHeight = 46, TitleHeight = 50, ExtensionHeight = 0;
         [Resources, OnlyNotNullMode, SerializeField]
         private PropertiesWindow InSlotPropertiesWindow, OutSlotPropertiesWindow;
 
@@ -148,6 +159,13 @@ namespace Convention.Workflow
                 if (info.Value != null)
                     info.Value.SetDirty();
             }
+            foreach (var info in m_Outmapping)
+            {
+                if (info.Value != null && info.Value.info.targetSlot != null)
+                {
+                    info.Value.info.targetSlot.SetDirty();
+                }
+            }
         }
 
         protected virtual void WhenSetup(NodeInfo info)
@@ -158,6 +176,11 @@ namespace Convention.Workflow
         public void SetupFromInfo([In] NodeInfo value)
         {
             ClearLink();
+            if (HierarchyWindow.instance != null)
+            {
+                HierarchyWindow.instance.RemoveReference(this.info);
+                HierarchyWindow.instance.CreateRootItemEntryWithBinders(value);
+            }
             info = value;
             int nodeID = WorkflowManager.instance.GetGraphNodeID(this);
             if (nodeID < 0)
@@ -171,6 +194,7 @@ namespace Convention.Workflow
                 BuildLink();
             }
             RefreshPosition();
+            RefreshRectTransform();
             WhenSetup(info);
         }
 
@@ -184,18 +208,25 @@ namespace Convention.Workflow
         {
             this.transform.position = info.position;
         }
+        public void RefreshRectTransform()
+        {
+            //InoutContainerPlane.AdjustSizeToContainsChilds();
+            this.rectTransform.sizeDelta = new(this.rectTransform.sizeDelta.x, TitleHeight + Mathf.Max(m_Inmapping.Count, m_Outmapping.Count) * SlotHeight + ExtensionHeight);
+        }
         public virtual void ClearLink()
         {
-            foreach (var (name, slot) in this.m_Inmapping)
-            {
-                NodeSlot.Unlink(slot);
-                slot.SetDirty();
-            }
-            foreach (var (name, slot) in m_Outmapping)
-            {
-                NodeSlot.Unlink(slot);
-                slot.SetDirty();
-            }
+            if (InSlotPropertiesWindow == true)
+                foreach (var (name, slot) in this.m_Inmapping)
+                {
+                    NodeSlot.Unlink(slot);
+                    slot.SetDirty();
+                }
+            if (OutSlotPropertiesWindow == true)
+                foreach (var (name, slot) in m_Outmapping)
+                {
+                    NodeSlot.Unlink(slot);
+                    slot.SetDirty();
+                }
         }
         public virtual void ClearSlots()
         {
@@ -203,71 +234,93 @@ namespace Convention.Workflow
             {
                 return;
             }
-            foreach (var slot in this.InSlots)
-                slot.Release();
-            foreach (var slot in this.OutSlots)
-                slot.Release();
-            InSlots.Clear();
-            OutSlots.Clear();
-            this.m_Inmapping.Clear();
-            this.m_Outmapping.Clear();
+            if (InSlotPropertiesWindow == true)
+            {
+                foreach (var slot in this.InSlots)
+                    slot.Release();
+                InSlots.Clear();
+                this.m_Inmapping.Clear();
+            }
+            if (OutSlotPropertiesWindow == true)
+            {
+                foreach (var slot in this.OutSlots)
+                    slot.Release();
+                OutSlots.Clear();
+                this.m_Outmapping.Clear();
+            }
         }
-        protected List<PropertiesWindow.ItemEntry> CreateGraphNodeSlots(int count)
+        protected List<PropertiesWindow.ItemEntry> CreateGraphNodeInSlots(int count)
         {
+            if (InSlotPropertiesWindow == null)
+                throw new InvalidOperationException($"this node is not using {nameof(InSlotPropertiesWindow)}");
             return InSlotPropertiesWindow.CreateRootItemEntries(count);
+        }
+        protected List<PropertiesWindow.ItemEntry> CreateGraphNodeOutSlots(int count)
+        {
+            if (OutSlotPropertiesWindow == null)
+                throw new InvalidOperationException($"this node is not using {nameof(OutSlotPropertiesWindow)}");
+            return OutSlotPropertiesWindow.CreateRootItemEntries(count);
         }
         public virtual void BuildSlots()
         {
-            int InSlotCount = info.inmapping.Count;
-            InSlots = CreateGraphNodeSlots(InSlotCount);
-            foreach (var (key, slotInfo) in info.inmapping)
+            if (InSlotPropertiesWindow == true)
             {
-                InSlotCount--;
-                var slot = InSlots[InSlotCount].ref_value.GetComponent<NodeSlot>();
-                m_Inmapping.Add(key, slot);
-                var info = slotInfo.TemplateClone();
-                info.parentNode = this;
-                slot.SetupFromInfo(info);
+                int InSlotCount = info.inmapping.Count;
+                InSlots = CreateGraphNodeInSlots(InSlotCount);
+                foreach (var (key, slotInfo) in info.inmapping)
+                {
+                    InSlotCount--;
+                    var slot = InSlots[InSlotCount].ref_value.GetComponent<NodeSlot>();
+                    m_Inmapping.Add(key, slot);
+                    var info = slotInfo.TemplateClone();
+                    info.parentNode = this;
+                    slot.SetupFromInfo(info);
+                }
             }
-            int OutSlotCount = info.outmapping.Count;
-            OutSlots = CreateGraphNodeSlots(OutSlotCount);
-            foreach (var (key, slotInfo) in info.outmapping)
+            if (OutSlotPropertiesWindow == true)
             {
-                OutSlotCount--;
-                var slot = OutSlots[OutSlotCount].ref_value.GetComponent<NodeSlot>();
-                m_Outmapping.Add(key, slot);
-                var info = slotInfo.TemplateClone();
-                info.parentNode = this;
-                slot.SetupFromInfo(info);
+                int OutSlotCount = info.outmapping.Count;
+                OutSlots = CreateGraphNodeOutSlots(OutSlotCount);
+                foreach (var (key, slotInfo) in info.outmapping)
+                {
+                    OutSlotCount--;
+                    var slot = OutSlots[OutSlotCount].ref_value.GetComponent<NodeSlot>();
+                    m_Outmapping.Add(key, slot);
+                    var info = slotInfo.TemplateClone();
+                    info.parentNode = this;
+                    slot.SetupFromInfo(info);
+                }
             }
-            InoutContainerPlane.AdjustSizeToContainsChilds();
+            RefreshRectTransform();
         }
         public virtual void BuildLink()
         {
-            foreach (var (slot_name, slot_info) in info.inmapping)
-            {
-                var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
-                if (targetNode != null)
+            if (InSlotPropertiesWindow == true)
+                foreach (var (slot_name, slot_info) in info.inmapping)
                 {
-                    NodeSlot.Link(m_Inmapping[slot_name], targetNode.m_Outmapping[slot_info.targetSlotName]);
+                    var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
+                    if (targetNode != null)
+                    {
+                        NodeSlot.Link(m_Inmapping[slot_name], targetNode.m_Outmapping[slot_info.targetSlotName]);
+                    }
+                    else
+                    {
+                        NodeSlot.Unlink(m_Inmapping[slot_name]);
+                    }
                 }
-                else
+            if (OutSlotPropertiesWindow != true)
+                foreach (var (slot_name, slot_info) in info.outmapping)
                 {
-                    NodeSlot.Unlink(m_Inmapping[slot_name]);
+                    var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
+                    if (targetNode != null)
+                    {
+                        NodeSlot.Link(m_Outmapping[slot_name], targetNode.m_Inmapping[slot_info.targetSlotName]);
+                    }
+                    else
+                    {
+                        NodeSlot.Unlink(m_Outmapping[slot_name]);
+                    }
                 }
-            }
-            foreach (var (slot_name, slot_info) in info.outmapping)
-            {
-                var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
-                if (targetNode != null)
-                {
-                    NodeSlot.Link(m_Outmapping[slot_name], targetNode.m_Inmapping[slot_info.targetSlotName]);
-                }
-                else
-                {
-                    NodeSlot.Unlink(m_Outmapping[slot_name]);
-                }
-            }
         }
 
         public void LinkInslotToOtherNodeOutslot(
@@ -324,25 +377,6 @@ namespace Convention.Workflow
         protected override NodeInfo CreateTemplateNodeInfoBySelfType()
         {
             return new StartNodeInfo();
-        }
-    }
-
-    [Serializable, ArgPackage]
-    public class StepNodeInfo : NodeInfo
-    {
-        public string funcname = "unknown";
-        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
-        {
-            return new StepNodeInfo();
-        }
-    }
-
-    [Serializable, ArgPackage]
-    public class EndNodeInfo : NodeInfo
-    {
-        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
-        {
-            return new EndNodeInfo();
         }
     }
 }

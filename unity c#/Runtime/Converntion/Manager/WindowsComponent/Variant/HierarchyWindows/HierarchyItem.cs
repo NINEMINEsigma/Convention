@@ -1,13 +1,35 @@
 using System.Collections.Generic;
 using System;
 using static Convention.WindowsUI.Variant.PropertiesWindow;
+using System.Reflection;
 
 namespace Convention.WindowsUI.Variant
 {
+    public interface IHierarchyItemTitle
+    {
+        string HierarchyItemTitle { get; }
+    }
+
     public class HierarchyItem : PropertyListItem
     {
-        [Content, HopeNotNull] public object target;
+        [Content, HopeNotNull] public object m_target;
+        public object target
+        {
+            get => m_target;
+            set
+            {
+                m_target = value;
+            }
+        }
         [Content] public bool IsEnableFocusWindow = true;
+
+        private void Update()
+        {
+            if (target is IHierarchyItemTitle ht)
+            {
+                this.title = ht.HierarchyItemTitle;
+            }
+        }
 
         protected override void Start()
         {

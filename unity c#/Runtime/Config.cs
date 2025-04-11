@@ -681,21 +681,25 @@ namespace Convention
         public class ActionStepCoroutineWrapper:AnyClass
         {
             private List<KeyValuePair<YieldInstruction, Action>> steps = new();
-            public void Update(Action action)
+            public ActionStepCoroutineWrapper Update(Action action)
             {
                 steps.Add(new(null, action));
+                return this;
             }
-            public void Wait(float time,Action action)
+            public ActionStepCoroutineWrapper Wait(float time,Action action)
             {
                 steps.Add(new(new WaitForSeconds(time), action));
+                return this;
             }
-            public void FixedUpdate(Action action)
+            public ActionStepCoroutineWrapper FixedUpdate(Action action)
             {
                 steps.Add(new(new WaitForFixedUpdate(), action));
+                return this;
             }
-            public void Next(Action action)
+            public ActionStepCoroutineWrapper Next(Action action)
             {
                 steps.Add(new(new WaitForEndOfFrame(), action));
+                return this;
             }
             private static IEnumerator Execute(List<KeyValuePair<YieldInstruction, Action>> steps)
             {
@@ -707,8 +711,7 @@ namespace Convention
             }
             ~ActionStepCoroutineWrapper()
             {
-                StartCoroutine(Execute(steps));
-                steps.Clear();
+                this.Invoke();
             }
             public void Invoke()
             {
@@ -898,6 +901,14 @@ namespace Convention
                     );
                 _CurType = _CurType.BaseType;
             }
+            return result;
+        }
+        public static List<MemberInfo> SeekMemberInfo([In] object target, IEnumerable<string> names, BindingFlags flags = BindingFlags.Default)
+        {
+            Type _CurType = target.GetType();
+            List<MemberInfo> result = _CurType.GetMembers(flags).ToList();
+            HashSet<string> nameSet = names.ToHashSet();
+            result.RemoveAll(x => nameSet.Contains(x.Name) == false);
             return result;
         }
         public static object InvokeMember([In] MemberInfo member, [In] object target, params object[] parameters)

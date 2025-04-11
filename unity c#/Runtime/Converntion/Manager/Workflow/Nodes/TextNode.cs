@@ -31,11 +31,14 @@ namespace Convention.Workflow
 
         protected override NodeInfo CreateTemplateNodeInfoBySelfType()
         {
-            return new TextNodeInfo();
+            return new TextNodeInfo()
+            {
+                text = text
+            };
         }
     }
 
-    public class TextNode : StartNode,IText
+    public class TextNode : StartNode, IText
     {
         [Resources, OnlyNotNullMode] public ModernUIInputField InputField;
         [Content, OnlyPlayMode] public bool isEditing = false;
@@ -49,7 +52,7 @@ namespace Convention.Workflow
         protected override void Start()
         {
             base.Start();
-            InputField.InputFieldSource.Source.onSelect.AddListener(_=>isEditing = true);
+            InputField.InputFieldSource.Source.onSelect.AddListener(_ => isEditing = true);
             InputField.InputFieldSource.Source.onEndEdit.AddListener(str =>
             {
                 MyTextNodeInfo.text = str;

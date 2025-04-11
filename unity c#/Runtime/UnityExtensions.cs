@@ -2,12 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Convention.WindowsUI;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using UnityEditor;
-using UnityEngine.Profiling;
-using static UnityEngine.UI.GridLayoutGroup;
 
 namespace Convention
 {
@@ -171,7 +169,7 @@ namespace Convention
 
         internal static void SetParentAndResizeWithoutNotifyBaseWindowPlane([In] RectTransform parent, [In] RectTransform child, Rect rect, bool isAdjustSizeToContainsChilds)
         {
-            child.SetParent(parent);
+            child.SetParent(parent, false);
             child.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, rect.x, rect.width);
             child.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Top, rect.y, rect.height);
             if (isAdjustSizeToContainsChilds)
@@ -179,7 +177,7 @@ namespace Convention
         }
         internal static void SetParentAndResizeWithoutNotifyBaseWindowPlane(RectTransform parent, RectTransform child, bool isAdjustSizeToContainsChilds)
         {
-            child.SetParent(parent);
+            child.SetParent(parent, false);
             if (isAdjustSizeToContainsChilds)
                 AdjustSizeToContainsChilds(parent);
         }

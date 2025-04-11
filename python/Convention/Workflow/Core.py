@@ -134,7 +134,7 @@ class NodeSlotInfo(BaseModel, any_class):
     def SymbolName(self) -> str:
         return f"{self.GetType().__name__}<name={self.slotName}, type={self.typeIndicator}, " \
                f"{'Input' if self.IsInmappingSlot else 'Output'}>"
-     
+
 class NodeInfo(BaseModel, any_class):
     """
     节点信息
@@ -261,32 +261,32 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
         if self.info.IsInmappingSlot==other.info.IsInmappingSlot:
             raise ValueError(f"相同映射的插槽<{self.info.slotName}>和<{other.info.slotName}>不能连接")
         if self.info.typeIndicator!=other.info.typeIndicator:
-            if ((self.info.typeIndicator == "string" and other.info.typeIndicator == "str") or 
+            if ((self.info.typeIndicator == "string" and other.info.typeIndicator == "str") or
                 (self.info.typeIndicator == "str" and other.info.typeIndicator == "string")):
                 return
             raise ValueError(f"类型不匹配的插槽<{self.info.slotName}>和<{other.info.slotName}>不能连接")
         if self.info.parentNode==other.info.parentNode:
             raise ValueError(f"父节点相同的插槽<node={self.info.parentNode.SymbolName()}, id={_Internal_GetNodeID(self.info.parentNode)}>"\
                 f"<name={self.info.slotName}, type={self.info.typeIndicator}>和"\
-                f"<name={other.info.slotName}, type={other.info.typeIndicator}>不能连接")   
+                f"<name={other.info.slotName}, type={other.info.typeIndicator}>不能连接")
 
     @classmethod
     def Link(cls, left:Self, right:Self) -> None:
         left.LinkVerify(right)
         if left.info.IsInmappingSlot or left.info.targetSlot == right:
             cls.Unlink(left)
-            left.info.targetSlot = right
-            left.info.targetSlotName = right.info.slotName
-            left.info.targetNode = right.info.parentNode
-            left.info.targetNodeID = _Internal_GetNodeID(right.info.targetNode)
-            left.SetDirty()
+        left.info.targetSlot = right
+        left.info.targetSlotName = right.info.slotName
+        left.info.targetNode = right.info.parentNode
+        left.info.targetNodeID = _Internal_GetNodeID(right.info.targetNode)
+        left.SetDirty()
         if right.info.IsInmappingSlot or right.info.targetSlot == left:
             cls.Unlink(right)
-            right.info.targetSlot = left
-            right.info.targetSlotName = left.info.slotName
-            right.info.targetNode = left.info.parentNode
-            right.info.targetNodeID = _Internal_GetNodeID(left.info.targetNode)
-            right.SetDirty()
+        right.info.targetSlot = left
+        right.info.targetSlotName = left.info.slotName
+        right.info.targetNode = left.info.parentNode
+        right.info.targetNodeID = _Internal_GetNodeID(left.info.targetNode)
+        right.SetDirty()
     @classmethod
     def Unlink(cls, slot:Self) -> None:
         targetSlot:Optional[NodeSlot] = slot.info.targetSlot

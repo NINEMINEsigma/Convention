@@ -384,11 +384,13 @@ namespace Convention.WindowsUI.Variant
         [Resources, SerializeField, HopeNotNull] private SO.Windows m_WindowsConfig;
         [Resources, SerializeField, HopeNotNull] private WindowManager m_WindowManager;
         [Setting, SerializeField, OnlyNotNullMode(nameof(m_WindowManager))] private int m_TargetWindowContent = 0;
+        [Resources, SerializeField, HopeNotNull, WhenAttribute.Is(nameof(m_WindowManager), null)] 
+        private RectTransform m_ContentPlaneWhenNoWindow;
         [Content, SerializeField, OnlyPlayMode] private List<ItemEntry> m_Entrys = new();
         [Resources, SerializeField, HopeNotNull] public WindowUIModule ItemPrefab;
         [Setting, Tooltip("RUNTIME MODE")] public PerformanceIndicator.PerformanceMode m_PerformanceMode = PerformanceIndicator.PerformanceMode.Quality;
 
-        public RectTransform TargetWindowContent => m_WindowManager[m_TargetWindowContent];
+        public RectTransform TargetWindowContent => m_WindowManager == null ? m_ContentPlaneWhenNoWindow : m_WindowManager[m_TargetWindowContent];
 
         private void Start()
         {
@@ -396,6 +398,8 @@ namespace Convention.WindowsUI.Variant
                 m_WindowsConfig = SO.Windows.GlobalInstance;
             if (m_WindowManager == null)
                 m_WindowManager = GetComponent<WindowManager>();
+            if (m_ContentPlaneWhenNoWindow == null)
+                m_ContentPlaneWhenNoWindow = transform as RectTransform;
         }
 
         private void Reset()
@@ -407,6 +411,8 @@ namespace Convention.WindowsUI.Variant
                 entry.Release();
             }
             m_Entrys = new();
+            if (m_ContentPlaneWhenNoWindow == null)
+                m_ContentPlaneWhenNoWindow = transform as RectTransform;
         }
 
         private void FixedUpdate()

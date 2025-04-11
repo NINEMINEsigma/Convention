@@ -17,6 +17,6 @@ namespace Convention.Workflow
 
     public class ResourceNode : StartNode
     {
-
+        //TODO
     }
 }

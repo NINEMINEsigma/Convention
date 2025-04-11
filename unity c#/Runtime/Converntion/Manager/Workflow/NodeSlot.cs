@@ -59,40 +59,55 @@ namespace Convention.Workflow
         }
     }
 
-    public class NodeSlot : WindowUIModule, ITitle
+    public interface INodeSlotLinkable
     {
-        public static void Link([In]NodeSlot left,[In] NodeSlot right)
+        public bool LinkTo([In, Opt] NodeSlot other);
+        public bool Linkable([In]NodeSlot other);
+    }
+
+    public class NodeSlot : WindowUIModule, ITitle, INodeSlotLinkable
+    {
+        //这个缩放因子是最顶层Canvas的变形
+        public const float ScaleFactor = 100;
+
+        public bool Linkable([In] NodeSlot other)
         {
-            if(left.info.IsInmappingSlot==right.info.IsInmappingSlot)
+            return true;
+            if (this.info.IsInmappingSlot == other.info.IsInmappingSlot)
             {
-                throw new InvalidOperationException($"{left} and {right} has same mapping type");
+                throw new InvalidOperationException($"{this} and {other} has same mapping type");
             }
-            if (left.info.typeIndicator != right.info.typeIndicator)
+            if (this.info.typeIndicator != other.info.typeIndicator)
             {
-                throw new InvalidOperationException($"{left} and {right} has different type indicator");
+                throw new InvalidOperationException($"{this} and {other} has different type indicator");
             }
-            if (left.info.parentNode == right.info.parentNode)
+            if (this.info.parentNode == other.info.parentNode)
             {
-                throw new InvalidOperationException($"{left} and {right} has same parent node");
+                throw new InvalidOperationException($"{this} and {other} has same parent node");
             }
-            if (left.info.IsInmappingSlot || left.info.targetSlot == right)
+            return true;
+        }
+        public static void Link([In] NodeSlot left, [In] NodeSlot right)
+        {
+            left.Linkable(right);
+            //if (left.info.IsInmappingSlot || left.info.targetSlot == right)
             {
                 Unlink(left);
-                left.info.targetSlot = right;
-                left.info.targetSlotName = right.info.slotName;
-                left.info.targetNode = right.info.parentNode;
-                left.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(right.info.targetNode);
-                left.SetDirty();
             }
-            if (left.info.IsInmappingSlot && left.info.targetSlot == right)
+            //if (right.info.IsInmappingSlot || right.info.targetSlot == left)
             {
                 Unlink(right);
-                right.info.targetSlot = left;
-                right.info.targetSlotName = left.info.slotName;
-                right.info.targetNode = right.info.parentNode;
-                right.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(left.info.targetNode);
-                right.SetDirty();
             }
+            left.info.targetSlot = right;
+            left.info.targetSlotName = right.info.slotName;
+            left.info.targetNode = right.info.parentNode;
+            left.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(right.info.targetNode);
+            left.SetDirty();
+            right.info.targetSlot = left;
+            right.info.targetSlotName = left.info.slotName;
+            right.info.targetNode = left.info.parentNode;
+            right.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(left.info.targetNode);
+            right.SetDirty();
         }
         public static void Unlink([In] NodeSlot slot)
         {
@@ -109,15 +124,22 @@ namespace Convention.Workflow
             }
             slot.SetDirty();
         }
-        public void LinkTo([In,Opt]NodeSlot slot)
+        public bool LinkTo([In, Opt] NodeSlot slot)
         {
             if (slot != null)
+            {
                 Link(this, slot);
+                return true;
+            }
             else
+            {
                 Unlink(this);
+                return true;
+            }
         }
 
         public static NodeSlot CurrentHighLightSlot { get; private set; }
+        public static INodeSlotLinkable CurrentLinkTarget;
         public static void EnableHighLight(NodeSlot slot)
         {
             if (CurrentHighLightSlot != null)
@@ -126,6 +148,7 @@ namespace Convention.Workflow
             }
             CurrentHighLightSlot = slot;
             CurrentHighLightSlot.HighLight.SetActive(true);
+            CurrentLinkTarget = slot;
         }
         public static void DisableAllHighLight()
         {
@@ -141,12 +164,13 @@ namespace Convention.Workflow
             {
                 CurrentHighLightSlot.HighLight.SetActive(false);
                 CurrentHighLightSlot = null;
+                CurrentLinkTarget = null;
             }
         }
 
         public static readonly Vector3[] zeroVecs = new Vector3[0];
 
-        [Content, OnlyPlayMode, Ignore] public NodeSlotInfo info { get;private set; }
+        [Content, OnlyPlayMode, Ignore] public NodeSlotInfo info { get; private set; }
         public void SetupFromInfo(NodeSlotInfo value)
         {
             if (info != value)
@@ -196,7 +220,7 @@ namespace Convention.Workflow
             {
                 UpdateLineImmediate();
             }
-            else if(IsDirty)
+            else if (IsDirty)
             {
                 LineRenderer.SetPositions(Points);
             }
@@ -209,13 +233,18 @@ namespace Convention.Workflow
 
         public void UpdateLineImmediate()
         {
-            LineRenderer.positionCount = Points.Length;
-#if UNITY_EDITOR
-            if (info != null)
-#endif
+            if (info.targetSlot != null && info.IsInmappingSlot)
             {
-                title = info.slotName;
+                Points = new Vector3[]
+                {
+                    this.Anchor.localPosition,
+                    this.Anchor.localPosition+Vector3.left*30,
+                    (info.targetSlot.Anchor.position-this.Anchor.position)*ScaleFactor+this.Anchor.localPosition+Vector3.right*30,
+                    (info.targetSlot.Anchor.position-this.Anchor.position)*ScaleFactor+this.Anchor.localPosition
+                };
             }
+            LineRenderer.positionCount = Points.Length;
+            title = info.slotName;
             LineRenderer.SetPositions(Points);
             IsDirty = false;
         }
@@ -225,7 +254,7 @@ namespace Convention.Workflow
             Unlink(this);
             IsKeepDrag = true;
 #if UNITY_EDITOR
-            if(info==null)
+            if (info == null)
             {
                 Points = zeroVecs;
                 this.SetDirty();
@@ -243,8 +272,8 @@ namespace Convention.Workflow
         public void DragLine(PointerEventData pointer)
         {
             LineRenderer.positionCount = 2;
-            // 低能Item Canvas具有0.01的缩放, 这里补回来
-            Points = new Vector3[] { Anchor.localPosition, (pointer.pointerCurrentRaycast.worldPosition - Anchor.position) * 100 + Anchor.localPosition };
+            // Item Canvas具有0.01的缩放, 这里补回来
+            Points = new Vector3[] { Anchor.localPosition, (pointer.pointerCurrentRaycast.worldPosition - Anchor.position) * ScaleFactor + Anchor.localPosition };
             SetDirty();
         }
         public void EndDragLine(PointerEventData _)

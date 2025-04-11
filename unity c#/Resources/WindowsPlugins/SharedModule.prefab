@@ -51,7 +51,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1fbfdae79966fc94ca2fdab888b96f01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  RenameField: {fileID: 7786887164459836986}
+  SingleInputField: {fileID: 7786887164459836986}
   CustomMenuPrefab: {fileID: 7382149556372448078}
   CustomMenuPlane: {fileID: 0}
   CustomMenuRelease: {fileID: 7129256805869604777}
@@ -236,7 +236,7 @@ PrefabInstance:
     - target: {fileID: 3241788777981816896, guid: 37924db2d27cd6e49bf8002531a08095,
         type: 3}
       propertyPath: m_Name
-      value: Rename
+      value: SingleInputField
       objectReference: {fileID: 0}
     - target: {fileID: 3241788777981816896, guid: 37924db2d27cd6e49bf8002531a08095,
         type: 3}
