@@ -81,12 +81,15 @@ namespace Convention.Workflow
             return CallableFunctionModels.FirstOrDefault(x => x.FunctionName == functionName);
         }
 
-        public string Transformer([In] string str)
+        public static string Transformer([In] string str)
         {
-            if (TextLabels == null)
-                return str;
-            if (TextLabels.Datas.ContainsKey(str))
-                return TextLabels.Datas[str].stringValue;
+            if (instance != null)
+            {
+                if (instance.TextLabels == null)
+                    return str;
+                if (instance.TextLabels.Datas.ContainsKey(str))
+                    return instance.TextLabels.Datas[str].stringValue;
+            }
             return str;
         }
 
@@ -119,28 +122,11 @@ namespace Convention.Workflow
                 if (GraphNodePrefabs == null)
                     GraphNodePrefabs = Resources.Load<ScriptableObject>("Workflow/Nodes");
                 SetupWorkflowGraphNodeType(
-                    new TextNodeInfo(Transformer("Text"))
-                    {
-                        title = Transformer("Text")
-                    },
-                    new ValueNodeInfo(0)
-                    {
-                        title = Transformer("Value")
-                    },
-                    new ResourceNodeInfo()
-                    {
-                        resource = Transformer("Path or URL"),
-                        title = Transformer("Path or URL")
-                    },
-                    new StepNodeInfo() 
-                    {
-                        funcname = Transformer("FunctionName"), 
-                        title = Transformer("FucntionStep") 
-                    },
-                    new EndNodeInfo()
-                    { 
-                        title = Transformer("End")
-                    });
+                    new TextNodeInfo(),
+                    new ValueNodeInfo(),
+                    new ResourceNodeInfo(),
+                    new StepNodeInfo(),
+                    new EndNodeInfo());
             }, typeof(GraphInputWindow), typeof(GraphInspector));
 #if UNITY_EDITOR
             this.RegisterFunctionModel(new()

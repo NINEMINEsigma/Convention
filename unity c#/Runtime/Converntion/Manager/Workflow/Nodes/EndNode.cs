@@ -40,20 +40,22 @@ namespace Convention.Workflow
 
         private Dictionary<string, PropertiesWindow.ItemEntry> m_dynamicSlots = new();
 
-        public void PointerRightClickAndOpenMenu(PointerEventData pointer)
+        public override void PointerRightClickAndOpenMenu(PointerEventData pointer)
         {
             if (pointer.button == PointerEventData.InputButton.Right)
             {
                 List<SharedModule.CallbackData> callbacks = new()
                 {
-                    new (WorkflowManager.instance.Transformer("Create New Slot"), x =>
+                    new (WorkflowManager.Transformer("Create New Slot"), x =>
                     {
-                        string slotName="";
                         SharedModule.instance.SingleEditString(
-                            WorkflowManager.instance.Transformer("SlotName"),
-                            WorkflowManager.instance.Transformer("SlotName"),
-                            y => slotName = y);
-                        AddSlot(slotName,"string");
+                            WorkflowManager.Transformer("SlotName"),
+                            WorkflowManager.Transformer("SlotName"),
+                            y =>  AddSlot(y,"string"));
+                    }),
+                    new (WorkflowManager.Transformer("Delete"), x =>
+                    {
+                        GameObject.Destroy(this.gameObject);
                     })
                 };
                 SharedModule.instance.OpenCustomMenu(WorkflowManager.instance.UIFocusObject, callbacks.ToArray());

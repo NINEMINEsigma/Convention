@@ -50,7 +50,7 @@ namespace Convention.Workflow
 
         public NodeInfo()
         {
-            typename = this.GetType().Name[..^4];
+            title = WorkflowManager.Transformer(typename = this.GetType().Name[..^4]);
         }
 
         protected virtual NodeInfo CreateTemplateNodeInfoBySelfType()
@@ -114,11 +114,11 @@ namespace Convention.Workflow
 
 #endif
 
-        [HideInInspector] public BehaviourContextManager Context;
+        private BehaviourContextManager Context;
         [Resources, OnlyNotNullMode, SerializeField] private Text Title;
         [Setting]
         public int SlotHeight = 46, TitleHeight = 50, ExtensionHeight = 0;
-        [Resources, OnlyNotNullMode, SerializeField]
+        [Resources, SerializeField]
         private PropertiesWindow InSlotPropertiesWindow, OutSlotPropertiesWindow;
 
         private List<PropertiesWindow.ItemEntry> InSlots, OutSlots;
@@ -126,7 +126,7 @@ namespace Convention.Workflow
         internal Dictionary<string, NodeSlot> m_Inmapping = new();
         internal Dictionary<string, NodeSlot> m_Outmapping = new();
 
-        [Resources, SerializeField, OnlyNotNullMode] private BaseWindowPlane InoutContainerPlane;
+        [Resources, SerializeField, OnlyNotNullMode] protected BaseWindowPlane InoutContainerPlane;
 
         public string title
         {
@@ -134,7 +134,8 @@ namespace Convention.Workflow
             set => ((ITitle)this.Title).title = value;
         }
 
-        [HideInInspector] public NodeInfo info { get; private set; }
+        [Setting, SerializeField] private NodeInfo m_info;
+        public NodeInfo info { get => m_info; private set => m_info = value; }
 
         protected virtual void Start()
         {
@@ -142,6 +143,22 @@ namespace Convention.Workflow
                 Context = this.GetOrAddComponent<BehaviourContextManager>();
             Context.OnPointerDownEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnPointerDownEvent, OnPointerDown);
             Context.OnDragEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnDragEvent, OnDrag);
+            Context.OnPointerClickEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnPointerClickEvent, PointerRightClickAndOpenMenu);
+        }
+
+        public virtual void PointerRightClickAndOpenMenu(PointerEventData pointer)
+        {
+            if (pointer.button == PointerEventData.InputButton.Right)
+            {
+                List<SharedModule.CallbackData> callbacks = new()
+                {
+                    new (WorkflowManager.Transformer("Delete"), x =>
+                    {
+                        GameObject.Destroy(this.gameObject);
+                    })
+                };
+                SharedModule.instance.OpenCustomMenu(WorkflowManager.instance.UIFocusObject, callbacks.ToArray());
+            }
         }
 
         public void OnPointerDown(PointerEventData _)
@@ -368,15 +385,6 @@ namespace Convention.Workflow
         protected override NodeInfo CreateTemplateNodeInfoBySelfType()
         {
             return new DynamicNodeInfo();
-        }
-    }
-
-    [Serializable, ArgPackage]
-    public class StartNodeInfo : NodeInfo
-    {
-        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
-        {
-            return new StartNodeInfo();
         }
     }
 }

@@ -166,9 +166,23 @@ namespace Convention
 
         public object LoadAsJson()
         {
+            return LoadAsJsonWithType<object>();
+        }
+
+        public T LoadAsJsonWithType<T>()
+        {
             string jsonText = LoadAsText();
-            this.data = JsonUtility.FromJson<object>(jsonText);
-            return this.data;
+            try
+            {
+                T result = JsonUtility.FromJson<T>(jsonText);
+                this.data = result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(jsonText);
+                throw;
+            }
         }
 
         public string LoadAsText()

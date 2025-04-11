@@ -62,6 +62,7 @@ namespace Convention
             if (this.map_dependences.Count == 0)
             {
                 RegisterWrapper<Tag>.callback();
+                RegisterWrapper<Tag>.callback = null;
                 foreach (var item in RegisterBaseWrapperExtension.Registers)
                 {
                     item.Value.OnceRegister(typeof(Tag));

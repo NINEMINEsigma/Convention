@@ -49,3 +49,8 @@ MonoBehaviour:
         CurrentValue: "\u503C"
         CurrentObject: {fileID: 0}
         RealType: String
+    - Key: SlotName
+      Value:
+        CurrentValue: "\u69FD\u7684\u540D\u79F0"
+        CurrentObject: {fileID: 0}
+        RealType: String

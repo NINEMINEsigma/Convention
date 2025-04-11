@@ -665,6 +665,15 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     def SymbolName(self) -> str:
         return self.GetType().__name__
 
+class FunctionModel(BaseModel, any_class):
+    """
+    函数模型
+    """
+    name:           str         = Field(description="函数名称")
+    description:    str         = Field(description="函数描述")
+    parameters:     Dict[str, str] = Field(description="函数参数")
+    returns:        Dict[str, str] = Field(description="函数返回值")
+
 class Workflow(BaseModel, any_class):
     """
     工作流信息
@@ -672,6 +681,7 @@ class Workflow(BaseModel, any_class):
     Datas:        List[NodeInfo] = Field(description="节点信息", default=[])
     Nodes:        List[Node]     = Field(description="节点, 此变量需要手动同步, nodeID的懒加载目标",
                                          default=[], exclude=True)
+    Functions:    List[FunctionModel] = Field(description="函数模型", default=[])
 
     @classmethod
     def CreateTemplate(cls, one_end:Optional['EndNodeInfo']) -> Self:

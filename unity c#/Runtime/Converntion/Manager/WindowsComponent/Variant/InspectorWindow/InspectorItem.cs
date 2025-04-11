@@ -40,13 +40,20 @@ namespace Convention.WindowsUI.Variant
         public readonly bool isUpdateAble = true;
         public readonly bool isChangeAble = true;
         public readonly string name = null;
+        public readonly string nameGenerater = null;
+
+        public InspectorDrawAttribute()
+        {
+            this.drawType = InspectorDrawType.Auto;
+        }
         public InspectorDrawAttribute(InspectorDrawType drawType = InspectorDrawType.Auto, bool isUpdateAble = true,
-                                      bool isChangeAble = true, string name = null)
+                                      bool isChangeAble = true, string name = null, string nameGenerater = null)
         {
             this.drawType = drawType;
             this.isUpdateAble = isUpdateAble;
             this.isChangeAble = isChangeAble;
-            this.name = name;   
+            this.name = name;
+            this.nameGenerater = nameGenerater;
         }
     }
 
@@ -289,7 +296,15 @@ namespace Convention.WindowsUI.Variant
                 {
                     AbleChangeType &= drawAttr.isChangeAble;
                     UpdateType = drawAttr.isUpdateAble;
-                    title = drawAttr.name;
+                    if (drawAttr.nameGenerater != null)
+                    {
+                        title = (string)ConventionUtility.SeekValue(target, drawAttr.nameGenerater, typeof(string),
+                            BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.GetProperty | BindingFlags.GetField);
+                    }
+                    else
+                    {
+                        title = drawAttr.name;
+                    }
                 }
                 if (drawAttr != null && drawAttr.drawType != InspectorDrawType.Auto)
                 {

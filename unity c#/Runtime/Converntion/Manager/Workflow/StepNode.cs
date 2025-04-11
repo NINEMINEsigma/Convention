@@ -41,10 +41,14 @@ namespace Convention.Workflow
                     this.MyStepInfo.outmapping[name] = info.TemplateClone();
                 }
                 this.title = x;
+                this.FunctionSelector.gameObject.SetActive(false);
+                this.ExtensionHeight = 10;
                 this.ClearLink();
                 this.ClearSlots();
                 this.BuildSlots();
                 this.BuildLink();
+                this.InoutContainerPlane.rectTransform.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Top, 50,
+                    Mathf.Max(this.MyStepInfo.inmapping.Count, this.MyStepInfo.outmapping.Count) * SlotHeight + ExtensionHeight);
             });
         }
 
@@ -63,7 +67,7 @@ namespace Convention.Workflow
             }
             else
             {
-                FunctionSelector.CreateOption(WorkflowManager.instance.Transformer("No Function Registered"));
+                FunctionSelector.CreateOption(WorkflowManager.Transformer("No Function Registered"));
             }
         }
     }

@@ -5,15 +5,19 @@ using UnityEngine;
 
 namespace Convention.Workflow
 {
-    public class TextNodeInfo : StartNodeInfo
-    {
-        [InspectorDraw(InspectorDrawType.Text, name: "文本内容")]
-        public string text;
+    public class ValueNodeInfo : StartNodeInfo
+    { 
+        [InspectorDraw(InspectorDrawType.Text, name: "数值")]
+        public float value = 0;
+        [InspectorDraw(InspectorDrawType.Auto, name: "上限")]
+        public float min = 100;
+        [InspectorDraw(InspectorDrawType.Auto, name: "下限")]
+        public float max = 0;
 
-        public TextNodeInfo() : this("") { }
-        public TextNodeInfo(string text, string outmappingName = "text", int targetNodeID = -1, string targetSlotName = "text")
+        public ValueNodeInfo() : this(0) { }
+        public ValueNodeInfo(float value, string outmappingName = "value", int targetNodeID = -1, string targetSlotName = "value")
         {
-            this.text = text;
+            this.value = value;
             this.outmapping = new()
             {
                 {
@@ -31,23 +35,24 @@ namespace Convention.Workflow
 
         protected override NodeInfo CreateTemplateNodeInfoBySelfType()
         {
-            return new TextNodeInfo()
+            return new ValueNodeInfo()
             {
-                text = text
+                value = value,
+                min = min,
+                max = max,
             };
         }
     }
 
-    public class TextNode : StartNode, IText
+    public class ValueNode : StartNode, IText
     {
         [Resources, OnlyNotNullMode] public ModernUIInputField InputField;
+        [Resources, OnlyNotNullMode] public ModernUIFillBar RangeBar;
         [Content, OnlyPlayMode] public bool isEditing = false;
 
-        public TextNodeInfo MyTextNodeInfo => this.info as TextNodeInfo;
+        public ValueNodeInfo MyValueNodeInfo => this.info as ValueNodeInfo;
 
         public string text { get => ((IText)this.InputField).text; set => ((IText)this.InputField).text = value; }
-
-        [Resources, OnlyNotNullMode] public NodeSlot OutputSlot;
 
         protected override void Start()
         {
@@ -55,26 +60,29 @@ namespace Convention.Workflow
             InputField.InputFieldSource.Source.onSelect.AddListener(_ => isEditing = true);
             InputField.InputFieldSource.Source.onEndEdit.AddListener(str =>
             {
-                MyTextNodeInfo.text = str;
+                if (float.TryParse(str, out float value))
+                    MyValueNodeInfo.value = value;
+                else
+                    MyValueNodeInfo.value = 0;
                 isEditing = false;
             });
         }
 
         protected override void WhenSetup(NodeInfo info)
         {
-            var pair = info.outmapping.First();
-            m_Outmapping.Clear();
-            var slotInfo = pair.Value.TemplateClone();
-            slotInfo.parentNode = this;
-            OutputSlot.SetupFromInfo(slotInfo);
-            m_Outmapping[pair.Key] = OutputSlot;
+            base.WhenSetup(info);
+            RangeBar.minValue = MyValueNodeInfo.min;
+            RangeBar.maxValue = MyValueNodeInfo.max;
+            RangeBar.SetValue(MyValueNodeInfo.value);
         }
 
         private void LateUpdate()
         {
             if (info != null && this.isEditing == false && RectTransformExtension.IsVisible(this.rectTransform))
             {
-                this.text = this.MyTextNodeInfo.text;
+                RangeBar.minValue = MyValueNodeInfo.min;
+                RangeBar.maxValue = MyValueNodeInfo.max;
+                RangeBar.SetValue(MyValueNodeInfo.value);
             }
         }
     }
