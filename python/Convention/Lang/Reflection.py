@@ -841,13 +841,14 @@ class RefType(ValueInfo):
         elif is_generic(metaType):
             raise NotImplementedError("Generic type is not supported")
 
-        self._BaseTypes = []
-        for baseType in metaType.__bases__:
-            if baseType != object:
-                self._BaseTypes.append(TypeManager.GetInstance().CreateOrGetRefType(baseType))
-
         if True:
             super().__init__(metaType)
+            self._BaseTypes = []
+            for baseType in metaType.__bases__:
+                self._BaseTypes.append(TypeManager.GetInstance().CreateOrGetRefType(baseType))
+
+            baseFields = self.GetAllBaseFields()
+            baseMethods = self.GetAllBaseMethods()
 
             self._FieldInfos = extensionFields
             self._MethodInfos = []
@@ -857,7 +858,8 @@ class RefType(ValueInfo):
             annotations:Dict[str, metaType] = get_type_hints(metaType)
 
             for name, member in inspect.getmembers(metaType):
-                if is_just_defined_in_current_class(name, metaType) and (inspect.ismethod(member) or inspect.isfunction(member)):
+                if (any(name == baseMember.MemberName for baseMember in baseMethods) == False and
+                    (inspect.ismethod(member) or inspect.isfunction(member))):
                     # 获取方法签名
                     sig = inspect.signature(member)
                     is_static = isinstance(member, staticmethod)
@@ -907,8 +909,12 @@ class RefType(ValueInfo):
                     self._MemberNames.append(name)
 
             if issubclass(metaType, BaseModel):
-                for field_name, model_field in metaType.__pydantic_fields__.items():
-                    if is_just_defined_in_current_class(field_name, metaType):
+                try:
+                    fields = metaType.model_fields
+                except AttributeError:
+                    fields = metaType.__pydantic_fields__
+                for field_name, model_field in fields.items():
+                    if any(field_name == baseField.MemberName for baseField in baseFields) == False:
                         fieldType = model_field.annotation if model_field.annotation is not None else Any
                         is_public = not model_field.exclude
                         field_info = FieldInfo(
@@ -924,7 +930,8 @@ class RefType(ValueInfo):
                         self._MemberNames.append(field_name)
             else:
                 for name, member in inspect.getmembers(metaType):
-                    if is_just_defined_in_current_class(name, metaType) and not inspect.ismethod(member) and not inspect.isfunction(member):
+                    if (any(name == baseMember.MemberName for baseMember in baseMethods) == False and
+                        not inspect.ismethod(member) and not inspect.isfunction(member)):
                         is_static = name in class_var
                         is_public = (name.startswith('__') and name.endswith('__')) or not name.startswith('_')
                         fieldType = annotations.get(name, Any)
@@ -941,7 +948,8 @@ class RefType(ValueInfo):
                         self._MemberNames.append(name)
 
             for name, annotation in annotations.items():
-                if is_just_defined_in_current_class(name, metaType) and name not in self._MemberNames:
+                if (any(name == baseMember.MemberName for baseMember in baseFields) == False and
+                    name not in self._MemberNames):
                     field_info = FieldInfo(
                         metaType = decay_type(annotation),
                         name = name,
@@ -972,30 +980,73 @@ class RefType(ValueInfo):
             stats &= (flag & RefTypeFlag.Special != 0)
         return stats
 
+    def GetBaseFields(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[FieldInfo]:
+        result = []
+        for baseType in self._BaseTypes:
+            result.extend(baseType.GetFields(flag))
+        return result
+    def GetAllBaseFields(self) -> List[FieldInfo]:
+        result = []
+        for baseType in self._BaseTypes:
+            result.extend(baseType.GetAllFields())
+        return result
+    def GetBaseMethods(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MethodInfo]:
+        result = []
+        for baseType in self._BaseTypes:
+            result.extend(baseType.GetMethods(flag))
+        return result
+    def GetAllBaseMethods(self) -> List[MethodInfo]:
+        result = []
+        for baseType in self._BaseTypes:
+            result.extend(baseType.GetAllMethods())
+        return result
+    def GetBaseMembers(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MemberInfo]:
+        result = []
+        for baseType in self._BaseTypes:
+            result.extend(baseType.GetMembers(flag))
+        return result
+    def GetAllBaseMembers(self) -> List[MemberInfo]:
+        result = []
+        for baseType in self._BaseTypes:
+            result.extend(baseType.GetAllMembers())
+        return result
+
     def GetFields(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[FieldInfo]:
         if flag == RefTypeFlag.Default:
-            return [field for field in self._FieldInfos
+            result = [field for field in self._FieldInfos
                     if self._where_member(field, RefTypeFlag.Field|RefTypeFlag.Public|RefTypeFlag.Instance)]
         else:
-            return [field for field in self._FieldInfos if self._where_member(field, flag)]
+            result = [field for field in self._FieldInfos if self._where_member(field, flag)]
+        result.extend(self.GetBaseFields(flag))
+        return result
     def GetAllFields(self) -> List[FieldInfo]:
-        return self._FieldInfos
+        result = self._FieldInfos
+        result.extend(self.GetAllBaseFields())
+        return result
     def GetMethods(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MethodInfo]:
         if flag == RefTypeFlag.Default:
-            return [method for method in self._MethodInfos
+            result = [method for method in self._MethodInfos
                     if self._where_member(method, RefTypeFlag.Method|RefTypeFlag.Public|RefTypeFlag.Instance|RefTypeFlag.Static)]
         else:
-            return [method for method in self._MethodInfos if self._where_member(method, flag)]
+            result = [method for method in self._MethodInfos if self._where_member(method, flag)]
+        result.extend(self.GetBaseMethods(flag))
+        return result
     def GetAllMethods(self) -> List[MethodInfo]:
-        return self._MethodInfos
+        result = self._MethodInfos
+        result.extend(self.GetAllBaseMethods())
+        return result
     def GetMembers(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MemberInfo]:
         if flag == RefTypeFlag.Default:
-            return [member for member in self._FieldInfos + self._MethodInfos
+            result = [member for member in self._FieldInfos + self._MethodInfos
                     if self._where_member(member, RefTypeFlag.Public|RefTypeFlag.Instance|RefTypeFlag.Field|RefTypeFlag.Method)]
         else:
-            return [member for member in self._FieldInfos + self._MethodInfos if self._where_member(member, flag)]
+            result = [member for member in self._FieldInfos + self._MethodInfos if self._where_member(member, flag)]
+        result.extend(self.GetBaseMembers(flag))
+        return result
     def GetAllMembers(self) -> List[MemberInfo]:
-        return self._FieldInfos + self._MethodInfos
+        result = self._FieldInfos + self._MethodInfos
+        result.extend(self.GetAllBaseMembers())
+        return result
 
     def GetField(self, name:str, flags:RefTypeFlag=RefTypeFlag.Default) -> Optional[FieldInfo]:
         return next((field for field in self.GetFields(flags) if field.MemberName == name), None)

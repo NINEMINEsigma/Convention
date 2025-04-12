@@ -940,6 +940,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         finally:
             self.__state.end_time = time.time()
             self.__state.is_completed = True
+            self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
         if verbose:
             print_colorful(ConsoleFrontColor.BLUE, f"工作流完成, 用时: "\
                 f"{time.time() - self.__state.start_time}秒, 异常状态: {self.__state.error}")

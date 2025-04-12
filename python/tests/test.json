@@ -16,7 +16,7 @@
                             "value": {
                                 "generate_trackback": null,
                                 "slotName": "answer",
-                                "targetNodeID": 0,
+                                "targetNodeID": 1,
                                 "targetSlotName": "result",
                                 "typeIndicator": "str",
                                 "IsInmappingSlot": true
@@ -43,7 +43,7 @@
                             "value": {
                                 "generate_trackback": null,
                                 "slotName": "user_msg",
-                                "targetNodeID": 1,
+                                "targetNodeID": 2,
                                 "targetSlotName": "query",
                                 "typeIndicator": "str",
                                 "IsInmappingSlot": true
@@ -51,7 +51,7 @@
                         }
                     },
                     "outmapping": {
-                        "answer": {
+                        "result": {
                             "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
                             "value": {
                                 "generate_trackback": null,
