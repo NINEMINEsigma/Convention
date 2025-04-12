@@ -742,15 +742,15 @@ class NodeResult(BaseModel):
     """
     工作流结果
     """
-    nodeID:     int          = Field(description="节点ID")
-    nodeTitle:  str          = Field(description="节点标题")
-    result:     context_type = Field(description="节点结果", default={})
+    nodeID:     int                             = Field(description="节点ID")
+    nodeTitle:  str                             = Field(description="节点标题")
+    result:     context_type|context_value_type = Field(description="节点结果", default={})
 
 class ContextResult(BaseModel):
     """
     上下文结果
     """
-    hashID:     str              = Field(description="结果哈希")
+    hashID:     str              = Field(description="结果哈希", default=0)
     results:    List[NodeResult] = Field(description="节点结果", default=[])
     progress:   float            = Field(description="进度", default=0.0)
     task_count: int              = Field(description="任务数量", default=0)
@@ -899,17 +899,40 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, "工作流为空")
             return
+        
         global _Internal_Task_Count
         _Internal_Task_Count.store(len(_Internal_All_EndNodes))
+        
         if GetInternalWorkflowDebug():
             print_colorful(ConsoleFrontColor.YELLOW, f"工作流开始, 任务数量: {_Internal_Task_Count}, 开始时间: {time.time()}")
+        
+        # 广播开始事件
         self.Broadcast(WorkflowStartEvent(verbose=verbose), "OnStartEvent")
-        while _Internal_Task_Count.load() > 0:
-            await asyncio.sleep(0.1)
-        self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
-        if GetInternalWorkflowDebug():
-            print_colorful(ConsoleFrontColor.YELLOW, f"工作流结束, 结束事件: {time.time()}")
-        self.__state.is_completed = True
+        
+        try:
+            # 等待所有终止节点完成
+            while _Internal_Task_Count.load() > 0:
+                await asyncio.sleep(0.1)
+                
+            # 所有任务正常完成
+            self.__state.is_completed = True
+            
+        except Exception as e:
+            # 发生异常，确保停止工作流
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.RED, f"工作流执行过程中发生错误: {e}")
+            
+            # 停止工作流并传递错误信息
+            self.StopWorkflow(error=e)
+            
+            # 重新抛出异常
+            raise
+        finally:
+            # 确保总是广播停止事件
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"工作流结束, 结束时间: {time.time()}")
+            
+            self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
 
     async def RunWorkflow(self, verbose:bool=False) -> None:
         """运行工作流"""
@@ -935,24 +958,49 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
 
         except Exception as e:
             self.__state.error = str(e)
+            # 确保在发生异常时停止工作流，并传递错误信息
+            self.StopWorkflow(error=e)
             self.__state.end_time = time.time()
+            # 确保广播停止事件不需要再次调用，因为StopWorkflow已经处理
+            # self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
             raise
-        finally:
-            self.__state.end_time = time.time()
-            self.__state.is_completed = True
-            self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
+        
+        # 无论是否发生异常，都确保工作流状态正确
+        self.__state.end_time = time.time()
+        self.__state.is_completed = True
+        # 确保广播停止事件
+        self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
+        
         if verbose:
             print_colorful(ConsoleFrontColor.BLUE, f"工作流完成, 用时: "\
                 f"{time.time() - self.__state.start_time}秒, 异常状态: {self.__state.error}")
 
-    def StopWorkflow(self, file: Optional[tool_file_or_str]=None) -> None:
+    def StopWorkflow(self, file: Optional[tool_file_or_str]=None, error: Optional[Exception]=None) -> None:
         '''
         打断任务, 直接停止工作流
+        
+        Args:
+            file: 保存工作流状态的文件
+            error: 停止工作流的错误原因
         '''
         # if file is not None:
         #     self.SaveState(file)
         global _Internal_Task_Count
+        
+        # 如果提供了错误信息，广播错误事件
+        if error is not None:
+            self.__state.error = str(error)
+            self.Broadcast(WorkflowErrorEvent(verbose=True, error=error, from_=self), "OnStopEvent")
+        
+        # 确保任务计数归零，以便_DoStart中的循环能够退出
         _Internal_Task_Count.store(0)
+        
+        # 记录结束时间
+        if self.__state.end_time is None:
+            self.__state.end_time = time.time()
+        
+        # 标记工作流已完成
+        self.__state.is_completed = True
 
     @override
     def __repr__(self) -> str:

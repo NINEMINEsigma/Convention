@@ -175,9 +175,22 @@ class GlobalConfig(any_class):
             self.LogPropertyNotFound(key, default)
             return default
 
+_ProjectConfig_FileFocus:tool_file_or_str = "Assets/"
+
 class ProjectConfig(GlobalConfig):
     def __init__(self, load=True):
-        super().__init__("Assets/", is_try_create_data_dir=True, load=load)
+        super().__init__(ProjectConfig.GetProjectAssets(), is_try_create_data_dir=True, load=load)
+        
+    @staticmethod
+    def SetProjectAssets(path:tool_file_or_str):
+        global _ProjectConfig_FileFocus
+        _ProjectConfig_FileFocus = path
+    
+    @staticmethod
+    def GetProjectAssets():
+        global _ProjectConfig_FileFocus
+        return _ProjectConfig_FileFocus
+    
 
 if __name__ == "__main__":
     pass

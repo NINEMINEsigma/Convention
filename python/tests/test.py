@@ -8,12 +8,10 @@ from Convention.Lang.Reflection import *
 from Convention.Lang.EasySave import *
 from Convention.Workflow.Core import *
 
-class A(BaseModel):
-    a:int = Field(description="a")
-class B(A):
-    b:int = Field(description="b")
-class D(B, any_class):
-    d:int = Field(description="d")
+def query(user_msg:str):
+    return "<query>:"+user_msg
+
+query_action = WorkflowActionWrapper("query", query)
 
 def main():
     SetInternalDebug(True)
@@ -21,13 +19,28 @@ def main():
     SetInternalEasySaveDebug(True)
     SetInternalWorkflowDebug(True)
     def error_handler(e:Exception):
-        WorkflowManager.GetInstance().StopWorkflow()
-        raise
+        # 停止工作流并传递错误信息
+        WorkflowManager.GetInstance().StopWorkflow(error=e)
+        # 不再立即抛出异常，让正常清理流程执行
+        print(f"捕获到异常: {e}")
     SetBehaviorExceptionHook(error_handler)
     AwakeBehaviorThread()
-    WorkflowManager.GetInstance().LoadWorkflow("./tests/test.json")
-    run_until_complete(WorkflowManager.GetInstance().RunWorkflow())
-    StopBehaviorThread()
+    
+    try:
+        WorkflowManager.GetInstance().LoadWorkflow("./tests/test.json")
+        WorkflowManager.GetInstance().set_timeout(60)
+        try:
+            run_until_complete(WorkflowManager.GetInstance().RunWorkflow(True))
+            run_until_complete(WorkflowManager.GetInstance().RunWorkflow(True))
+        except Exception as e:
+            print(f"工作流执行过程中发生错误: {e}")
+        print(WorkflowManager.GetInstance().GetCurrentContext())
+    finally:
+        # 确保行为线程始终被停止，防止程序无法退出
+        StopBehaviorThread()
+        print("行为线程已停止")
+    
+    print(TypeManager.GetInstance().AllRefTypes())
 
 if __name__ == "__main__":
     main()
