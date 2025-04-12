@@ -54,3 +54,13 @@ MonoBehaviour:
         CurrentValue: "\u69FD\u7684\u540D\u79F0"
         CurrentObject: {fileID: 0}
         RealType: String
+    - Key: Delete
+      Value:
+        CurrentValue: "\u5220\u9664"
+        CurrentObject: {fileID: 0}
+        RealType: String
+    - Key: Create New Slot
+      Value:
+        CurrentValue: "\u521B\u5EFA\u65B0\u7684\u69FD"
+        CurrentObject: {fileID: 0}
+        RealType: String

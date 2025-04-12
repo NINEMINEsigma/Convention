@@ -6,17 +6,19 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from Convention.Lang.Reflection import *
 from Convention.Lang.EasySave import *
 
+class A(BaseModel):
+    a:int = Field(description="a")
+class B(A):
+    b:int = Field(description="b")
+class D(B, any_class):
+    d:int = Field(description="d")
+
 def main():
-    SetInternalDebug(True)
-    from Convention.Workflow.Core import Workflow
-    print(TypeManager.GetInstance().CreateOrGetRefType(Workflow).tree())
-    #print(TypeManager.GetInstance().CreateOrGetRefType(Workflow).GetAllFields())
+    print(D.__bases__)
+    print(D.__bases__[0])
 
 if __name__ == "__main__":
-    #print(is_union(Union[int, str]))
     main()
-
-print(TypeManager.GetInstance().AllRefTypes())
 
 
 

@@ -211,6 +211,21 @@ def decay_type(
         print_colorful(ConsoleFrontColor.YELLOW, f"Result: {result}")
     return result
 
+def is_just_defined_in_current_class(member_name:str, current_class:type) -> bool:
+    '''
+    检查成员是否只在当前类中定义，而不是在父类中定义
+    '''
+    # 获取当前类的所有成员
+    current_members = dict(inspect.getmembers(current_class))
+    if member_name not in current_members:
+        return False
+    # 获取父类的所有成员
+    for baseType in current_class.__bases__:
+        parent_members = dict(inspect.getmembers(baseType))
+        if member_name in parent_members:
+            return False
+    return True
+
 class light_reflection(any_class):
     def __init__(self, obj:object, type_str:str=None, *args, **kwargs):
         if obj is not None:
@@ -770,10 +785,9 @@ class RefType(ValueInfo):
     _FieldInfos:    List[FieldInfo]  = PrivateAttr()
     _MethodInfos:   List[MethodInfo] = PrivateAttr()
     _MemberNames:   List[str]        = PrivateAttr()
-    _BaseTypes:     List[Self]    = PrivateAttr()
+    _BaseTypes:     List[Self]       = PrivateAttr()
 
     def __init__(self, metaType:type|_SpecialIndictaor):
-
         extensionFields:List[FieldInfo] = []
         if isinstance(metaType, ListIndictaor):
             extensionFields.append(FieldInfo(
@@ -827,6 +841,11 @@ class RefType(ValueInfo):
         elif is_generic(metaType):
             raise NotImplementedError("Generic type is not supported")
 
+        self._BaseTypes = []
+        for baseType in metaType.__bases__:
+            if baseType != object:
+                self._BaseTypes.append(TypeManager.GetInstance().CreateOrGetRefType(baseType))
+
         if True:
             super().__init__(metaType)
 
@@ -838,7 +857,7 @@ class RefType(ValueInfo):
             annotations:Dict[str, metaType] = get_type_hints(metaType)
 
             for name, member in inspect.getmembers(metaType):
-                if inspect.ismethod(member) or inspect.isfunction(member):
+                if is_just_defined_in_current_class(name, metaType) and (inspect.ismethod(member) or inspect.isfunction(member)):
                     # 获取方法签名
                     sig = inspect.signature(member)
                     is_static = isinstance(member, staticmethod)
@@ -889,22 +908,23 @@ class RefType(ValueInfo):
 
             if issubclass(metaType, BaseModel):
                 for field_name, model_field in metaType.__pydantic_fields__.items():
-                    fieldType = model_field.annotation if model_field.annotation is not None else Any
-                    is_public = not model_field.exclude
-                    field_info = FieldInfo(
-                        metaType=fieldType,
-                        name=field_name,
-                        ctype=metaType,
-                        is_public=is_public,
-                        is_static=False,
-                        module_name = self.ModuleName,
-                        selfType=metaType
-                    )
-                    self._FieldInfos.append(field_info)
-                    self._MemberNames.append(field_name)
+                    if is_just_defined_in_current_class(field_name, metaType):
+                        fieldType = model_field.annotation if model_field.annotation is not None else Any
+                        is_public = not model_field.exclude
+                        field_info = FieldInfo(
+                            metaType=fieldType,
+                            name=field_name,
+                            ctype=metaType,
+                            is_public=is_public,
+                            is_static=False,
+                            module_name = self.ModuleName,
+                            selfType=metaType
+                        )
+                        self._FieldInfos.append(field_info)
+                        self._MemberNames.append(field_name)
             else:
                 for name, member in inspect.getmembers(metaType):
-                    if not inspect.ismethod(member) and not inspect.isfunction(member):
+                    if is_just_defined_in_current_class(name, metaType) and not inspect.ismethod(member) and not inspect.isfunction(member):
                         is_static = name in class_var
                         is_public = (name.startswith('__') and name.endswith('__')) or not name.startswith('_')
                         fieldType = annotations.get(name, Any)
@@ -921,7 +941,7 @@ class RefType(ValueInfo):
                         self._MemberNames.append(name)
 
             for name, annotation in annotations.items():
-                if name not in self._MemberNames:
+                if is_just_defined_in_current_class(name, metaType) and name not in self._MemberNames:
                     field_info = FieldInfo(
                         metaType = decay_type(annotation),
                         name = name,

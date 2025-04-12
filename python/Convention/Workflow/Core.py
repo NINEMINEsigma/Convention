@@ -425,6 +425,10 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     """
     节点
     """
+    @property
+    def IsRunning(self) -> bool:
+        return self._is_start and self._results is None
+
     def __init__(self, info:NodeInfo) -> None:
         super().__init__(None)
         self._Internal_Inmapping:Dict[str, NodeSlot] = {}
@@ -498,13 +502,13 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
         for slot_name, info in self.info.inmapping.items():
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.BLUE, f"{self.SymbolName()}"\
-                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>BuildLink"\
+                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>"\
                     f"在<{slot_name}>处创建输入槽")
             self.Internal_Inmapping[slot_name] = NodeSlot(info.TemplateClone(), parent=self)
         for slot_name, info in self.info.outmapping.items():
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.BLUE, f"{self.SymbolName()}"\
-                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>BuildLink"\
+                    f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>"\
                     f"在<{slot_name}>处创建输出槽")
             self.Internal_Outmapping[slot_name] = NodeSlot(info.TemplateClone(), parent=self)
     @sealed
@@ -578,11 +582,11 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     def is_start(self) -> bool:
         return self._is_start
 
-    __parameters:Optional[Dict[str, context_value_type]] = None
-    __results:Optional[Dict[str, context_value_type]]|context_value_type = None
+    _parameters:Optional[Dict[str, context_value_type]] = None
+    _results:Optional[Dict[str, context_value_type]]|context_value_type = None
     @sealed
     def GetResult(self) -> context_value_type|None:
-        return self.__results
+        return self._results
     @sealed
     async def BuildParameter(self) -> None:
         '''
@@ -603,8 +607,8 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
         if GetInternalWorkflowDebug():
             print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                 f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>参数构建完成:{ConsoleFrontColor.WHITE}"\
-                f"{limit_str(self.__parameters, 100)}{ConsoleFrontColor.YELLOW}")
-        self.__parameters = parameters
+                f"{limit_str(self._parameters, 100)}{ConsoleFrontColor.YELLOW}")
+        self._parameters = parameters
     @sealed
     async def GetParameters(self) -> Dict[str, context_value_type]:
         if not self._is_start:
@@ -612,25 +616,25 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
                 print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                     f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>任务未开始")
             return {}
-        if self.__parameters is None:
+        if self._parameters is None:
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                     f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>开始构建参数")
             await self.BuildParameter()
-        return self.__parameters
+        return self._parameters
     @sealed
     def ClearParameters(self) -> None:
-        self.__parameters = None
+        self._parameters = None
     @sealed
     def ClearResult(self) -> None:
-        self.__results = None
+        self._results = None
     @sealed
     async def RunStep(self) -> None:
-        if self.__results is not None:
+        if self._results is not None:
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                     f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>结果"\
-                    f"<{limit_str(self.__results, 100)}>已存在")
+                    f"<{limit_str(self._results, 100)}>已存在")
             return
         try:
             if GetInternalWorkflowDebug():
@@ -638,17 +642,17 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
                     f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>开始执行")
             # 使用本地属性__parameters接收了参数
             await self.GetParameters()
-            self.__results = await self._DoRunStep()
-            if isinstance(self.__results, dict):
-                for key, value in self.__results.items():
+            self._results = await self._DoRunStep()
+            if isinstance(self._results, dict):
+                for key, value in self._results.items():
                     self.Internal_Outmapping[key].SetParameter(value)
             else:
                 if len(self.Internal_Outmapping.items()) == 1:
-                    self.Internal_Outmapping[next(iter(self.Internal_Outmapping.keys()))].SetParameter(self.__results)
+                    self.Internal_Outmapping[next(iter(self.Internal_Outmapping.keys()))].SetParameter(self._results)
                 elif len(self.Internal_Outmapping.items()) == 0:
                     pass
                 else:
-                    self.Internal_Outmapping["result"].SetParameter(self.__results)
+                    self.Internal_Outmapping["result"].SetParameter(self._results)
         except Exception as e:
             #self.Broadcast(WorkflowErrorEvent(error=e, from_=self), "OnStopEvent")
             raise
@@ -748,6 +752,8 @@ class ContextResult(BaseModel):
     """
     hashID:     str              = Field(description="结果哈希")
     results:    List[NodeResult] = Field(description="节点结果", default=[])
+    progress:   float            = Field(description="进度", default=0.0)
+    task_count: int              = Field(description="任务数量", default=0)
 
 class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
     """
@@ -951,13 +957,17 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}"
 
-    def GetLastContext(self) -> ContextResult:
-        """获取最后一个上下文, 也就是上次的结果"""
+    def GetCurrentContext(self) -> ContextResult:
+        """获取当前上下文, 也就是当前的结果"""
         result:ContextResult = ContextResult()
+        node_running_count = 0
         for index, node in enumerate(self.workflow.Nodes):
             if isinstance(node, EndNode):
                 result.results.append(NodeResult(nodeID=index, nodeTitle=node.info.title, result=node.end_result))
-        result.hashID = str(hash(self.workflow))
+            elif node.IsRunning:
+                node_running_count += 1
+        result.progress = 1 - (node_running_count / len(self.workflow.Nodes))
+        result.task_count = _Internal_Task_Count.load()
         return result
 
 class DynamicNode(Node):

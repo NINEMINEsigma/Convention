@@ -11,6 +11,8 @@ def GetLLM(name: str) -> LLMObject:
     return _Internal_WorkflowLLM[name]
 def ContainsLLM(name: str) -> bool:
     return name in _Internal_WorkflowLLM
+def GetAllLLMNames() -> List[str]:
+    return list(_Internal_WorkflowLLM.keys())
 
 _inject_llm_loader_funcname:Literal["__inject_llm_loader"] = "__inject_llm_loader"
 def __inject_llm_loader(

@@ -18,9 +18,9 @@ namespace Convention.Workflow
             this.outmapping = new()
             {
                 {
-                    outputName, new NodeSlotInfo()
+                    WorkflowManager.Transformer(outputName), new NodeSlotInfo()
                     {
-                        slotName=outputName,
+                        slotName=WorkflowManager.Transformer(outputName),
                         typeIndicator="string",
                         IsInmappingSlot=false
                     }

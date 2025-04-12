@@ -124,7 +124,7 @@ namespace Convention.Workflow
                 SetupWorkflowGraphNodeType(
                     new TextNodeInfo(),
                     new ValueNodeInfo(),
-                    new ResourceNodeInfo(),
+                    //new ResourceNodeInfo(),
                     new StepNodeInfo(),
                     new EndNodeInfo());
             }, typeof(GraphInputWindow), typeof(GraphInspector));
