@@ -31,6 +31,9 @@ def SetInternalReflectionDebug(debug:bool) -> None:
     global _Internal_Reflection_Debug
     _Internal_Reflection_Debug = debug
 
+# 缓存get_type_from_string的结果
+_type_string_cache: Dict[str, type] = {}
+
 class ReflectionException(Exception):
     def __init__(self, message:str):
         self.message = f"{ConsoleFrontColor.RED}{message}{ConsoleFrontColor.RESET}"
@@ -38,21 +41,27 @@ class ReflectionException(Exception):
 
 def get_type_from_string(type_string:str) -> type:
         """
-        根据字符串生成类型
+        根据字符串生成类型，使用缓存提高性能
         """
+        # 检查缓存
+        if type_string in _type_string_cache:
+            return _type_string_cache[type_string]
+            
+        result = None
+        
+        # 检查内置类型映射
         if type_string in type_symbols:
-            return type_symbols[type_string]
-
-        # 首先尝试从内置类型中获取
-        if type_string in dir(types):
-            return getattr(types, type_string)
-        # 首先尝试从内置类型中获取
+            result = type_symbols[type_string]
+        # 从内置类型中获取
+        elif type_string in dir(types):
+            result = getattr(types, type_string)
+        # 从当前全局命名空间获取
         elif type_string in globals():
-            return globals().get(type_string)
-        # 尝试从当前模块中获取
+            result = globals().get(type_string)
+        # 从当前模块获取
         elif type_string in dir(__import__(__name__)):
-            return getattr(__import__(__name__), type_string)
-        # 尝试从标准库中获取
+            result = getattr(__import__(__name__), type_string)
+        # 尝试从其他模块获取
         else:
             try:
                 if '.' not in type_string:
@@ -60,27 +69,46 @@ def get_type_from_string(type_string:str) -> type:
                 module_name, _, class_name = type_string.rpartition('.')
                 if not module_name:
                     raise ValueError(f"Empty module name, type_string is {type_string}")
-                module = importlib.import_module(module_name)
-                return getattr(module, class_name)
+                    
+                # 首先尝试直接获取模块
+                try:
+                    module = sys.modules[module_name]
+                except KeyError:
+                    # 模块未加载，需要导入
+                    module = importlib.import_module(module_name)
+                    
+                result = getattr(module, class_name)
             except (ImportError, AttributeError, ValueError) as ex:
-                #print("get_type_from_string failed.")
-                #print("first check in:{}".format(dir(types)))
-                #print("second check in:{}".format(globals()))
-                #print("third check in:{}".format(dir(__import__(__name__))))
                 raise TypeError(f"Cannot find type '{type_string}', type_string is <{type_string}>") from ex
+        
+        # 更新缓存
+        if result is not None:
+            _type_string_cache[type_string] = result
+            
+        return result
 
+@functools.lru_cache(maxsize=256)
 def get_type_from_string_with_module(type_string:str, module_name:str) -> type|None:
     '''
-    根据字符串生成类型
+    根据字符串生成类型，带模块名参数，使用缓存
     '''
+    # 检查内置类型映射
     if type_string in type_symbols:
         return type_symbols[type_string]
-    elif type_string in dir(__import__(module_name)):
-        return getattr(__import__(module_name), type_string)
-    elif type_string in dir(types):
+    
+    # 尝试从指定模块获取
+    try:
+        module = sys.modules.get(module_name)
+        if module and type_string in dir(module):
+            return getattr(module, type_string)
+    except (KeyError, AttributeError):
+        pass
+        
+    # 尝试从类型模块获取
+    if type_string in dir(types):
         return getattr(types, type_string)
-    else:
-        return None
+        
+    return None
 
 # 获取泛型参数
 def get_generic_args(type_hint: type | Any) -> tuple[type | None, tuple[type, ...] | None]:
@@ -137,11 +165,42 @@ def to_type(
     *,
     module_name:    str|None=None
     ) -> type|List[type]|_SpecialIndictaor:
+    # 快速路径：如果已经是类型，直接返回
     if isinstance(typen, type):
         return typen
     elif isinstance(typen, _SpecialIndictaor):
         return typen
     elif isinstance(typen, str):
+        # 快速路径：检查字符串的格式
+        if '.' in typen:
+            # 可能是带模块名的类型
+            try:
+                module_parts = typen.split('.')
+                # 尝试从sys.modules中获取模块
+                current_module = sys.modules
+                for part in module_parts[:-1]:
+                    if part in current_module:
+                        current_module = current_module[part]
+                    else:
+                        # 需要导入模块
+                        current_module = importlib.import_module('.'.join(module_parts[:-1]))
+                        break
+                
+                # 获取类型
+                if isinstance(current_module, dict):
+                    # 从字典中获取
+                    result = current_module.get(module_parts[-1])
+                    if isinstance(result, type):
+                        return result
+                else:
+                    # 从模块对象中获取
+                    result = getattr(current_module, module_parts[-1], None)
+                    if isinstance(result, type):
+                        return result
+            except (ImportError, AttributeError):
+                pass
+        
+        # 回退到一般处理
         import sys
         if not all(c.isalnum() or c == '.' for c in typen):
             raise ValueError(f"Invalid type string: {typen}, only alphanumeric characters and dots are allowed")
@@ -204,29 +263,39 @@ def decay_type(
     *,
     module_name:    str|None=None
     ) -> type|List[type]|_SpecialIndictaor:
+    # 快速路径：直接判断常见类型
+    if isinstance(type_hint, (type, _SpecialIndictaor)):
+        return type_hint
+    
     if GetInternalReflectionDebug():
         print_colorful(ConsoleFrontColor.YELLOW, f"Decay: {type_hint}")
-    type_dir = dir(type_hint)
+        
     result:type|List[type] = None
-    if isinstance(type_hint, _SpecialIndictaor):
-        return type_hint
-    elif isinstance(type_hint, str):
+    
+    # 处理字符串类型
+    if isinstance(type_hint, str):
         try:
             result = to_type(type_hint, module_name=module_name)
         except TypeError:
             result = Any
-    elif "__forward_arg__" in type_dir:
+    # 处理forward reference
+    elif hasattr(type_hint, "__forward_arg__"):
         result = to_type(type_hint.__forward_arg__, module_name=module_name)
+    # 处理type类型
     elif type_hint is type:
         result = type_hint
+    # 处理union类型
     elif is_union(type_hint):
         result = get_union_types(type_hint)
+    # 处理TypeVar
     elif isinstance(type_hint, TypeVar):
         result = TypeVarIndictaor
-    elif type_hint is type:
-        result = type_hint
+    # 处理泛型类型
+    elif is_generic(type_hint):
+        result = get_origin(type_hint)
     else:
         raise ReflectionException(f"Invalid type: {type_hint}<{type_hint.__class__}>")
+        
     if GetInternalReflectionDebug():
         print_colorful(ConsoleFrontColor.YELLOW, f"Result: {result}")
     return result
@@ -805,9 +874,10 @@ class RefType(ValueInfo):
     _FieldInfos:    List[FieldInfo]  = PrivateAttr()
     _MethodInfos:   List[MethodInfo] = PrivateAttr()
     _MemberNames:   List[str]        = PrivateAttr()
-    _BaseTypes:     List[Self]       = PrivateAttr(default=[])
+    _BaseTypes:     List[Self]       = PrivateAttr(default=None)
     _initialized:   bool             = PrivateAttr(default=False)
     _BaseMemberNamesSet: Set[str]    = PrivateAttr(default_factory=set)
+    _member_cache:  Dict[Tuple[str, RefTypeFlag], Optional[MemberInfo]] = PrivateAttr(default_factory=dict)
 
     def __init__(self, metaType:type|_SpecialIndictaor):
         extensionFields:List[FieldInfo] = []
@@ -868,6 +938,7 @@ class RefType(ValueInfo):
         self._MethodInfos = []
         self._MemberNames = []
         self._BaseMemberNamesSet = set()
+        self._member_cache = {}
         
         # 延迟初始化标志
         self._initialized = False
@@ -878,31 +949,46 @@ class RefType(ValueInfo):
             return
             
         metaType = self.RealType
-        # 初始化基类
-        for baseType in metaType.__bases__:
-            self._BaseTypes.append(TypeManager.GetInstance().CreateOrGetRefType(baseType))
+        # 初始化基类列表 - 只初始化一次
+        if self._BaseTypes is None:
+            self._BaseTypes = []
+            for baseType in metaType.__bases__:
+                if baseType == metaType:  # 避免循环引用
+                    continue
+                self._BaseTypes.append(TypeManager.GetInstance().CreateOrGetRefType(baseType))
 
-        # 收集基类成员名称集合，用于快速查找
-        baseFields = self.GetAllBaseFields()
-        baseMethods = self.GetAllBaseMethods()
-        
-        for field in baseFields:
-            self._BaseMemberNamesSet.add(field.MemberName)
-        for method in baseMethods:
-            self._BaseMemberNamesSet.add(method.MemberName)
+        # 如果BaseMemberNamesSet为空，则填充它
+        if not self._BaseMemberNamesSet:
+            # 使用更高效的方式收集基类成员名称
+            for baseType in self._BaseTypes:
+                # 确保基类已初始化
+                baseType._ensure_initialized()
+                # 直接合并集合，而不是逐个添加
+                self._BaseMemberNamesSet.update(baseType._MemberNames)
+                self._BaseMemberNamesSet.update(baseType._BaseMemberNamesSet)
 
         class_var = metaType.__dict__
-        annotations:Dict[str, Any] = get_type_hints(metaType)
+        # 只在需要时获取类型注解
+        annotations_dict = {}
+        try:
+            annotations_dict = get_type_hints(metaType)
+        except (TypeError, NameError):
+            # 类型提示获取失败时，使用空字典
+            pass
 
-        # 使用线程池并行处理方法和字段
-        # 处理方法的函数
-        def process_methods():
-            methods_info = []
-            method_names = []
-            
-            for name, member in inspect.getmembers(metaType):
-                if (name not in self._BaseMemberNamesSet and
-                    (inspect.ismethod(member) or inspect.isfunction(member))):
+        # 减少函数调用开销的辅助函数，改为内联处理
+        methods_info = []
+        method_names = []
+        fields_info = self._FieldInfos.copy()  # 保留extensionFields
+        field_names = []
+        
+        # 一次性收集所有成员，避免多次遍历
+        members = inspect.getmembers(metaType)
+        
+        # 处理方法
+        for name, member in members:
+            if name not in self._BaseMemberNamesSet:
+                if inspect.ismethod(member) or inspect.isfunction(member):
                     # 获取方法签名
                     sig = inspect.signature(member)
                     is_static = isinstance(member, staticmethod)
@@ -948,88 +1034,77 @@ class RefType(ValueInfo):
                     )
                     methods_info.append(method_info)
                     method_names.append(name)
-            return methods_info, method_names
+                # 处理字段 (非方法成员)
+                elif not name.startswith('__'):  # 排除魔术方法相关的属性
+                    is_static = name in class_var
+                    is_public = (name.startswith('__') and name.endswith('__')) or not name.startswith('_')
+                    fieldType = annotations_dict.get(name, Any)
+                    field_info = FieldInfo(
+                        metaType = fieldType,
+                        name = name,
+                        ctype = metaType,
+                        is_static = is_static,
+                        is_public = is_public,
+                        module_name = self.ModuleName,
+                        selfType=metaType
+                    )
+                    fields_info.append(field_info)
+                    field_names.append(name)
         
-        # 处理字段的函数
-        def process_fields():
-            fields_info = []
-            field_names = []
-            
-            # 处理BaseModel字段
-            if issubclass(metaType, BaseModel):
-                try:
-                    fields = metaType.model_fields
-                except AttributeError:
-                    fields = metaType.__pydantic_fields__
+        # 处理BaseModel字段 - 这些通常有特殊的处理
+        if issubclass(metaType, BaseModel):
+            try:
+                fields = getattr(metaType, 'model_fields', getattr(metaType, '__pydantic_fields__', {}))
                 for field_name, model_field in fields.items():
-                    if field_name not in self._BaseMemberNamesSet:
+                    if field_name not in self._BaseMemberNamesSet and field_name not in field_names:
                         fieldType = model_field.annotation if model_field.annotation is not None else Any
-                        is_public = not model_field.exclude
+                        is_public = not getattr(model_field, 'exclude', False)
                         field_info = FieldInfo(
                             metaType=fieldType,
                             name=field_name,
                             ctype=metaType,
                             is_public=is_public,
                             is_static=False,
-                            module_name = self.ModuleName,
+                            module_name=self.ModuleName,
                             selfType=metaType
                         )
                         fields_info.append(field_info)
                         field_names.append(field_name)
-            # 处理普通类字段
-            else:
-                for name, member in inspect.getmembers(metaType):
-                    if (name not in self._BaseMemberNamesSet and
-                        not inspect.ismethod(member) and not inspect.isfunction(member)):
-                        is_static = name in class_var
-                        is_public = (name.startswith('__') and name.endswith('__')) or not name.startswith('_')
-                        fieldType = annotations.get(name, Any)
-                        field_info = FieldInfo(
-                            metaType = fieldType,
-                            name = name,
-                            ctype = metaType,
-                            is_static = is_static,
-                            is_public = is_public,
-                            module_name = self.ModuleName,
-                            selfType=metaType
-                        )
-                        fields_info.append(field_info)
-                        field_names.append(name)
-            
-            # 处理注释中的字段
-            for name, annotation in annotations.items():
-                if name not in self._BaseMemberNamesSet and name not in field_names:
-                    field_info = FieldInfo(
-                        metaType = decay_type(annotation),
-                        name = name,
-                        ctype = metaType,
-                        is_static = False,
-                        is_public = not name.startswith('_'),
-                        module_name = self.ModuleName,
-                        selfType=metaType
-                    )
-                    fields_info.append(field_info)
-                    field_names.append(name)
-            
-            return fields_info, field_names
+            except (AttributeError, TypeError):
+                pass  # 忽略BaseModel相关错误
         
-        # 使用线程池并行执行方法和字段处理
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-            future_methods = executor.submit(process_methods)
-            future_fields = executor.submit(process_fields)
-            
-            # 获取结果并合并
-            method_infos, method_names = future_methods.result()
-            field_infos, field_names = future_fields.result()
-            
-            self._MethodInfos.extend(method_infos)
-            self._FieldInfos.extend(field_infos)
-            self._MemberNames.extend(method_names)
-            self._MemberNames.extend(field_names)
+        # 处理注释中的字段 - 只处理尚未添加的字段
+        for name, annotation in annotations_dict.items():
+            if name not in self._BaseMemberNamesSet and name not in field_names and not name.startswith('__'):
+                field_info = FieldInfo(
+                    metaType=decay_type(annotation),
+                    name=name,
+                    ctype=metaType,
+                    is_static=False,
+                    is_public=not name.startswith('_'),
+                    module_name=self.ModuleName,
+                    selfType=metaType
+                )
+                fields_info.append(field_info)
+                field_names.append(name)
+        
+        # 更新成员列表
+        self._MethodInfos = methods_info
+        self._FieldInfos = fields_info
+        self._MemberNames = method_names + field_names
         
         self._initialized = True
 
     def _where_member(self, member:MemberInfo, flag:RefTypeFlag) -> bool:
+        # 如果是默认标志，直接根据常见条件判断，避免位运算
+        if flag == RefTypeFlag.Default:
+            if isinstance(member, MethodInfo):
+                return member.IsPublic and (member.IsInstance or member.IsStatic)
+            elif isinstance(member, FieldInfo):
+                return member.IsPublic and member.IsInstance
+            return False
+        
+        # 否则进行完整的标志检查
         stats = True
         if member.IsStatic:
             stats &= (flag & RefTypeFlag.Static != 0)
@@ -1047,85 +1122,33 @@ class RefType(ValueInfo):
             stats &= (flag & RefTypeFlag.Special != 0)
         return stats
 
-    # 修改所有的GetBase*方法
-    @functools.lru_cache(maxsize=128)
-    def GetBaseMethods(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MethodInfo]:
-        self._init_base_types_if_needed()
-        result = []
-        for baseType in self._BaseTypes:
-            result.extend(baseType.GetMethods(flag))
-        return result
-    
-    @functools.lru_cache(maxsize=128)
-    def GetAllBaseMethods(self) -> List[MethodInfo]:
-        self._init_base_types_if_needed()
-        result = []
-        for baseType in self._BaseTypes:
-            result.extend(baseType.GetAllMethods())
-        return result
-    
-    @functools.lru_cache(maxsize=128)
-    def GetBaseMembers(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MemberInfo]:
-        self._init_base_types_if_needed()
-        result = []
-        for baseType in self._BaseTypes:
-            result.extend(baseType.GetMembers(flag))
-        return result
-    
-    @functools.lru_cache(maxsize=128)
-    def GetAllBaseMembers(self) -> List[MemberInfo]:
-        self._init_base_types_if_needed()
-        result = []
-        for baseType in self._BaseTypes:
-            result.extend(baseType.GetAllMembers())
-        return result
-
-    def GetFields(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[FieldInfo]:
-        self._ensure_initialized()
-        if flag == RefTypeFlag.Default:
-            result = [field for field in self._FieldInfos
-                    if self._where_member(field, RefTypeFlag.Field|RefTypeFlag.Public|RefTypeFlag.Instance)]
-        else:
-            result = [field for field in self._FieldInfos if self._where_member(field, flag)]
-        result.extend(self.GetBaseFields(flag))
-        return result
-    def GetAllFields(self) -> List[FieldInfo]:
-        result = self._FieldInfos
-        result.extend(self.GetAllBaseFields())
-        return result
-    def GetMethods(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MethodInfo]:
-        self._ensure_initialized()
-        if flag == RefTypeFlag.Default:
-            result = [method for method in self._MethodInfos
-                    if self._where_member(method, RefTypeFlag.Method|RefTypeFlag.Public|RefTypeFlag.Instance|RefTypeFlag.Static)]
-        else:
-            result = [method for method in self._MethodInfos if self._where_member(method, flag)]
-        result.extend(self.GetBaseMethods(flag))
-        return result
-    def GetAllMethods(self) -> List[MethodInfo]:
-        result = self._MethodInfos
-        result.extend(self.GetAllBaseMethods())
-        return result
-    def GetMembers(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MemberInfo]:
-        self._ensure_initialized()
-        if flag == RefTypeFlag.Default:
-            result = [member for member in self._FieldInfos + self._MethodInfos
-                    if self._where_member(member, RefTypeFlag.Public|RefTypeFlag.Instance|RefTypeFlag.Field|RefTypeFlag.Method)]
-        else:
-            result = [member for member in self._FieldInfos + self._MethodInfos if self._where_member(member, flag)]
-        result.extend(self.GetBaseMembers(flag))
-        return result
-    def GetAllMembers(self) -> List[MemberInfo]:
-        result = self._FieldInfos + self._MethodInfos
-        result.extend(self.GetAllBaseMembers())
-        return result
-
+    # 修改获取成员方法，使用缓存
     def GetField(self, name:str, flags:RefTypeFlag=RefTypeFlag.Default) -> Optional[FieldInfo]:
-        return next((field for field in self.GetFields(flags) if field.MemberName == name), None)
+        cache_key = (name, flags)
+        if cache_key in self._member_cache:
+            return self._member_cache[cache_key]
+            
+        result = next((field for field in self.GetFields(flags) if field.MemberName == name), None)
+        self._member_cache[cache_key] = result
+        return result
+        
     def GetMethod(self, name:str, flags:RefTypeFlag=RefTypeFlag.Default) -> Optional[MethodInfo]:
-        return next((method for method in self.GetMethods(flags) if method.MemberName == name), None)
+        cache_key = (name, flags)
+        if cache_key in self._member_cache:
+            return self._member_cache[cache_key]
+            
+        result = next((method for method in self.GetMethods(flags) if method.MemberName == name), None)
+        self._member_cache[cache_key] = result
+        return result
+        
     def GetMember(self, name:str, flags:RefTypeFlag=RefTypeFlag.Default) -> Optional[MemberInfo]:
-        return next((member for member in self.GetMembers(flags) if member.MemberName == name), None)
+        cache_key = (name, flags)
+        if cache_key in self._member_cache:
+            return self._member_cache[cache_key]
+            
+        result = next((member for member in self.GetMembers(flags) if member.MemberName == name), None)
+        self._member_cache[cache_key] = result
+        return result
 
     def GetFieldValue[T](self, obj:object, name:str, flags:RefTypeFlag=RefTypeFlag.Default) -> T:
         field = self.GetField(name, flags)
@@ -1194,20 +1217,29 @@ class RefType(ValueInfo):
     def tree(self, indent:int=4) -> str:
         type_set: set = set()
         def dfs(currentType:RefType) -> Dict[str, Dict[str, Any]|Any]:
-            if GetInternalReflectionDebug():
-                print_colorful(ConsoleFrontColor.RED, f"Current Tree DFS: "\
-                    f"__type={currentType.RealType} __type.class={currentType.RealType.__class__}")
             if currentType.IsPrimitive:
+                if GetInternalReflectionDebug():
+                    print_colorful(ConsoleFrontColor.RED, f"Current Tree DFS(IsPrimitive): "\
+                        f"__type={currentType.RealType} __type.class={currentType.RealType.__class__}")
                 return f"{currentType.RealType}"
             elif currentType.RealType in type_set:
+                if GetInternalReflectionDebug():
+                    print_colorful(ConsoleFrontColor.RED, f"Current Tree DFS(Already): "\
+                        f"__type={currentType.RealType} __type.class={currentType.RealType.__class__}")
                 return {
                     "type": f"{currentType.RealType}",
                     "value": { field.FieldName: f"{field.FieldType}" for field in currentType.GetFields() }
                 }
             else:
+                if GetInternalReflectionDebug():
+                    print_colorful(ConsoleFrontColor.RED, f"Current Tree DFS(New): "\
+                        f"__type={currentType.RealType} __type.class={currentType.RealType.__class__}")
                 type_set.add(currentType.RealType)
                 value = {}
-                for field in currentType.GetFields():
+                fields = currentType.GetFields()
+                if GetInternalReflectionDebug():
+                    print_colorful(ConsoleFrontColor.RED, f"Current Tree DFS(Fields): {[field.FieldName for field in fields]}")
+                for field in fields:
                     value[field.FieldName] = dfs(TypeManager.GetInstance().CreateOrGetRefType(field.FieldType))
                 return {
                     "type": f"{currentType.RealType}",
@@ -1231,18 +1263,20 @@ class RefType(ValueInfo):
     # 添加新的优化方法，避免重复检查
     def _init_base_types_if_needed(self):
         """初始化基类类型，只在需要时执行"""
-        if not hasattr(self, '_BaseTypes') or self._BaseTypes is None:
+        if self._BaseTypes is None:
             self._BaseTypes = []
-            for baseType in self.RealType.__bases__:
+            metaType = self.RealType
+            for baseType in metaType.__bases__:
                 # 避免循环引用，如果baseType是自己，则跳过
-                if baseType == self.RealType:
+                if baseType == metaType:
                     continue
                 self._BaseTypes.append(TypeManager.GetInstance().CreateOrGetRefType(baseType))
                 
     # 确保正确地实现所有GetBase*方法
     @functools.lru_cache(maxsize=128)
     def GetBaseFields(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[FieldInfo]:
-        self._init_base_types_if_needed()
+        if self._BaseTypes is None:
+            self._init_base_types_if_needed()
         result = []
         for baseType in self._BaseTypes:
             result.extend(baseType.GetFields(flag))
@@ -1250,10 +1284,96 @@ class RefType(ValueInfo):
     
     @functools.lru_cache(maxsize=128)
     def GetAllBaseFields(self) -> List[FieldInfo]:
-        self._init_base_types_if_needed()
+        if self._BaseTypes is None:
+            self._init_base_types_if_needed()
         result = []
         for baseType in self._BaseTypes:
             result.extend(baseType.GetAllFields())
+        return result
+
+    # 修改所有的GetBase*方法
+    @functools.lru_cache(maxsize=128)
+    def GetBaseMethods(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MethodInfo]:
+        if self._BaseTypes is None:
+            self._init_base_types_if_needed()
+        result = []
+        for baseType in self._BaseTypes:
+            result.extend(baseType.GetMethods(flag))
+        return result
+    
+    @functools.lru_cache(maxsize=128)
+    def GetAllBaseMethods(self) -> List[MethodInfo]:
+        if self._BaseTypes is None:
+            self._init_base_types_if_needed()
+        result = []
+        for baseType in self._BaseTypes:
+            result.extend(baseType.GetAllMethods())
+        return result
+        
+    @functools.lru_cache(maxsize=128)
+    def GetBaseMembers(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MemberInfo]:
+        if self._BaseTypes is None:
+            self._init_base_types_if_needed()
+        result = []
+        for baseType in self._BaseTypes:
+            result.extend(baseType.GetMembers(flag))
+        return result
+    
+    @functools.lru_cache(maxsize=128)
+    def GetAllBaseMembers(self) -> List[MemberInfo]:
+        if self._BaseTypes is None:
+            self._init_base_types_if_needed()
+        result = []
+        for baseType in self._BaseTypes:
+            result.extend(baseType.GetAllMembers())
+        return result
+
+    def GetFields(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[FieldInfo]:
+        self._ensure_initialized()
+        if flag == RefTypeFlag.Default:
+            result = [field for field in self._FieldInfos
+                   if self._where_member(field, RefTypeFlag.Field|RefTypeFlag.Public|RefTypeFlag.Instance)]
+        else:
+            result = [field for field in self._FieldInfos if self._where_member(field, flag)]
+        result.extend(self.GetBaseFields(flag))
+        return result
+    
+    def GetAllFields(self) -> List[FieldInfo]:
+        self._ensure_initialized()
+        result = self._FieldInfos.copy()
+        result.extend(self.GetAllBaseFields())
+        return result
+        
+    def GetMethods(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MethodInfo]:
+        self._ensure_initialized()
+        if flag == RefTypeFlag.Default:
+            result = [method for method in self._MethodInfos
+                   if self._where_member(method, RefTypeFlag.Method|RefTypeFlag.Public|RefTypeFlag.Instance|RefTypeFlag.Static)]
+        else:
+            result = [method for method in self._MethodInfos if self._where_member(method, flag)]
+        result.extend(self.GetBaseMethods(flag))
+        return result
+        
+    def GetAllMethods(self) -> List[MethodInfo]:
+        self._ensure_initialized()
+        result = self._MethodInfos.copy()
+        result.extend(self.GetAllBaseMethods())
+        return result
+        
+    def GetMembers(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MemberInfo]:
+        self._ensure_initialized()
+        if flag == RefTypeFlag.Default:
+            result = [member for member in self._FieldInfos + self._MethodInfos
+                   if self._where_member(member, RefTypeFlag.Public|RefTypeFlag.Instance|RefTypeFlag.Field|RefTypeFlag.Method)]
+        else:
+            result = [member for member in self._FieldInfos + self._MethodInfos if self._where_member(member, flag)]
+        result.extend(self.GetBaseMembers(flag))
+        return result
+        
+    def GetAllMembers(self) -> List[MemberInfo]:
+        self._ensure_initialized()
+        result = self._FieldInfos + self._MethodInfos
+        result.extend(self.GetAllBaseMembers())
         return result
 
 type RTypen[_T] = RefType
@@ -1267,6 +1387,8 @@ class TypeManager(BaseModel, any_class):
     _RefTypes:Dict[type, RefType] = PrivateAttr(default_factory=dict)
     _is_preheated: bool = PrivateAttr(default=False)
     _weak_refs: Dict[int, "weakref.ref[RefType]"] = PrivateAttr(default_factory=dict)  # 使用真正的弱引用
+    _type_name_cache: Dict[str, type] = PrivateAttr(default_factory=dict)  # 类型名称到类型的缓存
+    _string_to_type_cache: Dict[str, Any] = PrivateAttr(default_factory=dict)  # 字符串到类型的缓存
 
     @classmethod
     def GetInstance(cls) -> Self:
@@ -1284,13 +1406,20 @@ class TypeManager(BaseModel, any_class):
         # 常用的基础类型列表
         common_types = [
             int, float, str, bool, list, dict, tuple, set, 
-            object, type, None.__class__, Exception
+            object, type, None.__class__, Exception, BaseModel, any_class
         ]
         
-        # 使用线程池并行创建RefType
-        with concurrent.futures.ThreadPoolExecutor(max_workers=min(8, len(common_types))) as executor:
-            futures = [executor.submit(self.CreateRefType, t) for t in common_types]
-            concurrent.futures.wait(futures)
+        # 预加载的类型和它们之间常见的关系，减少后续运行时计算
+        for t in common_types:
+            self.CreateRefType(t)
+            # 同时缓存类型名称到类型的映射
+            self._type_name_cache[t.__name__] = t
+            # 也缓存类型字符串到类型的映射
+            self._string_to_type_cache[t.__name__] = t
+            # 缓存模块全限定名
+            if t.__module__ != 'builtins':
+                full_name = f"{t.__module__}.{t.__name__}"
+                self._string_to_type_cache[full_name] = t
             
         self._is_preheated = True
 
@@ -1298,15 +1427,35 @@ class TypeManager(BaseModel, any_class):
         return tuple(self._RefTypes.values())
 
     @staticmethod
+    @functools.lru_cache(maxsize=256)
     def _TurnToType(data:Any, module_name:Optional[str]=None) -> type|_SpecialIndictaor:
+        """将任意数据转换为类型，增加缓存以提高性能"""
         metaType:type|_SpecialIndictaor = None
+        
+        # 快速路径：如果已经是类型，直接返回
+        if isinstance(data, type) or isinstance(data, _SpecialIndictaor):
+            return data
+            
+        # 处理字符串类型
         if isinstance(data, str):
-            if module_name is None:
-                metaType = sys.modules[module_name][data]
-        if metaType is None:
-            metaType = try_to_type(data, module_name=module_name)
-            if metaType is None or isinstance(metaType, list):
-                metaType = data
+            # 尝试使用模块名解析类型
+            if module_name is not None:
+                try:
+                    return sys.modules[module_name].__dict__[data]
+                except (KeyError, AttributeError):
+                    pass
+                    
+            # 尝试使用to_type函数
+            try:
+                return to_type(data, module_name=module_name)
+            except Exception:
+                pass
+                
+        # 尝试使用try_to_type函数作为回退
+        metaType = try_to_type(data, module_name=module_name)
+        if metaType is None or isinstance(metaType, list):
+            metaType = data
+            
         return metaType
 
     @overload
@@ -1335,9 +1484,15 @@ class TypeManager(BaseModel, any_class):
         data,
         module_name:    Optional[str] = None
         ) -> RefType:
+        """创建或获取RefType实例，使用多级缓存提高性能"""
         if data is None:
             raise ReflectionException("data is None")
 
+        # 快速路径：如果是字符串并且在字符串缓存中，直接返回对应的类型
+        if isinstance(data, str) and data in self._string_to_type_cache:
+            data = self._string_to_type_cache[data]
+        
+        # 获取或转换为类型
         metaType:type = TypeManager._TurnToType(data, module_name=module_name)
         
         # 首先尝试从弱引用缓存中获取
@@ -1390,10 +1545,19 @@ class TypeManager(BaseModel, any_class):
         data,
         module_name:    Optional[str] = None
         ) -> RefType:
+        """创建新的RefType实例"""
         if data is None:
             raise ReflectionException("data is None")
 
+        # 快速路径：如果是字符串并且在字符串缓存中，直接返回对应的类型
+        if isinstance(data, str) and data in self._string_to_type_cache:
+            data = self._string_to_type_cache[data]
+
         metaType:type|_SpecialIndictaor = TypeManager._TurnToType(data, module_name=module_name)
+        
+        # 如果是字符串类型，缓存结果以供将来使用
+        if isinstance(data, str) and not data in self._string_to_type_cache:
+            self._string_to_type_cache[data] = metaType
 
         if GetInternalReflectionDebug():
             print_colorful(ConsoleFrontColor.GREEN, f"Create RefType: {metaType}")
@@ -1405,12 +1569,14 @@ class TypeManager(BaseModel, any_class):
             raise ReflectionException(f"Create RefType failed: {e}")
 
     def CreateOrGetRefTypeFromType(self, type_:type) -> RefType:
+        """快速路径：直接从类型创建或获取RefType"""
         if type_ in self._RefTypes:
             return self._RefTypes[type_]
         else:
             return self.CreateRefType(type_)
     def CreateRefTypeFromType(self, type_:type) -> RefType:
-        result = self._RefTypes[type_] = self.CreateRefType(type_)
+        """直接从类型创建RefType"""
+        result = self._RefTypes[type_] = RefType(type_)
         return result
 
 

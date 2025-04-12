@@ -250,8 +250,9 @@ class ESReader(BaseModel, any_class):
                     field_rtype:RefType = None
                     try:
                         field = rtype.GetField(fieldName)
-                        field_rtype = TypeManager.GetInstance().CreateOrGetRefType(field.FieldType)
-                        field.SetValue(rinstance, dfs(field_rtype, fieldValue))
+                        if field is not None:
+                            field_rtype = TypeManager.GetInstance().CreateOrGetRefType(field.FieldType)
+                            field.SetValue(rinstance, dfs(field_rtype, fieldValue))
                     except Exception as e:
                         raise ReflectionException(f"Json字段{fieldName}={limit_str(str(fieldValue), 100)}: \n{e}") from e
                 return rinstance

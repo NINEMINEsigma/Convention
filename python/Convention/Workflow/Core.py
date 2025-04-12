@@ -959,21 +959,21 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         except Exception as e:
             self.__state.error = str(e)
             # 确保在发生异常时停止工作流，并传递错误信息
-            self.StopWorkflow(error=e)
-            self.__state.end_time = time.time()
+            #self.StopWorkflow(error=e)
+            #self.__state.end_time = time.time()
             # 确保广播停止事件不需要再次调用，因为StopWorkflow已经处理
             # self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
             raise
-        
-        # 无论是否发生异常，都确保工作流状态正确
-        self.__state.end_time = time.time()
-        self.__state.is_completed = True
-        # 确保广播停止事件
-        self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
-        
-        if verbose:
-            print_colorful(ConsoleFrontColor.BLUE, f"工作流完成, 用时: "\
-                f"{time.time() - self.__state.start_time}秒, 异常状态: {self.__state.error}")
+        finally:
+            # 无论是否发生异常，都确保工作流状态正确
+            self.__state.end_time = time.time()
+            self.__state.is_completed = True
+            # 确保广播停止事件
+            self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
+            
+            if verbose:
+                print_colorful(ConsoleFrontColor.BLUE, f"工作流完成, 用时: "\
+                    f"{time.time() - self.__state.start_time}秒, 异常状态: {self.__state.error}")
 
     def StopWorkflow(self, file: Optional[tool_file_or_str]=None, error: Optional[Exception]=None) -> None:
         '''

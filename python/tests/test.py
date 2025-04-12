@@ -14,10 +14,6 @@ def query(user_msg:str):
 query_action = WorkflowActionWrapper("query", query)
 
 def main():
-    SetInternalDebug(True)
-    SetInternalReflectionDebug(True)
-    SetInternalEasySaveDebug(True)
-    SetInternalWorkflowDebug(True)
     def error_handler(e:Exception):
         # 停止工作流并传递错误信息
         WorkflowManager.GetInstance().StopWorkflow(error=e)
@@ -43,7 +39,13 @@ def main():
     print(TypeManager.GetInstance().AllRefTypes())
 
 if __name__ == "__main__":
-    main()
+    SetInternalDebug(True)
+    SetInternalReflectionDebug(True)
+    SetInternalEasySaveDebug(True)
+    SetInternalWorkflowDebug(True)
+    print_colorful(ConsoleFrontColor.RED, TypeManager.GetInstance().CreateOrGetRefType(RefType).tree())
+    print_colorful(ConsoleFrontColor.BLUE, TypeManager.GetInstance().CreateOrGetRefType(RefType).GetAllFields())
+    #main()
 
 
 
