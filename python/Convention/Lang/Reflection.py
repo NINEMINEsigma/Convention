@@ -46,9 +46,9 @@ def get_type_from_string(type_string:str) -> type:
         # 检查缓存
         if type_string in _type_string_cache:
             return _type_string_cache[type_string]
-            
+
         result = None
-        
+
         # 检查内置类型映射
         if type_string in type_symbols:
             result = type_symbols[type_string]
@@ -69,22 +69,22 @@ def get_type_from_string(type_string:str) -> type:
                 module_name, _, class_name = type_string.rpartition('.')
                 if not module_name:
                     raise ValueError(f"Empty module name, type_string is {type_string}")
-                    
+
                 # 首先尝试直接获取模块
                 try:
                     module = sys.modules[module_name]
                 except KeyError:
                     # 模块未加载，需要导入
                     module = importlib.import_module(module_name)
-                    
+
                 result = getattr(module, class_name)
             except (ImportError, AttributeError, ValueError) as ex:
                 raise TypeError(f"Cannot find type '{type_string}', type_string is <{type_string}>") from ex
-        
+
         # 更新缓存
         if result is not None:
             _type_string_cache[type_string] = result
-            
+
         return result
 
 @functools.lru_cache(maxsize=256)
@@ -95,7 +95,7 @@ def get_type_from_string_with_module(type_string:str, module_name:str) -> type|N
     # 检查内置类型映射
     if type_string in type_symbols:
         return type_symbols[type_string]
-    
+
     # 尝试从指定模块获取
     try:
         module = sys.modules.get(module_name)
@@ -103,11 +103,11 @@ def get_type_from_string_with_module(type_string:str, module_name:str) -> type|N
             return getattr(module, type_string)
     except (KeyError, AttributeError):
         pass
-        
+
     # 尝试从类型模块获取
     if type_string in dir(types):
         return getattr(types, type_string)
-        
+
     return None
 
 # 获取泛型参数
@@ -185,7 +185,7 @@ def to_type(
                         # 需要导入模块
                         current_module = importlib.import_module('.'.join(module_parts[:-1]))
                         break
-                
+
                 # 获取类型
                 if isinstance(current_module, dict):
                     # 从字典中获取
@@ -199,7 +199,7 @@ def to_type(
                         return result
             except (ImportError, AttributeError):
                 pass
-        
+
         # 回退到一般处理
         import sys
         if not all(c.isalnum() or c == '.' for c in typen):
@@ -266,12 +266,12 @@ def decay_type(
     # 快速路径：直接判断常见类型
     if isinstance(type_hint, (type, _SpecialIndictaor)):
         return type_hint
-    
+
     if GetInternalReflectionDebug():
         print_colorful(ConsoleFrontColor.YELLOW, f"Decay: {type_hint}")
-        
+
     result:type|List[type] = None
-    
+
     # 处理字符串类型
     if isinstance(type_hint, str):
         try:
@@ -295,7 +295,7 @@ def decay_type(
         result = get_origin(type_hint)
     else:
         raise ReflectionException(f"Invalid type: {type_hint}<{type_hint.__class__}>")
-        
+
     if GetInternalReflectionDebug():
         print_colorful(ConsoleFrontColor.YELLOW, f"Result: {result}")
     return result
@@ -416,7 +416,7 @@ class MemberInfo(BaseInfo):
     _IsStatic:      bool            = PrivateAttr(default=False)
     _IsPublic:      bool            = PrivateAttr(default=False)
 
-    def __init__(self, name:str, ctype:type, is_static:bool, is_public:bool, **kwargs):
+    def __init__(self, name:str, ctype:Optional[type], is_static:bool, is_public:bool, **kwargs):
         super().__init__(**kwargs)
         self._MemberName = name
         self._ParentType = ctype
@@ -859,6 +859,61 @@ class MethodInfo(MemberInfo):
                f"{', static' if self.IsStatic else ''}{', class' if self.IsClassMethod else ''}, {'public' if self.IsPublic else 'private'}, " \
                f"params_count={len(self.Parameters)}>"
 
+    @classmethod
+    def Create(
+        cls,
+        name:           str,
+        method:         Callable,
+        ctype:          Optional[type]  = None,
+        module_name:    Optional[str]   = None
+        ) -> Self:
+        '''
+        创建MethodInfo对象
+        name: 方法名
+        method: 方法对象
+        ctype: 方法所属的类
+        module_name: 模块名
+        '''
+        # 获取方法签名
+        sig = inspect.signature(method)
+        is_static = isinstance(method, staticmethod)
+        is_class_method = isinstance(method, classmethod)
+        is_public = (name.startswith("__") and name.endswith("__")) or not name.startswith('_')
+        # 构建参数列表
+        parameters:List[ParameterInfo] = []
+        positional_parameters:List[ParameterInfo] = []
+        keyword_parameters:List[ParameterInfo] = []
+        for param_name, param in sig.parameters.items():
+            if param_name in ('self', 'cls'):
+                continue
+            ptype = param.annotation if param.annotation != inspect.Parameter.empty else Any
+            ptype = ptype if isinstance(ptype, type) else Any
+            param_info = ParameterInfo(
+                metaType = ptype,
+                name = param_name,
+                is_optional = param.default != inspect.Parameter.empty,
+                default_value = param.default if param.default != inspect.Parameter.empty else None,
+                module_name = module_name,
+                selfType=ctype
+            )
+            parameters.append(param_info)
+            if param.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD):
+                positional_parameters.append(param_info)
+            elif param.kind == inspect.Parameter.KEYWORD_ONLY:
+                keyword_parameters.append(param_info)
+        # 构建方法信息
+        return MethodInfo(
+            return_type = sig.return_annotation if sig.return_annotation != inspect.Signature.empty else Any,
+            parameters = parameters,
+            positional_parameters = positional_parameters,
+            keyword_parameters = keyword_parameters,
+            name = name,
+            ctype = ctype,
+            is_static = is_static,
+            is_public = is_public,
+            is_class_method = is_class_method
+        )
+
 class RefTypeFlag(IntFlag):
     Static:int = 0b00000001
     Instance:int = 0b00000010
@@ -939,15 +994,15 @@ class RefType(ValueInfo):
         self._MemberNames = []
         self._BaseMemberNamesSet = set()
         self._member_cache = {}
-        
+
         # 延迟初始化标志
         self._initialized = False
-    
+
     def _ensure_initialized(self):
         """确保完全初始化，实现延迟加载"""
         if self._initialized:
             return
-            
+
         metaType = self.RealType
         # 初始化基类列表 - 只初始化一次
         if self._BaseTypes is None:
@@ -981,58 +1036,15 @@ class RefType(ValueInfo):
         method_names = []
         fields_info = self._FieldInfos.copy()  # 保留extensionFields
         field_names = []
-        
+
         # 一次性收集所有成员，避免多次遍历
         members = inspect.getmembers(metaType)
-        
+
         # 处理方法
         for name, member in members:
             if name not in self._BaseMemberNamesSet:
                 if inspect.ismethod(member) or inspect.isfunction(member):
-                    # 获取方法签名
-                    sig = inspect.signature(member)
-                    is_static = isinstance(member, staticmethod)
-                    is_class_method = isinstance(member, classmethod)
-                    is_public = (name.startswith("__") and name.endswith("__")) or not name.startswith('_')
-
-                    # 构建参数列表
-                    parameters:List[ParameterInfo] = []
-                    positional_parameters:List[ParameterInfo] = []
-                    keyword_parameters:List[ParameterInfo] = []
-
-                    for param_name, param in sig.parameters.items():
-                        if param_name in ('self', 'cls'):
-                            continue
-                        ptype = param.annotation if param.annotation != inspect.Parameter.empty else Any
-                        ptype = ptype if isinstance(ptype, type) else Any
-                        param_info = ParameterInfo(
-                            metaType = ptype,
-                            name = param_name,
-                            is_optional = param.default != inspect.Parameter.empty,
-                            default_value = param.default if param.default != inspect.Parameter.empty else None,
-                            module_name = self.ModuleName,
-                            selfType=metaType
-                        )
-                        parameters.append(param_info)
-
-                        if param.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD):
-                            positional_parameters.append(param_info)
-                        elif param.kind == inspect.Parameter.KEYWORD_ONLY:
-                            keyword_parameters.append(param_info)
-
-                    # 构建方法信息
-                    method_info = MethodInfo(
-                        return_type = sig.return_annotation if sig.return_annotation != inspect.Signature.empty else Any,
-                        parameters = parameters,
-                        positional_parameters = positional_parameters,
-                        keyword_parameters = keyword_parameters,
-                        name = name,
-                        ctype = metaType,
-                        is_static = is_static,
-                        is_public = is_public,
-                        is_class_method = is_class_method
-                    )
-                    methods_info.append(method_info)
+                    methods_info.append(MethodInfo.Create(name, member, ctype=metaType, module_name=self.ModuleName))
                     method_names.append(name)
                 # 处理字段 (非方法成员)
                 elif not name.startswith('__'):  # 排除魔术方法相关的属性
@@ -1050,7 +1062,7 @@ class RefType(ValueInfo):
                     )
                     fields_info.append(field_info)
                     field_names.append(name)
-        
+
         # 处理BaseModel字段 - 这些通常有特殊的处理
         if issubclass(metaType, BaseModel):
             try:
@@ -1072,7 +1084,7 @@ class RefType(ValueInfo):
                         field_names.append(field_name)
             except (AttributeError, TypeError):
                 pass  # 忽略BaseModel相关错误
-        
+
         # 处理注释中的字段 - 只处理尚未添加的字段
         for name, annotation in annotations_dict.items():
             if name not in self._BaseMemberNamesSet and name not in field_names and not name.startswith('__'):
@@ -1087,12 +1099,12 @@ class RefType(ValueInfo):
                 )
                 fields_info.append(field_info)
                 field_names.append(name)
-        
+
         # 更新成员列表
         self._MethodInfos = methods_info
         self._FieldInfos = fields_info
         self._MemberNames = method_names + field_names
-        
+
         self._initialized = True
 
     def _where_member(self, member:MemberInfo, flag:RefTypeFlag) -> bool:
@@ -1103,7 +1115,7 @@ class RefType(ValueInfo):
             elif isinstance(member, FieldInfo):
                 return member.IsPublic and member.IsInstance
             return False
-        
+
         # 否则进行完整的标志检查
         stats = True
         if member.IsStatic:
@@ -1127,25 +1139,25 @@ class RefType(ValueInfo):
         cache_key = (name, flags)
         if cache_key in self._member_cache:
             return self._member_cache[cache_key]
-            
+
         result = next((field for field in self.GetFields(flags) if field.MemberName == name), None)
         self._member_cache[cache_key] = result
         return result
-        
+
     def GetMethod(self, name:str, flags:RefTypeFlag=RefTypeFlag.Default) -> Optional[MethodInfo]:
         cache_key = (name, flags)
         if cache_key in self._member_cache:
             return self._member_cache[cache_key]
-            
+
         result = next((method for method in self.GetMethods(flags) if method.MemberName == name), None)
         self._member_cache[cache_key] = result
         return result
-        
+
     def GetMember(self, name:str, flags:RefTypeFlag=RefTypeFlag.Default) -> Optional[MemberInfo]:
         cache_key = (name, flags)
         if cache_key in self._member_cache:
             return self._member_cache[cache_key]
-            
+
         result = next((member for member in self.GetMembers(flags) if member.MemberName == name), None)
         self._member_cache[cache_key] = result
         return result
@@ -1252,7 +1264,7 @@ class RefType(ValueInfo):
     def __hash__(self) -> int:
         """使RefType对象可哈希，基于RealType的哈希值"""
         return hash(self.RealType)
-    
+
     @override
     def __eq__(self, other) -> bool:
         """比较两个RefType对象是否相等，基于RealType的比较"""
@@ -1271,7 +1283,7 @@ class RefType(ValueInfo):
                 if baseType == metaType:
                     continue
                 self._BaseTypes.append(TypeManager.GetInstance().CreateOrGetRefType(baseType))
-                
+
     # 确保正确地实现所有GetBase*方法
     @functools.lru_cache(maxsize=128)
     def GetBaseFields(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[FieldInfo]:
@@ -1281,7 +1293,7 @@ class RefType(ValueInfo):
         for baseType in self._BaseTypes:
             result.extend(baseType.GetFields(flag))
         return result
-    
+
     @functools.lru_cache(maxsize=128)
     def GetAllBaseFields(self) -> List[FieldInfo]:
         if self._BaseTypes is None:
@@ -1300,7 +1312,7 @@ class RefType(ValueInfo):
         for baseType in self._BaseTypes:
             result.extend(baseType.GetMethods(flag))
         return result
-    
+
     @functools.lru_cache(maxsize=128)
     def GetAllBaseMethods(self) -> List[MethodInfo]:
         if self._BaseTypes is None:
@@ -1309,7 +1321,7 @@ class RefType(ValueInfo):
         for baseType in self._BaseTypes:
             result.extend(baseType.GetAllMethods())
         return result
-        
+
     @functools.lru_cache(maxsize=128)
     def GetBaseMembers(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MemberInfo]:
         if self._BaseTypes is None:
@@ -1318,7 +1330,7 @@ class RefType(ValueInfo):
         for baseType in self._BaseTypes:
             result.extend(baseType.GetMembers(flag))
         return result
-    
+
     @functools.lru_cache(maxsize=128)
     def GetAllBaseMembers(self) -> List[MemberInfo]:
         if self._BaseTypes is None:
@@ -1337,13 +1349,13 @@ class RefType(ValueInfo):
             result = [field for field in self._FieldInfos if self._where_member(field, flag)]
         result.extend(self.GetBaseFields(flag))
         return result
-    
+
     def GetAllFields(self) -> List[FieldInfo]:
         self._ensure_initialized()
         result = self._FieldInfos.copy()
         result.extend(self.GetAllBaseFields())
         return result
-        
+
     def GetMethods(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MethodInfo]:
         self._ensure_initialized()
         if flag == RefTypeFlag.Default:
@@ -1353,13 +1365,13 @@ class RefType(ValueInfo):
             result = [method for method in self._MethodInfos if self._where_member(method, flag)]
         result.extend(self.GetBaseMethods(flag))
         return result
-        
+
     def GetAllMethods(self) -> List[MethodInfo]:
         self._ensure_initialized()
         result = self._MethodInfos.copy()
         result.extend(self.GetAllBaseMethods())
         return result
-        
+
     def GetMembers(self, flag:RefTypeFlag=RefTypeFlag.Default) -> List[MemberInfo]:
         self._ensure_initialized()
         if flag == RefTypeFlag.Default:
@@ -1369,7 +1381,7 @@ class RefType(ValueInfo):
             result = [member for member in self._FieldInfos + self._MethodInfos if self._where_member(member, flag)]
         result.extend(self.GetBaseMembers(flag))
         return result
-        
+
     def GetAllMembers(self) -> List[MemberInfo]:
         self._ensure_initialized()
         result = self._FieldInfos + self._MethodInfos
@@ -1397,18 +1409,18 @@ class TypeManager(BaseModel, any_class):
             _Internal_TypeManager = cls()
             _Internal_TypeManager._preheat_cache()
         return _Internal_TypeManager
-        
+
     def _preheat_cache(self):
         """预热缓存，为常用类型预先创建RefType"""
         if self._is_preheated:
             return
-            
+
         # 常用的基础类型列表
         common_types = [
-            int, float, str, bool, list, dict, tuple, set, 
+            int, float, str, bool, list, dict, tuple, set,
             object, type, None.__class__, Exception, BaseModel, any_class
         ]
-        
+
         # 预加载的类型和它们之间常见的关系，减少后续运行时计算
         for t in common_types:
             self.CreateRefType(t)
@@ -1420,7 +1432,7 @@ class TypeManager(BaseModel, any_class):
             if t.__module__ != 'builtins':
                 full_name = f"{t.__module__}.{t.__name__}"
                 self._string_to_type_cache[full_name] = t
-            
+
         self._is_preheated = True
 
     def AllRefTypes(self) -> Tuple[RefType, ...]:
@@ -1431,11 +1443,11 @@ class TypeManager(BaseModel, any_class):
     def _TurnToType(data:Any, module_name:Optional[str]=None) -> type|_SpecialIndictaor:
         """将任意数据转换为类型，增加缓存以提高性能"""
         metaType:type|_SpecialIndictaor = None
-        
+
         # 快速路径：如果已经是类型，直接返回
         if isinstance(data, type) or isinstance(data, _SpecialIndictaor):
             return data
-            
+
         # 处理字符串类型
         if isinstance(data, str):
             # 尝试使用模块名解析类型
@@ -1444,18 +1456,18 @@ class TypeManager(BaseModel, any_class):
                     return sys.modules[module_name].__dict__[data]
                 except (KeyError, AttributeError):
                     pass
-                    
+
             # 尝试使用to_type函数
             try:
                 return to_type(data, module_name=module_name)
             except Exception:
                 pass
-                
+
         # 尝试使用try_to_type函数作为回退
         metaType = try_to_type(data, module_name=module_name)
         if metaType is None or isinstance(metaType, list):
             metaType = data
-            
+
         return metaType
 
     @overload
@@ -1491,10 +1503,10 @@ class TypeManager(BaseModel, any_class):
         # 快速路径：如果是字符串并且在字符串缓存中，直接返回对应的类型
         if isinstance(data, str) and data in self._string_to_type_cache:
             data = self._string_to_type_cache[data]
-        
+
         # 获取或转换为类型
         metaType:type = TypeManager._TurnToType(data, module_name=module_name)
-        
+
         # 首先尝试从弱引用缓存中获取
         type_id = id(metaType)
         if type_id in self._weak_refs:
@@ -1504,7 +1516,7 @@ class TypeManager(BaseModel, any_class):
             else:
                 # 如果弱引用已被回收，则从字典中删除
                 del self._weak_refs[type_id]
-            
+
         # 然后尝试从常规缓存中获取
         try:
             ref_type = self._RefTypes[metaType]
@@ -1554,7 +1566,7 @@ class TypeManager(BaseModel, any_class):
             data = self._string_to_type_cache[data]
 
         metaType:type|_SpecialIndictaor = TypeManager._TurnToType(data, module_name=module_name)
-        
+
         # 如果是字符串类型，缓存结果以供将来使用
         if isinstance(data, str) and not data in self._string_to_type_cache:
             self._string_to_type_cache[data] = metaType

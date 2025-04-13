@@ -1,5 +1,6 @@
 from ..Internal         import *
 from ..Lang.Core        import run_async_coroutine
+from ..Lang.Reflection  import MethodInfo
 from pydantic           import BaseModel, Field, GetCoreSchemaHandler
 from pydantic_core      import core_schema
 from ..Lang.EasySave    import EasySave, SetInternalEasySaveDebug, SetInternalDebug, SetInternalReflectionDebug
@@ -92,7 +93,6 @@ WorkflowManager (工作流管理器)
 
 '''
 
-__all__workflow_action_wrappers__:Dict[action_label_type, 'WorkflowActionWrapper'] = {}
 
 class NodeSlotInfo(BaseModel, any_class):
     """
@@ -673,10 +673,10 @@ class FunctionModel(BaseModel, any_class):
     """
     函数模型
     """
-    name:           str         = Field(description="函数名称")
-    description:    str         = Field(description="函数描述")
-    parameters:     Dict[str, str] = Field(description="函数参数")
-    returns:        Dict[str, str] = Field(description="函数返回值")
+    name:           str             = Field(description="函数名称")
+    description:    Optional[str]   = Field(description="函数描述")
+    parameters:     Dict[str, str]  = Field(description="函数参数")
+    returns:        Dict[str, str]  = Field(description="函数返回值")
 
 class Workflow(BaseModel, any_class):
     """
@@ -708,13 +708,44 @@ class Workflow(BaseModel, any_class):
                 index += 1
         return workflow
 
+__all__workflow_action_wrappers__:Dict[action_label_type, 'WorkflowActionWrapper'] = {}
+
 class WorkflowActionWrapper(left_value_reference[Callable], invoke_callable):
-    def __init__(self, name:action_label_type, action:Callable):
+    name:           action_label_type   = None
+    functionModel:  FunctionModel       = None
+
+    def __init__(
+        self,
+        name:           action_label_type,
+        action:         Callable,
+        description:    Optional[str]               = None,
+        parameters:     Optional[Dict[str, str]]    = None,
+        returns:        Optional[Dict[str, str]]    = None,
+        ):
         super().__init__(action)
         self.name = name
+        if parameters is None or returns is None:
+            methodInfo = MethodInfo.Create(name, action)
+            if parameters is None:
+                parameters = {param.ParameterName: str(param.ParameterType) for param in methodInfo.Parameters}
+            if returns is None:
+                returns = {"result": str(methodInfo.ReturnType)}
+        if parameters is not None and returns is not None:
+            self.functionModel = FunctionModel(
+                name=name,
+                description=description or action.__doc__ or "",
+                parameters=parameters,
+                returns=returns
+            )
+        if name in __all__workflow_action_wrappers__:
+            if GetInternalWorkflowDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"警告: 工作流动作<{name}>已存在, 将覆盖旧的ActionWrapper")
+            __all__workflow_action_wrappers__[name] = None
         __all__workflow_action_wrappers__[name] = self
+
     def __del__(self):
-        del __all__workflow_action_wrappers__[self.name]
+        if self.name in __all__workflow_action_wrappers__:
+            del __all__workflow_action_wrappers__[self.name]
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.ref_value(*args, **kwds)
@@ -734,6 +765,11 @@ class WorkflowActionWrapper(left_value_reference[Callable], invoke_callable):
     @classmethod
     def ContainsActionWrapper(cls, name:action_label_type) -> bool:
         return name in __all__workflow_action_wrappers__
+
+    @classmethod
+    def GetActionWrapperModels(cls) -> List[FunctionModel]:
+        return [wrapper.functionModel for wrapper in __all__workflow_action_wrappers__.values()
+                if wrapper is not None and wrapper.functionModel is not None]
 
 _Internal_All_EndNodes:List['EndNode'] = []
 _Internal_Task_Count:atomic[int] = atomic(0, threading.Lock())
@@ -899,39 +935,39 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, "工作流为空")
             return
-        
+
         global _Internal_Task_Count
         _Internal_Task_Count.store(len(_Internal_All_EndNodes))
-        
+
         if GetInternalWorkflowDebug():
             print_colorful(ConsoleFrontColor.YELLOW, f"工作流开始, 任务数量: {_Internal_Task_Count}, 开始时间: {time.time()}")
-        
+
         # 广播开始事件
         self.Broadcast(WorkflowStartEvent(verbose=verbose), "OnStartEvent")
-        
+
         try:
             # 等待所有终止节点完成
             while _Internal_Task_Count.load() > 0:
                 await asyncio.sleep(0.1)
-                
+
             # 所有任务正常完成
             self.__state.is_completed = True
-            
+
         except Exception as e:
             # 发生异常，确保停止工作流
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.RED, f"工作流执行过程中发生错误: {e}")
-            
+
             # 停止工作流并传递错误信息
             self.StopWorkflow(error=e)
-            
+
             # 重新抛出异常
             raise
         finally:
             # 确保总是广播停止事件
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, f"工作流结束, 结束时间: {time.time()}")
-            
+
             self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
 
     async def RunWorkflow(self, verbose:bool=False) -> None:
@@ -970,7 +1006,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
             self.__state.is_completed = True
             # 确保广播停止事件
             self.Broadcast(WorkflowStopEvent(verbose=verbose), "OnStopEvent")
-            
+
             if verbose:
                 print_colorful(ConsoleFrontColor.BLUE, f"工作流完成, 用时: "\
                     f"{time.time() - self.__state.start_time}秒, 异常状态: {self.__state.error}")
@@ -978,7 +1014,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
     def StopWorkflow(self, file: Optional[tool_file_or_str]=None, error: Optional[Exception]=None) -> None:
         '''
         打断任务, 直接停止工作流
-        
+
         Args:
             file: 保存工作流状态的文件
             error: 停止工作流的错误原因
@@ -986,19 +1022,19 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         # if file is not None:
         #     self.SaveState(file)
         global _Internal_Task_Count
-        
+
         # 如果提供了错误信息，广播错误事件
         if error is not None:
             self.__state.error = str(error)
             self.Broadcast(WorkflowErrorEvent(verbose=True, error=error, from_=self), "OnStopEvent")
-        
+
         # 确保任务计数归零，以便_DoStart中的循环能够退出
         _Internal_Task_Count.store(0)
-        
+
         # 记录结束时间
         if self.__state.end_time is None:
             self.__state.end_time = time.time()
-        
+
         # 标记工作流已完成
         self.__state.is_completed = True
 

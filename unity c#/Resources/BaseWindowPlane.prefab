@@ -50,8 +50,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 999be728ad5e8324baf45ccaf0f9c3d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Plane: {fileID: 0}
-  m_AnimationPlane: {fileID: 0}
+  m_Plane: {fileID: 693676614408209864}
+  m_AnimationPlane: {fileID: 646754433006795524}
   IsEnableAnimation: 1
   AnimationSpeed: 0.5
   BeforeMaximizeWindow:
@@ -62,6 +62,7 @@ MonoBehaviour:
     anchorMax: {x: 0, y: 0}
     anchorMin: {x: 0, y: 0}
     pivot: {x: 0, y: 0}
+  AdjustSizeToContainsRect: {fileID: 0}
 --- !u!1 &1920076764606642093
 GameObject:
   m_ObjectHideFlags: 0

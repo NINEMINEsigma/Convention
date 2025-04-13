@@ -9,12 +9,31 @@ using UnityEngine.InputSystem;
 
 namespace Convention.Workflow
 {
+    [Serializable,ArgPackage]
+    public class NodeResult
+    {
+        public int nodeID;
+        public string nodeTitle;
+        // context_type or context_value_type
+        public object result;
+    }
+
+    [Serializable,ArgPackage]
+    public class ContextResult
+    {
+        public string hashID;
+        public List<NodeResult> results;
+        public float progress;
+        public int task_count;
+    }
+
     [Serializable, ArgPackage]
     public class FunctionModel
     {
-        public string FunctionName = "unknown";
-        public Dictionary<string, NodeSlotInfo> Parameters = new();
-        public Dictionary<string, NodeSlotInfo> Returns = new();
+        public string name = "unknown";
+        public string description = "unknown";
+        public Dictionary<string, NodeSlotInfo> parameters = new();
+        public Dictionary<string, NodeSlotInfo> returns = new();
     }
 
     [Serializable, ArgPackage]
@@ -69,16 +88,16 @@ namespace Convention.Workflow
         }
         public List<string> GetAllFunctionName()
         {
-            return CallableFunctionModels.ConvertAll(x => x.FunctionName);
+            return CallableFunctionModels.ConvertAll(x => x.name);
         }
         public bool ContainsFunctionModel(string functionName)
         {
-            return CallableFunctionModels.Any(x => x.FunctionName == functionName);
+            return CallableFunctionModels.Any(x => x.name == functionName);
         }
         [return:ReturnMayNull]
         public FunctionModel GetFunctionModel(string functionName)
         {
-            return CallableFunctionModels.FirstOrDefault(x => x.FunctionName == functionName);
+            return CallableFunctionModels.FirstOrDefault(x => x.name == functionName);
         }
 
         public static string Transformer([In] string str)
@@ -131,8 +150,8 @@ namespace Convention.Workflow
 #if UNITY_EDITOR
             this.RegisterFunctionModel(new()
             {
-                FunctionName = "TestFunction",
-                Parameters =
+                name = "TestFunction",
+                parameters =
                 {
                     {
                         "In",new NodeSlotInfo()
@@ -143,7 +162,7 @@ namespace Convention.Workflow
                         }
                     }
                 },
-                Returns =
+                returns =
                 {
                     {
                         "Out", new NodeSlotInfo()

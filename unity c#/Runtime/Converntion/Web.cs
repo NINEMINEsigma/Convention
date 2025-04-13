@@ -64,6 +64,72 @@ namespace Convention
             return this.url;
         }
 
+        public delegate void GetCallback([In] UnityWebRequest request);
+        public bool Get([In] GetCallback callback)
+        {
+            if (!IsValid)
+                return false;
+
+            WebRequest = UnityWebRequest.Get(this.url);
+            WebRequest.SendWebRequest();
+
+            while (!WebRequest.isDone) ;
+
+            callback(WebRequest);
+            return WebRequest.result == UnityWebRequest.Result.Success;
+        }
+
+        public delegate void GetAsyncCallback([In, Opt] UnityWebRequest request);
+        public IEnumerator GetAsync([In] GetAsyncCallback callback)
+        {
+            if (!IsValid)
+            {
+                callback(null);
+                yield break;
+            }
+
+            WebRequest = UnityWebRequest.Get(this.url);
+            WebRequest.SendWebRequest();
+
+            while (!WebRequest.isDone) 
+                yield return null;
+
+            callback(WebRequest);
+        }
+
+        public delegate void PostCallback([In] UnityWebRequest request);
+        public bool Post([In] PostCallback callback, [In]WWWForm form)
+        {
+            if (!IsValid)
+                return false;
+
+            WebRequest = UnityWebRequest.Post(this.url, form);
+            WebRequest.SendWebRequest();
+
+            while (!WebRequest.isDone) ;
+
+            callback(WebRequest);
+            return WebRequest.result == UnityWebRequest.Result.Success;
+        }
+
+        public delegate void PostAsyncCallback([In, Opt] UnityWebRequest request);
+        public IEnumerator PostAsync([In] PostAsyncCallback callback, [In] WWWForm form)
+        {
+            if (!IsValid)
+            {
+                callback(null);
+                yield break;
+            }
+
+            WebRequest = UnityWebRequest.Post(this.url, form);
+            WebRequest.SendWebRequest();
+
+            while (!WebRequest.isDone)
+                yield return null;
+
+            callback(WebRequest);
+        }
+
         #region URL Properties
         public string FullURL => this.url;
         public static implicit operator string(ToolURL data) => data.FullURL;
@@ -178,7 +244,7 @@ namespace Convention
                 this.data = result;
                 return result;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Debug.Log(jsonText);
                 throw;

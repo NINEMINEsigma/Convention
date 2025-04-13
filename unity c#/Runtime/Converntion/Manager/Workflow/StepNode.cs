@@ -31,12 +31,12 @@ namespace Convention.Workflow
             {
                 this.MyStepInfo.funcname = x;
                 this.MyStepInfo.inmapping = new();
-                foreach (var (name, info) in WorkflowManager.instance.GetFunctionModel(x).Parameters)
+                foreach (var (name, info) in WorkflowManager.instance.GetFunctionModel(x).parameters)
                 {
                     this.MyStepInfo.inmapping[name] = info.TemplateClone();
                 }
                 this.MyStepInfo.outmapping = new();
-                foreach (var (name, info) in WorkflowManager.instance.GetFunctionModel(x).Returns)
+                foreach (var (name, info) in WorkflowManager.instance.GetFunctionModel(x).returns)
                 {
                     this.MyStepInfo.outmapping[name] = info.TemplateClone();
                 }
