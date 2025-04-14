@@ -1008,7 +1008,7 @@ class RefType(ValueInfo):
         """确保完全初始化，实现延迟加载"""
         
         # 初始化锁, 防止同个RefType在多线程中被重复初始化
-        if self.RealType in _RefTypeLock:
+        if self.RealType not in _RefTypeLock:
             _RefTypeLock[self.RealType] = threading.Lock()
         lock_guard(_RefTypeLock[self.RealType])
         
