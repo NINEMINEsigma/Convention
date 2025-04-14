@@ -16,7 +16,7 @@ try:
     import llama_cpp as _
     from ..LLM.llama import *
 except ImportError as ex:
-    ImportingThrow(ex, "llama", ["llama-cpp"])
+    ImportingThrow(ex, "llama", ["llama-cpp-python"])
 
 # Import LlamaIndex module
 try:

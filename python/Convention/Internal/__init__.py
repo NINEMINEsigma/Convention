@@ -10,6 +10,9 @@ import                     time
 if platform.system() == "Windows":
     from colorama       import Fore as ConsoleFrontColor, Back as ConsoleBackgroundColor, Style as ConsoleStyle
 
+def format_traceback_info(char:str='\n'):
+    return char.join(traceback.format_stack()[:-1])
+
 INTERNAL_DEBUG = False
 def SetInternalDebug(mode:bool):
     global INTERNAL_DEBUG
@@ -43,8 +46,7 @@ def ImportingThrow(
             install = installBase.format_map({"name":i})
             print(install)
         if ex:
-            print(ex)
-            #raise ex
+            print_colorful(ConsoleFrontColor.RED, f"Import Error On {moduleName} Module: {ex}, \b{ex.path}")
 
 def InternalImportingThrow(
     moduleName:     str,
@@ -191,9 +193,6 @@ type Action4[_T1, _T2, _T3, _T4] = Callable[[_T1, _T2, _T3, _T4], None]
 type Action5[_T1, _T2, _T3, _T4, _T5] = Callable[[_T1, _T2, _T3, _T4, _T5], None]
 type ActionW = Callable[[Sequence[Any]], None]
 type ClosuresCallable[_T] = Union[Callable[[Optional[None]], _T], Typen[_T]]
-
-def format_traceback_info():
-    return ''.join(traceback.format_stack()[:-1])
 
 class type_class(object):
     generate_trackback: Optional[str] = None

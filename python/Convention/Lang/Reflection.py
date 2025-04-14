@@ -609,7 +609,11 @@ class ValueInfo(BaseInfo):
                 raise ReflectionException("SelfType is required when metaType is <Self>")
             return ValueInfo.Create(SelfType, **kwargs)
         elif isinstance(metaType, TypeVar):
-            return TypeVarIndictaor
+            gargs = get_generic_args(metaType)
+            if len(gargs) == 1:
+                return ValueInfo(gargs[0], **kwargs)
+            else:
+                return ValueInfo(Any, **kwargs)
         elif hasattr(metaType, '__origin__'):
             oType = get_origin(metaType)
             if oType is list:
@@ -925,6 +929,8 @@ class RefTypeFlag(IntFlag):
     Special:int = 0b10000000
     All:int = 0b11111111
 
+_RefTypeLock:Dict[Any|type|_SpecialIndictaor, threading.Lock] = {}
+
 class RefType(ValueInfo):
     _FieldInfos:    List[FieldInfo]  = PrivateAttr()
     _MethodInfos:   List[MethodInfo] = PrivateAttr()
@@ -1000,9 +1006,15 @@ class RefType(ValueInfo):
 
     def _ensure_initialized(self):
         """确保完全初始化，实现延迟加载"""
+        
+        # 初始化锁, 防止同个RefType在多线程中被重复初始化
+        if self.RealType in _RefTypeLock:
+            _RefTypeLock[self.RealType] = threading.Lock()
+        lock_guard(_RefTypeLock[self.RealType])
+        
         if self._initialized:
             return
-
+        
         metaType = self.RealType
         # 初始化基类列表 - 只初始化一次
         if self._BaseTypes is None:

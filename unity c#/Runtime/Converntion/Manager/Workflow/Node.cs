@@ -365,21 +365,6 @@ namespace Convention.Workflow
     }
 
     [Serializable, ArgPackage]
-    public class NodeResult : AnyClass
-    {
-        public int nodeID = -1;
-        public string nodeTitle = "";
-        public Dictionary<string, object> result = new();
-    }
-
-    [Serializable, ArgPackage]
-    public class ContextResult : AnyClass
-    {
-        public string hashID = "";
-        public List<NodeResult> results = new();
-    }
-
-    [Serializable, ArgPackage]
     public class DynamicNodeInfo : NodeInfo
     {
         protected override NodeInfo CreateTemplateNodeInfoBySelfType()
