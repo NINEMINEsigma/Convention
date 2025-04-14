@@ -230,6 +230,28 @@ class WorkflowErrorEvent(WorkflowStopEvent):
     error:  Any   = Field(description="错误")
     from_:  Any   = Field(description="错误来源")
 
+class _DefaultOptional(any_class):
+    __instance:Optional[Self] = None
+    
+    def __new__(cls) -> Self:
+        if cls.__instance is None:
+            cls.__instance = super().__new__(cls)
+        return cls.__instance
+    
+    @override
+    def SymbolName(self) -> str:
+        return "DefaultOptional"
+    
+    @staticmethod
+    def GetInstance() -> Self:
+        if _DefaultOptional.__instance is None:
+            _DefaultOptional.__instance = _DefaultOptional()
+        return _DefaultOptional.__instance
+    
+    @staticmethod
+    def IsInstance(value:Any) -> bool:
+        return isinstance(value, _DefaultOptional)
+
 class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
     """
     节点插槽
@@ -368,6 +390,8 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
             获取上游输出槽的参数, 当上游参数还未被设置时应等待
         '''
         if self.info.IsInmappingSlot:
+            if self.info.targetSlot is None:
+                return _DefaultOptional.GetInstance()
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, f"节点<{self.info.parentNode.SymbolName()}, "\
                     f"id={_Internal_GetNodeID(self.info.parentNode)}, title={self.info.parentNode.info.title}>"\
@@ -603,7 +627,8 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
                     f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>位于"\
                     f"{ConsoleFrontColor.RESET}<{slot_name}>{ConsoleFrontColor.YELLOW}的槽开始获取参数")
             value = await slot.GetParameter()
-            parameters[slot_name] = value
+            if not _DefaultOptional.IsInstance(value):
+                parameters[slot_name] = value
         if GetInternalWorkflowDebug():
             print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                 f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>参数构建完成:{ConsoleFrontColor.WHITE}"\

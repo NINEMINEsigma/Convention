@@ -86,6 +86,10 @@ namespace Convention.Workflow
         {
             CallableFunctionModels.Add(func);
         }
+        public void UnregisterFunctionModel([In]FunctionModel func)
+        {
+            CallableFunctionModels.Remove(func);
+        }
         public List<string> GetAllFunctionName()
         {
             return CallableFunctionModels.ConvertAll(x => x.name);
@@ -184,7 +188,7 @@ namespace Convention.Workflow
                 var t = Mouse.current.scroll.y.ReadValue() * ScrollSpeed * 0.001f;
                 var z = m_CameraTransform.transform.localPosition.z;
                 if (z - t > -100 && z - t < -5)
-                    m_CameraTransform.transform.Translate(new Vector3(0, 0, -t), Space.Self);
+                    m_CameraTransform.transform.Translate(new Vector3(0, 0, t), Space.Self);
             }
             UIFocusObject.position = Mouse.current.position.ReadValue();
         }
@@ -255,6 +259,15 @@ namespace Convention.Workflow
             if (node == null)
                 return -1;
             return workflow.Nodes.IndexOf(node);
+        }
+
+        public void SaveWorkflowWithSystemPlugin()
+        {
+            SaveWorkflow(PluginExtenion.SaveFile("工作流|*.workflow;*.json", "保存工作流"));
+        }
+        public void LoadWorkflowWithSystemPlugin()
+        {
+            LoadWorkflow(PluginExtenion.SelectFile("工作流|*.workflow;*.json", "加载工作流"));
         }
 
         public ToolFile SaveWorkflow(string workflowPath)

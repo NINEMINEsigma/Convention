@@ -601,15 +601,12 @@ namespace Convention
 
         public static string BrowseFile([In] params string[] extensions)
         {
-            string result = null;
-#if PLATFORM_STANDALONE_WIN
+            string filter = "";
+            foreach (var ext in extensions)
             {
-                WindowsKit.SelectFileOnSystem((string file) =>
-                {
-                    result = file;
-                }, "Browse", "File", extensions);
+                filter += "*." + ext + ";";
             }
-#endif
+            string result = PluginExtenion.SelectFile("所有文件|" + filter);
             return result;
         }
         public static ToolFile BrowseToolFile([In] params string[] extensions)

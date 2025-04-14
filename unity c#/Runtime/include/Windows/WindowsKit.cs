@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace Convention
 {
@@ -37,62 +38,94 @@ namespace Convention
             public int flagsEx = 0;
         }
 
-        public class LocalDialog
-        {
-            [System.Runtime.InteropServices.DllImport(
-                "Comdlg32.dll", SetLastError = true,
-                ThrowOnUnmappableChar = true, 
-                CharSet = System.Runtime.InteropServices.CharSet.Auto)]
-            public static extern bool GetOpenFileName(
-                [System.Runtime.InteropServices.In, System.Runtime.InteropServices.Out] OpenFileName ofn);
-            public static bool GetOFN(
-                [System.Runtime.InteropServices.In, System.Runtime.InteropServices.Out] OpenFileName ofn)
-            {
-                return GetOpenFileName(ofn);
-            }
+        [DllImport("Comdlg32.dll", SetLastError = true, ThrowOnUnmappableChar = true, CharSet = CharSet.Auto)]
+        public static extern bool GetOpenFileName([In, Out] OpenFileName ofn);
 
-            [System.Runtime.InteropServices.DllImport(
-                "Comdlg32.dll", SetLastError = true,
-                ThrowOnUnmappableChar = true,
-                CharSet = System.Runtime.InteropServices.CharSet.Auto)]
-            public static extern bool GetSaveFileName(
-                [System.Runtime.InteropServices.In, System.Runtime.InteropServices.Out] OpenFileName ofn);
-            public static bool GetSFN(
-                [System.Runtime.InteropServices.In, System.Runtime.InteropServices.Out] OpenFileName ofn)
-            {
-                return GetSaveFileName(ofn);
-            }
+        [DllImport("Comdlg32.dll", SetLastError = true, ThrowOnUnmappableChar = true, CharSet = CharSet.Auto)]
+        public static extern bool GetSaveFileName([In, Out] OpenFileName ofn);
+
+        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        public static extern IntPtr SHBrowseForFolder(ref BROWSEINFO lpbi);
+
+        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        public static extern bool SHGetPathFromIDList(IntPtr pidl, IntPtr pszPath);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        public struct BROWSEINFO
+        {
+            public IntPtr hwndOwner;
+            public IntPtr pidlRoot;
+            public string pszDisplayName;
+            public string lpszTitle;
+            public uint ulFlags;
+            public IntPtr lpfn;
+            public IntPtr lParam;
+            public int iImage;
         }
 
-        public static OpenFileName SelectFileOnSystem(string labelName, string subLabelName, params string[] fileArgs)
+        public static string SelectFolder(string description = "请选择文件夹")
         {
-            OpenFileName targetFile = new OpenFileName();
-            targetFile.structSize = System.Runtime.InteropServices.Marshal.SizeOf(targetFile);
-            targetFile.filter = labelName + "(*" + subLabelName + ")\0";
-            for (int i = 0; i < fileArgs.Length - 1; i++)
+            BROWSEINFO bi = new BROWSEINFO();
+            bi.lpszTitle = description;
+            bi.ulFlags = 0x00000040; // BIF_NEWDIALOGSTYLE
+            bi.hwndOwner = IntPtr.Zero;
+
+            IntPtr pidl = SHBrowseForFolder(ref bi);
+            if (pidl != IntPtr.Zero)
             {
-                targetFile.filter += "*." + fileArgs[i] + ";";
+                IntPtr pathPtr = Marshal.AllocHGlobal(260);
+                if (SHGetPathFromIDList(pidl, pathPtr))
+                {
+                    string path = Marshal.PtrToStringAuto(pathPtr);
+                    Marshal.FreeHGlobal(pathPtr);
+                    current_initialDir = path;
+                    return path;
+                }
+                Marshal.FreeHGlobal(pathPtr);
             }
-            if (fileArgs.Length > 0) targetFile.filter += "*." + fileArgs[^1] + ";\0";
-            targetFile.file = new string(new char[256]);
-            targetFile.maxFile = targetFile.file.Length;
-            targetFile.fileTitle = new string(new char[64]);
-            targetFile.maxFileTitle = targetFile.fileTitle.Length;
-            targetFile.initialDir = current_initialDir;
-            targetFile.title = "Select";
-            targetFile.flags = 0x00080000 | 0x00001000 | 0x00000800 | 0x00000008;
-            return targetFile;
+            return null;
         }
 
-        public static OpenFileName SelectFileOnSystem(Action<string> action, string labelName, string subLabelName, params string[] fileArgs)
+        public static string[] SelectMultipleFiles(string filter = "所有文件|*.*", string title = "选择文件")
         {
-            OpenFileName targetFile = SelectFileOnSystem(labelName, subLabelName, fileArgs);
-            if (LocalDialog.GetOpenFileName(targetFile) && targetFile.file != "")
+            OpenFileName ofn = new OpenFileName();
+            ofn.structSize = Marshal.SizeOf(ofn);
+            ofn.filter = filter.Replace("|", "\0") + "\0";
+            ofn.file = new string(new char[256]);
+            ofn.maxFile = ofn.file.Length;
+            ofn.fileTitle = new string(new char[64]);
+            ofn.maxFileTitle = ofn.fileTitle.Length;
+            ofn.initialDir = current_initialDir;
+            ofn.title = title;
+            ofn.flags = 0x00080000 | 0x00001000 | 0x00000800 | 0x00000008 | 0x00000200; // OFN_ALLOWMULTISELECT
+
+            if (GetOpenFileName(ofn))
             {
-                action(targetFile.file);
-                current_initialDir = new FileInfo(targetFile.file).Directory.FullName;
+                current_initialDir = Path.GetDirectoryName(ofn.file);
+                return ofn.file.Split('\0');
             }
-            return targetFile;
+            return null;
+        }
+
+        public static string SaveFile(string filter = "所有文件|*.*", string title = "保存文件")
+        {
+            OpenFileName ofn = new OpenFileName();
+            ofn.structSize = Marshal.SizeOf(ofn);
+            ofn.filter = filter.Replace("|", "\0") + "\0";
+            ofn.file = new string(new char[256]);
+            ofn.maxFile = ofn.file.Length;
+            ofn.fileTitle = new string(new char[64]);
+            ofn.maxFileTitle = ofn.fileTitle.Length;
+            ofn.initialDir = current_initialDir;
+            ofn.title = title;
+            ofn.flags = 0x00080000 | 0x00001000 | 0x00000800 | 0x00000008 | 0x00000002; // OFN_OVERWRITEPROMPT
+
+            if (GetSaveFileName(ofn))
+            {
+                current_initialDir = Path.GetDirectoryName(ofn.file);
+                return ofn.file;
+            }
+            return null;
         }
     }
 }

@@ -30,20 +30,21 @@ namespace Convention.WindowsUI.Variant
 
         private void OnCallback()
         {
-            PluginExtenion.SelectFileOnSystem(path =>
+            string filter = "";
+            foreach (var ext in ToolFile.ImageFileExtension)
+                filter += "*." + ext + ";";
+            string path = PluginExtenion.SelectFile("image or texture|" + filter);
+            if (path == null || path.Length == 0)
+                return;
+            var file = new ToolFile(path);
+            if (file.IsExist == false)
+                return;
+            Texture2D texture = file.LoadAsImage();
+            SetImage(texture);
+            if (targetItem.target is IInspectorUpdater updater)
             {
-                if (path == null || path.Length == 0)
-                    return;
-                var file = new ToolFile(path);
-                if (file.IsExist == false)
-                    return;
-                Texture2D texture = file.LoadAsImage();
-                SetImage(texture);
-                if (targetItem.target is IInspectorUpdater updater)
-                {
-                    updater.OnInspectorUpdate();
-                }
-            }, "image", "texture", ToolFile.ImageFileExtension);
+                updater.OnInspectorUpdate();
+            }
         }
 
         private void Start()

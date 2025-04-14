@@ -1,16 +1,44 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace Convention
 {
     public static class PluginExtenion
     {
-        public static void SelectFileOnSystem(Action<string> action, string labelName, string subLabelName, params string[] fileArgs)
+        public static string[] SelectMultipleFiles(string filter = "所有文件|*.*", string title = "选择文件")
         {
 #if PLATFORM_WINDOWS
-            WindowsKit.SelectFileOnSystem(action, labelName, subLabelName, fileArgs);
+            return WindowsKit.SelectMultipleFiles(filter, title);
+#elif PLATFORM_WEBGL               
+
+#endif
+        }
+
+        public static string SelectFile(string filter = "所有文件|*.*", string title = "选择文件")
+        {
+#if PLATFORM_WINDOWS
+            var results = WindowsKit.SelectMultipleFiles(filter, title);
+            if (results != null && results.Length > 0)
+                return results[0];
+#elif PLATFORM_WEBGL               
+
+#endif
+            return null;
+        }
+
+        public static string SaveFile(string filter = "所有文件|*.*", string title = "保存文件")
+        {
+#if PLATFORM_WINDOWS
+            return WindowsKit.SaveFile(filter, title);
+#elif PLATFORM_WEBGL               
+
+#endif
+        }
+
+        public static string SelectFolder(string description = "请选择文件夹")
+        {
+#if PLATFORM_WINDOWS
+            return WindowsKit.SelectFolder(description);
 #elif PLATFORM_WEBGL               
 
 #endif

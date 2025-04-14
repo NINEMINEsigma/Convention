@@ -361,6 +361,11 @@ class any_class(type_class, ABC):
             out_value.ref_value = out_value.GetRealType()(self)
         return self
 
+    @classmethod
+    @virtual
+    def Assembly(cls) -> str:
+        return "Convention.Runtime"
+
 def UnwrapperInstance2Ref[_T](instance:Union[
     _T,
     base_value_reference

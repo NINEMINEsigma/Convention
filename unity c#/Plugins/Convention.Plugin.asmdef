@@ -6,7 +6,8 @@
         "EasySave3",
         "Unity.Mathematics",
         "Unity.Entities",
-        "Unity.Collections"
+        "Unity.Collections",
+        "Convention.Windows"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

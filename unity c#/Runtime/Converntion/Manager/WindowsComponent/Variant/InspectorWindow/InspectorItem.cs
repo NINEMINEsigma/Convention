@@ -40,20 +40,24 @@ namespace Convention.WindowsUI.Variant
         public readonly bool isUpdateAble = true;
         public readonly bool isChangeAble = true;
         public readonly string name = null;
+        // Get Real Inspector Name: Field
         public readonly string nameGenerater = null;
+        // Get Real Enum Names: Method
+        public readonly string enumGenerater = null;
 
         public InspectorDrawAttribute()
         {
             this.drawType = InspectorDrawType.Auto;
         }
         public InspectorDrawAttribute(InspectorDrawType drawType = InspectorDrawType.Auto, bool isUpdateAble = true,
-                                      bool isChangeAble = true, string name = null, string nameGenerater = null)
+                                      bool isChangeAble = true, string name = null, string nameGenerater = null, string enumGenerater = null)
         {
             this.drawType = drawType;
             this.isUpdateAble = isUpdateAble;
             this.isChangeAble = isChangeAble;
             this.name = name;
             this.nameGenerater = nameGenerater;
+            this.enumGenerater = enumGenerater;
         }
     }
 
@@ -89,6 +93,7 @@ namespace Convention.WindowsUI.Variant
         [Setting, SerializeField] private InspectorDrawType targetDrawType;
         [Setting, SerializeField] private bool targetAbleChangeMode = true;
         [Setting, SerializeField] private bool targetUpdateMode = true;
+        [Setting, SerializeField] public InspectorDrawAttribute targetDrawer { get; private set; }
 
         public InspectorDrawer CurrentModule => m_AllUIModules[targetDrawType];
         public InspectorDrawType DrawType
@@ -286,7 +291,7 @@ namespace Convention.WindowsUI.Variant
                 ArgPackageAttribute argAttr = null;
                 Type type = null;
                 // Reset AbleChangeType
-                drawAttr = targetMemberInfo.GetCustomAttribute<InspectorDrawAttribute>(true);
+                this.targetDrawer = drawAttr = targetMemberInfo.GetCustomAttribute<InspectorDrawAttribute>(true);
                 argAttr = targetMemberInfo.GetCustomAttribute<ArgPackageAttribute>(true);
                 type = ConventionUtility.GetMemberValueType(targetMemberInfo);
                 AbleChangeType = targetMemberInfo.GetCustomAttributes(typeof(IgnoreAttribute), true).Length == 0;

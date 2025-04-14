@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Convention.WindowsUI;
 using Convention.WindowsUI.Variant;
@@ -8,7 +9,15 @@ namespace Convention.Workflow
 {
     public class SelectorNodeInfo : StartNodeInfo
     {
-        [InspectorDraw(InspectorDrawType.Text, true, false, "选择")]
+        public virtual IEnumerable<string> EnumNamesGenerater()
+        {
+            return new List<string>()
+            {
+                "unknown"
+            };
+        }
+
+        [InspectorDraw(InspectorDrawType.Enum, true, false, "选择", enumGenerater:nameof(EnumNamesGenerater))]
         public string select = "unknown";
 
         public SelectorNodeInfo() : this(WorkflowManager.Transformer(nameof(SelectorNode))) { }
@@ -52,14 +61,24 @@ namespace Convention.Workflow
             DropDown.AddListener(x => MySelectorInfo.select = x);
         }
 
-        protected virtual void RebuildDropDown(ModernUIDropdown dropdown)
+        protected virtual void RebuildDropDown(ModernUIDropdown dropdown, SelectorNodeInfo info)
         {
-
+            try
+            {
+                foreach (var llm in info.EnumNamesGenerater())
+                {
+                    dropdown.CreateOption(llm);
+                }
+            }
+            catch (Exception)
+            {
+                GameObject.Destroy(this.gameObject);
+            }
         }
 
         protected override void WhenSetup(NodeInfo info)
         {
-            RebuildDropDown(DropDown);
+            RebuildDropDown(DropDown, info as SelectorNodeInfo);
             base.WhenSetup(info);
         }
     }

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,41 +15,74 @@ namespace Convention.WindowsUI.Variant
         private bool isFlags;
         private string[] enumNames;
 
-        public override void OnInspectorItemInit(InspectorItem item)
+        private bool GetIsFlags()
         {
-            base.OnInspectorItemInit(item);
+            if (enumType.IsEnum)
+                return enumType.GetCustomAttributes(typeof(FlagsAttribute), true).Length != 0;
+            else
+                return false;
+        }
+
+        private string[] GetEnumNames()
+        {
+            if (enumType.IsEnum)
+                return Enum.GetNames(enumType);
+            else
+            {
+                var curValue = InspectorWindow.instance.GetTarget();
+                var curType = curValue.GetType();
+                var enumGeneratorField = curType.GetField(targetItem.targetDrawer.enumGenerater);
+                if (enumGeneratorField != null)
+                    return (enumGeneratorField.GetValue(curValue) as IEnumerable<string>).ToArray();
+                else
+                {
+                    return (curType.GetMethod(targetItem.targetDrawer.enumGenerater).Invoke(curValue, new object[] { }) as IEnumerable<string>).ToArray();
+                }
+            }
         }
 
         private void OnEnable()
         {
             m_Dropdown.ClearOptions();
             enumType = targetItem.GetValue().GetType();
-            isFlags = enumType.GetCustomAttributes(typeof(FlagsAttribute), true).Length != 0;
-            enumNames = Enum.GetNames(enumType);
-            int currentValue = (int)targetItem.GetValue();
-            foreach (var name in enumNames)
+            isFlags = GetIsFlags();
+            enumNames = GetEnumNames();
+            if (enumType.IsEnum)
             {
-                var item = m_Dropdown.CreateOption(name, T =>
+                int currentValue = (int)targetItem.GetValue();
+                foreach (var name in enumNames)
                 {
-                    if (Enum.TryParse(enumType, name, out var result))
+                    var item = m_Dropdown.CreateOption(name, T =>
                     {
-                        if (isFlags)
+                        if (Enum.TryParse(enumType, name, out var result))
                         {
-                            targetItem.SetValue((int)targetItem.GetValue() | (int)result);
+                            if (isFlags)
+                            {
+                                targetItem.SetValue((int)targetItem.GetValue() | (int)result);
+                            }
+                            else if (T)
+                            {
+                                targetItem.SetValue(result);
+                            }
                         }
-                        else if (T)
-                        {
-                            targetItem.SetValue(result);
-                        }
+                    });
+                    if (isFlags)
+                    {
+                        item.isOn = ((int)Enum.Parse(enumType, name) & currentValue) != 0;
                     }
-                });
-                if (isFlags)
-                {
-                    item.isOn = ((int)Enum.Parse(enumType, name) & currentValue) != 0;
+                    else
+                    {
+                        item.isOn = (int)Enum.Parse(enumType, name) == currentValue;
+                    }
                 }
-                else
+            }
+            else
+            {
+                string currentValue = (string)targetItem.GetValue();
+                foreach (var name in enumNames)
                 {
-                    item.isOn = (int)Enum.Parse(enumType, name) == currentValue;
+                    var item = m_Dropdown.CreateOption(name, T => targetItem.SetValue(name));
+                    item.isOn = name == currentValue;
                 }
             }
             m_Dropdown.interactable = targetItem.AbleChangeType;
@@ -63,16 +98,18 @@ namespace Convention.WindowsUI.Variant
         {
             if(targetItem.UpdateType)
             {
-                int currentValue = (int)targetItem.GetValue();
                 foreach (var item in m_Dropdown.dropdownItems)
                 {
                     if (isFlags)
                     {
-                        item.isOn = ((int)Enum.Parse(enumType, item.itemName) & currentValue) != 0;
+                        item.isOn = ((int)Enum.Parse(enumType, item.itemName) & (int)targetItem.GetValue()) != 0;
                     }
                     else
                     {
-                        item.isOn = (int)Enum.Parse(enumType, item.itemName) == currentValue;
+                        if (enumType.IsEnum)
+                            item.isOn = (int)Enum.Parse(enumType, item.itemName) == (int)targetItem.GetValue();
+                        else
+                            item.isOn = item.itemName == (string)targetItem.GetValue();
                     }
                 }
             }
