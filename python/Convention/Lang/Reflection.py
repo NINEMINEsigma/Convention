@@ -505,7 +505,7 @@ class ValueInfo(BaseInfo):
     def __init__(self, metaType:type|Any, generic_args:List[type]=[], **kwargs) -> None:
         super().__init__(**kwargs)
         self._RealType = metaType
-        if len(generic_args) > 0:
+        if GetInternalReflectionDebug() and len(generic_args) > 0:
             print_colorful(ConsoleFrontColor.YELLOW, f"Current ValueInfo Debug Frame: "\
                 f"metaType={metaType}, generic_args={generic_args}")
         self._GenericArgs = generic_args
@@ -1006,15 +1006,15 @@ class RefType(ValueInfo):
 
     def _ensure_initialized(self):
         """确保完全初始化，实现延迟加载"""
-        
+
         # 初始化锁, 防止同个RefType在多线程中被重复初始化
         if self.RealType not in _RefTypeLock:
             _RefTypeLock[self.RealType] = threading.Lock()
         lock_guard(_RefTypeLock[self.RealType])
-        
+
         if self._initialized:
             return
-        
+
         metaType = self.RealType
         # 初始化基类列表 - 只初始化一次
         if self._BaseTypes is None:

@@ -13,11 +13,12 @@ namespace Convention.Workflow
         {
             return new List<string>()
             {
-                "unknown"
+                 WorkflowManager.Transformer("unknown")
             };
         }
 
-        [InspectorDraw(InspectorDrawType.Enum, true, false, "选择", enumGenerater:nameof(EnumNamesGenerater))]
+        [NonSerialized] private string l_select = WorkflowManager.Transformer(nameof(select));
+        [InspectorDraw(InspectorDrawType.Enum, true, false, nameGenerater: nameof(l_select), enumGenerater: nameof(EnumNamesGenerater))]
         public string select = "unknown";
 
         public SelectorNodeInfo() : this(WorkflowManager.Transformer(nameof(SelectorNode))) { }
@@ -29,7 +30,7 @@ namespace Convention.Workflow
                 {
                     WorkflowManager.Transformer(outputName), new NodeSlotInfo()
                     {
-                        slotName=WorkflowManager.Transformer(outputName),
+                        slotName = WorkflowManager.Transformer(outputName),
                         typeIndicator="string",
                         IsInmappingSlot=false
                     }

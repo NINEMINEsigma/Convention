@@ -4,8 +4,12 @@ from ...Workflow.Core   import *
 
 _Internal_WorkflowLLM:Dict[str, LLMObject] = {}
 def AddLLM(name: str, llm: LLMObject):
+    global _Internal_WorkflowLLM
+    if len(_Internal_WorkflowLLM) == 0 and LlamaIndexSettings.llm is None:
+        llm.set_as_global_llm()
     _Internal_WorkflowLLM[name] = llm
 def RemoveLLM(name: str):
+    global _Internal_WorkflowLLM
     _Internal_WorkflowLLM.pop(name)
 def GetLLM(name: str) -> LLMObject:
     return _Internal_WorkflowLLM[name]
@@ -14,186 +18,174 @@ def ContainsLLM(name: str) -> bool:
 def GetAllLLMNames() -> List[str]:
     return list(_Internal_WorkflowLLM.keys())
 
-_inject_llm_loader_funcname:Literal["__inject_llm_loader"] = "__inject_llm_loader"
-def __inject_llm_loader(
-    *,
-    llm: str = "global",
-    url_or_path: str = "",
-    **kwargs
-) -> LLMObject:
-    if not ContainsLLM(llm):
-        if WrapperFile(url_or_path).exists():
-            AddLLM(llm, LLMObject.loading_LlamaCPP_from_local_path(url_or_path, **kwargs))
-        else:
-            AddLLM(llm, LLMObject.using_LlamaCPP_from_url(url_or_path, **kwargs))
-    llm_object = GetLLM(llm)
-    return {
-        "llm": llm_object,
-        "raw_llm": llm_object.ref_value,
-    }
-
-_inject_llm_loader_funcwrapper = WorkflowActionWrapper(_inject_llm_loader_funcname, __inject_llm_loader)
-
-class LLMLoaderNode(StepNode):
-    def __init__(self, info: 'LLMLoaderNodeInfo'):
-        super().__init__(info)
-
-class LLMLoaderNodeInfo(StepNodeInfo):
-    '''
-    加载LLM节点
-
-    inmapping:
-        llm_name: str
-        url_or_path: str
-    outmapping:
-        llm: LLMObject
-        raw_llm: LLM
-    '''
-    def __init__(
-        self,
-        *,
-        title:              str             = "LLMLoader",
-        llm_name_data:      Tuple[int, str] = (-1, "llm_name"),
-        url_or_path_data:   Tuple[int, str] = (-1, "url_or_path"),
-        outmapping_llm_nodeID:            int = -1,
-        outmapping_raw_llm_nodeID:        int = -1,
-        **kwargs
-        ) -> None:
-        '''
-        inmapping:
-            llm_name: str
-            url_or_path: str
-        outmapping:
-            llm: LLMObject
-            raw_llm: LLM
-
-        参数 (nodeID, slotName):
-            llm_name_data:      Tuple[int, str] = (-1, "llm_name")
-            url_or_path_data:   Tuple[int, str] = (-1, "url_or_path")
-            llm_data:           Tuple[int, str] = (-1, "llm")
-            raw_llm_data:       Tuple[int, str] = (-1, "raw_llm")
-        '''
-        super().__init__(title=title, **kwargs)
-        self.inmapping = {
-            "llm_name": NodeSlotInfo(slotName="llm_name", typeIndicator="str", IsInmappingSlot=True,
-                                     targetSlotName=llm_name_data[1], targetNodeID=llm_name_data[0]),
-            "url_or_path": NodeSlotInfo(slotName="url_or_path", typeIndicator="str", IsInmappingSlot=True,
-                                        targetSlotName=url_or_path_data[1], targetNodeID=url_or_path_data[0]),
-        }
-        self.outmapping = {
-            "llm": NodeSlotInfo(slotName="llm", typeIndicator=LLMObject.__class__.__name__, IsInmappingSlot=False,
-                               targetSlotName="llm", targetNodeID=outmapping_llm_nodeID),
-            "raw_llm": NodeSlotInfo(slotName="raw_llm", typeIndicator=LLM.__class__.__name__, IsInmappingSlot=False,
-                                    targetSlotName="raw_llm", targetNodeID=outmapping_raw_llm_nodeID),
-        }
-        self.funcname = _inject_llm_loader_funcname
-
-    @override
-    def Instantiate(self) -> Node:
-        return LLMLoaderNode(self)
-
-_inject_function_call_funcname:Literal["__inject_function_call"] = "__inject_function_call"
-def __inject_function_call(
-    *,
-    llm:                        Optional[LLMObject] = None,
-    function_tools:             List[FunctionTool]  = [],
-    function_tools_str_forms:   Optional[str]       = None,
-    **kwargs
-) -> str:
-    if llm is None:
-        llm = LlamaIndexSettings.llm
-    if function_tools_str_forms is None:
-        pass
+# region LLMLoader
+def LLMLoader(llm_name:str, url_or_path:Optional[str] = None):
+    if ContainsLLM(llm_name):
+        llmObject = GetLLM(llm_name)
+    elif url_or_path is None:
+        llmObject = None
+    elif url_or_path.startswith("http"):
+        llmObject = LLMObject.using_LlamaCPP_from_url(url_or_path)
     else:
-        pass
+        llmObject = LLMObject.loading_LlamaCPP_from_local_path(url_or_path)
+    return {
+        "llm": llmObject,
+        "raw_llm": llmObject.ref_value,
+    }
+_LLMLoader = WorkflowActionWrapper(LLMLoader.__name__, LLMLoader, "加载LLM",
+                                   {"llm_name": "str", "url_or_path": "str"},
+                                   {"llm": "LLMObject", "raw_llm": "LLM"})
+# endregion
 
-class FunctionCallNode(StepNode):
-    def __init__(self, info: 'FunctionCallNodeInfo'):
-        super().__init__(info)
+# region MakeGPTModelPrompt
+def MakeGPTModelPrompt():
+    from llama_index.core.prompts import ChatPromptTemplate
+    return {
+        "result": make_gpt_model_prompt(ChatPromptTemplate)
+    }
+_MakeGPTModelPrompt = WorkflowActionWrapper(MakeGPTModelPrompt.__name__, MakeGPTModelPrompt, "创建GPT模型提示",
+                                           {},
+                                           {"result": "Prompt"})
+# endregion
 
-class FunctionCallNodeInfo(StepNodeInfo):
-    '''
-    函数调用节点
-    '''
+# region EmbeddingLoader
+def EmbeddingLoader(url:str, time_out:int = 120):
+    return {
+        "result": CustomEmbedding(url, time_out)
+    }
+_EmbeddingLoader = WorkflowActionWrapper(EmbeddingLoader.__name__, EmbeddingLoader, "加载Embedding",
+                                        {"url": "str", "time_out": "int"},
+                                        {"result": "Embedding"})
+# endregion
 
-class GlobalSettingNode(Node):
-    def __init__(self, info: 'GlobalSettingNodeInfo'):
-        super().__init__(info)
+# region KeywordQueryEngine
+def MakeKeywordQueryEngine(
+    retriever:      VectorIndexRetriever,
+    keyword:        str,
+    lang:           str = "zh"
+    ):
+    keyword_list = keyword.split(";")
+    return {
+        "result": make_query_engine_with_keywords(
+            retriever,
+            keyword_list,
+            lang
+        )
+    }
+_MakeKeywordQueryEngine = WorkflowActionWrapper(MakeKeywordQueryEngine.__name__, MakeKeywordQueryEngine, "创建关键词查询引擎",
+                                               {"retriever": "VectorIndexRetriever", "keyword": "str", "lang": "str"},
+                                               {"result": "QueryEngine"})
+# endregion
 
-    @override
-    async def _DoRunStep(self) -> Coroutine[Any, Any, Dict[str, Any] | Any]:
-        parameters = await self.GetParameters()
-        if "llm" in parameters:
-            LlamaIndexSettings.llm = parameters["llm"]
-        if "embed_model" in parameters:
-            LlamaIndexSettings.embed_model = parameters["embed_model"]
-        if "callback_manager" in parameters:
-            LlamaIndexSettings.callback_manager = parameters["callback_manager"]
-        if "chunk_overlap" in parameters:
-            LlamaIndexSettings.chunk_overlap = parameters["chunk_overlap"]
-        if "chunk_size" in parameters:
-            LlamaIndexSettings.chunk_size = parameters["chunk_size"]
-        if "context_window" in parameters:
-            LlamaIndexSettings.context_window = parameters["context_window"]
-        if "node_parser" in parameters:
-            LlamaIndexSettings.node_parser = parameters["node_parser"]
-        if "num_output" in parameters:
-            LlamaIndexSettings.num_output = parameters["num_output"]
-        if "prompt_helper" in parameters:
-            LlamaIndexSettings.prompt_helper = parameters["prompt_helper"]
-        if "text_splitter" in parameters:
-            LlamaIndexSettings.text_splitter = parameters["text_splitter"]
-        if "prompt_helper" in parameters:
-            LlamaIndexSettings.prompt_helper = parameters["prompt_helper"]
-        return {}
+# region MakeRetriever
+def MakeRetriever(
+        index:                      VectorStoreIndex,
+        similarity_top_k:           int                         = DEFAULT_SIMILARITY_TOP_K,
+        vector_store_query_mode:    VectorStoreQueryMode        = VectorStoreQueryMode.DEFAULT,
+        filters:                    Optional[MetadataFilters]   = None,
+        alpha:                      Optional[float]             = None,
+        sparse_top_k:               Optional[int]               = None,
+        hybrid_top_k:               Optional[int]               = None,
+        embed_model:                Optional[BaseEmbedding]     = None,
+        ):
+    return {
+        "result": make_retriever(
+            index= index,
+            similarity_top_k= similarity_top_k,
+            vector_store_query_mode= vector_store_query_mode,
+            filters= filters,
+            alpha= alpha,
+            sparse_top_k= sparse_top_k,
+            hybrid_top_k= hybrid_top_k,
+            embed_model= embed_model
+        )
+    }
+_MakeRetriever = WorkflowActionWrapper(MakeRetriever.__name__, MakeRetriever, "创建Retriever",
+                                        {
+                                            "index": "VectorStoreIndex",
+                                            "similarity_top_k": "int",
+                                            "vector_store_query_mode": "VectorStoreQueryMode",
+                                            "filters": "MetadataFilters",
+                                            "alpha": "float",
+                                            "sparse_top_k": "int",
+                                            "hybrid_top_k": "int",
+                                            "embed_model": "BaseEmbedding"
+                                        },
+                                        {"result": "VectorIndexRetriever"})
+# endregion
 
-class GlobalSettingNodeInfo(NodeInfo):
-    '''
-    全局设置节点
-    '''
-    @override
-    def Instantiate(self) -> GlobalSettingNode:
-        return GlobalSettingNode(self)
+#region FunctionToolLoader
+_RegisteredFunctionTools:Dict[str, FunctionTool] = {}
+def FunctionToolLoader(funcNames:  List[str|Any]|str = []):
+    results = []
+    if not isinstance(funcNames, list):
+        funcNames = Unwrapper2Str(funcNames).split(";")
+    for funcName_c in funcNames:
+        funcName = Unwrapper2Str(funcName_c)
+        if funcName in _RegisteredFunctionTools:
+            results.append(_RegisteredFunctionTools[funcName])
+        else:
+            results.append(make_function_tool(funcName))
+            _RegisteredFunctionTools[funcName] = results[-1]
+    return {
+        "result": results
+    }
+_FunctionToolLoader = WorkflowActionWrapper(FunctionToolLoader.__name__, FunctionToolLoader, "加载FunctionTool",
+                                           {"funcNames": "Any"},
+                                           {"result": "Array"})
 
-__step_function_wrappers = [
-    WorkflowActionWrapper(make_directory_reader.__name__, make_directory_reader),
-    WorkflowActionWrapper(test_health.__name__, test_health),
-    WorkflowActionWrapper(make_gpt_model_prompt.__name__, make_gpt_model_prompt),
-    WorkflowActionWrapper(make_gpt_model_prompt_zh.__name__, make_gpt_model_prompt_zh),
-    WorkflowActionWrapper(make_retriever.__name__, make_retriever),
-    WorkflowActionWrapper(make_query_engine_with_keywords.__name__, make_query_engine_with_keywords),
-    WorkflowActionWrapper(make_text_node.__name__, make_text_node),
-    WorkflowActionWrapper(make_image_node_from_local_file.__name__, make_image_node_from_local_file),
-    WorkflowActionWrapper(make_image_node_from_url.__name__, make_image_node_from_url),
-    WorkflowActionWrapper(make_system_message.__name__, make_system_message),
-    WorkflowActionWrapper(make_user_message.__name__, make_user_message),
-    WorkflowActionWrapper(make_assistant_message.__name__, make_assistant_message),
-]
+def RegisterFunctionTool(funcName:str, func:Callable):
+    _RegisteredFunctionTools[funcName] = func
+def UnregisterFunctionTool(funcName:str):
+    _RegisteredFunctionTools.pop(funcName)
+def ContainsFunctionTool(funcName:str) -> bool:
+    return funcName in _RegisteredFunctionTools
+def GetAllFunctionToolNames() -> List[str]:
+    return list(_RegisteredFunctionTools.keys())
+#endregion
 
-class FunctionToolsLoaderNode(DynamicNode):
-    def __init__(self, info: 'FunctionToolsLoaderNodeInfo'):
-        super().__init__(info)
+# region AgentLoader
+def AgentLoader(
+    tools: List[BaseTool] = [],
+    llm: Optional[LLM] = None,
+    ):
+    return {
+        "result": ReActAgentCore((tools, llm))
+    }
+_AgentLoader = WorkflowActionWrapper(AgentLoader.__name__, AgentLoader, "加载Agent",
+                                     {"tools": "Array", "llm": "LLM"},
+                                     {"result": "Agent"})
+# endregion
 
-    @override
-    async def _DoRunStep(self) -> Coroutine[Any, Any, Dict[str, Any] | Any]:
-        parameters:Dict[str, Any] = await self.GetParameters()
-        function_tools:Dict[str, FunctionTool] = {}
-        for name, tool in parameters.items():
-            if isinstance(tool, FunctionTool):
-                function_tools[name] = tool
-            elif isinstance(tool, Callable):
-                function_tools[name] = make_function_tool(tool, name)
-            elif isinstance(tool, str) and WorkflowActionWrapper.ContainsActionWrapper(tool):
-                function_tools[name] = WorkflowActionWrapper.GetActionWrapper(tool)
-            else:
-                raise ValueError(f"Invalid tool: {tool}<{type(tool)}>")
-        return function_tools
+# region Chat
+def _SplitThinkingAndAnswer(message:str) -> Tuple[str, str]:
+    if message.startswith("<think>"):
+        thinking, _, answer = message.partition("</think>")
+        if thinking.startswith("<thinking>"):
+            thinking = thinking[len("<thinking>"):]
+        return thinking.strip(), answer.strip()
+    else:
+        return "", message.strip()
+def Chat(
+    ai: ReActAgentCore|LLMObject|LLM,
+    message: str,
+    ):
+    thinking:str = ""
+    answer:str = ""
+    if isinstance(ai, ReActAgentCore):
+        thinking, answer = _SplitThinkingAndAnswer(ai.chat(message))
+    elif isinstance(ai, LLMObject):
+        thinking, answer = _SplitThinkingAndAnswer(ai.chat(message))
+    elif isinstance(ai, LLM):
+        thinking, answer = _SplitThinkingAndAnswer(ai.chat(message))
+    return {
+        "thinking": thinking,
+        "answer": answer
+    }
+_Chat = WorkflowActionWrapper(Chat.__name__, Chat, "聊天",
+                              {"ai": "Any", "message": "str"},
+                              {"thinking": "str", "answer": "str"})
+# endregion
 
-class FunctionToolsLoaderNodeInfo(DynamicNodeInfo):
-    '''
-    函数工具加载节点
-    '''
 
-    @override
-    def Instantiate(self) -> FunctionToolsLoaderNode:
-        return FunctionToolsLoaderNode(self)
+

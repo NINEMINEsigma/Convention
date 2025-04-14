@@ -5,6 +5,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using Newtonsoft;
+using Newtonsoft.Json;
 
 namespace Convention
 {
@@ -240,7 +242,7 @@ namespace Convention
             string jsonText = LoadAsText();
             try
             {
-                T result = JsonUtility.FromJson<T>(jsonText);
+                T result = JsonConvert.DeserializeObject<T>(jsonText);
                 this.data = result;
                 return result;
             }
@@ -267,6 +269,7 @@ namespace Convention
             if (WebRequest.result == UnityWebRequest.Result.Success)
             {
                 this.data = WebRequest.downloadHandler.text;
+                Debug.Log($"{(string)this.data}");
                 return (string)this.data;
             }
 
@@ -470,7 +473,7 @@ namespace Convention
                 localPath = Path.Combine(Application.temporaryCachePath, GetFilename());
             }
 
-            string jsonText = JsonUtility.ToJson(this.data);
+            string jsonText = JsonConvert.SerializeObject(this.data);
             File.WriteAllText(localPath, jsonText);
         }
 

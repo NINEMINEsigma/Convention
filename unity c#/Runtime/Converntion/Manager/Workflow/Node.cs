@@ -146,6 +146,14 @@ namespace Convention.Workflow
             Context.OnPointerClickEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnPointerClickEvent, PointerRightClickAndOpenMenu);
         }
 
+        protected virtual void OnDestroy()
+        {
+            if (InspectorWindow.instance.GetTarget() == this.info)
+            {
+                InspectorWindow.instance.ClearWindow();
+            }
+        }
+
         public virtual void PointerRightClickAndOpenMenu(PointerEventData pointer)
         {
             if (pointer.button == PointerEventData.InputButton.Right)
@@ -154,7 +162,7 @@ namespace Convention.Workflow
                 {
                     new (WorkflowManager.Transformer("Delete"), x =>
                     {
-                        GameObject.Destroy(this.gameObject);
+                        WorkflowManager.instance.DestroyNode(this);
                     })
                 };
                 SharedModule.instance.OpenCustomMenu(WorkflowManager.instance.UIFocusObject, callbacks.ToArray());

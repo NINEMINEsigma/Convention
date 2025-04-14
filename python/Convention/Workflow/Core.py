@@ -232,22 +232,22 @@ class WorkflowErrorEvent(WorkflowStopEvent):
 
 class _DefaultOptional(any_class):
     __instance:Optional[Self] = None
-    
+
     def __new__(cls) -> Self:
         if cls.__instance is None:
             cls.__instance = super().__new__(cls)
         return cls.__instance
-    
+
     @override
     def SymbolName(self) -> str:
         return "DefaultOptional"
-    
+
     @staticmethod
     def GetInstance() -> Self:
         if _DefaultOptional.__instance is None:
             _DefaultOptional.__instance = _DefaultOptional()
         return _DefaultOptional.__instance
-    
+
     @staticmethod
     def IsInstance(value:Any) -> bool:
         return isinstance(value, _DefaultOptional)
@@ -283,10 +283,13 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
         if self.info.IsInmappingSlot==other.info.IsInmappingSlot:
             raise ValueError(f"相同映射的插槽<{self.info.slotName}>和<{other.info.slotName}>不能连接")
         if self.info.typeIndicator!=other.info.typeIndicator:
-            if ((self.info.typeIndicator == "string" and other.info.typeIndicator == "str") or
-                (self.info.typeIndicator == "str" and other.info.typeIndicator == "string")):
-                return
-            raise ValueError(f"类型不匹配的插槽<{self.info.slotName}>和<{other.info.slotName}>不能连接")
+            if not (
+                    (self.info.typeIndicator == "string" and other.info.typeIndicator == "str") or
+                    (self.info.typeIndicator == "str" and other.info.typeIndicator == "string") or
+                    self.info.typeIndicator == Any or
+                    other.info.typeIndicator == Any
+                ):
+                raise ValueError(f"类型不匹配的插槽<{self.info.slotName}>和<{other.info.slotName}>不能连接")
         if self.info.parentNode==other.info.parentNode:
             raise ValueError(f"父节点相同的插槽<node={self.info.parentNode.SymbolName()}, id={_Internal_GetNodeID(self.info.parentNode)}>"\
                 f"<name={self.info.slotName}, type={self.info.typeIndicator}>和"\

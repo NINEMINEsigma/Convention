@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Convention.WindowsUI;
 using Convention.WindowsUI.Variant;
@@ -6,13 +7,16 @@ using UnityEngine;
 namespace Convention.Workflow
 {
     public class ValueNodeInfo : StartNodeInfo
-    { 
-        [InspectorDraw(InspectorDrawType.Text, name: "数值")]
+    {
+        [NonSerialized] private string l_value = WorkflowManager.Transformer(nameof(value));
+        [InspectorDraw(InspectorDrawType.Text, true, true, nameGenerater: nameof(l_value))]
         public float value = 0;
-        [InspectorDraw(InspectorDrawType.Auto, name: "上限")]
-        public float min = 100;
-        [InspectorDraw(InspectorDrawType.Auto, name: "下限")]
-        public float max = 0;
+        [NonSerialized] private string l_min = WorkflowManager.Transformer(nameof(min));
+        [InspectorDraw(InspectorDrawType.Auto, true, true, nameGenerater: nameof(l_min))]
+        public float min = 0;
+        [NonSerialized]private string l_max = WorkflowManager.Transformer(nameof(max));
+        [InspectorDraw(InspectorDrawType.Auto, true, true, nameGenerater: nameof(l_max))]
+        public float max = 1;
 
         public ValueNodeInfo() : this(0) { }
         public ValueNodeInfo(float value, string outmappingName = "value", int targetNodeID = -1, string targetSlotName = "value")
@@ -21,9 +25,9 @@ namespace Convention.Workflow
             this.outmapping = new()
             {
                 {
-                    outmappingName, new NodeSlotInfo()
+                    WorkflowManager.Transformer(outmappingName), new NodeSlotInfo()
                     {
-                        slotName = outmappingName,
+                        slotName =  WorkflowManager.Transformer(outmappingName),
                         typeIndicator = "string",
                         IsInmappingSlot = false,
                         targetNodeID = targetNodeID,

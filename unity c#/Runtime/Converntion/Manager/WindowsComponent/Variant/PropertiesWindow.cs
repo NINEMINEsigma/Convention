@@ -351,7 +351,7 @@ namespace Convention.WindowsUI.Variant
 
             public void Release()
             {
-                if ((parentWindow==null&& parentEntry==null)|| childs==null|| rootWindow==null)
+                if ((parentWindow == null && parentEntry == null) || childs == null || rootWindow == null)
                 {
                     Debug.LogWarning("Auto Gen is bad supporting");
                     return;

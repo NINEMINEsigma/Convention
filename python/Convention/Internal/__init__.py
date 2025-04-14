@@ -195,10 +195,14 @@ type ActionW = Callable[[Sequence[Any]], None]
 type ClosuresCallable[_T] = Union[Callable[[Optional[None]], _T], Typen[_T]]
 
 class type_class(object):
-    generate_trackback: Optional[str] = None
-    def __init__(self):
-        if GetInternalDebug():
-            self.generate_trackback = format_traceback_info()
+    if GetInternalDebug():
+        generate_trackback: Optional[str] = None
+        def __init__(self):
+            if GetInternalDebug():
+                self.generate_trackback = format_traceback_info()
+    else:
+        def __init__(self):
+            pass
     def GetType(self):
         return type(self)
     @virtual

@@ -6,6 +6,7 @@ using Convention.WindowsUI.Variant;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using static Convention.WindowsUI.Variant.SharedModule;
 
 namespace Convention.Workflow
 {
@@ -32,8 +33,8 @@ namespace Convention.Workflow
     {
         public string name = "unknown";
         public string description = "unknown";
-        public Dictionary<string, NodeSlotInfo> parameters = new();
-        public Dictionary<string, NodeSlotInfo> returns = new();
+        public Dictionary<string, string> parameters = new();
+        public Dictionary<string, string> returns = new();
     }
 
     [Serializable, ArgPackage]
@@ -80,11 +81,13 @@ namespace Convention.Workflow
         public RectTransform UIFocusObject;
         private List<SharedModule.CallbackData> callbackDatas = new();
 
-        public List<FunctionModel> CallableFunctionModels => workflow.Functions;
+        public List<FunctionModel> CallableFunctionModels = new();
 
         public void RegisterFunctionModel([In] FunctionModel func)
         {
             CallableFunctionModels.Add(func);
+            Debug.Log($"[{String.Join(", ", func.returns.ToList().ConvertAll(x => $"{x.Key}: {x.Value}"))}] {func.name}" +
+                $"({String.Join(", ", func.parameters.ToList().ConvertAll(x => $"{x.Key}: {x.Value}"))}): {func.description}");
         }
         public void UnregisterFunctionModel([In]FunctionModel func)
         {
@@ -139,6 +142,7 @@ namespace Convention.Workflow
 
         private void Start()
         {
+            callbackDatas = new();
             m_RegisterWrapper = new(() =>
             {
                 Debug.Log($"{nameof(WorkflowManager)} registered");
@@ -147,7 +151,7 @@ namespace Convention.Workflow
                 SetupWorkflowGraphNodeType(
                     new TextNodeInfo(),
                     new ValueNodeInfo(),
-                    //new ResourceNodeInfo(),
+                    new ResourceNodeInfo(),
                     new StepNodeInfo(),
                     new EndNodeInfo());
             }, typeof(GraphInputWindow), typeof(GraphInspector));
@@ -158,23 +162,13 @@ namespace Convention.Workflow
                 parameters =
                 {
                     {
-                        "In",new NodeSlotInfo()
-                        {
-                            IsInmappingSlot = true,
-                            typeIndicator = "string",
-                            slotName = "In"
-                        }
+                        "In", "string"
                     }
                 },
                 returns =
                 {
                     {
-                        "Out", new NodeSlotInfo()
-                        {
-                            IsInmappingSlot = false,
-                            typeIndicator = "string",
-                            slotName = "Out"
-                        }
+                        "Out", "string"
                     }
                 }
             });
@@ -185,10 +179,10 @@ namespace Convention.Workflow
         {
             if (Keyboard.current[Key.LeftCtrl].isPressed)
             {
-                var t = Mouse.current.scroll.y.ReadValue() * ScrollSpeed * 0.001f;
+                var t = -Mouse.current.scroll.y.ReadValue() * ScrollSpeed * 0.001f;
                 var z = m_CameraTransform.transform.localPosition.z;
                 if (z - t > -100 && z - t < -5)
-                    m_CameraTransform.transform.Translate(new Vector3(0, 0, t), Space.Self);
+                    m_CameraTransform.transform.Translate(new Vector3(0, 0, -t), Space.Self);
             }
             UIFocusObject.position = Mouse.current.position.ReadValue();
         }
@@ -239,8 +233,10 @@ namespace Convention.Workflow
             if (id >= 0)
             {
                 workflow.Nodes.RemoveAt(id);
+                workflow.Datas.Remove(node.info);
+                GameObject.Destroy(node.gameObject);
             }
-            return workflow.Nodes.Remove(node);
+            return false;
         }
         public bool ContainsNode(int id)
         {

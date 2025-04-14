@@ -31,14 +31,24 @@ namespace Convention.Workflow
             {
                 this.MyStepInfo.funcname = x;
                 this.MyStepInfo.inmapping = new();
-                foreach (var (name, info) in WorkflowManager.instance.GetFunctionModel(x).parameters)
+                foreach (var (name, type) in WorkflowManager.instance.GetFunctionModel(x).parameters)
                 {
-                    this.MyStepInfo.inmapping[name] = info.TemplateClone();
+                    this.MyStepInfo.inmapping[name] = new NodeSlotInfo()
+                    {
+                        slotName = name,
+                        typeIndicator = type,
+                        IsInmappingSlot = true
+                    };
                 }
                 this.MyStepInfo.outmapping = new();
-                foreach (var (name, info) in WorkflowManager.instance.GetFunctionModel(x).returns)
+                foreach (var (name, type) in WorkflowManager.instance.GetFunctionModel(x).returns)
                 {
-                    this.MyStepInfo.outmapping[name] = info.TemplateClone();
+                    this.MyStepInfo.outmapping[name] = new NodeSlotInfo()
+                    {
+                        slotName = name,
+                        typeIndicator = type,
+                        IsInmappingSlot = false
+                    };
                 }
                 this.title = x;
                 this.FunctionSelector.gameObject.SetActive(false);
@@ -62,7 +72,9 @@ namespace Convention.Workflow
             {
                 foreach (var funcName in names)
                 {
-                    FunctionSelector.CreateOption(funcName);
+                    var funcModel = WorkflowManager.instance.GetFunctionModel(funcName);
+                    if (funcModel.parameters.Count + funcModel.returns.Count != 0)
+                        FunctionSelector.CreateOption(WorkflowManager.Transformer(funcName));
                 }
             }
             else

@@ -311,6 +311,22 @@ class ImageObject(left_np_ndarray_reference):
         self.ref_value = value
         return value
 
+    @overload
+    def __init__(self, imagePath:str, flags:int = -1):...
+    @overload
+    def __init__(self, image:tool_file, flags:int = -1):...
+    @overload
+    def __init__(self, camera:light_cv_camera):...
+    @overload
+    def __init__(self, image:MatLike, flags:int = -1):...
+    @overload
+    def __init__(self, image:Self):...
+    @overload
+    def __init__(self, image:Image.Image):...
+    @overload
+    def __init__(self, image:ImageFile.ImageFile):...
+    @overload
+    def __init__(self, image:np.ndarray):...
     def __init__(
         self,
         image:          Optional[Union[
@@ -323,7 +339,8 @@ class ImageObject(left_np_ndarray_reference):
             ImageFile.ImageFile,
             Image.Image
             ]],
-        flags:          int             = -1):
+        flags:          int             = -1
+        ) -> None:
         super().__init__()
         self.__camera:  light_cv_camera = None
         self.current:   MatLike         = None
@@ -433,6 +450,20 @@ class ImageObject(left_np_ndarray_reference):
     def __MatLike__(self):
         return self.image
 
+    @overload
+    def load_image(self, image:str, flags:int = -1):...
+    @overload
+    def load_image(self, image:tool_file, flags:int = -1):...
+    @overload
+    def load_image(self, image:light_cv_camera):...
+    @overload
+    def load_image(self, image:MatLike):...
+    @overload
+    def load_image(self, image:Self):...
+    @overload
+    def load_image(self, image:Image.Image):...
+    @overload
+    def load_image(self, image:ImageFile.ImageFile):...
     def load_image(
         self,
         image:          Optional[Union[
@@ -465,7 +496,11 @@ class ImageObject(left_np_ndarray_reference):
         else:
             self.__image = base.imread(Unwrapper2Str(image), flags)
         return self
-    def save_image(self, save_path:Union[str, tool_file], is_path_must_exist = False):
+    def save_image(
+        self,
+        save_path:          Union[str, tool_file],
+        is_path_must_exist: bool = False
+        ) -> Self:
         """保存图片"""
         if isinstance(save_path, loss_file):
             return self

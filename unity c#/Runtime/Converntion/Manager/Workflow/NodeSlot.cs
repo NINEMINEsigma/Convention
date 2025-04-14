@@ -72,18 +72,22 @@ namespace Convention.Workflow
 
         public bool Linkable([In] NodeSlot other)
         {
-            return true;
             if (this.info.IsInmappingSlot == other.info.IsInmappingSlot)
             {
                 throw new InvalidOperationException($"{this} and {other} has same mapping type");
             }
             if (this.info.typeIndicator != other.info.typeIndicator)
             {
-                throw new InvalidOperationException($"{this} and {other} has different type indicator");
+                if (!((this.info.typeIndicator == "string" && other.info.typeIndicator == "str") ||
+                    (this.info.typeIndicator == "str" && other.info.typeIndicator == "string") ||
+                    this.info.typeIndicator.StartsWith("Any", StringComparison.CurrentCultureIgnoreCase) ||
+                    other.info.typeIndicator.StartsWith("Any", StringComparison.CurrentCultureIgnoreCase
+                    )))
+                    throw new InvalidOperationException($"{this}<{this.info.typeIndicator}> and {other}<{other.info.typeIndicator}> has different type indicator");
             }
             if (this.info.parentNode == other.info.parentNode)
             {
-                throw new InvalidOperationException($"{this} and {other} has same parent node");
+                throw new InvalidOperationException($"{this} and {other} has same parent node<{this.info.parentNode}>");
             }
             return true;
         }

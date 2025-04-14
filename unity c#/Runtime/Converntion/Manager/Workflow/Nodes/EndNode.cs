@@ -33,8 +33,9 @@ namespace Convention.Workflow
             var context = gameObject.GetOrAddComponent<BehaviourContextManager>();
             context.OnPointerClickEvent = BehaviourContextManager.InitializeContextSingleEvent(context.OnPointerClickEvent, PointerRightClickAndOpenMenu);
         }
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
+            base.OnDestroy();
             AllEndNodes.Remove(this);
         }
 
