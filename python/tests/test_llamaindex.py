@@ -46,11 +46,13 @@ async def run(query:str, model:str):
                                                       IsInmappingSlot=True)
                              }, nodeID=1),
             TextNodeInfo(text=query, outmappingName="query", nodeID=2, targetNodeID=1, targetSlotName="user_msg"),
-            LLMLoaderNodeInfo(nodeID=3,
-                              llm_name_data=(4, "llm_name"),
-                              url_or_path_data=(5, "url_or_path"),
-                              outmapping_llm_nodeID=1,
-                              outmapping_raw_llm_nodeID=-1),
+            StepNodeInfo(funcname=LLMLoader.__name__,
+                         inmapping={
+                             "llm_name": "str", "url_or_path": "str"},
+                         outmapping=
+                                   
+                                   {"llm": "LLMObject", "raw_llm": "LLM"}
+                         , nodeID=3),
             TextNodeInfo(text="llm", outmappingName="llm_name", targetNodeID=3, targetSlotName="llm_name", nodeID=4),
             TextNodeInfo(text=model, outmappingName="url_or_path", targetNodeID=3, targetSlotName="url_or_path", nodeID=5),
         is_auto_id=False))

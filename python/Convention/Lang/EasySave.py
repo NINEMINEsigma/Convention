@@ -172,9 +172,10 @@ class ESReader(BaseModel, any_class):
         从类型标签中获取类型
         '''
         module_name, _, class_name = type_label.split(",")[0].strip().rpartition('.')
-        print_colorful(ConsoleFrontColor.YELLOW, f"Prase __type label: {ConsoleFrontColor.RESET}{type_label}"\
-            f"{ConsoleFrontColor.YELLOW}, module_name: {ConsoleFrontColor.RESET}{module_name}"\
-            f"{ConsoleFrontColor.YELLOW}, class_name: {ConsoleFrontColor.RESET}{class_name}")
+        if GetInternalEasySaveDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"Prase __type label: {ConsoleFrontColor.RESET}{type_label}"\
+                f"{ConsoleFrontColor.YELLOW}, module_name: {ConsoleFrontColor.RESET}{module_name}"\
+                f"{ConsoleFrontColor.YELLOW}, class_name: {ConsoleFrontColor.RESET}{class_name}")
         typen_to = try_to_type(class_name, module_name=module_name) or to_type(class_name)
         return TypeManager.GetInstance().CreateOrGetRefType(typen_to)
 

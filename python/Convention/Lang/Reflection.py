@@ -207,6 +207,9 @@ def to_type(
         type_components = typen.split(".")
         type_module = module_name or (".".join(type_components[:-1]) if len(type_components) > 1 else None)
         type_final = type_components[-1]
+        if GetInternalReflectionDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"type_module: {type_module}, type_final: {type_final}, "\
+                f"typen: {typen}, type_components: {type_components}")
         if type_module is not None:
             return sys.modules[type_module].__dict__[type_final]
         else:
