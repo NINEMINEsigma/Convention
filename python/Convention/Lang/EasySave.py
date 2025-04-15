@@ -77,7 +77,7 @@ class ESWriter(BaseModel, any_class):
             else:
                 fields: List[FieldInfo] = self._GetFields(rtype)
                 layer:  Dict[str, Any]  = {
-                    "__type": f"{rtype.RealType.__module__}.{rtype.RealType.__name__}, {rtype.RealType.__name__}",
+                    "__type": AssemblyTypen(rtype.RealType),
                     "value": {}
                 }
                 for field in fields:
@@ -171,13 +171,19 @@ class ESReader(BaseModel, any_class):
         '''
         从类型标签中获取类型
         '''
-        module_name, _, class_name = type_label.split(",")[0].strip().rpartition('.')
+        #module_name, _, class_name = type_label.split(",")[0].strip().rpartition('.')
+        #if GetInternalEasySaveDebug():
+        #    print_colorful(ConsoleFrontColor.YELLOW, f"Prase __type label: {ConsoleFrontColor.RESET}{type_label}"\
+        #        f"{ConsoleFrontColor.YELLOW}, module_name: {ConsoleFrontColor.RESET}{module_name}"\
+        #        f"{ConsoleFrontColor.YELLOW}, class_name: {ConsoleFrontColor.RESET}{class_name}")
+        #typen_to = try_to_type(class_name, module_name=module_name) or to_type(class_name)
+        #return TypeManager.GetInstance().CreateOrGetRefType(typen_to)
+        typen, assembly_name = ReadAssemblyTypen(type_label)
         if GetInternalEasySaveDebug():
             print_colorful(ConsoleFrontColor.YELLOW, f"Prase __type label: {ConsoleFrontColor.RESET}{type_label}"\
-                f"{ConsoleFrontColor.YELLOW}, module_name: {ConsoleFrontColor.RESET}{module_name}"\
-                f"{ConsoleFrontColor.YELLOW}, class_name: {ConsoleFrontColor.RESET}{class_name}")
-        typen_to = try_to_type(class_name, module_name=module_name) or to_type(class_name)
-        return TypeManager.GetInstance().CreateOrGetRefType(typen_to)
+                f"{ConsoleFrontColor.YELLOW}, typen: {ConsoleFrontColor.RESET}{typen}"\
+                f"{ConsoleFrontColor.YELLOW}, assembly_name: {ConsoleFrontColor.RESET}{assembly_name}")
+        return TypeManager.GetInstance().CreateOrGetRefType(typen)
 
     @sealed
     def _DoJsonDeserialize(self, read_file:tool_file, rtype:Optional[RTypen[Any]] = None) -> Any:

@@ -1,20 +1,20 @@
 {
     "easy": {
-        "__type": "Convention.Workflow.Core.Workflow, Workflow",
+        "__type": "Convention.Workflow.Workflow, Convention.Runtime",
         "value": {
             "Datas": [
                 {
-                    "__type": "Convention.Workflow.Core.EndNodeInfo, EndNodeInfo",
+                    "__type": "Convention.Workflow.EndNodeInfo, Convention.Runtime",
                     "value": {
                         "nodeID": 0,
                         "typename": "EndNodeInfo",
                         "title": "\u7ed3\u675f",
                         "inmapping": {
                             "text": {
-                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "__type": "Convention.Workflow.NodeSlotInfo, Convention.Runtime",
                                 "value": {
                                     "slotName": "text",
-                                    "targetNodeID": 1,
+                                    "targetNodeID": -1,
                                     "targetSlotName": "text",
                                     "typeIndicator": "str",
                                     "IsInmappingSlot": true
@@ -29,7 +29,7 @@
                     }
                 },
                 {
-                    "__type": "Convention.Workflow.Core.TextNodeInfo, TextNodeInfo",
+                    "__type": "Convention.Workflow.TextNodeInfo, Convention.Runtime",
                     "value": {
                         "text": "\u4f60\u6765\u81ea\u54ea\u91cc",
                         "nodeID": 1,
@@ -38,10 +38,10 @@
                         "inmapping": {},
                         "outmapping": {
                             "text": {
-                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "__type": "Convention.Workflow.NodeSlotInfo, Convention.Runtime",
                                 "value": {
                                     "slotName": "text",
-                                    "targetNodeID": 0,
+                                    "targetNodeID": 1,
                                     "targetSlotName": "text",
                                     "typeIndicator": "str",
                                     "IsInmappingSlot": false
