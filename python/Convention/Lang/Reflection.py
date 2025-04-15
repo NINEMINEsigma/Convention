@@ -1454,7 +1454,7 @@ class TypeManager(BaseModel, any_class):
         return tuple(self._RefTypes.values())
 
     @staticmethod
-    @functools.lru_cache(maxsize=256)
+    #@functools.lru_cache(maxsize=256)
     def _TurnToType(data:Any, module_name:Optional[str]=None) -> type|_SpecialIndictaor:
         """将任意数据转换为类型，增加缓存以提高性能"""
         metaType:type|_SpecialIndictaor = None

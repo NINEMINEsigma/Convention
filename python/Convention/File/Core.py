@@ -293,13 +293,13 @@ class tool_file(any_class):
         if self.is_open() is False or 'w' in self.__file.mode:
             self.open('r')
         json_data = json.load(self.__file)
-        try:
-            from pydantic import BaseModel
-            if "__type" in json_data and "pydantic.BaseModel" in json_data["__type"]:
-                del json_data["__type"]
-                json_data = BaseModel.model_validate(json_data)
-        except:
-            pass
+        #try:
+        #    from pydantic import BaseModel
+        #    if "__type" in json_data and "pydantic.BaseModel" in json_data["__type"]:
+        #        del json_data["__type"]
+        #        json_data = BaseModel.model_validate(json_data)
+        #except:
+        #    pass
         self.data = json_data
         return self.data
     def load_as_csv(self) -> pd.DataFrame:
@@ -412,19 +412,23 @@ class tool_file(any_class):
         if path is not None:
             with open(path, 'wb') as f:
                 f.write(self.data)
+                f.flush()
         else:
             if self.is_open() is False or 'r' in self.__file.mode:
                 self.open('wb')
             self.__file.write(self.data)
+            self.__file.flush()
         return self
     def save_as_text(self, path:Optional[str]=None):
         if path is not None:
             with open(path, 'w') as f:
                 f.writelines(self.data)
+                f.flush()
         else:
             if self.is_open() is False or 'r' in self.__file.mode:
                 self.open('w')
             self.__file.writelines(self.data)
+            self.__file.flush()
         return self
     def save_as_audio(self, path:Optional[str]=None):
         path = path if path is not None else self.__file_path

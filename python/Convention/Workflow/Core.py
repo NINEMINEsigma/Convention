@@ -135,6 +135,11 @@ class NodeSlotInfo(BaseModel, any_class):
         return f"{self.GetType().__name__}<name={self.slotName}, type={self.typeIndicator}, " \
                f"{'Input' if self.IsInmappingSlot else 'Output'}>"
 
+    @override
+    def __init__(self, slotName:str, typeIndicator:str, IsInmappingSlot:bool, **kwargs:Any) -> Self:...
+    def __init__(self, **kwargs:Any) -> Self:
+        super().__init__(**kwargs)
+
 class NodeInfo(BaseModel, any_class):
     """
     节点信息
@@ -802,7 +807,7 @@ class WorkflowActionWrapper(left_value_reference[Callable], invoke_callable):
 _Internal_All_EndNodes:List['EndNode'] = []
 _Internal_Task_Count:atomic[int] = atomic(0, threading.Lock())
 
-class NodeResult(BaseModel):
+class NodeResult(BaseModel, any_class):
     """
     工作流结果
     """
@@ -810,14 +815,26 @@ class NodeResult(BaseModel):
     nodeTitle:  str                             = Field(description="节点标题")
     result:     context_type|context_value_type = Field(description="节点结果", default={})
 
-class ContextResult(BaseModel):
+    @override
+    def ToString(self) -> str:
+        return f"{self.nodeTitle}<{self.nodeID}>: {self.result}"
+    def __str__(self) -> str:
+        return self.ToString()
+
+class ContextResult(BaseModel, any_class):
     """
     上下文结果
     """
-    hashID:     str              = Field(description="结果哈希", default=0)
+    hashID:     str              = Field(description="结果哈希", default="")
     results:    List[NodeResult] = Field(description="节点结果", default=[])
     progress:   float            = Field(description="进度", default=0.0)
     task_count: int              = Field(description="任务数量", default=0)
+
+    @override
+    def ToString(self) -> str:
+        return f"[{', '.join([Unwrapper2Str(result) for result in self.results])}]<progress={self.progress}, task_count={self.task_count}>"
+    def __str__(self) -> str:
+        return self.ToString()
 
 class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
     """
@@ -1081,6 +1098,8 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
                 node_running_count += 1
         result.progress = 1 - (node_running_count / len(self.workflow.Nodes))
         result.task_count = _Internal_Task_Count.load()
+        import hashlib
+        result.hashID = hashlib.md5(result.ToString().encode()).hexdigest()
         return result
 
 class DynamicNode(Node):
@@ -1271,7 +1290,7 @@ class EndNode(Node):
         return f"{self.end_result}"
     @override
     def __repr__(self) -> str:
-        return f"{self.GetType()}>"
+        return f"{self.GetType()}"
 
 class EndNodeInfo(NodeInfo):
     """
@@ -1448,25 +1467,33 @@ class TextNodeInfo(StartNodeInfo):
 
     def __init__(
         self,
+        text:               Optional[str] = None,
+        outmappingName:     Optional[str] = None,
         *,
-        text:               str = "",
-        outmappingName:     str = "text",
-        targetNodeID:       int = -1,
-        targetSlotName:     str = "text",
+        targetNodeID:       Optional[int] = None,
+        targetSlotName:     Optional[str] = None,
         **kwargs:Any
         ) -> None:
         super().__init__(**kwargs)
-        self.text = text
+        if text is not None:
+            self.text = text
         self.inmapping = {}
-        self.outmapping = {
-            outmappingName: NodeSlotInfo(
-                slotName=outmappingName,
-                typeIndicator="str",
-                IsInmappingSlot=False,
-                targetNodeID=targetNodeID,
-                targetSlotName=targetSlotName
+        if outmappingName is not None or targetNodeID is not None or targetSlotName is not None:
+            if outmappingName is None:
+                outmappingName = "text"
+            if targetNodeID is None:
+                targetNodeID = -1
+            if targetSlotName is None:
+                targetSlotName = "text"
+            self.outmapping = {
+                outmappingName: NodeSlotInfo(
+                    slotName=outmappingName,
+                    typeIndicator="str",
+                    IsInmappingSlot=False,
+                    targetNodeID=targetNodeID,
+                    targetSlotName=targetSlotName
                 )
-        }
+            }
 
     @override
     def Instantiate(self) -> Node:
