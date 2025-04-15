@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Convention.WindowsUI;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -21,21 +22,21 @@ namespace Convention.Workflow
         /// </summary>
         public string slotName = "unknown";
         /// <summary>
-        /// 目标节点, 对于输入槽而言这是连接的上游输出节点, 对于输出槽而言这是最后一个连接到此的输入节点
+        /// 目标节点
         /// </summary>
-        [Ignore, NonSerialized, Description("This is a lazy variable that needs to be taken care of manually syncing the value of the " + nameof(targetNodeID))]
-        public Node targetNode = null;
+        [Ignore, NonSerialized]
+        public List<Node> targetNodes = new();
         /// <summary>
-        /// 目标槽, 对于输入槽而言这是连接的上游输出槽, 对于输出槽而言这是最后一个连接到此的输入槽
+        /// 目标槽
         /// </summary>
-        [Ignore, NonSerialized, Description("This is a lazy variable that needs to be taken care of manually syncing the value of the " + nameof(targetSlotName))]
-        public NodeSlot targetSlot = null;
+        [Ignore, NonSerialized]
+        public List<NodeSlot> targetSlots = new();
         /// <summary>
-        /// 目标节点ID
+        /// 目标节点ID, 输出节点无效
         /// </summary>
         public int targetNodeID = -1;
         /// <summary>
-        /// 目标插槽名称
+        /// 目标插槽名称, 输出节点无效
         /// </summary>
         public string targetSlotName = "unknown";
         /// <summary>
@@ -94,38 +95,49 @@ namespace Convention.Workflow
         public static void Link([In] NodeSlot left, [In] NodeSlot right)
         {
             left.Linkable(right);
-            //if (left.info.IsInmappingSlot || left.info.targetSlot == right)
+            if (left.info.IsInmappingSlot)
+                UnlinkAll(left);
+            if (right.info.IsInmappingSlot)
+                UnlinkAll(right);
+            if (left.info.targetSlots.Contains(right) == false)
             {
-                Unlink(left);
+                left.info.targetSlots.Add(right);
+                left.info.targetSlotName = right.info.slotName;
+                left.info.targetNodes.Add(right.info.parentNode);
+                left.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(right.info.parentNode);
+                left.SetDirty();
             }
-            //if (right.info.IsInmappingSlot || right.info.targetSlot == left)
+            if (right.info.targetSlots.Contains(left) == false)
             {
-                Unlink(right);
+                right.info.targetSlots.Add(left);
+                right.info.targetSlotName = left.info.slotName;
+                right.info.targetNodes.Add(left.info.parentNode);
+                right.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(left.info.parentNode);
+                right.SetDirty();
             }
-            left.info.targetSlot = right;
-            left.info.targetSlotName = right.info.slotName;
-            left.info.targetNode = right.info.parentNode;
-            left.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(right.info.targetNode);
-            left.SetDirty();
-            right.info.targetSlot = left;
-            right.info.targetSlotName = left.info.slotName;
-            right.info.targetNode = left.info.parentNode;
-            right.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(left.info.targetNode);
-            right.SetDirty();
         }
-        public static void Unlink([In] NodeSlot slot)
+        public static void Unlink([In] NodeSlot slot, int slotIndex)
         {
-            var targetSlot = slot.info.targetSlot;
-            slot.info.targetSlot = null;
-            slot.info.targetNode = null;
+            var targetSlot = slot.info.targetSlots[slotIndex];
+            slot.info.targetSlots.RemoveAt(slotIndex);
+            slot.info.targetNodes.RemoveAt(slotIndex);
             slot.info.targetNodeID = -1;
-            if (targetSlot != null && targetSlot.info.targetSlot == slot)
+            int r_slotIndex = targetSlot.info.targetSlots.IndexOf(slot);
+            if (targetSlot != null && r_slotIndex!=-1)
             {
-                targetSlot.info.targetSlot = null;
-                targetSlot.info.targetNode = null;
+                targetSlot.info.targetSlots.RemoveAt(r_slotIndex);
+                targetSlot.info.targetNodes.RemoveAt(r_slotIndex);
                 targetSlot.info.targetNodeID = -1;
                 targetSlot.SetDirty();
             }
+            slot.SetDirty();
+        }
+        public static void UnlinkAll([In]NodeSlot slot)
+        {
+            slot.info.targetSlots.Clear();
+            slot.info.targetNodes.Clear();
+            slot.info.targetNodeID = -1;
+            slot.info.targetSlotName = "";
             slot.SetDirty();
         }
         public bool LinkTo([In, Opt] NodeSlot slot)
@@ -135,11 +147,7 @@ namespace Convention.Workflow
                 Link(this, slot);
                 return true;
             }
-            else
-            {
-                Unlink(this);
-                return true;
-            }
+            return false;
         }
 
         public static NodeSlot CurrentHighLightSlot { get; private set; }
@@ -237,14 +245,14 @@ namespace Convention.Workflow
 
         public void UpdateLineImmediate()
         {
-            if (info.targetSlot != null && info.IsInmappingSlot)
+            if (info.targetSlots.Count > 0 && info.IsInmappingSlot)
             {
                 Points = new Vector3[]
                 {
                     this.Anchor.localPosition,
                     this.Anchor.localPosition+Vector3.left*30,
-                    (info.targetSlot.Anchor.position-this.Anchor.position)*ScaleFactor+this.Anchor.localPosition+Vector3.right*30,
-                    (info.targetSlot.Anchor.position-this.Anchor.position)*ScaleFactor+this.Anchor.localPosition
+                    (info.targetSlots[0].Anchor.position-this.Anchor.position)*ScaleFactor+this.Anchor.localPosition+Vector3.right*30,
+                    (info.targetSlots[0].Anchor.position-this.Anchor.position)*ScaleFactor+this.Anchor.localPosition
                 };
             }
             LineRenderer.positionCount = Points.Length;
@@ -255,7 +263,8 @@ namespace Convention.Workflow
 
         public void BeginDragLine(PointerEventData _)
         {
-            Unlink(this);
+            if (this.info.IsInmappingSlot)
+                UnlinkAll(this);
             IsKeepDrag = true;
 #if UNITY_EDITOR
             if (info == null)
@@ -265,11 +274,6 @@ namespace Convention.Workflow
                 return;
             }
 #endif
-            if (info.targetNode != null)
-            {
-                info.targetSlot.Points = zeroVecs;
-                info.targetSlot.SetDirty();
-            }
             Points = zeroVecs;
             SetDirty();
         }

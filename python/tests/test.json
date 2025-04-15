@@ -1,0 +1,217 @@
+{
+    "easy": {
+        "__type": "Convention.Workflow.Core.Workflow, Workflow",
+        "value": {
+            "Datas": [
+                {
+                    "__type": "Convention.Workflow.Core.EndNodeInfo, EndNodeInfo",
+                    "value": {
+                        "nodeID": 0,
+                        "typename": "EndNodeInfo",
+                        "title": "EndNodeInfo",
+                        "inmapping": {
+                            "answer": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "slotName": "answer",
+                                    "targetNodeID": 0,
+                                    "targetSlotName": "answer",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": true
+                                }
+                            }
+                        },
+                        "outmapping": {},
+                        "position": [
+                            0,
+                            0
+                        ]
+                    }
+                },
+                {
+                    "__type": "Convention.Workflow.Core.StepNodeInfo, StepNodeInfo",
+                    "value": {
+                        "funcname": "query",
+                        "nodeID": 1,
+                        "typename": "StepNodeInfo",
+                        "title": "StepNodeInfo",
+                        "inmapping": {
+                            "llm": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "slotName": "llm",
+                                    "targetNodeID": 1,
+                                    "targetSlotName": "llm",
+                                    "typeIndicator": "type",
+                                    "IsInmappingSlot": true
+                                }
+                            },
+                            "user_msg": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "slotName": "user_msg",
+                                    "targetNodeID": 1,
+                                    "targetSlotName": "query",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": true
+                                }
+                            }
+                        },
+                        "outmapping": {
+                            "answer": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "slotName": "answer",
+                                    "targetNodeID": -1,
+                                    "targetSlotName": "answer",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": false
+                                }
+                            }
+                        },
+                        "position": [
+                            0,
+                            0
+                        ]
+                    }
+                },
+                {
+                    "__type": "Convention.Workflow.Core.TextNodeInfo, TextNodeInfo",
+                    "value": {
+                        "text": "\u4f60\u662f\u8c01",
+                        "nodeID": 2,
+                        "typename": "TextNodeInfo",
+                        "title": "TextNodeInfo",
+                        "inmapping": {},
+                        "outmapping": {
+                            "query": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "slotName": "query",
+                                    "targetNodeID": -1,
+                                    "targetSlotName": "user_msg",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": false
+                                }
+                            }
+                        },
+                        "position": [
+                            0,
+                            0
+                        ]
+                    }
+                },
+                {
+                    "__type": "Convention.LLM.LlamaIndex.WorkflowStep.LLMLoaderNodeInfo, LLMLoaderNodeInfo",
+                    "value": {
+                        "funcname": "__inject_llm_loader",
+                        "nodeID": 3,
+                        "typename": "LLMLoaderNodeInfo",
+                        "title": "LLMLoader",
+                        "inmapping": {
+                            "llm_name": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "slotName": "llm_name",
+                                    "targetNodeID": 3,
+                                    "targetSlotName": "llm_name",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": true
+                                }
+                            },
+                            "url_or_path": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "slotName": "url_or_path",
+                                    "targetNodeID": 3,
+                                    "targetSlotName": "url_or_path",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": true
+                                }
+                            }
+                        },
+                        "outmapping": {
+                            "llm": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "slotName": "llm",
+                                    "targetNodeID": -1,
+                                    "targetSlotName": "llm",
+                                    "typeIndicator": "type",
+                                    "IsInmappingSlot": false
+                                }
+                            },
+                            "raw_llm": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "slotName": "raw_llm",
+                                    "targetNodeID": -1,
+                                    "targetSlotName": "unknown",
+                                    "typeIndicator": "ModelMetaclass",
+                                    "IsInmappingSlot": false
+                                }
+                            }
+                        },
+                        "position": [
+                            0,
+                            0
+                        ]
+                    }
+                },
+                {
+                    "__type": "Convention.Workflow.Core.TextNodeInfo, TextNodeInfo",
+                    "value": {
+                        "text": "llm",
+                        "nodeID": 4,
+                        "typename": "TextNodeInfo",
+                        "title": "TextNodeInfo",
+                        "inmapping": {},
+                        "outmapping": {
+                            "llm_name": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "slotName": "llm_name",
+                                    "targetNodeID": -1,
+                                    "targetSlotName": "llm_name",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": false
+                                }
+                            }
+                        },
+                        "position": [
+                            0,
+                            0
+                        ]
+                    }
+                },
+                {
+                    "__type": "Convention.Workflow.Core.TextNodeInfo, TextNodeInfo",
+                    "value": {
+                        "text": "\u4e3b\u6a21\u578b",
+                        "nodeID": 5,
+                        "typename": "TextNodeInfo",
+                        "title": "TextNodeInfo",
+                        "inmapping": {},
+                        "outmapping": {
+                            "url_or_path": {
+                                "__type": "Convention.Workflow.Core.NodeSlotInfo, NodeSlotInfo",
+                                "value": {
+                                    "slotName": "url_or_path",
+                                    "targetNodeID": -1,
+                                    "targetSlotName": "url_or_path",
+                                    "typeIndicator": "str",
+                                    "IsInmappingSlot": false
+                                }
+                            }
+                        },
+                        "position": [
+                            0,
+                            0
+                        ]
+                    }
+                }
+            ],
+            "Functions": []
+        }
+    }
+}

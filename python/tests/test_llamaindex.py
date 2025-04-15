@@ -3,6 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from Convention.Internal import *
+from Convention.Lang.Core import *
 from Convention.Workflow.Core import *
 from Convention.LLM.LlamaIndex.WorkflowStep import *
 from Convention.LLM.LlamaIndex.Core import LLMObject
@@ -12,12 +13,6 @@ def query(llm:LLMObject, user_msg:str) -> str:
     return ReActAgentCore(([], llm.ref_value), True).chat(user_msg, False)
 query_wrapper = WorkflowActionWrapper("query", query)
 
-from fastapi import FastAPI
-import uvicorn
-
-app = FastAPI()
-
-@app.put("/test/")
 async def run(query:str, model:str):
     print_colorful(ConsoleFrontColor.GREEN, "测试开始")
     manager = WorkflowManager.GetInstance()
@@ -32,7 +27,7 @@ async def run(query:str, model:str):
                 }, nodeID=0),
             StepNodeInfo(funcname="query",
                          outmapping={
-                             "answer": NodeSlotInfo(slotName="result",
+                             "answer": NodeSlotInfo(slotName="answer",
                                                     targetNodeID=0,
                                                     targetSlotName="answer",
                                                     typeIndicator="str",
@@ -59,6 +54,8 @@ async def run(query:str, model:str):
             TextNodeInfo(text="llm", outmappingName="llm_name", targetNodeID=3, targetSlotName="llm_name", nodeID=4),
             TextNodeInfo(text=model, outmappingName="url_or_path", targetNodeID=3, targetSlotName="url_or_path", nodeID=5),
         is_auto_id=False))
+        WorkflowManager.GetInstance().SaveWorkflow("./tests/test.json")
+        return
         await manager.RunWorkflow(verbose=True)
         print_colorful(ConsoleFrontColor.WHITE, f"测试结果: {manager.GetNode(0).end_result}")
     except Exception:
@@ -69,14 +66,14 @@ async def run(query:str, model:str):
     return manager.GetNode(0).end_result
 
 if __name__ == "__main__":
-    SetInternalDebug(True)
-    SetInternalReflectionDebug(True)
-    SetInternalEasySaveDebug(True)
-    SetInternalWorkflowDebug(True)
-    def error_handler(e:Exception):
-        WorkflowManager.GetInstance().StopWorkflow()
-        raise
-    SetBehaviorExceptionHook(error_handler)
-    AwakeBehaviorThread()
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-    StopBehaviorThread()
+    #SetInternalDebug(True)
+    #SetInternalReflectionDebug(True)
+    #SetInternalEasySaveDebug(True)
+    #SetInternalWorkflowDebug(True)
+    #def error_handler(e:Exception):
+    #    WorkflowManager.GetInstance().StopWorkflow()
+    #    raise
+    #SetBehaviorExceptionHook(error_handler)
+    #AwakeBehaviorThread()
+    run_until_complete(run("你是谁", "主模型"))
+    #StopBehaviorThread()

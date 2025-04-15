@@ -186,9 +186,12 @@ namespace Convention.Workflow
             }
             foreach (var info in m_Outmapping)
             {
-                if (info.Value != null && info.Value.info.targetSlot != null)
+                if (info.Value != null)
                 {
-                    info.Value.info.targetSlot.SetDirty();
+                    foreach (var targetSlot in info.Value.info.targetSlots)
+                    {
+                        targetSlot.SetDirty();
+                    }
                 }
             }
         }
@@ -243,13 +246,13 @@ namespace Convention.Workflow
             if (InSlotPropertiesWindow == true)
                 foreach (var (name, slot) in this.m_Inmapping)
                 {
-                    NodeSlot.Unlink(slot);
+                    NodeSlot.UnlinkAll(slot);
                     slot.SetDirty();
                 }
             if (OutSlotPropertiesWindow == true)
                 foreach (var (name, slot) in m_Outmapping)
                 {
-                    NodeSlot.Unlink(slot);
+                    NodeSlot.UnlinkAll(slot);
                     slot.SetDirty();
                 }
         }
@@ -330,20 +333,7 @@ namespace Convention.Workflow
                     }
                     else
                     {
-                        NodeSlot.Unlink(m_Inmapping[slot_name]);
-                    }
-                }
-            if (OutSlotPropertiesWindow != true)
-                foreach (var (slot_name, slot_info) in info.outmapping)
-                {
-                    var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
-                    if (targetNode != null)
-                    {
-                        NodeSlot.Link(m_Outmapping[slot_name], targetNode.m_Inmapping[slot_info.targetSlotName]);
-                    }
-                    else
-                    {
-                        NodeSlot.Unlink(m_Outmapping[slot_name]);
+                        NodeSlot.UnlinkAll(m_Inmapping[slot_name]);
                     }
                 }
         }
@@ -364,11 +354,11 @@ namespace Convention.Workflow
         }
         public void UnlinkInslot([In] string slotName)
         {
-            NodeSlot.Unlink(this.m_Inmapping[slotName]);
+            NodeSlot.UnlinkAll(this.m_Inmapping[slotName]);
         }
         public void UnlinkOutslot([In] string slotName)
         {
-            NodeSlot.Unlink(this.m_Outmapping[slotName]);
+            NodeSlot.UnlinkAll(this.m_Outmapping[slotName]);
         }
     }
 

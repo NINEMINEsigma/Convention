@@ -10,6 +10,7 @@ def SetInternalEasySaveDebug(debug:bool) -> None:
     _Internal_EasySave_Debug = debug
 
 class EasySaveSetting(BaseModel, any_class):
+    key:            str         = Field(description="目标键", default="easy")
     # 从目标文件进行序列化/反序列化
     file:           str         = Field(description="目标文件")
     # 序列化/反序列化的格式方法
@@ -17,7 +18,6 @@ class EasySaveSetting(BaseModel, any_class):
     # TODO: refChain:       bool        = Field(description="是否以保留引用的方式保存", default=True)
     # 文件形式与参数
     # TODO: encoding:       str         = Field(description="编码", default="utf-8")
-    # TODO: prettyPrint:    bool        = Field(description="是否缩进", default=True)
     is_backup:      bool        = Field(description="是否备份", default=True)
     backup_suffix:  str         = Field(description="备份后缀", default=".backup")
     # 序列化/反序列化时, 如果设置了忽略字段的谓词, 则被谓词选中的字段将不会工作
@@ -91,7 +91,13 @@ class ESWriter(BaseModel, any_class):
                             f"<{field.FieldType}>在序列化时遇到错误:{ConsoleFrontColor.RESET}\n{e}") from e
                 return layer
 
-        result_file.data = dfs(rtype, rinstance)
+        layers: Dict[str, Any] = {}
+        if result_file.exists():
+            filedata = result_file.load()
+            if isinstance(filedata, dict):
+                layers = filedata
+        layers[self.setting.key] = dfs(rtype, rinstance)
+        result_file.data = layers
         result_file.save_as_json()
 
     @sealed
@@ -131,12 +137,12 @@ class ESWriter(BaseModel, any_class):
             result_file.copy(backup_file)
         try:
             self.Serialize(result_file, TypeManager.GetInstance().CreateOrGetRefType(rinstance), rinstance)
-        except Exception as e:
+        except Exception:
             if backup_file is not None:
                 result_file.remove()
                 backup_file.copy(result_file)
                 backup_file.remove()
-            raise e
+            raise
         finally:
             if backup_file is not None:
                 backup_file.remove()
@@ -190,6 +196,9 @@ class ESReader(BaseModel, any_class):
         '''
         # 从文件中加载JSON数据
         layers:             Dict[str, Any]  = read_file.load_as_json()
+        if self.setting.key not in layers:
+            raise ValueError(f"{ConsoleFrontColor.RED}文件中不包含目标键: {ConsoleFrontColor.RESET}{self.setting.key}")
+        layers = layers[self.setting.key]
         result_instance:    Any             = None
 
         # 如果未指定类型, 则从JSON数据中获取类型信息
