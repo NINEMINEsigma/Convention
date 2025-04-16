@@ -232,6 +232,15 @@ namespace Convention
                 return LoadAsText();
         }
 
+        public static T LoadFromRequest<T>([In]UnityWebRequest request)
+        {
+            while (!request.isDone) ;
+
+            return request.result == UnityWebRequest.Result.Success 
+                ? JsonConvert.DeserializeObject<T>(request.downloadHandler.text)
+                : default;
+        }
+
         public object LoadAsJson()
         {
             return LoadAsJsonWithType<object>();

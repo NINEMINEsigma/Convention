@@ -17,7 +17,7 @@ namespace Convention
             [Content, Setting] private bool DissolveNeeded = false;
 
             [Setting, Header("Dissolve Setting")] public AnimationCurve DissolveZoomInCurve = AnimationCurve.Linear(0, 0, 1, 1);
-            [Setting] public AnimationCurve DissolveZoomOutCurve = AnimationCurve.Linear(0, 0, -1, 1);
+            [Setting] public AnimationCurve DissolveZoomOutCurve = AnimationCurve.Linear(0, 0, 1, 1);
             [Setting] public float ZommInDuration = 0.5f;
             [Setting] public float ZommOutDuration = 0.5f;
             [Setting] public float StayDuration = 0.5f;
@@ -55,6 +55,7 @@ namespace Convention
                 DissolveNeeded = false;
             }
 
+            [Content,OnlyPlayMode]
             public void StartDissolve()
             {
                 StopCoroutine("Dissolving");

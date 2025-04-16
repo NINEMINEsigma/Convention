@@ -6,12 +6,6 @@ using UnityEngine.EventSystems;
 
 namespace Convention.Workflow
 {
-    [Serializable]
-    public class TNodeSlotInfo: NodeSlotInfo
-    {
-
-    }
-
     [Serializable, ArgPackage]
     public class NodeSlotInfo : AnyClass
     {
@@ -74,6 +68,8 @@ namespace Convention.Workflow
 
     public class NodeSlot : WindowUIModule, ITitle, INodeSlotLinkable
     {
+        [Resources, Setting, Tooltip("挂载额外的组件")] public GameObject ExtensionModule;
+
         //这个缩放因子是最顶层Canvas的变形
         public const float ScaleFactor = 100;
 

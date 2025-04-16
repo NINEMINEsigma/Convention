@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -267,11 +267,11 @@ namespace Convention.Workflow
 
         public void SaveWorkflowWithSystemPlugin()
         {
-            SaveWorkflow(PluginExtenion.SaveFile("¹¤×÷Á÷|*.workflow;*.json", "±£´æ¹¤×÷Á÷"));
+            SaveWorkflow(PluginExtenion.SaveFile("å·¥ä½œæµ|*.workflow;*.json", "ä¿å­˜å·¥ä½œæµ"));
         }
         public void LoadWorkflowWithSystemPlugin()
         {
-            LoadWorkflow(PluginExtenion.SelectFile("¹¤×÷Á÷|*.workflow;*.json", "¼ÓÔØ¹¤×÷Á÷"));
+            LoadWorkflow(PluginExtenion.SelectFile("å·¥ä½œæµ|*.workflow;*.json", "åŠ è½½å·¥ä½œæµ"));
         }
 
         [Content, OnlyPlayMode] public string LastSavePath = null;
@@ -323,6 +323,7 @@ namespace Convention.Workflow
             ToolFile local = new(workflowPath);
             if (local.IsExist == false)
                 throw new FileNotFoundException($"{local} is not exist");
+            LastSavePath = workflowPath;
             var loadedWorkflow = (Workflow)local.LoadAsJson();
             return LoadWorkflow(loadedWorkflow);
         }

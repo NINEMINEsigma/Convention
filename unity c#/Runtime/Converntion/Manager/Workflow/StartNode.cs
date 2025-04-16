@@ -28,6 +28,10 @@ namespace Convention.Workflow
 
         protected override void WhenSetup(NodeInfo info)
         {
+            if (this.info != null)
+            {
+
+            }
             base.WhenSetup(info);
             var pair = info.outmapping.First();
             m_Outmapping.Clear();
@@ -35,6 +39,11 @@ namespace Convention.Workflow
             slotInfo.parentNode = this;
             OutputSlot.SetupFromInfo(slotInfo);
             m_Outmapping[pair.Key] = OutputSlot;
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
         }
 
         public override void BuildLink()

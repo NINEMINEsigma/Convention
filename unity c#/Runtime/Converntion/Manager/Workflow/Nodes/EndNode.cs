@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using Convention.WindowsUI;
@@ -112,6 +112,29 @@ namespace Convention.Workflow
         public bool Linkable([In] NodeSlot other)
         {
             return other != null && other.info.IsInmappingSlot == false;
+        }
+
+        [return: ReturnMayNull]
+        public GameObject GetExtensionModule(string slotName)
+        {
+            if (this.m_Inmapping.ContainsKey(slotName))
+            {
+                return this.m_Inmapping[slotName].ExtensionModule;
+            }
+            return null;
+        }
+        [return: ReturnMayNull]
+        public T GetExtensionModule<T>(string slotName) where T : Component
+        {
+            if (this.m_Inmapping.ContainsKey(slotName))
+            {
+                var go = this.m_Inmapping[slotName].ExtensionModule;
+                if (go != null)
+                {
+                    return ConventionUtility.SeekComponent<T>(go);
+                }
+            }
+            return null;
         }
     }
 }
