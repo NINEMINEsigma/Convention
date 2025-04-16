@@ -42,6 +42,7 @@ MonoBehaviour:
     - EasySave3
     - LeanCommon
     - LeanPool
+    - WorkflowAgent
     showAdvancedSettings: 0
   addMgrToSceneAutomatically: 0
   autoUpdateReferences: 1

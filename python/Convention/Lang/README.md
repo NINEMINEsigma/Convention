@@ -294,7 +294,164 @@ max_index = CppLike.max_element([1, 3, 2, 5, 4])
 3. 序列化时选择合适的格式
 4. 反射操作时缓存类型信息
 
-## 贡献指南
+## EasySave模块 (EasySave.py)
 
-欢迎提交Issue和Pull Request来改进功能或添加新特性。
+EasySave是一个强大的序列化模块，参考Unity的EasySave3插件设计，提供了简单易用的对象序列化和反序列化功能。它支持与Unity的ES3完全兼容的JSON格式，可以实现Python和Unity之间的数据互通。
 
+### 核心功能
+
+#### 1. 序列化设置
+
+- **文件格式选择**
+  - JSON格式：支持与Unity ES3完全兼容的JSON格式
+  - 二进制格式：支持高效的二进制序列化
+
+- **文件操作**
+  - 自动备份功能
+  - 文件路径处理
+  - 错误恢复机制
+
+- **字段控制**
+  - 字段过滤
+  - 选择性序列化
+  - 自定义序列化规则
+
+#### 2. 序列化操作
+
+- **基本序列化**
+  ```python
+  from Convention.Lang import EasySave
+
+  # 保存对象
+  class MyClass:
+      def __init__(self):
+          self.value = 42
+
+  obj = MyClass()
+  EasySave.Write(obj, "data.json")
+
+  # 加载对象
+  loaded_obj = EasySave.Read(MyClass, "data.json")
+  ```
+
+- **高级设置**
+  ```python
+  from Convention.Lang import EasySave, EasySaveSetting
+
+  # 自定义设置
+  setting = EasySaveSetting(
+      file="data.json",
+      format="json",
+      is_backup=True,
+      backup_suffix=".backup"
+  )
+
+  # 使用自定义设置保存
+  EasySave.Write(obj, setting=setting)
+  ```
+
+#### 3. 类型支持
+
+- **基本类型**
+  - 数值类型 (int, float)
+  - 字符串 (str)
+  - 布尔值 (bool)
+  - None值
+
+- **容器类型**
+  - 列表 (List)
+  - 集合 (Set)
+  - 元组 (Tuple)
+  - 字典 (Dict)
+
+- **自定义类型**
+  - 支持自定义类的序列化
+  - 支持继承关系
+  - 支持泛型类型
+
+#### 4. Unity兼容性
+
+- **JSON格式兼容**
+  - 完全兼容Unity ES3的JSON格式
+  - 支持双向数据交换
+  - 保持类型信息
+
+- **类型映射**
+  - Python类型到Unity类型的自动映射
+  - 自定义类型映射支持
+  - 泛型类型处理
+
+### 高级特性
+
+#### 1. 自定义序列化
+
+```python
+class CustomClass:
+    def __easy_serialize__(self) -> Tuple[Dict[str, Any], bool]:
+        # 自定义序列化逻辑
+        return {"custom_data": self.data}, True
+
+    @classmethod
+    def __easy_deserialize__(cls, data:Dict[str, Any]):
+        # 自定义反序列化逻辑
+        instance = cls()
+        instance.data = data["custom_data"]
+        return instance
+```
+
+#### 2. 字段控制
+
+```python
+# 使用谓词控制字段序列化
+setting = EasySaveSetting(
+    ignore_pr=lambda field: field.FieldName.startswith("_"),
+    select_pr=lambda field: field.FieldType == int
+)
+```
+
+#### 3. 错误处理
+
+- 自动备份机制
+- 异常恢复
+- 详细的错误信息
+
+### 性能优化
+
+1. **缓存机制**
+   - 类型信息缓存
+   - 字段信息缓存
+   - 序列化结果缓存
+
+2. **延迟加载**
+   - 按需加载字段
+   - 延迟初始化
+   - 资源优化
+
+3. **内存管理**
+   - 自动垃圾回收
+   - 资源及时释放
+   - 内存使用优化
+
+### 注意事项
+
+1. 序列化时注意循环引用
+2. 自定义类型需要实现序列化接口
+3. 注意字段访问权限
+4. 大量数据序列化时注意性能
+
+### 与Unity ES3的兼容性
+
+1. **数据格式**
+   - 完全兼容ES3的JSON格式
+   - 支持类型信息保存
+   - 支持复杂对象图
+
+2. **类型映射**
+   - 基本类型自动映射
+   - 容器类型兼容处理
+   - 自定义类型支持
+
+3. **使用场景**
+   - 游戏存档共享
+   - 配置数据交换
+   - 跨平台数据同步

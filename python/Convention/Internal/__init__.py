@@ -197,19 +197,19 @@ type ClosuresCallable[_T] = Union[Callable[[Optional[None]], _T], Typen[_T]]
 class type_class(object):
     """
     基础类型类，是框架中所有对象类型的基类。
-    
+
     该类提供了对象类型反射、类型转换、类型检查等基础功能，是框架中类型系统的核心。
     实现了类似C++中的RTTI(运行时类型识别)机制，支持动态类型转换和类型安全检查。
-    
+
     特性:
     - 提供对象的类型获取和名称解析
     - 支持类型转换操作(AsRef, AsValue)
     - 实现类型检查与条件执行(Is, IfIam)
     - 支持上下文管理器协议(__enter__, __exit__)
     - 提供程序集(Assembly)信息
-    
+
     当开启内部调试模式时，会自动记录对象创建的堆栈信息，便于追踪对象生命周期。
-    
+
     继承自该类的子类可以覆盖虚方法来自定义行为，但应当保持类型系统的一致性。
     """
     if GetInternalDebug():
@@ -273,10 +273,10 @@ class type_class(object):
     @virtual
     def GetAssembly(self) -> str:
         return self.__class__.Assembly()
-    
+
 class base_value_reference[_T](type_class):
     _ref_value:     Optional[_T]        = None
-    _real_type:    Optional[type]      = None
+    _real_type:     Optional[type]      = None
     def __init__(self, ref_value:_T):
         super().__init__()
         self._reinit_ref_value(ref_value)
@@ -382,19 +382,19 @@ class right_value_refenence[_T](base_value_reference):
 class any_class(type_class, ABC):
     """
     抽象基类，继承自type_class，是框架中所有高级对象的共同基类。
-    
+
     该类是一个抽象类(ABC)，提供了更高级的对象共享和程序集管理功能。
     设计为框架中各种服务、组件和实体的基础接口，定义了标准行为和约定。
-    
+
     特性:
     - 继承自type_class的所有基础类型系统功能
     - 提供对象共享机制(Share方法)，支持引用传递
     - 指定特定的程序集标识(Convention.Runtime)
     - 作为抽象基类，可以定义接口约定
-    
+
     在框架中，any_class充当了标准接口的角色，使得不同组件可以通过多态性进行交互，
     同时维护类型安全和引用完整性。服务定位器、事件系统等高级功能通常基于此类实现。
-    
+
     使用该类作为基类可以确保对象遵循框架的约定和标准，便于系统集成和扩展。
     """
     def __init__(self):
@@ -427,8 +427,8 @@ def AssemblyTypen(obj:Any) -> str:
         return f"{obj.__class__.__module__}.{obj.__class__.__name__}, "\
             f"{obj.GetAssembly() if hasattr(obj, "GetAssembly") else "Global"}"
 def ReadAssemblyTypen(
-    assembly_typen: str, 
-    *, 
+    assembly_typen: str,
+    *,
     premodule:      Optional[str|Callable[[str], str]] = None
     ) -> Tuple[type, str]:
     typen, assembly_name = assembly_typen.split(",")
@@ -974,17 +974,17 @@ def StopBehaviorThread():
 class Vector2(BaseModel, any_class):
     x: float = Field(default=0.0)
     y: float = Field(default=0.0)
-    
+
     def __init__(self, x:float=0.0, y:float=0.0):
         super().__init__()
         self.x = x
         self.y = y
-    
+
     @classmethod
     def __easy_serialize__(cls, instance:Any) -> Tuple[Dict[str, Any], bool]:
         '''
         序列化
-        
+
         返回值:
             Dict[str, Any]: 序列化后的数据
             bool: 是否需要添加__type字段
@@ -1001,18 +1001,18 @@ class Vector3(BaseModel, any_class):
     x: float = Field(default=0.0)
     y: float = Field(default=0.0)
     z: float = Field(default=0.0)
-    
+
     def __init__(self, x:float=0.0, y:float=0.0, z:float=0.0):
         super().__init__()
         self.x = x
         self.y = y
         self.z = z
-    
+
     @classmethod
     def __easy_serialize__(cls, instance:Any) -> Tuple[Dict[str, Any], bool]:
         '''
         序列化
-        
+
         返回值:
             Dict[str, Any]: 序列化后的数据
             bool: 是否需要添加__type字段

@@ -79,6 +79,7 @@ namespace Convention.Workflow
         [SerializeField, OnlyNotNullMode]
         public RectTransform UIFocusObject;
         private List<SharedModule.CallbackData> callbackDatas = new();
+        private HashSet<Type> registeredCallbackNodeType = new();
 
         public List<FunctionModel> CallableFunctionModels = new();
 
@@ -126,6 +127,9 @@ namespace Convention.Workflow
         {
             foreach (NodeInfo nodeInfo in templates)
             {
+                if (registeredCallbackNodeType.Contains(nodeInfo.GetType()))
+                    continue;
+                registeredCallbackNodeType.Add(nodeInfo.GetType());
                 string label = nodeInfo.GetType().Name;
                 if (label.EndsWith("Info"))
                     label = label[..^4];

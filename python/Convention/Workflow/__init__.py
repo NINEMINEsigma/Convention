@@ -179,7 +179,7 @@ class NodeInfo(BaseModel, any_class):
 
     @virtual
     def TemplateClone(self) -> Self:
-        result:NodeInfo = NodeInfo(
+        result:NodeInfo = self.__class__(
             nodeID=self.nodeID,
             typename=self.typename,
             title=self.title,
@@ -1498,3 +1498,34 @@ class TextNodeInfo(StartNodeInfo):
     @override
     def Instantiate(self) -> Node:
         return TextNode(self)
+
+class SelectorNode(StartNode):
+    """
+    选择器节点, 属于开始节点, 用于选择
+    """
+    def __init__(self, info:'SelectorNodeInfo') -> None:
+        super().__init__(info)
+
+    @override
+    async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
+        info:SelectorNodeInfo = self.info
+        return info.select
+
+class SelectorNodeInfo(StartNodeInfo):
+    """
+    选择器节点信息, 属于开始节点, 用于选择
+    """
+    select:str = Field(description="选择器", default="unknown")
+
+    def __init__(
+        self,
+        select:str = "unknown",
+        **kwargs:Any
+        ) -> None:
+        super().__init__(**kwargs)
+        self.select = select
+
+
+    @override
+    def Instantiate(self) -> Node:
+        return SelectorNode(self)
