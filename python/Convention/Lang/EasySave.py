@@ -263,8 +263,13 @@ class ESReader(BaseModel, any_class):
                         element_type = rtype.GenericArgs[0] if len(rtype.GenericArgs) > 0 else Any
                         return { dfs(TypeManager.GetInstance().CreateOrGetRefType(element_type), iter_) for iter_ in layer }
                     elif rtype.IsTuple:
-                        element_type = rtype.GenericArgs[0] if len(rtype.GenericArgs) > 0 else Any
-                        return tuple(dfs(TypeManager.GetInstance().CreateOrGetRefType(element_type), iter_) for iter_ in layer)
+                        element_types: List[type] = rtype.GenericArgs
+                        result: tuple = tuple(None for _ in layer)
+                        if element_types is None or len(element_types) == 0:
+                            element_types = [Any] * len(layer)
+                        for index, iter_ in enumerate(layer):
+                            result[index] = dfs(TypeManager.GetInstance().CreateOrGetRefType(element_types[index]), iter_)
+                        return result
                     elif rtype.IsDictionary:
                         element_key, element_value = (rtype.GenericArgs[0], rtype.GenericArgs[1]) if len(rtype.GenericArgs) > 1 else (Any, Any)
                         return {
@@ -283,34 +288,46 @@ class ESReader(BaseModel, any_class):
                 rinstance = rtype.CreateInstance()
                 if GetInternalEasySaveDebug():
                     print_colorful(ConsoleFrontColor.YELLOW, f"rinstance rtype target: {ConsoleFrontColor.RESET}"\
-                        f"{rtype.print_str(flags=RefTypeFlag.Field|RefTypeFlag.Instance|RefTypeFlag.Public)}")
-                for fieldName, fieldValue in layer.items():
-                    if fieldName == "__type":
-                        continue
-                    field:FieldInfo = None
+                        f"{rtype.print_str(verbose=True, flags=RefTypeFlag.Field|RefTypeFlag.Instance|RefTypeFlag.Public)}")
+                fields:List[FieldInfo] = self._GetFields(rtype)
+                for field in fields:
                     field_rtype:RefType = None
                     try:
-                        field = rtype.GetField(fieldName)
-                        if field is not None:
-                            if field.FieldType == list and field.ValueType.IsGeneric:
-                                field_rtype = TypeManager.GetInstance().CreateOrGetRefType(List[field.ValueType.GenericArgs[0]])
-                            elif field.FieldType == set and field.ValueType.IsGeneric:
-                                field_rtype = TypeManager.GetInstance().CreateOrGetRefType(Set[field.ValueType.GenericArgs[0]])
-                            elif field.FieldType == tuple and field.ValueType.IsGeneric:
-                                field_rtype = TypeManager.GetInstance().CreateOrGetRefType(Tuple[field.ValueType.GenericArgs[0]])
-                            elif field.FieldType == dict and field.ValueType.IsGeneric:
-                                field_rtype = TypeManager.GetInstance().CreateOrGetRefType(
-                                    Dict[field.ValueType.GenericArgs[0], field.ValueType.GenericArgs[1]]
-                                    )
-                            else:
-                                field_rtype = TypeManager.GetInstance().CreateOrGetRefType(field.FieldType)
+                        if field.FieldType == list and field.ValueType.IsGeneric:
+                            field_rtype = TypeManager.GetInstance().CreateOrGetRefType(ListIndictaor(field.ValueType.GenericArgs[0]))
+                            if GetInternalEasySaveDebug():
+                                print_colorful(ConsoleFrontColor.YELLOW, f"field: {ConsoleFrontColor.RESET}{field.FieldName}"\
+                                    f"{ConsoleFrontColor.YELLOW}, field_rtype: {ConsoleFrontColor.RESET}List<"\
+                                    f"{field_rtype.GenericArgs[0]}>")
+                        elif field.FieldType == set and field.ValueType.IsGeneric:
+                            field_rtype = TypeManager.GetInstance().CreateOrGetRefType(SetIndictaor(field.ValueType.GenericArgs[0]))
+                            if GetInternalEasySaveDebug():
+                                print_colorful(ConsoleFrontColor.YELLOW, f"field: {ConsoleFrontColor.RESET}{field.FieldName}"\
+                                    f"{ConsoleFrontColor.YELLOW}, field_rtype: {ConsoleFrontColor.RESET}Set<"\
+                                    f"{field_rtype.GenericArgs[0]}>")
+                        elif field.FieldType == tuple and field.ValueType.IsGeneric:
+                            field_rtype = TypeManager.GetInstance().CreateOrGetRefType(TupleIndictaor(field.ValueType.GenericArgs[0]))
+                            if GetInternalEasySaveDebug():
+                                print_colorful(ConsoleFrontColor.YELLOW, f"field: {ConsoleFrontColor.RESET}{field.FieldName}"\
+                                    f"{ConsoleFrontColor.YELLOW}, field_rtype: {ConsoleFrontColor.RESET}Tuple<"\
+                                    f"{field_rtype.GenericArgs[0]}>")
+                        elif field.FieldType == dict and field.ValueType.IsGeneric:
+                            field_rtype = TypeManager.GetInstance().CreateOrGetRefType(
+                                DictIndictaor(field.ValueType.GenericArgs[0], field.ValueType.GenericArgs[1])
+                                )
+                            if GetInternalEasySaveDebug():
+                                print_colorful(ConsoleFrontColor.YELLOW, f"field: {ConsoleFrontColor.RESET}{field.FieldName}"\
+                                    f"{ConsoleFrontColor.YELLOW}, field_rtype: {ConsoleFrontColor.RESET}Dict<"\
+                                    f"{field_rtype.GenericArgs[0]}, {field_rtype.GenericArgs[1]}>")
+                        else:
+                            field_rtype = TypeManager.GetInstance().CreateOrGetRefType(field.FieldType)
                             if GetInternalEasySaveDebug():
                                 print_colorful(ConsoleFrontColor.YELLOW, f"field: {ConsoleFrontColor.RESET}{field.FieldName}"\
                                     f"{ConsoleFrontColor.YELLOW}, field_rtype: {ConsoleFrontColor.RESET}{field_rtype.RealType}"\
                                     f"<{field_rtype.GenericArgs}>")
-                            field.SetValue(rinstance, dfs(field_rtype, fieldValue))
+                        field.SetValue(rinstance, dfs(field_rtype, layer[field.FieldName]))
                     except Exception as e:
-                        raise ReflectionException(f"Json字段{fieldName}={limit_str(str(fieldValue), 100)}: \n{e}") from e
+                        raise ReflectionException(f"Json字段{field.FieldName}={limit_str(str(layer[field.FieldName]), 100)}: \n{e}") from e
                 return rinstance
 
         # 从根节点开始反序列化

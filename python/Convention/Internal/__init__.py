@@ -69,7 +69,7 @@ try:
 except ImportError:
     InternalImportingThrow("Internal", ["pydantic"])
 
-def virtual(func:Callable) -> Callable:
+def virtual[_Func:Callable](func:_Func) -> _Func:
     '''
     你拥有覆写这个函数的权力, 这使得函数成为一个虚函数
     '''
@@ -81,7 +81,7 @@ def virtual(func:Callable) -> Callable:
     except AttributeError:
         pass
     return func
-def sealed(func:Callable) -> Callable:
+def sealed[_Func:Callable](func:_Func) -> _Func:
     '''
     密封这个函数, 这使得函数不可被@virtual装饰
     '''
@@ -93,7 +93,7 @@ def sealed(func:Callable) -> Callable:
     except AttributeError:
         pass
     return func
-def final(func:Callable) -> Callable:
+def final[_Func:Callable](func:_Func) -> _Func:
     '''
     取消该函数的虚函数特性, 这使得函数不可被继承
     '''
@@ -106,7 +106,7 @@ def final(func:Callable) -> Callable:
     except AttributeError:
         pass
     return func
-def noexcept(func:Callable) -> Callable:
+def noexcept[_Func:Callable](func:_Func) -> _Func:
     '''
     该函数将不会抛出异常, 无论发生什么
     '''
@@ -116,7 +116,7 @@ def noexcept(func:Callable) -> Callable:
         except Exception as e:
             return None
     return wrapper
-def throw(func:Callable, *args:Exception) -> Callable:
+def throw[_Func:Callable](func:_Func, *args:Exception) -> _Func:
     '''
     该函数抛出的异常如果不在预期内, 将终止整个程序,
     预期异常列表为空时, 也视为该函数不应抛出异常

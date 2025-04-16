@@ -3,6 +3,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from Convention.Lang.Core import *
+from Convention.Lang.Reflection import *
 from Convention.Workflow import *
 
 async def run():
@@ -29,6 +30,7 @@ async def run():
         raise
     finally:
         StopBehaviorThread()
+        print_colorful(ConsoleFrontColor.LIGHTWHITE_EX, TypeManager.GetInstance().AllRefTypes())
 
 
 if __name__ == "__main__":

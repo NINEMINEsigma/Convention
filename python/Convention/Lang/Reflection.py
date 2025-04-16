@@ -130,6 +130,17 @@ class ListIndictaor(_SpecialIndictaor):
     def __init__(self, elementType:type):
         self.elementType = elementType
 
+    def __repr__(self) -> str:
+        return f"ListIndictaor<elementType={self.elementType}>"
+    def __str__(self) -> str:
+        return self.__repr__()
+    @override
+    def ToString(self) -> str:
+        return self.__repr__()
+
+    def __hash__(self) -> int:
+        return hash(List[self.elementType])
+
 class DictIndictaor(_SpecialIndictaor):
     keyType:type
     valueType:type
@@ -137,15 +148,49 @@ class DictIndictaor(_SpecialIndictaor):
         self.keyType = keyType
         self.valueType = valueType
 
+    def __repr__(self) -> str:
+        return f"DictIndictaor<keyType={self.keyType}, valueType={self.valueType}>"
+    def __str__(self) -> str:
+        return self.__repr__()
+    @override
+    def ToString(self) -> str:
+        return self.__repr__()
+
+    def __hash__(self) -> int:
+        return hash(Dict[self.keyType, self.valueType])
+
 class TupleIndictaor(_SpecialIndictaor):
-    elementTypes:tuple[type, ...]
+    elementTypes:Tuple[type, ...]
     def __init__(self, *elementTypes:type):
         self.elementTypes = elementTypes
+
+    def __repr__(self) -> str:
+        return f"TupleIndictaor<{', '.join(map(str, self.elementTypes))}>"
+    def __str__(self) -> str:
+        return self.__repr__()
+    @override
+    def ToString(self) -> str:
+        return self.__repr__()
+
+    def __hash__(self) -> int:
+        return hash(Tuple[self.elementTypes])
 
 class SetIndictaor(_SpecialIndictaor):
     elementType:type
     def __init__(self, elementType:type):
         self.elementType = elementType
+
+    def __repr__(self) -> str:
+        return f"SetIndictaor<elementType={self.elementType}>"
+    def __str__(self) -> str:
+        return self.__repr__()
+    @override
+    def ToString(self) -> str:
+        return self.__repr__()
+
+    def __hash__(self) -> int:
+        return hash(Set[self.elementType])
+
 
 # 添加记忆化装饰器
 def memoize(func):
@@ -412,6 +457,10 @@ class BaseInfo(BaseModel, any_class):
     def __init__(self, **kwargs):
         BaseModel.__init__(self, **kwargs)
         any_class.__init__(self)
+        
+    @virtual
+    def __str__(self) -> str:
+        return self.ToString()
 
 class MemberInfo(BaseInfo):
     _MemberName:    str             = PrivateAttr(default="")
@@ -603,7 +652,16 @@ class ValueInfo(BaseInfo):
             print_colorful(ConsoleFrontColor.BLUE, f"Current ValueInfo.Create Frame: "\
                 f"metaType={metaType}, SelfType={SelfType}")
         if isinstance(metaType, type):
-            return ValueInfo(metaType, **kwargs)
+            if metaType is list:
+                return ValueInfo(list, [Any])
+            elif metaType is dict:
+                return ValueInfo(dict, [Any, Any])
+            elif metaType is tuple:
+                return ValueInfo(tuple, [])
+            elif metaType is set:
+                return ValueInfo(set, [Any])
+            else:
+                return ValueInfo(metaType, **kwargs)
         elif isinstance(metaType, str):
             type_ = try_to_type(metaType, module_name=module_name)
             if type_ is None:
@@ -656,7 +714,8 @@ class FieldInfo(MemberInfo):
             )
         self._MetaType = ValueInfo.Create(metaType, module_name=module_name, SelfType=selfType)
         if GetInternalReflectionDebug():
-            print_colorful(ConsoleFrontColor.LIGHTBLUE_EX, f"Current RealType: {self._MetaType.RealType}")
+            print_colorful(ConsoleFrontColor.LIGHTBLUE_EX, f"Current RealType: {self.FieldType}"\
+                f"{f'<{self.ValueType.GenericArgs}>' if self.ValueType.IsGeneric else ''}")
 
     @property
     def IsUnion(self) -> bool:
@@ -720,8 +779,9 @@ class FieldInfo(MemberInfo):
         return "FieldInfo"
     @override
     def ToString(self) -> str:
-        return f"FieldInfo<name={self.MemberName}, type={self.FieldType}, ctype={self.ParentType}, " \
-               f"{'static' if self.IsStatic else 'instance'}, {'public' if self.IsPublic else 'private'}>"
+        return f"FieldInfo<name={self.MemberName}, type={self.FieldType}, ctype={self.ParentType}, "\
+            f"{("generics="+str(self.ValueType.GenericArgs)+", ") if self.ValueType.IsGeneric else ''}" \
+            f"{'static' if self.IsStatic else 'instance'}, {'public' if self.IsPublic else 'private'}>"
 
 class ParameterInfo(BaseInfo):
     _MetaType:      Optional[ValueInfo] = PrivateAttr(default=None)
@@ -949,16 +1009,16 @@ class RefType(ValueInfo):
 
     def __init__(self, metaType:type|_SpecialIndictaor):
         if isinstance(metaType, ListIndictaor):
-            super().__init__(list, elementType=metaType.elementType)
+            super().__init__(list, generic_args=[metaType.elementType])
             metaType = list
         elif isinstance(metaType, DictIndictaor):
-            super().__init__(dict, keyType=metaType.keyType, valueType=metaType.valueType)
+            super().__init__(dict, generic_args=[metaType.keyType, metaType.valueType])
             metaType = dict
         elif isinstance(metaType, TupleIndictaor):
-            super().__init__(tuple, elementTypes=metaType.elementTypes)
+            super().__init__(tuple, generic_args=metaType.elementTypes)
             metaType = tuple
         elif isinstance(metaType, SetIndictaor):
-            super().__init__(set, elementType=metaType.elementType)
+            super().__init__(set, generic_args=[metaType.elementType])
             metaType = set
         elif is_generic(metaType):
             raise NotImplementedError("Generic type is not supported")
@@ -1188,13 +1248,13 @@ class RefType(ValueInfo):
 
     @override
     def __repr__(self) -> str:
-        return f"RefType<{self.RealType}>"
+        return f"RefType<{self.RealType}{f'<{self.GenericArgs}>' if self.IsGeneric else ''}>"
     @override
     def SymbolName(self) -> str:
         return "RefType"
     @override
     def ToString(self) -> str:
-        return f"RefType<type={self.RealType}>"
+        return f"RefType<type={self.RealType}, generic={self.GenericArgs}>"
     def print_str(self, verbose:bool=False, flags:RefTypeFlag=RefTypeFlag.Default) -> str:
         fields:     List[str] = []
         methods:    List[str] = []
@@ -1244,8 +1304,8 @@ class RefType(ValueInfo):
 
     @override
     def __hash__(self) -> int:
-        """使RefType对象可哈希，基于RealType的哈希值"""
-        return hash(self.RealType)
+        """使RefType对象可哈希，基于RealType和GenericArgs的哈希值"""
+        return hash((self.RealType, tuple(self.GenericArgs)))
 
     @override
     def __eq__(self, other) -> bool:
@@ -1378,11 +1438,11 @@ RTypen[T] 是 T 类型的 RefType
 _Internal_TypeManager:Optional['TypeManager'] = None
 
 class TypeManager(BaseModel, any_class):
-    _RefTypes:Dict[type, RefType] = PrivateAttr(default_factory=dict)
-    _is_preheated: bool = PrivateAttr(default=False)
-    _weak_refs: Dict[int, "weakref.ref[RefType]"] = PrivateAttr(default_factory=dict)  # 使用真正的弱引用
-    _type_name_cache: Dict[str, type] = PrivateAttr(default_factory=dict)  # 类型名称到类型的缓存
-    _string_to_type_cache: Dict[str, Any] = PrivateAttr(default_factory=dict)  # 字符串到类型的缓存
+    _RefTypes:              Dict[type|_SpecialIndictaor, RefType]   = PrivateAttr(default_factory=dict)
+    _is_preheated:          bool                                    = PrivateAttr(default=False)
+    _weak_refs:             Dict[int, "weakref.ref[RefType]"]       = PrivateAttr(default_factory=dict)  # 使用真正的弱引用
+    _type_name_cache:       Dict[str, type]                         = PrivateAttr(default_factory=dict)  # 类型名称到类型的缓存
+    _string_to_type_cache:  Dict[str, Any]                          = PrivateAttr(default_factory=dict)  # 字符串到类型的缓存
 
     @classmethod
     def GetInstance(cls) -> Self:
@@ -1488,7 +1548,7 @@ class TypeManager(BaseModel, any_class):
             data = self._string_to_type_cache[data]
 
         # 获取或转换为类型
-        metaType:type = TypeManager._TurnToType(data, module_name=module_name)
+        metaType:type|_SpecialIndictaor = TypeManager._TurnToType(data, module_name=module_name)
 
         # 首先尝试从弱引用缓存中获取
         type_id = id(metaType)
@@ -1506,7 +1566,9 @@ class TypeManager(BaseModel, any_class):
             # 添加到弱引用缓存
             self._weak_refs[type_id] = weakref.ref(ref_type)
             if GetInternalReflectionDebug():
-                print_colorful(ConsoleFrontColor.YELLOW, f"Get RefType: {metaType}")
+                print_colorful(ConsoleFrontColor.YELLOW, f"Get "\
+                    f"{ConsoleFrontColor.RESET}{metaType}{ConsoleFrontColor.YELLOW} RefType: "\
+                    f"{ConsoleFrontColor.RESET}{ref_type.ToString()}")
             return ref_type
         except KeyError:
             ref_type = self.CreateRefType(metaType, module_name=module_name)
@@ -1555,21 +1617,23 @@ class TypeManager(BaseModel, any_class):
             self._string_to_type_cache[data] = metaType
 
         try:
-            if GetInternalReflectionDebug():
-                print_colorful(ConsoleFrontColor.RED, f"Create RefType: {metaType}")
             ref_type = RefType(metaType)
+            if GetInternalReflectionDebug():
+                print_colorful(ConsoleFrontColor.RED, f"Create "\
+                    f"{ConsoleFrontColor.RESET}{metaType} "\
+                    f"{ConsoleFrontColor.RED}RefType: {ConsoleFrontColor.RESET}{ref_type.ToString()}")
             self._RefTypes[metaType] = ref_type
             return ref_type
         except Exception as e:
             raise ReflectionException(f"Create RefType failed: {e}")
 
-    def CreateOrGetRefTypeFromType(self, type_:type) -> RefType:
+    def CreateOrGetRefTypeFromType(self, type_:type|_SpecialIndictaor) -> RefType:
         """快速路径：直接从类型创建或获取RefType"""
         if type_ in self._RefTypes:
             return self._RefTypes[type_]
         else:
             return self.CreateRefType(type_)
-    def CreateRefTypeFromType(self, type_:type) -> RefType:
+    def CreateRefTypeFromType(self, type_:type|_SpecialIndictaor) -> RefType:
         """直接从类型创建RefType"""
         result = self._RefTypes[type_] = RefType(type_)
         return result

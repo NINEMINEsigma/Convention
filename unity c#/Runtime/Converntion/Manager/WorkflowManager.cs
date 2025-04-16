@@ -270,8 +270,11 @@ namespace Convention.Workflow
             LoadWorkflow(PluginExtenion.SelectFile("工作流|*.workflow;*.json", "加载工作流"));
         }
 
+        [Content, OnlyPlayMode] public string LastSavePath = null;
+
         public ToolFile SaveWorkflow(string workflowPath)
         {
+            LastSavePath = workflowPath;
             ToolFile local = new(workflowPath);
             ToolFile parent = local.GetParentDir();
             if (parent.IsExist == false)
@@ -331,7 +334,5 @@ namespace Convention.Workflow
                 SharedModule.instance.OpenCustomMenu(UIFocusObject, callbackDatas.ToArray());
             }
         }
-
-
     }
 }
