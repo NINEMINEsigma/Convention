@@ -499,6 +499,9 @@ class ValueInfo(BaseInfo):
     def GenericArgs(self) -> List[type]:
         return self._GenericArgs
     @property
+    def IsGeneric(self) -> bool:
+        return len(self._GenericArgs) > 0
+    @property
     def Module(self) -> Optional[Dict[str, type]]:
         return sys.modules[self.RealType.__module__]
     @property
@@ -643,7 +646,8 @@ class FieldInfo(MemberInfo):
         selfType:       type|Any|None = None
         ):
         if GetInternalReflectionDebug():
-            print_colorful(ConsoleFrontColor.LIGHTBLUE_EX, f"Current Make FieldInfo: {ctype}.{name} {metaType} ")
+            print_colorful(ConsoleFrontColor.LIGHTBLUE_EX, f"Current Make FieldInfo: {ctype}."\
+                f"{ConsoleFrontColor.RESET}{name} {ConsoleFrontColor.LIGHTBLUE_EX}{metaType} ")
         super().__init__(
             name = name,
             ctype = ctype,
@@ -944,61 +948,24 @@ class RefType(ValueInfo):
     _member_cache:  Dict[Tuple[str, RefTypeFlag], Optional[MemberInfo]] = PrivateAttr(default_factory=dict)
 
     def __init__(self, metaType:type|_SpecialIndictaor):
-        extensionFields:List[FieldInfo] = []
         if isinstance(metaType, ListIndictaor):
-            extensionFields.append(FieldInfo(
-                metaType = metaType.elementType,
-                name = "elementType",
-                ctype = metaType,
-                is_static = False,
-                is_public = True,
-                selfType=list
-            ))
+            super().__init__(list, elementType=metaType.elementType)
             metaType = list
         elif isinstance(metaType, DictIndictaor):
-            extensionFields.append(FieldInfo(
-                metaType = metaType.keyType,
-                name = "keyType",
-                ctype = metaType,
-                is_static = False,
-                is_public = True,
-                selfType=dict
-            ))
-            extensionFields.append(FieldInfo(
-                metaType = metaType.valueType,
-                name = "valueType",
-                ctype = metaType,
-                is_static = False,
-                is_public = True,
-                selfType=dict
-            ))
+            super().__init__(dict, keyType=metaType.keyType, valueType=metaType.valueType)
             metaType = dict
         elif isinstance(metaType, TupleIndictaor):
-            for i, elementType in enumerate(metaType.elementTypes):
-                extensionFields.append(FieldInfo(
-                    metaType = elementType,
-                    name = f"elementType_{i}",
-                    ctype = metaType,
-                    is_static = False,
-                    is_public = True,
-                    selfType=tuple
-                ))
+            super().__init__(tuple, elementTypes=metaType.elementTypes)
             metaType = tuple
         elif isinstance(metaType, SetIndictaor):
-            extensionFields.append(FieldInfo(
-                metaType = metaType.elementType,
-                name = "elementType",
-                ctype = metaType,
-                is_static = False,
-                is_public = True,
-                selfType=set
-            ))
+            super().__init__(set, elementType=metaType.elementType)
             metaType = set
         elif is_generic(metaType):
             raise NotImplementedError("Generic type is not supported")
+        else:
+            super().__init__(metaType)
 
-        super().__init__(metaType)
-        self._FieldInfos = extensionFields
+        self._FieldInfos = []
         self._MethodInfos = []
         self._MemberNames = []
         self._BaseMemberNamesSet = set()
@@ -1482,7 +1449,6 @@ class TypeManager(BaseModel, any_class):
         metaType = try_to_type(data, module_name=module_name)
         if metaType is None or isinstance(metaType, list):
             metaType = data
-
         return metaType
 
     @overload
@@ -1514,6 +1480,8 @@ class TypeManager(BaseModel, any_class):
         """创建或获取RefType实例，使用多级缓存提高性能"""
         if data is None:
             raise ReflectionException("data is None")
+        if GetInternalReflectionDebug():
+            print_colorful(ConsoleFrontColor.YELLOW, f"Try Get RefType: {ConsoleFrontColor.RESET}{data}")
 
         # 快速路径：如果是字符串并且在字符串缓存中，直接返回对应的类型
         if isinstance(data, str) and data in self._string_to_type_cache:
@@ -1537,10 +1505,10 @@ class TypeManager(BaseModel, any_class):
             ref_type = self._RefTypes[metaType]
             # 添加到弱引用缓存
             self._weak_refs[type_id] = weakref.ref(ref_type)
+            if GetInternalReflectionDebug():
+                print_colorful(ConsoleFrontColor.YELLOW, f"Get RefType: {metaType}")
             return ref_type
         except KeyError:
-            if GetInternalReflectionDebug():
-                print_colorful(ConsoleFrontColor.GREEN, f"Creating RefType: {metaType}")
             ref_type = self.CreateRefType(metaType, module_name=module_name)
             # 添加到弱引用缓存
             self._weak_refs[type_id] = weakref.ref(ref_type)
@@ -1586,9 +1554,9 @@ class TypeManager(BaseModel, any_class):
         if isinstance(data, str) and not data in self._string_to_type_cache:
             self._string_to_type_cache[data] = metaType
 
-        if GetInternalReflectionDebug():
-            print_colorful(ConsoleFrontColor.GREEN, f"Create RefType: {metaType}")
         try:
+            if GetInternalReflectionDebug():
+                print_colorful(ConsoleFrontColor.RED, f"Create RefType: {metaType}")
             ref_type = RefType(metaType)
             self._RefTypes[metaType] = ref_type
             return ref_type

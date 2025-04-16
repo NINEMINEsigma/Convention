@@ -6,7 +6,6 @@ using Convention.WindowsUI.Variant;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
-using static Convention.WindowsUI.Variant.SharedModule;
 
 namespace Convention.Workflow
 {
@@ -156,22 +155,23 @@ namespace Convention.Workflow
                     new EndNodeInfo());
             }, typeof(GraphInputWindow), typeof(GraphInspector));
 #if UNITY_EDITOR
-            this.RegisterFunctionModel(new()
-            {
-                name = "TestFunction",
-                parameters =
+            if (this.GetAllFunctionName().Count() == 0) 
+                this.RegisterFunctionModel(new()
                 {
+                    name = "TestFunction",
+                    parameters =
                     {
-                        "In", "string"
-                    }
-                },
-                returns =
-                {
+                        {
+                            "In", "string"
+                        }
+                    },
+                    returns =
                     {
-                        "Out", "string"
+                        {
+                            "Out", "string"
+                        }
                     }
-                }
-            });
+                });
 #endif
         }
 
@@ -236,6 +236,10 @@ namespace Convention.Workflow
                 workflow.Datas.Remove(node.info);
                 GameObject.Destroy(node.gameObject);
             }
+            else
+            {
+                Debug.LogError("node is not in current workflow");
+            }
             return false;
         }
         public bool ContainsNode(int id)
@@ -297,10 +301,13 @@ namespace Convention.Workflow
             {
                 CreateGraphNode(info);
             }
-            foreach (var node in workflow.Nodes)
+            ConventionUtility.CreateSteps().Next(()=>
             {
-                node.BuildLink();
-            }
+                foreach (var node in this.m_workflow.Nodes)
+                {
+                    node.BuildLink();
+                }
+            }).Invoke();
             return this.workflow;
 
         }

@@ -68,21 +68,33 @@ class ESWriter(BaseModel, any_class):
                     elif rtype.IsTuple:
                         return tuple(dfs(TypeManager.GetInstance().CreateOrGetRefType(iter_), iter_) for iter_ in rinstance)
                     elif rtype.IsDictionary:
-                        return { keyname:dfs(TypeManager.GetInstance().CreateOrGetRefType(iter_), iter_) for keyname, iter_ in rinstance.items() }
+                        return { 
+                                dfs(TypeManager.GetInstance().CreateOrGetRefType(key), key):
+                                    dfs(TypeManager.GetInstance().CreateOrGetRefType(iter_), iter_)
+                                    for key, iter_ in rinstance.items() 
+                                    }
                 except Exception as e:
                     raise ReflectionException(f"{ConsoleFrontColor.RED}容器<{rtype.RealType}>"\
                         f"在序列化时遇到错误:{ConsoleFrontColor.RESET}\n{e}") from e
                 raise NotImplementedError(f"{ConsoleFrontColor.RED}不支持的容器: {rinstance}"\
                         f"<{rtype.print_str(verbose=GetInternalEasySaveDebug())}>{ConsoleFrontColor.RESET}")
+            elif hasattr(rtype.RealType, "__easy_serialize__"):
+                custom_data, is_need_type = rtype.RealType.__easy_serialize__(rinstance)
+                if is_need_type:
+                    return {
+                        "__type": AssemblyTypen(rtype.RealType),
+                        **custom_data
+                    }
+                else:
+                    return custom_data
             else:
                 fields: List[FieldInfo] = self._GetFields(rtype)
                 layer:  Dict[str, Any]  = {
-                    "__type": AssemblyTypen(rtype.RealType),
-                    "value": {}
+                    "__type": AssemblyTypen(rtype.RealType)
                 }
                 for field in fields:
                     try:
-                        layer["value"][field.FieldName] = dfs(
+                        layer[field.FieldName] = dfs(
                             TypeManager.GetInstance().CreateOrGetRefType(field.FieldType),
                             field.GetValue(rinstance)
                             )
@@ -96,7 +108,10 @@ class ESWriter(BaseModel, any_class):
             filedata = result_file.load()
             if isinstance(filedata, dict):
                 layers = filedata
-        layers[self.setting.key] = dfs(rtype, rinstance)
+        layers[self.setting.key] = {
+            "__type": AssemblyTypen(rtype.RealType),
+            "value": dfs(rtype, rinstance)
+        }
         result_file.data = layers
         result_file.save_as_json()
 
@@ -186,7 +201,7 @@ class ESReader(BaseModel, any_class):
         return TypeManager.GetInstance().CreateOrGetRefType(typen)
 
     @sealed
-    def _DoJsonDeserialize(self, read_file:tool_file, rtype:Optional[RTypen[Any]] = None) -> Any:
+    def _DoJsonDeserialize(self, read_file:tool_file, rtype:Optional[RefType] = None) -> Any:
         '''
         反序列化: json格式
 
@@ -205,12 +220,11 @@ class ESReader(BaseModel, any_class):
         layers:             Dict[str, Any]  = read_file.load_as_json()
         if self.setting.key not in layers:
             raise ValueError(f"{ConsoleFrontColor.RED}文件中不包含目标键: {ConsoleFrontColor.RESET}{self.setting.key}")
-        layers = layers[self.setting.key]
-        result_instance:    Any             = None
-
         # 如果未指定类型, 则从JSON数据中获取类型信息
         if rtype is None:
-            rtype = self.get_rtype_from_typen(layers["__type"])
+            rtype:          RefType         = self.get_rtype_from_typen(layers["__type"])
+        layers:             Dict[str, Any]  = layers[self.setting.key]["value"]
+        result_instance:    Any             = None
 
         def dfs(rtype:Optional[RefType], layer:Dict[str, Any]|Any) -> Any:
             '''
@@ -227,12 +241,11 @@ class ESReader(BaseModel, any_class):
             # 如果类型为None且当前层包含类型信息, 则获取类型
             if isinstance(layer, dict) and "__type" in layer:
                 rtype = self.get_rtype_from_typen(layer["__type"])
-                layer = layer["value"]
             if rtype is None:
                 raise ValueError(f"{ConsoleFrontColor.RED}当前层不包含类型信息: {ConsoleFrontColor.RESET}{limit_str(str(layer), 100)}")
             if GetInternalEasySaveDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, f"layer: {ConsoleFrontColor.RESET}{limit_str(str(layer), 100)}"\
-                    f"{ConsoleFrontColor.YELLOW}, rtype: {ConsoleFrontColor.RESET}{rtype.RealType}")
+                    f"{ConsoleFrontColor.YELLOW}, rtype: {ConsoleFrontColor.RESET}{rtype.ToString()}")
 
             # 处理值类型
             if (rtype.IsValueType or
@@ -253,21 +266,48 @@ class ESReader(BaseModel, any_class):
                         element_type = rtype.GenericArgs[0] if len(rtype.GenericArgs) > 0 else Any
                         return tuple(dfs(TypeManager.GetInstance().CreateOrGetRefType(element_type), iter_) for iter_ in layer)
                     elif rtype.IsDictionary:
-                        return { keyname:dfs(None, iter_) for keyname, iter_ in layer.items() }
+                        element_key, element_value = (rtype.GenericArgs[0], rtype.GenericArgs[1]) if len(rtype.GenericArgs) > 1 else (Any, Any)
+                        return {
+                            dfs(TypeManager.GetInstance().CreateOrGetRefType(element_key), keyname):
+                                dfs(TypeManager.GetInstance().CreateOrGetRefType(element_value), iter_) 
+                            for keyname, iter_ in layer.items() 
+                            }
                 except Exception as e:
                     raise ReflectionException(f"容器<{limit_str(str(layer), 100)}>在反序列化时遇到错误:\n{e}") from e
                 raise NotImplementedError(f"{ConsoleFrontColor.RED}不支持的容器: {limit_str(str(layer), 100)}"\
                         f"<{rtype.print_str(verbose=GetInternalEasySaveDebug())}>{ConsoleFrontColor.RESET}")
             # 处理对象类型
+            elif isinstance(rtype.RealType, type) and hasattr(rtype.RealType, "__easy_deserialize__"):
+                return rtype.RealType.__easy_deserialize__(layer)
             else:
                 rinstance = rtype.CreateInstance()
+                if GetInternalEasySaveDebug():
+                    print_colorful(ConsoleFrontColor.YELLOW, f"rinstance rtype target: {ConsoleFrontColor.RESET}"\
+                        f"{rtype.print_str(flags=RefTypeFlag.Field|RefTypeFlag.Instance|RefTypeFlag.Public)}")
                 for fieldName, fieldValue in layer.items():
+                    if fieldName == "__type":
+                        continue
                     field:FieldInfo = None
                     field_rtype:RefType = None
                     try:
                         field = rtype.GetField(fieldName)
                         if field is not None:
-                            field_rtype = TypeManager.GetInstance().CreateOrGetRefType(field.FieldType)
+                            if field.FieldType == list and field.ValueType.IsGeneric:
+                                field_rtype = TypeManager.GetInstance().CreateOrGetRefType(List[field.ValueType.GenericArgs[0]])
+                            elif field.FieldType == set and field.ValueType.IsGeneric:
+                                field_rtype = TypeManager.GetInstance().CreateOrGetRefType(Set[field.ValueType.GenericArgs[0]])
+                            elif field.FieldType == tuple and field.ValueType.IsGeneric:
+                                field_rtype = TypeManager.GetInstance().CreateOrGetRefType(Tuple[field.ValueType.GenericArgs[0]])
+                            elif field.FieldType == dict and field.ValueType.IsGeneric:
+                                field_rtype = TypeManager.GetInstance().CreateOrGetRefType(
+                                    Dict[field.ValueType.GenericArgs[0], field.ValueType.GenericArgs[1]]
+                                    )
+                            else:
+                                field_rtype = TypeManager.GetInstance().CreateOrGetRefType(field.FieldType)
+                            if GetInternalEasySaveDebug():
+                                print_colorful(ConsoleFrontColor.YELLOW, f"field: {ConsoleFrontColor.RESET}{field.FieldName}"\
+                                    f"{ConsoleFrontColor.YELLOW}, field_rtype: {ConsoleFrontColor.RESET}{field_rtype.RealType}"\
+                                    f"<{field_rtype.GenericArgs}>")
                             field.SetValue(rinstance, dfs(field_rtype, fieldValue))
                     except Exception as e:
                         raise ReflectionException(f"Json字段{fieldName}={limit_str(str(fieldValue), 100)}: \n{e}") from e
@@ -285,7 +325,7 @@ class ESReader(BaseModel, any_class):
         return read_file.load_as_binary()
 
     @virtual
-    def Deserialize(self, read_file:tool_file, rtype:Optional[RTypen[Any]]=None) -> Any:
+    def Deserialize(self, read_file:tool_file, rtype:Optional[RefType]=None) -> Any:
         '''
         反序列化
         '''

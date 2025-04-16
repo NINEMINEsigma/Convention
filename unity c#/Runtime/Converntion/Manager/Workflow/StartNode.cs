@@ -36,5 +36,10 @@ namespace Convention.Workflow
             OutputSlot.SetupFromInfo(slotInfo);
             m_Outmapping[pair.Key] = OutputSlot;
         }
+
+        public override void BuildLink()
+        {
+
+        }
     }
 }

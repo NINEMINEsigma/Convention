@@ -79,7 +79,7 @@ namespace Convention.Workflow
         {
             nodeID = WorkflowManager.instance.GetGraphNodeID(node);
             title = node.title;
-            position = node.transform.position;
+            position = node.transform.localPosition;
             foreach (var (key, inslot) in node.m_Inmapping)
             {
                 inmapping[key] = inslot.info;
@@ -100,6 +100,11 @@ namespace Convention.Workflow
             var node = GameObject.Instantiate(WorkflowManager.instance.GraphNodePrefabs.Datas[key].uobjectValue as GameObject).GetComponent<Node>();
             node.SetupFromInfo(this);
             return node;
+        }
+
+        public override string ToString()
+        {
+            return $"{title}<in.c={(inmapping == null ? 0 : inmapping.Count)}, out.c={(outmapping == null ? 0 : outmapping.Count)}>";
         }
     }
 
@@ -234,7 +239,7 @@ namespace Convention.Workflow
         }
         public void RefreshPosition()
         {
-            this.transform.position = info.position;
+            this.transform.localPosition = info.position * 0.01f;
         }
         public void RefreshRectTransform()
         {
@@ -323,10 +328,17 @@ namespace Convention.Workflow
         }
         public virtual void BuildLink()
         {
-            if (InSlotPropertiesWindow == true)
+            if (InSlotPropertiesWindow != null)
+            {
+#if UNITY_EDITOR
+                Debug.Log("BuildLink", this);
+#endif
                 foreach (var (slot_name, slot_info) in info.inmapping)
                 {
                     var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
+#if UNITY_EDITOR
+                    Debug.Log($"Link slot<{slot_name}> to <{targetNode}, id={slot_info.targetNodeID}>", this);
+#endif
                     if (targetNode != null)
                     {
                         NodeSlot.Link(m_Inmapping[slot_name], targetNode.m_Outmapping[slot_info.targetSlotName]);
@@ -336,6 +348,7 @@ namespace Convention.Workflow
                         NodeSlot.UnlinkAll(m_Inmapping[slot_name]);
                     }
                 }
+            }
         }
 
         public void LinkInslotToOtherNodeOutslot(

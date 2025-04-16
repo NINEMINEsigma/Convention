@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -703,8 +704,9 @@ namespace Convention
             }
             private static IEnumerator Execute(List<KeyValuePair<YieldInstruction, Action>> steps)
             {
-                foreach (var step in steps)
+                for (int i = 0, e = steps.Count; i < e; i++)
                 {
+                    var step = steps[i];
                     step.Value();
                     yield return step.Key;
                 }

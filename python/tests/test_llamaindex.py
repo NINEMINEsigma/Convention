@@ -7,10 +7,14 @@ from Convention.Workflow import *
 
 async def run():
     try:
+        SetInternalDebug(True)
+        SetInternalReflectionDebug(True)
+        SetInternalEasySaveDebug(True)
+        SetInternalWorkflowDebug(True)
         AwakeBehaviorThread()
         manager = WorkflowManager.GetInstance()
-        if False:
-            manager.LoadWorkflow("./tests/test.json")
+        if True:
+            manager.LoadWorkflow(r"C:\Users\admin\Desktop\123.json")
         else:
             manager.LoadWorkflow(Workflow.Create())
             node1 = manager.CreateNode(EndNodeInfo(title="结束", inmapping={

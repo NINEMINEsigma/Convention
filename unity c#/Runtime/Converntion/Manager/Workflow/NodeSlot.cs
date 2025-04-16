@@ -6,6 +6,12 @@ using UnityEngine.EventSystems;
 
 namespace Convention.Workflow
 {
+    [Serializable]
+    public class TNodeSlotInfo: NodeSlotInfo
+    {
+
+    }
+
     [Serializable, ArgPackage]
     public class NodeSlotInfo : AnyClass
     {
@@ -182,7 +188,8 @@ namespace Convention.Workflow
 
         public static readonly Vector3[] zeroVecs = new Vector3[0];
 
-        [Content, OnlyPlayMode, Ignore] public NodeSlotInfo info { get; private set; }
+        [Content, OnlyPlayMode, Ignore] private NodeSlotInfo m_info;
+        public NodeSlotInfo info { get => m_info; private set => m_info = value; }
         public void SetupFromInfo(NodeSlotInfo value)
         {
             if (info != value)

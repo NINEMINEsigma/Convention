@@ -65,7 +65,7 @@ def ReleaseFailed2Requirements():
         f.write("\n".join(ImportingFailedSet))
 
 try:
-    from pydantic import BaseModel
+    from pydantic import *
 except ImportError:
     InternalImportingThrow("Internal", ["pydantic"])
 
@@ -431,7 +431,7 @@ def ReadAssemblyTypen(
     *, 
     premodule:      Optional[str|Callable[[str], str]] = None
     ) -> Tuple[type, str]:
-    typen, assembly_name = assembly_typen.split(", ")
+    typen, assembly_name = assembly_typen.split(",")
     module_name, _, class_name = typen.rpartition(".")
     if premodule is not None:
         if isinstance(premodule, str):
@@ -968,3 +968,62 @@ def StopBehaviorThread():
     if _behavior_thread is not None:
         _behavior_thread.join()
         _behavior_thread = None
+
+# region Engine
+
+class Vector2(BaseModel, any_class):
+    x: float = Field(default=0.0)
+    y: float = Field(default=0.0)
+    
+    def __init__(self, x:float=0.0, y:float=0.0):
+        super().__init__()
+        self.x = x
+        self.y = y
+    
+    @classmethod
+    def __easy_serialize__(cls, instance:Any) -> Tuple[Dict[str, Any], bool]:
+        '''
+        序列化
+        
+        返回值:
+            Dict[str, Any]: 序列化后的数据
+            bool: 是否需要添加__type字段
+        '''
+        return {
+            "x": instance.x,
+            "y": instance.y
+        }, False
+    @classmethod
+    def __easy_deserialize__(cls, data:Dict[str, Any]):
+        return cls(x=data["x"], y=data["y"])
+
+class Vector3(BaseModel, any_class):
+    x: float = Field(default=0.0)
+    y: float = Field(default=0.0)
+    z: float = Field(default=0.0)
+    
+    def __init__(self, x:float=0.0, y:float=0.0, z:float=0.0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.z = z
+    
+    @classmethod
+    def __easy_serialize__(cls, instance:Any) -> Tuple[Dict[str, Any], bool]:
+        '''
+        序列化
+        
+        返回值:
+            Dict[str, Any]: 序列化后的数据
+            bool: 是否需要添加__type字段
+        '''
+        return {
+            "x": instance.x,
+            "y": instance.y,
+            "z": instance.z
+        }, False
+    @classmethod
+    def __easy_deserialize__(cls, data:Dict[str, Any]):
+        return cls(x=data["x"], y=data["y"], z=data["z"])
+
+# endregion

@@ -151,7 +151,7 @@ class NodeInfo(BaseModel, any_class):
     title:          str                     = Field(description="节点标题", default="unknown")
     inmapping:      Dict[str, NodeSlotInfo] = Field(description="输入映射", default={})
     outmapping:     Dict[str, NodeSlotInfo] = Field(description="输出映射", default={})
-    position:       Tuple[float, float]     = Field(description="节点位置", default=(0, 0))
+    position:       Vector2                 = Field(description="节点位置", default=Vector2(0, 0))
 
     @overload
     def __init__(
