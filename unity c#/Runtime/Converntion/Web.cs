@@ -100,12 +100,26 @@ namespace Convention
         }
 
         public delegate void PostCallback([In] UnityWebRequest request);
+        public delegate UnityWebRequest PostIniter([In]UnityWebRequest request);
         public bool Post([In] PostCallback callback, [In]WWWForm form)
         {
             if (!IsValid)
                 return false;
 
             WebRequest = UnityWebRequest.Post(this.url, form);
+            WebRequest.SendWebRequest();
+
+            while (!WebRequest.isDone) ;
+
+            callback(WebRequest);
+            return WebRequest.result == UnityWebRequest.Result.Success;
+        }
+        public bool Post([In]PostCallback callback, [In]PostIniter initer,  [In]WWWForm form)
+        {
+            if (!IsValid)
+                return false;
+
+            WebRequest = initer(UnityWebRequest.Post(this.url, form));
             WebRequest.SendWebRequest();
 
             while (!WebRequest.isDone) ;
@@ -232,13 +246,27 @@ namespace Convention
                 return LoadAsText();
         }
 
-        public static T LoadFromRequest<T>([In]UnityWebRequest request)
+        public static T LoadFromText<T>([In] string requestText)
+        {
+            return JsonConvert.DeserializeObject<T>(requestText);
+        }
+        [return: ReturnMayNull]
+        public static T LoadFromRequest<T>([In] UnityWebRequest request)
         {
             while (!request.isDone) ;
 
-            return request.result == UnityWebRequest.Result.Success 
-                ? JsonConvert.DeserializeObject<T>(request.downloadHandler.text)
+            return request.result == UnityWebRequest.Result.Success
+                ? LoadFromText<T>(request.downloadHandler.text)
                 : default;
+        }
+        [return: ReturnNotNull]
+        public static T LoadFromRequestNotNull<T>([In] UnityWebRequest request) where T : class, new()
+        {
+            while (!request.isDone) ;
+
+            return request.result == UnityWebRequest.Result.Success
+                ? LoadFromText<T>(request.downloadHandler.text)
+                : new();
         }
 
         public object LoadAsJson()

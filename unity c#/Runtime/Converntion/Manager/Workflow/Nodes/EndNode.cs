@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Convention.WindowsUI;
 using Convention.WindowsUI.Variant;
 using UnityEngine;
@@ -135,6 +136,14 @@ namespace Convention.Workflow
                 }
             }
             return null;
+        }
+        public List<string> GetAllInslotNames()
+        {
+            return m_Inmapping.Keys.ToList();
+        }
+        public bool ContainsInslot(string slotName)
+        {
+            return m_Inmapping.ContainsKey(slotName);
         }
     }
 }
