@@ -258,7 +258,7 @@ namespace Convention
             catch (Exception)
             {
                 Debug.Log(jsonText);
-                throw;
+                return default;
             }
         }
 
