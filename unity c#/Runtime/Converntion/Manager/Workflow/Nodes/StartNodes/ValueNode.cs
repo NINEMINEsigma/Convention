@@ -19,22 +19,22 @@ namespace Convention.Workflow
         public float max = 1;
 
         public ValueNodeInfo() : this(0) { }
-        public ValueNodeInfo(float value, string outmappingName = "value", int targetNodeID = -1, string targetSlotName = "value")
+        public ValueNodeInfo(float value, string outmappingName = "value")
         {
             this.value = value;
             this.outmapping = new()
             {
                 {
-                    WorkflowManager.Transformer(outmappingName), new NodeSlotInfo()
+                    outmappingName, new NodeSlotInfo()
                     {
-                        slotName =  WorkflowManager.Transformer(outmappingName),
+                        slotName = outmappingName,
                         typeIndicator = "string",
                         IsInmappingSlot = false,
-                        targetNodeID = targetNodeID,
-                        targetSlotName = targetSlotName,
                     }
                 }
             };
+            this.inmapping = new();
+            this.title = "Value";
         }
 
         protected override NodeInfo CreateTemplateNodeInfoBySelfType()

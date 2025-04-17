@@ -290,6 +290,22 @@ namespace Convention
             }
         }
 
+        public T LoadAsJsonWithType<T>(T whenThrow)
+        {
+            string jsonText = LoadAsText();
+            try
+            {
+                T result = JsonConvert.DeserializeObject<T>(jsonText);
+                this.data = result;
+                return result;
+            }
+            catch (Exception)
+            {
+                Debug.Log(jsonText);
+                return whenThrow;
+            }
+        }
+
         public string LoadAsText()
         {
             if (!IsValid)

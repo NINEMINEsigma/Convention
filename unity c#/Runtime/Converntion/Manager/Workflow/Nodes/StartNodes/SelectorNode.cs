@@ -22,22 +22,22 @@ namespace Convention.Workflow
         public string select = "unknown";
 
         public SelectorNodeInfo() : this(WorkflowManager.Transformer(nameof(SelectorNode))) { }
-        public SelectorNodeInfo(string select, string outputName = "select", string title = "选择器")
+        public SelectorNodeInfo(string select, string outputName = "select")
         {
             this.select = select;
             this.outmapping = new()
             {
                 {
-                    WorkflowManager.Transformer(outputName), new NodeSlotInfo()
+                    outputName, new NodeSlotInfo()
                     {
-                        slotName = WorkflowManager.Transformer(outputName),
+                        slotName = outputName,
                         typeIndicator="string",
                         IsInmappingSlot=false
                     }
                 }
             };
             this.inmapping = new();
-            this.title = title;
+            this.title = "Selector";
         }
 
         protected override NodeInfo CreateTemplateNodeInfoBySelfType()

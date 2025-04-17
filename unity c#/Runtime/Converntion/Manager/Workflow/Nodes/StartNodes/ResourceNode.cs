@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Convention.WindowsUI;
 using Convention.WindowsUI.Variant;
 using UnityEngine;
 
@@ -14,22 +15,22 @@ namespace Convention.Workflow
         public string resource = "unknown";
 
         public ResourceNodeInfo() : this(WorkflowManager.Transformer(nameof(ResourceNode))) { }
-        public ResourceNodeInfo(string resource, string outmappingName = "value", int targetNodeID = -1, string targetSlotName = "value")
+        public ResourceNodeInfo(string resource, string outmappingName = "value")
         {
             this.resource = resource;
             this.outmapping = new()
             {
                 {
-                    WorkflowManager.Transformer(outmappingName), new NodeSlotInfo()
+                    outmappingName, new NodeSlotInfo()
                     {
-                        slotName = WorkflowManager.Transformer(outmappingName),
+                        slotName = outmappingName,
                         typeIndicator = "string",
                         IsInmappingSlot = false,
-                        targetNodeID = targetNodeID,
-                        targetSlotName = targetSlotName,
                     }
                 }
             };
+            this.inmapping = new();
+            this.title = "Resource";
         }
         protected override NodeInfo CreateTemplateNodeInfoBySelfType()
         {
@@ -40,8 +41,33 @@ namespace Convention.Workflow
         }
     }
 
-    public class ResourceNode : StartNode
+    public class ResourceNode : StartNode, IText
     {
-        //TODO
+        [Resources, OnlyNotNullMode] public ModernUIInputField InputField;
+        [Content, OnlyPlayMode] public bool isEditing = false;
+
+        public ResourceNodeInfo MyResourceNodeInfo => this.info as ResourceNodeInfo;
+
+        public string text { get => ((IText)this.InputField).text; set => ((IText)this.InputField).text = value; }
+
+
+        protected override void Start()
+        {
+            base.Start();
+            InputField.InputFieldSource.Source.onSelect.AddListener(_ => isEditing = true);
+            InputField.InputFieldSource.Source.onEndEdit.AddListener(str =>
+            {
+                MyResourceNodeInfo.resource = str;
+                isEditing = false;
+            });
+        }
+
+        private void LateUpdate()
+        {
+            if (info != null && this.isEditing == false && RectTransformExtension.IsVisible(this.rectTransform))
+            {
+                this.text = this.MyResourceNodeInfo.resource;
+            }
+        }
     }
 }

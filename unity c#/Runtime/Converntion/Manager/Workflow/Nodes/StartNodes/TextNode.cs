@@ -12,22 +12,22 @@ namespace Convention.Workflow
         public string text;
 
         public TextNodeInfo() : this(WorkflowManager.Transformer("text")) { }
-        public TextNodeInfo(string text, string outmappingName = "text", int targetNodeID = -1, string targetSlotName = "text")
+        public TextNodeInfo(string text, string outmappingName = "text")
         {
             this.text = text;
             this.outmapping = new()
             {
                 {
-                    WorkflowManager.Transformer(outmappingName), new NodeSlotInfo()
+                    outmappingName, new NodeSlotInfo()
                     {
-                        slotName = WorkflowManager.Transformer(outmappingName),
+                        slotName = outmappingName,
                         typeIndicator = "string",
                         IsInmappingSlot = false,
-                        targetNodeID = targetNodeID,
-                        targetSlotName = targetSlotName,
                     }
                 }
             };
+            this.inmapping = new();
+            this.title = "Text";
         }
 
         protected override NodeInfo CreateTemplateNodeInfoBySelfType()

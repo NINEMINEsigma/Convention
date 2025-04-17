@@ -259,7 +259,7 @@ namespace Convention.Workflow
                 };
             }
             LineRenderer.positionCount = Points.Length;
-            title = info.slotName;
+            title = $"{WorkflowManager.Transformer(info.slotName)}({WorkflowManager.Transformer(info.typeIndicator)})";
             LineRenderer.SetPositions(Points);
             IsDirty = false;
         }
