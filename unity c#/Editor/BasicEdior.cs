@@ -25,18 +25,23 @@ namespace Convention
         protected void OnEnable()
         {
             Type _CurType = target.GetType();
+            HashSet<string> MemberNames = new();
             List<FieldInfo> fields = new();
             List<MethodInfo> methods = new();
-            fields.AddRange(_CurType.GetFields(BindingFlags.Public |
-                BindingFlags.Instance | BindingFlags.Static));
-            methods.AddRange(_CurType.GetMethods(BindingFlags.Public |
-                BindingFlags.Instance | BindingFlags.Static));
+            fields.AddRange(from field in _CurType.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
+                            where MemberNames.Add(field.Name)
+                            select field);
+            methods.AddRange(from method in _CurType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
+                             where MemberNames.Add(method.Name)
+                             select method);
             while (_CurType != null && _CurType != typeof(UnityEngine.MonoBehaviour) && _CurType != typeof(object))
             {
-                fields.AddRange(_CurType.GetFields(BindingFlags.NonPublic |
-                    BindingFlags.Instance | BindingFlags.Static));
-                methods.AddRange(_CurType.GetMethods(BindingFlags.NonPublic |
-                    BindingFlags.Instance | BindingFlags.Static));
+                fields.AddRange(from field in _CurType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+                                where MemberNames.Add(field.Name)
+                                select field);
+                methods.AddRange(from method in _CurType.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+                                 where MemberNames.Add(method.Name)
+                                 select method);
                 _CurType = _CurType.BaseType;
             }
             fields.RemoveAll((field) =>

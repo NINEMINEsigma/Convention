@@ -123,8 +123,14 @@ namespace Convention.Workflow
         [Resources, OnlyNotNullMode, SerializeField] private Text Title;
         [Setting]
         public int SlotHeight = 46, TitleHeight = 50, ExtensionHeight = 0;
-        [Resources, SerializeField]
-        private PropertiesWindow InSlotPropertiesWindow, OutSlotPropertiesWindow;
+
+        public bool IsStartNode => this.GetType().IsSubclassOf(typeof(StartNode));
+        public bool IsEndNode => this.GetType().IsSubclassOf(typeof(EndNode));
+
+        [Resources, SerializeField, WhenAttribute.Is(nameof(IsStartNode), false), OnlyNotNullMode]
+        private PropertiesWindow InSlotPropertiesWindow;
+        [Resources, SerializeField, WhenAttribute.Is(nameof(IsEndNode), false), OnlyNotNullMode]
+        private PropertiesWindow OutSlotPropertiesWindow;
 
         private List<PropertiesWindow.ItemEntry> InSlots, OutSlots;
 
@@ -133,10 +139,15 @@ namespace Convention.Workflow
 
         [Resources, SerializeField, OnlyNotNullMode] protected BaseWindowPlane InoutContainerPlane;
 
+        [Content, OnlyPlayMode, SerializeField] private string rawTitle;
         public string title
         {
-            get => ((ITitle)this.Title).title;
-            set => ((ITitle)this.Title).title = value;
+            get => rawTitle;
+            set
+            {
+                rawTitle = value;
+                this.Title.title = WorkflowManager.Transformer(rawTitle);
+            }
         }
 
         [Setting, SerializeField] private NodeInfo m_info;

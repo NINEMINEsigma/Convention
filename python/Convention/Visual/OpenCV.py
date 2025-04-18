@@ -5,10 +5,12 @@ try:
     import cv2.data     as     BaseData
 except ImportError:
     InternalImportingThrow("OpenCV", ["opencv-python"])
+    raise
 try:
     from PIL            import ImageFile, Image
 except ImportError:
     InternalImportingThrow("OpenCV", ["Pillow"])
+    raise
 
 from ..MathEx.Core  import *
 from ..Str.Core     import UnWrapper as Unwrapper2Str
@@ -312,13 +314,13 @@ class ImageObject(left_np_ndarray_reference):
         return value
 
     @overload
-    def __init__(self, imagePath:str, flags:int = -1):...
+    def __init__(self, imagePath:str, flags:Optional[int] = None):...
     @overload
-    def __init__(self, image:tool_file, flags:int = -1):...
+    def __init__(self, image:tool_file, flags:Optional[int] = None):...
     @overload
     def __init__(self, camera:light_cv_camera):...
     @overload
-    def __init__(self, image:MatLike, flags:int = -1):...
+    def __init__(self, image:MatLike, flags:Optional[int] = None):...
     @overload
     def __init__(self, image:Self):...
     @overload
@@ -339,7 +341,7 @@ class ImageObject(left_np_ndarray_reference):
             ImageFile.ImageFile,
             Image.Image
             ]],
-        flags:          int             = -1
+        flags:          Optional[Any] = None
         ) -> None:
         super().__init__()
         self.__camera:  light_cv_camera = None
@@ -396,19 +398,25 @@ class ImageObject(left_np_ndarray_reference):
     def load_from_nparray(
         self,
         array_: np.ndarray,
-        code:   int = base.COLOR_RGB2BGR,
+        code:   Optional[int] = None,
         *args, **kwargs
         ):
         self.__gray = None
-        self.__image = base.cvtColor(array_, code, *args, **kwargs).astype(np.uint8)
+        if code is None:
+            self.__image = array_
+        else:
+            self.__image = base.cvtColor(array_, code, *args, **kwargs).astype(np.uint8)
         return self
     def load_from_PIL_image(
         self,
         image:  Image.Image,
-        code:   int = base.COLOR_RGB2BGR,
+        code:   Optional[int] = None,
         *args, **kwargs
     ):
-        self.load_from_nparray(np.array(image), code, *args, **kwargs)
+        if code is None:
+            self.load_from_nparray(np.array(image), *args, **kwargs)
+        else:
+            self.load_from_nparray(base.cvtColor(np.array(image), code, *args, **kwargs).astype(np.uint8))
         return self
     def load_from_PIL_ImageFile(
         self,

@@ -10,8 +10,8 @@ import                     time
 if platform.system() == "Windows":
     from colorama       import Fore as ConsoleFrontColor, Back as ConsoleBackgroundColor, Style as ConsoleStyle
 
-def format_traceback_info(char:str='\n'):
-    return char.join(traceback.format_stack()[:-1])
+def format_traceback_info(char:str='\n', back:int=1):
+    return char.join(traceback.format_stack()[:-back])
 
 INTERNAL_DEBUG = False
 def SetInternalDebug(mode:bool):
@@ -37,6 +37,7 @@ def ImportingThrow(
     messageBase:    str = ConsoleFrontColor.RED+"{module} Module requires {required} package."+ConsoleFrontColor.RESET,
     installBase:    str = ConsoleFrontColor.GREEN+"\tpip install {name}"+ConsoleFrontColor.RESET
     ):
+    with lock_guard():
         requierds_str = ",".join([f"<{r}>" for r in requierds])
         print(messageBase.format_map(dict(module=moduleName, required=requierds_str)))
         print('Install it via command:')
@@ -46,7 +47,8 @@ def ImportingThrow(
             install = installBase.format_map({"name":i})
             print(install)
         if ex:
-            print_colorful(ConsoleFrontColor.RED, f"Import Error On {moduleName} Module: {ex}, \b{ex.path}")
+            print_colorful(ConsoleFrontColor.RED, f"Import Error On {moduleName} Module: {ex}, \b{ex.path}\n"\
+                f"[{ConsoleFrontColor.RESET}{format_traceback_info(back=2)}{ConsoleFrontColor.RED}]")
 
 def InternalImportingThrow(
     moduleName:     str,
@@ -54,8 +56,12 @@ def InternalImportingThrow(
     *,
     messageBase:    str = ConsoleFrontColor.RED+"{module} Module requires internal Convention package: {required}."+ConsoleFrontColor.RESET,
     ):
+    with lock_guard():
         requierds_str = ",".join([f"<{r}>" for r in requierds])
-        print(f"Internal Convention package is not installed.\n{messageBase.format_map(dict(module=moduleName, required=requierds_str))}")
+        print(f"Internal Convention package is not installed.\n{messageBase.format_map({
+            "module": moduleName,
+            "required": requierds_str
+        })}\n[{ConsoleFrontColor.RESET}{format_traceback_info(back=2)}{ConsoleFrontColor.RED}]")
 
 def ReleaseFailed2Requirements():
     global ImportingFailedSet

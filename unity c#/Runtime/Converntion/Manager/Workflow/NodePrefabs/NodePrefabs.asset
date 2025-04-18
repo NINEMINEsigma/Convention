@@ -17,30 +17,25 @@ MonoBehaviour:
     - Key: TextNode
       Value:
         CurrentValue: TextNode (UnityEngine.GameObject)
-        CurrentObject: {fileID: 7581424999518592735, guid: 3add4e75f485dfe4da39ee5334017e8f,
-          type: 3}
+        CurrentObject: {fileID: 5643479676596018674, guid: b9430ac712415504f8e090ca01cfa5e9, type: 3}
         RealType: GameObject
     - Key: ResourceNode
       Value:
         CurrentValue: ResourceNode (UnityEngine.GameObject)
-        CurrentObject: {fileID: 7368777427851480311, guid: 33758f009a94512469e578396fa2ded4,
-          type: 3}
+        CurrentObject: {fileID: 1131170017039480627, guid: 678fa72e5ebe5c74e8d4de1fece04c3e, type: 3}
         RealType: GameObject
     - Key: EndNode
       Value:
         CurrentValue: EndNode (UnityEngine.GameObject)
-        CurrentObject: {fileID: 7767195200921155885, guid: 342367736a396c348b524e4f4ca082f0,
-          type: 3}
+        CurrentObject: {fileID: 7767195200921155885, guid: 342367736a396c348b524e4f4ca082f0, type: 3}
         RealType: GameObject
     - Key: StepNode
       Value:
         CurrentValue: StepNode (UnityEngine.GameObject)
-        CurrentObject: {fileID: 8268118131121350037, guid: 0d7e6ee07c22c19479e1ef65ded010aa,
-          type: 3}
+        CurrentObject: {fileID: 7399632051589070183, guid: 4bdcb6a81d37aa14db41e036f4d87a2a, type: 3}
         RealType: GameObject
     - Key: ValueNode
       Value:
         CurrentValue: ValueNode (UnityEngine.GameObject)
-        CurrentObject: {fileID: 4318176869595439093, guid: cf7376bfb3f88e645bdea9614f36f723,
-          type: 3}
+        CurrentObject: {fileID: 2495722784719720390, guid: 3903bd8b562bcb547acc3bdcc7d96b0f, type: 3}
         RealType: GameObject
