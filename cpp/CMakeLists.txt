@@ -1,6 +1,6 @@
 # Make Setting
 option(__FILE_CONVENTION_FFMPEG_INSTANCE "disable ffmpeg_instance" OFF)
-option(__IS_REF_BOOST "is import boost" ON)
+option(__IS_REF_BOOST "is import boost" OFF)
 
 message("Root: --- ----- ----- ----- ----- --")
 
@@ -16,13 +16,14 @@ function(BoostRefer)
         add_compile_definitions(__REF_BOOST)
         
         # ≤È’“Boostø‚
-        find_package(Boost REQUIRED)
+        find_package(Boost)
         if(Boost_FOUND)
             include_directories(${Boost_INCLUDE_DIRS})
             link_directories(${Boost_LIBRARY_DIRS})
             message("Convention: Boost found at ${Boost_INCLUDE_DIRS}")
         else()
-            message(FATAL_ERROR "Convention: Boost not found, but __IS_REF_BOOST is enabled")
+            #message(FATAL_ERROR "Convention: Boost not found, but __IS_REF_BOOST is enabled")
+            message("Convention: Boost not found, but __IS_REF_BOOST is enabled")
         endif()
     endif()
     
