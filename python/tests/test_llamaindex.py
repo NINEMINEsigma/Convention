@@ -15,7 +15,7 @@ async def run():
         AwakeBehaviorThread()
         manager = WorkflowManager.GetInstance()
         if True:
-            manager.LoadWorkflow(r"C:\Users\admin\Desktop\123.json")
+            manager.LoadWorkflow(r"C:\Users\000\Desktop\llm.json")
         else:
             manager.LoadWorkflow(Workflow.Create())
             node1 = manager.CreateNode(EndNodeInfo(title="结束", inmapping={

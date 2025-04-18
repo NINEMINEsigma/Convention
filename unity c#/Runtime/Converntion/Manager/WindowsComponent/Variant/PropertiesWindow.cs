@@ -247,6 +247,16 @@ namespace Convention.WindowsUI.Variant
                 }
             }
 
+            public PropertyListItem GetPropertyListItem()
+            {
+                return ref_value.GetComponent<PropertyListItem>();
+            }
+
+            public HierarchyItem GetHierarchyItem()
+            {
+                return ref_value.GetComponent<HierarchyItem>();
+            }
+
             [Resources, SerializeField] private List<ItemEntry> childs = new();
             [Content, OnlyPlayMode, Ignore, SerializeField] private PropertiesWindow parentWindow;
             [Content, OnlyPlayMode, Ignore, SerializeField] private ItemEntry parentEntry;

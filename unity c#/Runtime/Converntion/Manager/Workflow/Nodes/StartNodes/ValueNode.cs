@@ -28,7 +28,7 @@ namespace Convention.Workflow
                     outmappingName, new NodeSlotInfo()
                     {
                         slotName = outmappingName,
-                        typeIndicator = "string",
+                        typeIndicator = "float",
                         IsInmappingSlot = false,
                     }
                 }

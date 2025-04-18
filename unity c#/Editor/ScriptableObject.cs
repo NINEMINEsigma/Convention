@@ -63,9 +63,9 @@ namespace Convention
         }
     }
 #endif
-    [CustomEditor(typeof(Convention.ScriptableObject))]
-    public class ScriptableObjectEditor : AbstractCustomEditor
-    {
-
-    }
+    //[CustomEditor(typeof(Convention.ScriptableObject))]
+    //public class ScriptableObjectEditor : AbstractCustomEditor
+    //{
+    //
+    //}
 }

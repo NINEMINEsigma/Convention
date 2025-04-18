@@ -40,6 +40,7 @@ namespace Convention.Workflow
                         {
                             if(x)
                             {
+                                this.ExtensionHeight = 0;
                                 this.MyStepInfo.funcname = funcName;
                                 this.MyStepInfo.inmapping = new();
                                 foreach (var (name, type) in funcModel.parameters)
@@ -68,8 +69,8 @@ namespace Convention.Workflow
                                 this.ClearSlots();
                                 this.BuildSlots();
                                 this.BuildLink();
-                                this.InoutContainerPlane.rectTransform.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Top, 50,
-                                    Mathf.Max(this.MyStepInfo.inmapping.Count, this.MyStepInfo.outmapping.Count) * SlotHeight + ExtensionHeight);
+                                //this.InoutContainerPlane.rectTransform.SetInsetAndSizeFromParentEdge(RectTransform.Edge.Top, 50,
+                                //    Mathf.Max(this.MyStepInfo.inmapping.Count, this.MyStepInfo.outmapping.Count) * SlotHeight + ExtensionHeight);
                             }
                         });
                 }

@@ -9,7 +9,7 @@ using UnityEngine.EventSystems;
 namespace Convention.Workflow
 {
     [Serializable, ArgPackage]
-    public class NodeInfo : AnyClass
+    public class NodeInfo : AnyClass,IHierarchyItemTitle
     {
         /// <summary>
         /// 节点
@@ -48,6 +48,8 @@ namespace Convention.Workflow
             set => this.title = node.title = value;
         }
 
+        string IHierarchyItemTitle.HierarchyItemTitle => title;
+
         public NodeInfo()
         {
             title = WorkflowManager.Transformer(typename = this.GetType().Name[..^4]);
@@ -79,7 +81,7 @@ namespace Convention.Workflow
         {
             nodeID = WorkflowManager.instance.GetGraphNodeID(node);
             title = node.title;
-            position = node.transform.localPosition;
+            position = node.transform.position - WorkflowManager.instance.ContentPlane.transform.position;
             foreach (var (key, inslot) in node.m_Inmapping)
             {
                 inmapping[key] = inslot.info;
@@ -93,11 +95,10 @@ namespace Convention.Workflow
         [return: IsInstantiated(true)]
         public virtual Node Instantiate()
         {
-            //throw new NotImplementedException("Node.Instantiate not implemented");
             string key = this.GetType().Name;
             if (key.EndsWith("Info"))
                 key = key[..^4];
-            var node = GameObject.Instantiate(WorkflowManager.instance.GraphNodePrefabs.Datas[key].uobjectValue as GameObject).GetComponent<Node>();
+            var node = GameObject.Instantiate(WorkflowManager.instance.GraphNodePrefabs.FindItem<GameObject>(key)).GetComponent<Node>();
             node.SetupFromInfo(this);
             return node;
         }
@@ -119,10 +120,12 @@ namespace Convention.Workflow
 
 #endif
 
+        public PropertiesWindow.ItemEntry MyNodeTab; 
+
         private BehaviourContextManager Context;
         [Resources, OnlyNotNullMode, SerializeField] private Text Title;
         [Setting]
-        public int SlotHeight = 46, TitleHeight = 50, ExtensionHeight = 0;
+        public int SlotHeight = 40, TitleHeight = 50, ExtensionHeight = 0;
 
         public bool IsStartNode => this.GetType().IsSubclassOf(typeof(StartNode));
         public bool IsEndNode => this.GetType().IsSubclassOf(typeof(EndNode));
@@ -168,6 +171,7 @@ namespace Convention.Workflow
             {
                 InspectorWindow.instance.ClearWindow();
             }
+            MyNodeTab?.Release();
         }
 
         public virtual void PointerRightClickAndOpenMenu(PointerEventData pointer)
@@ -220,11 +224,6 @@ namespace Convention.Workflow
         public void SetupFromInfo([In] NodeInfo value)
         {
             ClearLink();
-            if (HierarchyWindow.instance != null)
-            {
-                HierarchyWindow.instance.RemoveReference(this.info);
-                HierarchyWindow.instance.CreateRootItemEntryWithBinders(value);
-            }
             info = value;
             int nodeID = WorkflowManager.instance.GetGraphNodeID(this);
             if (nodeID < 0)
@@ -250,7 +249,7 @@ namespace Convention.Workflow
         }
         public void RefreshPosition()
         {
-            this.transform.localPosition = info.position * 0.01f;
+            this.transform.position = new Vector3(info.position.x, info.position.y) + (WorkflowManager.instance.ContentPlane.transform.position);
         }
         public void RefreshRectTransform()
         {

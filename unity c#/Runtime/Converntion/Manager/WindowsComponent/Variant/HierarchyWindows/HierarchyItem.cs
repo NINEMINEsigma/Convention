@@ -22,12 +22,17 @@ namespace Convention.WindowsUI.Variant
             }
         }
         [Content] public bool IsEnableFocusWindow = true;
+        [Content] public bool IsUpdateWhenTargetIsString = true;
 
         private void Update()
         {
             if (target is IHierarchyItemTitle ht)
             {
                 this.title = ht.HierarchyItemTitle;
+            }
+            else if (IsUpdateWhenTargetIsString && target is string str)
+            {
+                this.title = str;
             }
         }
 
@@ -66,7 +71,8 @@ namespace Convention.WindowsUI.Variant
             InspectorWindow.instance.SetTarget(target, this);
             if (!IsEnableFocusWindow)
                 return;
-            FocusWindowIndictaor.instance.SetTargetRectTransform(TextRectTransform);
+            if (FocusWindowIndictaor.instance != null)
+                FocusWindowIndictaor.instance.SetTargetRectTransform(TextRectTransform);
         }
     }
 }

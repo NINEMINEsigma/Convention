@@ -42,8 +42,9 @@ namespace Convention.SO
             Reset();
         }
 
-        private void Reset()
+        public override void Reset()
         {
+            base.Reset();
             foreach (string name in default_exist_names)
             {
                 var resourcesArray = Resources.LoadAll(name);
@@ -53,7 +54,7 @@ namespace Convention.SO
                         continue;
                     if((item as GameObject).GetComponents<IAnyClass>().Length == 0)
                         continue;
-                    this.Datas[name] = new(item);
+                    this.uobjects[name] = item;
                     break;
                 }
             }
@@ -62,9 +63,9 @@ namespace Convention.SO
         [return: When("Datas's keys contains [In]name"), ReturnMayNull]
         public WindowsComponent[] GetWindowsComponents([In] string name)
         {
-            if (this.Datas.TryGetValue(name, out var value))
+            if (this.uobjects.TryGetValue(name, out var uobj))
             {
-                var go = (value.uobjectValue as GameObject);
+                var go = (uobj as GameObject);
                 return go.GetComponents<WindowsComponent>();
             }
             else return null;
@@ -86,8 +87,8 @@ namespace Convention.SO
         [return: When("Datas's keys contains [In]name"), ReturnMayNull]
         public IWindowUIModule[] GetWindowsUIs([In] string name)
         {
-            if (this.Datas.TryGetValue(name, out var value))
-                return (value.uobjectValue as GameObject).GetComponents<IWindowUIModule>();
+            if (this.uobjects.TryGetValue(name, out var value))
+                return (value as GameObject).GetComponents<IWindowUIModule>();
             return null;
         }
         [return: When("Datas's keys contains [In]name"), IsInstantiated(false), ReturnMayNull]

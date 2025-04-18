@@ -52,7 +52,7 @@ namespace Convention.WindowsUI.Variant
 
         private void UpdateSprite([In] AssetsItem item, [In] string sprite)
         {
-            item.ButtonSprite = m_Icons.Datas[sprite].uobjectValue as Sprite;
+            item.ButtonSprite = m_Icons.FindItem<Sprite>(sprite);
         }
 
         private void UpdateSpriteAndTitle([In] AssetsItem item, [In] string name, [In] string extension)
@@ -72,9 +72,9 @@ namespace Convention.WindowsUI.Variant
                 return;
             else if (m_File.IsDir())
                 UpdateSprite(item, "folder");
-            else if (m_File.Extension.Length != 0 && m_Icons.Datas.ContainsKey(m_File.Extension))
+            else if (m_File.Extension.Length != 0 && m_Icons.uobjects.ContainsKey(m_File.Extension))
                 UpdateSprite(item, m_File.Extension);
-            else if (m_File.Extension.Length != 0 && m_Icons.Datas.ContainsKey(m_File.Extension[1..]))
+            else if (m_File.Extension.Length != 0 && m_Icons.uobjects.ContainsKey(m_File.Extension[1..]))
                 UpdateSprite(item, m_File.Extension[1..]);
             else if (m_File.IsImage)
                 UpdateSprite(item, "image");

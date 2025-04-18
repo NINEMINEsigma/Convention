@@ -291,8 +291,8 @@ class NodeSlot(left_value_reference[NodeSlotInfo], BaseBehavior):
             if not (
                     (self.info.typeIndicator == "string" and other.info.typeIndicator == "str") or
                     (self.info.typeIndicator == "str" and other.info.typeIndicator == "string") or
-                    self.info.typeIndicator == Any or
-                    other.info.typeIndicator == Any
+                    self.info.typeIndicator == "Any" or
+                    other.info.typeIndicator == "Any"
                 ):
                 raise ValueError(f"类型不匹配的插槽<{self.info.slotName}>和<{other.info.slotName}>不能连接")
         if self.info.parentNode==other.info.parentNode:
@@ -518,7 +518,7 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
             return
         if GetInternalWorkflowDebug():
             print_colorful(ConsoleFrontColor.BLUE, f"{self.SymbolName()}"\
-                f"<id={_Internal_GetNodeID(self)}, title={self.info.title if self.info is not None else '<no info>'}>ClearLink")
+                f"<id={_Internal_GetNodeID(self)}, title={self.info.title if self.info is not None else '<no info>'}>ClearSlots")
         self.Internal_Inmapping.clear()
         self.Internal_Outmapping.clear()
     @sealed
@@ -530,7 +530,7 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
             raise ValueError(f"节点<{self.SymbolName()}>未设置info")
         if GetInternalWorkflowDebug():
             print_colorful(ConsoleFrontColor.BLUE, f"{self.SymbolName()}"\
-                f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>BuildLink")
+                f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>BuildSlots")
         for slot_name, info in self.info.inmapping.items():
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.BLUE, f"{self.SymbolName()}"\
@@ -1300,11 +1300,11 @@ class EndNodeInfo(NodeInfo):
     """
     结束节点信息, 属于结束节点, 用于结束工作流
     """
-    
+
     def __init__(self, **kwargs:Any) -> None:
         kwargs.pop("outmapping", None)
         super().__init__(**kwargs)
-    
+
     @override
     def Instantiate(self) -> Node:
         return EndNode(self)
@@ -1452,10 +1452,10 @@ class ResourceNodeInfo(StartNodeInfo):
     资源节点信息, 属于开始节点, 用于加载资源
     """
     resource:   str = Field(description="文件地址或url地址", default="unknown")
-    
+
     def __init__(self, **kwargs:Any) -> None:
         super().__init__(**kwargs)
-    
+
     @override
     def Instantiate(self) -> Node:
         return ResourceNode(self)

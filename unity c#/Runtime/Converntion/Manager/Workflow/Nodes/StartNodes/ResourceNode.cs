@@ -14,7 +14,7 @@ namespace Convention.Workflow
         [InspectorDraw(InspectorDrawType.Text, true, true, nameof(l_resource))]
         public string resource = "unknown";
 
-        public ResourceNodeInfo() : this(WorkflowManager.Transformer(nameof(ResourceNode))) { }
+        public ResourceNodeInfo() : this("") { }
         public ResourceNodeInfo(string resource, string outmappingName = "value")
         {
             this.resource = resource;

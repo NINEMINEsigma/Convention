@@ -11,6 +11,7 @@ namespace Convention
         [Serializable]
         public class ToolFileSO : ScriptableObject
         {
+            /*
             [Setting, ToolFile.File, TextArea(2, 5)] public string FilePath;
             [OnlyPlayMode, Content, Ignore] public ToolFile File;
             public void Refresh()
@@ -19,7 +20,7 @@ namespace Convention
                     throw new Exception("Just refresh on play mode");
                 if (FilePath == null || FilePath.Length == 0)
                 {
-                    this.Datas.Clear();
+                    this.Reset();
                     return;
                 }
                 File = new ToolFile(FilePath);
@@ -43,7 +44,7 @@ namespace Convention
                     this.Datas.Clear();
                 }
             }
-
+            */
         }
     }
 }

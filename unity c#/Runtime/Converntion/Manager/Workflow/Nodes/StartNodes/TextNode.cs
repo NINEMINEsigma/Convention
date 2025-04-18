@@ -11,7 +11,7 @@ namespace Convention.Workflow
         [InspectorDraw(InspectorDrawType.Text, nameGenerater: nameof(l_text))]
         public string text;
 
-        public TextNodeInfo() : this(WorkflowManager.Transformer("text")) { }
+        public TextNodeInfo() : this("") { }
         public TextNodeInfo(string text, string outmappingName = "text")
         {
             this.text = text;

@@ -73,7 +73,7 @@ namespace Convention.Workflow
         //[Resources, SerializeField, OnlyNotNullMode, Header("Prefabs")]
         //private GameObject GraphNodePrefab;
         [Resources, SerializeField, OnlyNotNullMode, Header("Content")]
-        private RectTransform ContentPlane;
+        public RectTransform ContentPlane;
         [Resources, SerializeField, OnlyNotNullMode, Header("Mouse Click")]
         public RectTransform focusObject;
         [SerializeField, OnlyNotNullMode]
@@ -113,8 +113,8 @@ namespace Convention.Workflow
             {
                 if (instance.TextLabels == null)
                     return str;
-                if (instance.TextLabels.Datas.ContainsKey(str))
-                    return instance.TextLabels.Datas[str].stringValue;
+                if (instance.TextLabels.symbols.ContainsKey(str))
+                    return instance.TextLabels.symbols[str];
             }
             return str;
         }
@@ -229,6 +229,7 @@ namespace Convention.Workflow
             node.transform.eulerAngles = Vector3.zero;
             workflow.Nodes.Add(node);
             node.BuildSlots();
+            node.MyNodeTab = GraphInputWindow.instance.RegisterOnHierarchyWindow(node.info);
             return node;
         }
         public bool DestroyNode(Node node)

@@ -15,15 +15,16 @@ namespace Convention
                 Reset();
             }
 
-            private void Reset()
+            public override void Reset()
             {
+                base.Reset();
                 m_RenderTextureScaleName = "RenderTextureScale";
-                this.Datas[m_RenderTextureScaleName] = new(1f);
+                this.values[m_RenderTextureScaleName] = 1f;
             }
 
             private void OnValidate()
             {
-                if(this.Datas.ContainsKey(m_RenderTextureScaleName)==false)
+                if (this.values.ContainsKey(m_RenderTextureScaleName) == false)
                 {
                     Reset();
                 }
@@ -32,8 +33,8 @@ namespace Convention
             public override void Invoke(Camera camera)
             {
                 camera.targetTexture = new RenderTexture(
-                    (int)(camera.scaledPixelWidth *this.Datas[m_RenderTextureScaleName].floatValue),
-                    (int)(camera.scaledPixelHeight * this.Datas[m_RenderTextureScaleName].floatValue),
+                    (int)(camera.scaledPixelWidth * this.values[m_RenderTextureScaleName]),
+                    (int)(camera.scaledPixelHeight * this.values[m_RenderTextureScaleName]),
                     GraphicsFormat.R16G16B16A16_SFloat, GraphicsFormat.D24_UNorm_S8_UInt
                     );
             }
