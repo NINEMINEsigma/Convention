@@ -66,9 +66,9 @@ namespace Convention.Workflow
         {
             try
             {
-                foreach (var llm in info.EnumNamesGenerater())
+                foreach (var name in info.EnumNamesGenerater())
                 {
-                    dropdown.CreateOption(llm);
+                    dropdown.CreateOption(name);
                 }
             }
             catch (Exception)

@@ -1170,6 +1170,10 @@ class StartNodeInfo(NodeInfo):
     开始节点信息, 属于开始节点, 用于开始工作流
     """
 
+    def __init__(self, **kwargs:Any) -> None:
+        kwargs.pop("inmapping", None)
+        super().__init__(**kwargs)
+
     @override
     def Instantiate(self) -> Node:
         raise NotImplementedError(f"开始节点<{self.__class__.__name__}>未实现Instantiate方法")
@@ -1296,6 +1300,11 @@ class EndNodeInfo(NodeInfo):
     """
     结束节点信息, 属于结束节点, 用于结束工作流
     """
+    
+    def __init__(self, **kwargs:Any) -> None:
+        kwargs.pop("outmapping", None)
+        super().__init__(**kwargs)
+    
     @override
     def Instantiate(self) -> Node:
         return EndNode(self)
@@ -1443,6 +1452,10 @@ class ResourceNodeInfo(StartNodeInfo):
     资源节点信息, 属于开始节点, 用于加载资源
     """
     resource:   str = Field(description="文件地址或url地址", default="unknown")
+    
+    def __init__(self, **kwargs:Any) -> None:
+        super().__init__(**kwargs)
+    
     @override
     def Instantiate(self) -> Node:
         return ResourceNode(self)
@@ -1468,32 +1481,20 @@ class TextNodeInfo(StartNodeInfo):
     def __init__(
         self,
         text:               Optional[str] = None,
-        outmappingName:     Optional[str] = None,
-        *,
-        targetNodeID:       Optional[int] = None,
-        targetSlotName:     Optional[str] = None,
-        **kwargs:Any
+        outmappingName:     Optional[str] = None
         ) -> None:
-        super().__init__(**kwargs)
+        super().__init__()
         if text is not None:
             self.text = text
-        self.inmapping = {}
-        if outmappingName is not None or targetNodeID is not None or targetSlotName is not None:
-            if outmappingName is None:
-                outmappingName = "text"
-            if targetNodeID is None:
-                targetNodeID = -1
-            if targetSlotName is None:
-                targetSlotName = "text"
-            self.outmapping = {
-                outmappingName: NodeSlotInfo(
-                    slotName=outmappingName,
-                    typeIndicator="str",
-                    IsInmappingSlot=False,
-                    targetNodeID=targetNodeID,
-                    targetSlotName=targetSlotName
-                )
-            }
+        if outmappingName is None:
+            outmappingName = "text"
+        self.outmapping = {
+            outmappingName: NodeSlotInfo(
+                slotName=outmappingName,
+                typeIndicator="str",
+                IsInmappingSlot=False,
+            )
+        }
 
     @override
     def Instantiate(self) -> Node:
