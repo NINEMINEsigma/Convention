@@ -145,7 +145,7 @@ namespace internal
 }
 
 #ifdef __REF_BOOST
-
+#if __REF_BOOST
 #include <boost/math_fwd.hpp>
 #include <boost/math/quaternion.hpp>
 #include <boost/multiprecision/number.hpp>
@@ -253,6 +253,8 @@ using char_traits = number_traits<char>;
 using unsigned_char_traits = number_traits<unsigned char>;
 using long_double_traits = number_traits<long double>;
 using size_t_traits = number_traits<size_t>;
+
+#endif //__REF_BOOST
 
 #endif // __REF_BOOST
 

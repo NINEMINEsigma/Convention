@@ -24,8 +24,8 @@ function(BoostRefer)
         else()
             #message(FATAL_ERROR "Convention: Boost not found, but __IS_REF_BOOST is enabled")
             message("Convention: Boost not found, but __IS_REF_BOOST is enabled")
-        endif()
-    endif()
+        endif(Boost_FOUND)
+    endif(__IS_REF_BOOST)
     
 endfunction(BoostRefer)
 
@@ -64,6 +64,8 @@ project("Convention")
 
 # Project
 add_subdirectory("Convention")
+# EasySave with Convention-Build
+add_subdirectory("EasySave")
 # Test Demo
 add_subdirectory("Test")
 # Visual Algorithm with Convention-Build

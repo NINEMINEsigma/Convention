@@ -1645,4 +1645,15 @@ struct is_specialization<Template<Args...>, Template> : std::true_type {};
 
 #pragma endregion
 
+#pragma region Reflection
+
+#if !defined(__PRETTY_FUNCTION__) && !defined(__GNUC__)
+#define __PRETTY_FUNCTION__ __FUNCSIG__
+#endif
+
+#define PrettyFunctionName() __PRETTY_FUNCTION__
+
+#pragma endregion
+
+
 #endif // !__FILE_CONFIG
