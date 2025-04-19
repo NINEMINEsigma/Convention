@@ -56,7 +56,8 @@ namespace Convention.WindowsUI.Variant
                 }
                 catch (Exception) { }
             }
-            TextArea.text = targetItem.GetValue().ToString();
+            var value = targetItem.GetValue();
+            TextArea.text = value == null ? "" : value.ToString();
         }
 
         private void FixedUpdate()

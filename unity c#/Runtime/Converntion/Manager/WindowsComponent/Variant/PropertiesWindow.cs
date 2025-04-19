@@ -301,10 +301,13 @@ namespace Convention.WindowsUI.Variant
 
                 static IEnumerator Adjuster(RectTransform rectTransform)
                 {
+                    if (rectTransform == null)
+                        yield break;
                     LayoutRebuilder.ForceRebuildLayoutImmediate(rectTransform);
                     yield return null;
+                    if (rectTransform == null)
+                        yield break;
                     RectTransformExtension.AdjustSizeToContainsChilds(rectTransform);
-                    yield break;
                 }
                 static IEnumerator Adjuster2(RectTransform rectTransform, ItemEntry parentEntry)
                 {

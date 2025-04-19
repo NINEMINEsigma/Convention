@@ -52,7 +52,7 @@ namespace Convention.Workflow
 
         public NodeInfo()
         {
-            title = WorkflowManager.Transformer(typename = this.GetType().Name[..^4]);
+            WorkflowManager.Transformer(typename = this.GetType().Name[..^4]);
         }
 
         protected virtual NodeInfo CreateTemplateNodeInfoBySelfType()
@@ -64,7 +64,7 @@ namespace Convention.Workflow
             NodeInfo result = CreateTemplateNodeInfoBySelfType();
             result.nodeID = nodeID;
             result.typename = typename;
-            result.title = title;
+            result.title = string.IsNullOrEmpty(title) ? WorkflowManager.Transformer(this.GetType().Name[..^4]) : title;
             result.position = Vector2.zero;
             foreach (var (key, value) in inmapping)
             {
@@ -135,7 +135,7 @@ namespace Convention.Workflow
         [Resources, SerializeField, WhenAttribute.Is(nameof(IsEndNode), false), OnlyNotNullMode]
         private PropertiesWindow OutSlotPropertiesWindow;
 
-        private List<PropertiesWindow.ItemEntry> InSlots, OutSlots;
+        private List<PropertiesWindow.ItemEntry> InSlots = new(), OutSlots = new();
 
         internal Dictionary<string, NodeSlot> m_Inmapping = new();
         internal Dictionary<string, NodeSlot> m_Outmapping = new();
@@ -243,9 +243,14 @@ namespace Convention.Workflow
 
         public void RefreshImmediate()
         {
-            //ClearLink();
-            //RefreshPosition();
-            //BuildLink();
+            //foreach (var (_, slot) in m_Inmapping)
+            //{
+            //    slot.SetDirty();
+            //}
+            //foreach (var (_, slot) in m_Outmapping)
+            //{
+            //    slot.SetDirty();
+            //}
         }
         public void RefreshPosition()
         {
@@ -347,7 +352,7 @@ namespace Convention.Workflow
                 {
                     var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
 #if UNITY_EDITOR
-                    Debug.Log($"Link slot<{slot_name}> to <{targetNode}, id={slot_info.targetNodeID}>", this);
+                    Debug.Log($"id={WorkflowManager.instance.GetGraphNodeID(this)} Link slot<{slot_name}> to <{targetNode}, id={slot_info.targetNodeID}>", this);
 #endif
                     if (targetNode != null)
                     {

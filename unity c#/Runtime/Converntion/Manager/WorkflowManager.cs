@@ -10,7 +10,7 @@ using UnityEngine.InputSystem;
 
 namespace Convention.Workflow
 {
-    [Serializable,ArgPackage]
+    [Serializable, ArgPackage]
     public class NodeResult
     {
         public int nodeID;
@@ -19,7 +19,7 @@ namespace Convention.Workflow
         public object result;
     }
 
-    [Serializable,ArgPackage]
+    [Serializable, ArgPackage]
     public class ContextResult
     {
         public string hashID;
@@ -90,7 +90,7 @@ namespace Convention.Workflow
             Debug.Log($"[{String.Join(", ", func.returns.ToList().ConvertAll(x => $"{x.Key}: {x.Value}"))}] {func.name}" +
                 $"({String.Join(", ", func.parameters.ToList().ConvertAll(x => $"{x.Key}: {x.Value}"))}): {func.description}");
         }
-        public void UnregisterFunctionModel([In]FunctionModel func)
+        public void UnregisterFunctionModel([In] FunctionModel func)
         {
             CallableFunctionModels.Remove(func);
         }
@@ -102,7 +102,7 @@ namespace Convention.Workflow
         {
             return CallableFunctionModels.Any(x => x.name == functionName);
         }
-        [return:ReturnMayNull]
+        [return: ReturnMayNull]
         public FunctionModel GetFunctionModel(string functionName)
         {
             return CallableFunctionModels.FirstOrDefault(x => x.name == functionName);
@@ -112,7 +112,7 @@ namespace Convention.Workflow
         public List<CustomTransformer> customTransformers = new();
         public static string Transformer([In] string str)
         {
-            if(string.IsNullOrEmpty(str))
+            if (string.IsNullOrEmpty(str))
                 return str;
             if (instance != null)
             {
@@ -176,7 +176,7 @@ namespace Convention.Workflow
                     new EndNodeInfo());
             }, typeof(GraphInputWindow), typeof(GraphInspector));
 #if UNITY_EDITOR
-            if (this.GetAllFunctionName().Count() == 0) 
+            if (this.GetAllFunctionName().Count() == 0)
                 this.RegisterFunctionModel(new()
                 {
                     name = "TestFunction",
@@ -245,6 +245,7 @@ namespace Convention.Workflow
             node.transform.localScale = Vector3.one;
             node.transform.eulerAngles = Vector3.zero;
             workflow.Nodes.Add(node);
+            node.ClearSlots();
             node.BuildSlots();
             node.MyNodeTab = GraphInputWindow.instance.RegisterOnHierarchyWindow(node.info);
             return node;
@@ -285,11 +286,15 @@ namespace Convention.Workflow
 
         public void SaveWorkflowWithSystemPlugin()
         {
-            SaveWorkflow(PluginExtenion.SaveFile("工作流|*.workflow;*.json", "保存工作流"));
+            var str = PluginExtenion.SaveFile("工作流|*.workflow;*.json", "保存工作流");
+            if (string.IsNullOrEmpty(str) == false)
+                SaveWorkflow(str);
         }
         public void LoadWorkflowWithSystemPlugin()
         {
-            LoadWorkflow(PluginExtenion.SelectFile("工作流|*.workflow;*.json", "加载工作流"));
+            var str = PluginExtenion.SelectFile("工作流|*.workflow;*.json", "加载工作流");
+            if (string.IsNullOrEmpty(str) == false)
+                LoadWorkflow(str);
         }
 
         [Content, OnlyPlayMode] public string LastSavePath = null;
@@ -303,7 +308,7 @@ namespace Convention.Workflow
                 throw new FileNotFoundException($"{parent} is not exist");
             var currentWorkflow = workflow;
             currentWorkflow.Datas.Clear();
-            foreach(var node in currentWorkflow.Nodes)
+            foreach (var node in currentWorkflow.Nodes)
             {
                 node.info.CopyFromNode(node);
                 currentWorkflow.Datas.Add(node.info);
@@ -320,17 +325,23 @@ namespace Convention.Workflow
             {
                 if (workflow.Datas[i].nodeID != i)
                     throw new InvalidOperationException("Bad workflow: nodeID != node index");
-            }    
+            }
             this.m_workflow = new();
             foreach (var info in workflow.Datas)
             {
-                CreateGraphNode(info);
+                this.workflow.Datas.Add(CreateGraphNode(info).info);
             }
-            ConventionUtility.CreateSteps().Next(()=>
+            ConventionUtility.CreateSteps().Next(() =>
             {
                 foreach (var node in this.m_workflow.Nodes)
                 {
                     node.BuildLink();
+                }
+            }).Next(() =>
+            {
+                foreach (var node in this.m_workflow.Nodes)
+                {
+                    node.RefreshImmediate();
                 }
             }).Invoke();
             return this.workflow;
@@ -354,6 +365,10 @@ namespace Convention.Workflow
             else
 #endif
             {
+                foreach (var callbackData in callbackDatas)
+                {
+                    Transformer(callbackData.name);
+                }
                 SharedModule.instance.OpenCustomMenu(UIFocusObject, callbackDatas.ToArray());
             }
         }

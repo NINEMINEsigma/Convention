@@ -39,14 +39,11 @@ namespace Convention
         public static string[] DocumentURLTypes = new string[] { "pdf", "doc", "docx", "txt", "rtf" };
         public static string[] JsonURLTypes = new string[] { "json" };
 
-        [Content, SerializeField] private string url;
+        [Content, SerializeField] private string url { get => ref_value; set => ref_value = value; }
         [Ignore][HideInInspector] public UnityWebRequest WebRequest { get; protected set; }
         [Content] public object data;
 
-        public ToolURL([In] string url) : base(url)
-        {
-            this.url = url;
-        }
+        public ToolURL([In] string url) : base(url) { }
 
         ~ToolURL()
         {

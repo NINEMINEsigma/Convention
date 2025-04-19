@@ -68,7 +68,8 @@ namespace Convention.WindowsUI.Variant
 
     public abstract class InspectorDrawer : WindowUIModule
     {
-        public InspectorItem targetItem { get; private set; }
+        [Resources, SerializeField] private InspectorItem m_targetItem;
+        public InspectorItem targetItem { get => m_targetItem; private set => m_targetItem = value; }
         public virtual void OnInspectorItemInit(InspectorItem item)
         {
             targetItem = item;

@@ -175,9 +175,9 @@ def Chat(
     if isinstance(ai, ReActAgentCore):
         thinking, answer = _SplitThinkingAndAnswer(ai.chat(message))
     elif isinstance(ai, LLMObject):
-        thinking, answer = _SplitThinkingAndAnswer(ai.chat(message))
+        thinking, answer = _SplitThinkingAndAnswer(ai.chat(make_user_message(message)))
     elif isinstance(ai, LLM):
-        thinking, answer = _SplitThinkingAndAnswer(ai.chat(message))
+        thinking, answer = _SplitThinkingAndAnswer(ai.chat(make_user_message(message)))
     return {
         "thinking": thinking,
         "answer": answer

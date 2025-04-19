@@ -11,7 +11,7 @@ namespace Convention.Workflow
     public class ResourceNodeInfo : StartNodeInfo
     {
         [NonSerialized] private string l_resource = WorkflowManager.Transformer(nameof(resource));
-        [InspectorDraw(InspectorDrawType.Text, true, true, nameof(l_resource))]
+        [InspectorDraw(InspectorDrawType.Text, true, true, nameGenerater: nameof(l_resource))]
         public string resource = "unknown";
 
         public ResourceNodeInfo() : this("") { }

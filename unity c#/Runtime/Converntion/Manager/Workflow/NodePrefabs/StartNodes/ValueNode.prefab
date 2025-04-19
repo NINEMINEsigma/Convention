@@ -126,17 +126,17 @@ PrefabInstance:
     - target: {fileID: 7163478622867287499, guid: a59964a535cc0d045a3321772da9013a,
         type: 3}
       propertyPath: m_SizeDelta.y
-      value: -54
+      value: -204
       objectReference: {fileID: 0}
     - target: {fileID: 8633163998647511832, guid: a59964a535cc0d045a3321772da9013a,
         type: 3}
       propertyPath: m_SizeDelta.y
-      value: -152
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8633163998647511832, guid: a59964a535cc0d045a3321772da9013a,
         type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -150
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -192,7 +192,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Title: {fileID: 3324260385847587959}
-  SlotHeight: 46
+  SlotHeight: 40
   TitleHeight: 50
   ExtensionHeight: 150
   InSlotPropertiesWindow: {fileID: 0}

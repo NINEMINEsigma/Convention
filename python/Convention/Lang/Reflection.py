@@ -457,7 +457,7 @@ class BaseInfo(BaseModel, any_class):
     def __init__(self, **kwargs):
         BaseModel.__init__(self, **kwargs)
         any_class.__init__(self)
-        
+
     @virtual
     def __str__(self) -> str:
         return self.ToString()
@@ -606,6 +606,8 @@ class ValueInfo(BaseInfo):
     def Verify(self, valueType:type) -> bool:
         if self.IsUnsupported:
             raise ReflectionException(f"Unsupported type: {self.RealType}")
+        if valueType is type(None):
+            return True
         if self.IsUnion:
             return any(ValueInfo(uType).Verify(valueType) for uType in get_union_types(self.RealType))
         elif self.RealType is Any:
@@ -762,14 +764,9 @@ class FieldInfo(MemberInfo):
             if self.Verify(type(value)):
                 setattr(obj, self.MemberName, value)
             else:
-                if isinstance(self.FieldType, str):
-                    raise TypeError(f"{ConsoleFrontColor.RED}Field {ConsoleFrontColor.LIGHTBLUE_EX}{self.MemberName}"\
-                        f"{ConsoleFrontColor.RED} , value type mismatch, expected \"{self.FieldType}\""\
-                        f", got {type(value)}{ConsoleFrontColor.RESET}")
-                else:
-                    raise TypeError(f"{ConsoleFrontColor.RED}Field {ConsoleFrontColor.LIGHTBLUE_EX}{self.MemberName}"\
-                        f"{ConsoleFrontColor.RED} , value type mismatch, expected {self.FieldType}"\
-                        f", got {type(value)}{ConsoleFrontColor.RESET}")
+                raise TypeError(f"{ConsoleFrontColor.RED}Field {ConsoleFrontColor.LIGHTBLUE_EX}{self.MemberName}"\
+                    f"{ConsoleFrontColor.RED} , value type mismatch, expected \"{self.FieldType}\""\
+                    f", got {type(value)}{ConsoleFrontColor.RESET}")
 
     @override
     def __repr__(self) -> str:

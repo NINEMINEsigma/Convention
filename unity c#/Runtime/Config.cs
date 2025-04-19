@@ -704,11 +704,10 @@ namespace Convention
             }
             private static IEnumerator Execute(List<KeyValuePair<YieldInstruction, Action>> steps)
             {
-                for (int i = 0, e = steps.Count; i < e; i++)
+                foreach (var (waiting,action) in steps)
                 {
-                    var step = steps[i];
-                    step.Value();
-                    yield return step.Key;
+                    action();
+                    yield return waiting;
                 }
             }
             ~ActionStepCoroutineWrapper()
@@ -717,7 +716,7 @@ namespace Convention
             }
             public void Invoke()
             {
-                StartCoroutine(Execute(steps));
+                StartCoroutine(Execute(new List<KeyValuePair<YieldInstruction, Action>>(steps)));
                 steps.Clear();
             }
         }
@@ -842,7 +841,12 @@ namespace Convention
         {
             if (info is FieldInfo field)
             {
-                field.SetValue(target, value);
+                if (value.GetType().IsSubclassOf(field.FieldType))
+                    field.SetValue(target, value);
+                else
+                {
+                    field.SetValue(target, field.FieldType.GetMethod(nameof(float.Parse)).Invoke(target, new object[] { value }));
+                }
             }
             else if (info is PropertyInfo property)
             {
