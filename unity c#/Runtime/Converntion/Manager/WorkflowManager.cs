@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Convention.WindowsUI.Variant;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -107,10 +108,26 @@ namespace Convention.Workflow
             return CallableFunctionModels.FirstOrDefault(x => x.name == functionName);
         }
 
+        public delegate bool CustomTransformer([In] string word, out string late);
+        public List<CustomTransformer> customTransformers = new();
         public static string Transformer([In] string str)
         {
+            if(string.IsNullOrEmpty(str))
+                return str;
             if (instance != null)
             {
+                foreach (var customTransformer in instance.customTransformers)
+                {
+                    if (customTransformer(str, out var result))
+                    {
+                        var menuButton = instance.callbackDatas.Find(x => x.name == str);
+                        if (menuButton != null)
+                        {
+                            menuButton.name = result;
+                        }
+                        return result;
+                    }
+                }
                 if (instance.TextLabels == null)
                     return str;
                 if (instance.TextLabels.symbols.ContainsKey(str))

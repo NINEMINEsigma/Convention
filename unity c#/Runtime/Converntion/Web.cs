@@ -322,7 +322,6 @@ namespace Convention
             if (WebRequest.result == UnityWebRequest.Result.Success)
             {
                 this.data = WebRequest.downloadHandler.text;
-                Debug.Log($"{(string)this.data}");
                 return (string)this.data;
             }
 

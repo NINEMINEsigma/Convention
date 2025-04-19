@@ -31,7 +31,8 @@ except ImportError as ex:
 
 # Import Selunit.py
 try:
-    import selenium as _
+    pass
+    # import selenium as _
     #from .Selunit import *
 except ImportError as ex:
     ImportingThrow(ex, "Selunit", ["selenium"])
