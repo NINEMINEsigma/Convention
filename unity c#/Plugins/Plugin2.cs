@@ -10,7 +10,7 @@ namespace Convention
 #if PLATFORM_WINDOWS
             return WindowsKit.SelectMultipleFiles(filter, title);
 #elif PLATFORM_WEBGL               
-
+            throw new NotImplementedException();
 #endif
         }
 
@@ -21,7 +21,7 @@ namespace Convention
             if (results != null && results.Length > 0)
                 return results[0];
 #elif PLATFORM_WEBGL               
-
+            throw new NotImplementedException();
 #endif
             return null;
         }
@@ -31,7 +31,7 @@ namespace Convention
 #if PLATFORM_WINDOWS
             return WindowsKit.SaveFile(filter, title);
 #elif PLATFORM_WEBGL               
-
+            throw new NotImplementedException();
 #endif
         }
 
@@ -40,7 +40,7 @@ namespace Convention
 #if PLATFORM_WINDOWS
             return WindowsKit.SelectFolder(description);
 #elif PLATFORM_WEBGL               
-
+            throw new NotImplementedException();
 #endif
         }
     }

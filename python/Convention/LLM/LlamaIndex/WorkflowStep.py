@@ -158,7 +158,8 @@ _AgentLoader = WorkflowActionWrapper(AgentLoader.__name__, AgentLoader, "加载A
 # endregion
 
 # region Chat
-def _SplitThinkingAndAnswer(message:str) -> Tuple[str, str]:
+def _SplitThinkingAndAnswer(response:ChatResponse) -> Tuple[str, str]:
+    message = response.message.content
     if message.startswith("<think>"):
         thinking, _, answer = message.partition("</think>")
         if thinking.startswith("<thinking>"):

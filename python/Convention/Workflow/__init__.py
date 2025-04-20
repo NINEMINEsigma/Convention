@@ -678,7 +678,11 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
             self._results = await self._DoRunStep()
             if isinstance(self._results, dict):
                 for key, value in self._results.items():
-                    self.Internal_Outmapping[key].SetParameter(value)
+                    if key in self.Internal_Outmapping:
+                        self.Internal_Outmapping[key].SetParameter(value)
+                    elif GetInternalWorkflowDebug():
+                        print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
+                            f"<id={_Internal_GetNodeID(self)}, title={self.info.title}>输出槽<{key}>不存在")
             else:
                 if len(self.Internal_Outmapping.items()) == 1:
                     self.Internal_Outmapping[next(iter(self.Internal_Outmapping.keys()))].SetParameter(self._results)
