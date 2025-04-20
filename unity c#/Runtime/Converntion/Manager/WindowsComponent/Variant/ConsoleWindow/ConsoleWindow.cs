@@ -25,11 +25,11 @@ namespace Convention.WindowsUI.Variant
             m_entries.Clear();
         }
 
-        public void Log(string condition,string stackTrace,LogType type=LogType.Log)
+        public void Log(string condition, string stackTrace, LogType type = LogType.Log)
         {
-                PropertiesWindow.ItemEntry entry = m_ListView.CreateRootItemEntries(1)[0];
-                m_entries.Add(entry);
-                entry.ref_value.GetComponent<ConsoleListItem>()
+            PropertiesWindow.ItemEntry entry = m_ListView.CreateRootItemEntries(1)[0];
+            m_entries.Add(entry);
+            //entry.ref_value.GetComponent<ConsoleListItem>()
 
         }
 
