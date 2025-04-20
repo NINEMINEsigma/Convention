@@ -1097,7 +1097,12 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         node_running_count = 0
         for index, node in enumerate(self.workflow.Nodes):
             if isinstance(node, EndNode):
-                result.results.append(NodeResult(nodeID=index, nodeTitle=node.info.title, result=node.end_result))
+                result.results.append(NodeResult(nodeID=index,
+                                                 nodeTitle=node.info.title,
+                                                 result=node.end_result if isinstance(
+                                                     node.end_result, dict) else {
+                                                         "result":node.end_result
+                                                         }))
             elif node.IsRunning:
                 node_running_count += 1
         result.progress = 1 - (node_running_count / len(self.workflow.Nodes))

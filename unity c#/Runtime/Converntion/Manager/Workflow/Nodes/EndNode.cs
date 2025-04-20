@@ -80,6 +80,10 @@ namespace Convention.Workflow
             });
             m_dynamicSlots.Add(name, entry);
             this.rectTransform.sizeDelta = new Vector2(this.rectTransform.sizeDelta.x, this.rectTransform.sizeDelta.y + curEntryRect.rect.height);
+            foreach (var (key, slot) in this.m_Inmapping)
+            {
+                slot.SetDirty();
+            }
             return true;
         }
 
@@ -92,6 +96,10 @@ namespace Convention.Workflow
             this.rectTransform.sizeDelta = new Vector2(this.rectTransform.sizeDelta.x, this.rectTransform.sizeDelta.y - curEntryRect.rect.height);
             m_dynamicSlots[name].Release();
             m_dynamicSlots.Remove(name);
+            foreach (var (key, slot) in this.m_Inmapping)
+            {
+                slot.SetDirty();
+            }
             return true;
         }
 

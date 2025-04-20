@@ -244,6 +244,7 @@ namespace Convention.Workflow
             node.transform.SetParent(ContentPlane);
             node.transform.localScale = Vector3.one;
             node.transform.eulerAngles = Vector3.zero;
+            node.SetupFromInfo(info);
             workflow.Nodes.Add(node);
             node.ClearSlots();
             node.BuildSlots();

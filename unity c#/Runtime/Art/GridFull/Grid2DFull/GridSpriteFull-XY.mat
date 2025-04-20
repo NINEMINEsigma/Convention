@@ -25,8 +25,8 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _ColorLevel: 0.099
+    - _ColorLevel: 1
     - _GridScale: 1
     m_Colors:
-    - _Offset: {r: 0, g: 0, b: 61.62, a: 50.59}
+    - _Offset: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []

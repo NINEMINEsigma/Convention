@@ -99,7 +99,6 @@ namespace Convention.Workflow
             if (key.EndsWith("Info"))
                 key = key[..^4];
             var node = GameObject.Instantiate(WorkflowManager.instance.GraphNodePrefabs.FindItem<GameObject>(key)).GetComponent<Node>();
-            node.SetupFromInfo(this);
             return node;
         }
 
@@ -223,22 +222,25 @@ namespace Convention.Workflow
 
         public void SetupFromInfo([In] NodeInfo value)
         {
-            ClearLink();
-            info = value;
-            int nodeID = WorkflowManager.instance.GetGraphNodeID(this);
-            if (nodeID < 0)
+            if (value != info)
             {
-                this.info.node = this;
+                ClearLink();
+                info = value;
+                int nodeID = WorkflowManager.instance.GetGraphNodeID(this);
+                if (nodeID < 0)
+                {
+                    this.info.node = this;
+                }
+                else
+                {
+                    value.nodeID = nodeID;
+                    value.node = this;
+                    BuildLink();
+                }
+                RefreshPosition();
+                RefreshRectTransform();
+                WhenSetup(info);
             }
-            else
-            {
-                value.nodeID = nodeID;
-                value.node = this;
-                BuildLink();
-            }
-            RefreshPosition();
-            RefreshRectTransform();
-            WhenSetup(info);
         }
 
         public void RefreshImmediate()
