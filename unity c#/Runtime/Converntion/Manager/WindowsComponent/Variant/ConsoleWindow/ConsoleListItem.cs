@@ -1,21 +1,25 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using Convention.WindowsUI.Variant;
 using UnityEngine;
 
-namespace Convention
+namespace Convention.WindowsUI.Variant
 {
-    public class ConsoleListItem : MonoBehaviour
+    public class ConsoleListItem : PropertyListItem
     {
-        // Start is called before the first frame update
-        void Start()
+        public string stackTrace;
+        public bool IsEnableFocusWindow;
+
+
+        [Content]
+        public void OnFocusHierarchyItem()
         {
-        
+            if (!IsEnableFocusWindow)
+                return;
+            if (FocusWindowIndictaor.instance != null)
+                FocusWindowIndictaor.instance.SetTargetRectTransform(TextRectTransform);
         }
 
-        // Update is called once per frame
-        void Update()
-        {
-        
-        }
     }
 }

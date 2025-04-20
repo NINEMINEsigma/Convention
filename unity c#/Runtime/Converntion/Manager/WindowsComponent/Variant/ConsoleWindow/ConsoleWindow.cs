@@ -16,14 +16,27 @@ namespace Convention.WindowsUI.Variant
         [Header("Property Window - ListView"), Resources, SerializeField, OnlyNotNullMode] private PropertiesWindow m_ListView;
         private List<PropertiesWindow.ItemEntry> m_entries = new();
 
-        private void Start()
+        public void ClearLog()
         {
-            Application.logMessageReceived += (condition, stackTrace, type) =>
+            foreach (var entry in m_entries)
             {
+                entry.Release();
+            }
+            m_entries.Clear();
+        }
+
+        public void Log(string condition,string stackTrace,LogType type=LogType.Log)
+        {
                 PropertiesWindow.ItemEntry entry = m_ListView.CreateRootItemEntries(1)[0];
                 m_entries.Add(entry);
-                entry.ref_value.GetComponent<>
-            };
+                entry.ref_value.GetComponent<ConsoleListItem>()
+
+        }
+
+        private void Start()
+        {
+            Application.logMessageReceived -= Log;
+            Application.logMessageReceived += Log;
             ConsoleWindowIndex = m_WindowManager.CreateSubWindowWithBarButton(m_plane, m_root);
             ConsoleWindowIndex.button.AddListener(() =>
             {
