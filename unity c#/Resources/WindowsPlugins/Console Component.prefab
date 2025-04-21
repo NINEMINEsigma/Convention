@@ -301,7 +301,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3256815747533395065
 RectTransform:
   m_ObjectHideFlags: 0
@@ -579,6 +579,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Name
       value: StackTrace
+      objectReference: {fileID: 0}
+    - target: {fileID: 3241788777981816902, guid: 37924db2d27cd6e49bf8002531a08095,
+        type: 3}
+      propertyPath: m_Color.a
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 3241788777981816903, guid: 37924db2d27cd6e49bf8002531a08095,
         type: 3}
