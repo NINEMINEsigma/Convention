@@ -246,7 +246,7 @@ namespace Convention.Workflow
             node.transform.eulerAngles = Vector3.zero;
             node.SetupFromInfo(info);
             workflow.Nodes.Add(node);
-            node.ClearSlots();
+            //node.ClearSlots();
             node.BuildSlots();
             node.MyNodeTab = GraphInputWindow.instance.RegisterOnHierarchyWindow(node.info);
             return node;

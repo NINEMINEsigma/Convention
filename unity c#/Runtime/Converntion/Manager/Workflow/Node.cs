@@ -288,7 +288,6 @@ namespace Convention.Workflow
             {
                 foreach (var slot in this.InSlots)
                     slot.Release();
-                InSlots.Clear();
                 this.m_Inmapping.Clear();
             }
             if (OutSlotPropertiesWindow == true)
@@ -347,9 +346,6 @@ namespace Convention.Workflow
         {
             if (InSlotPropertiesWindow != null)
             {
-#if UNITY_EDITOR
-                Debug.Log("BuildLink", this);
-#endif
                 foreach (var (slot_name, slot_info) in info.inmapping)
                 {
                     var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
@@ -360,10 +356,10 @@ namespace Convention.Workflow
                     {
                         NodeSlot.Link(m_Inmapping[slot_name], targetNode.m_Outmapping[slot_info.targetSlotName]);
                     }
-                    else
-                    {
-                        NodeSlot.UnlinkAll(m_Inmapping[slot_name]);
-                    }
+                    //else
+                    //{
+                    //    NodeSlot.UnlinkAll(m_Inmapping[slot_name]);
+                    //}
                 }
             }
         }
