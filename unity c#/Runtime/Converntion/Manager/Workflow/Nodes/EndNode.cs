@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Convention.WindowsUI;
@@ -80,10 +79,13 @@ namespace Convention.Workflow
             });
             m_dynamicSlots.Add(name, entry);
             this.rectTransform.sizeDelta = new Vector2(this.rectTransform.sizeDelta.x, this.rectTransform.sizeDelta.y + curEntryRect.rect.height);
-            foreach (var (key, slot) in this.m_Inmapping)
+            ConventionUtility.CreateSteps().Wait(1f, () =>
             {
-                slot.SetDirty();
-            }
+                foreach (var (key, slot) in this.m_Inmapping)
+                {
+                    slot.SetDirty();
+                }
+            }).Invoke();
             return true;
         }
 
@@ -96,10 +98,13 @@ namespace Convention.Workflow
             this.rectTransform.sizeDelta = new Vector2(this.rectTransform.sizeDelta.x, this.rectTransform.sizeDelta.y - curEntryRect.rect.height);
             m_dynamicSlots[name].Release();
             m_dynamicSlots.Remove(name);
-            foreach (var (key, slot) in this.m_Inmapping)
+            ConventionUtility.CreateSteps().Next(() =>
             {
-                slot.SetDirty();
-            }
+                foreach (var (key, slot) in this.m_Inmapping)
+                {
+                    slot.SetDirty();
+                }
+            }).Invoke();
             return true;
         }
 
