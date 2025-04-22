@@ -9,7 +9,7 @@ namespace Convention.WindowsUI.Variant
         public static void InitLoadedRoots(ref List<string> LoadedInRoot)
         {
             LoadedInRoot = new List<string>();
-            if(PlatformIndicator.is_platform_windows)
+            if (PlatformIndicator.is_platform_windows)
             {
                 LoadedInRoot.Add(Application.persistentDataPath);
                 LoadedInRoot.Add(Application.streamingAssetsPath);
@@ -46,7 +46,7 @@ namespace Convention.WindowsUI.Variant
         private void Start()
         {
             var entries = m_AssetsWindow.GetComponent<PropertiesWindow>().CreateRootItemEntries(false, LoadedInRoot.Count);
-            for (int i = 0,e=LoadedInRoot.Count;i!=e;i++)
+            for (int i = 0, e = LoadedInRoot.Count; i != e; i++)
             {
                 entries[i].ref_value.GetComponent<FileSystemAssetsItem>().RebuildFileInfo(LoadedInRoot[i]);
             }
@@ -63,7 +63,7 @@ namespace Convention.WindowsUI.Variant
 
         public void RefreshImmediate()
         {
-            if(FocusWindowIndictaor.instance.Target== m_AssetsWindow.transform as RectTransform)
+            if (FocusWindowIndictaor.instance.Target == m_AssetsWindow.transform as RectTransform)
             {
                 foreach (var entry in m_AssetsWindow.Peek())
                 {
@@ -72,5 +72,4 @@ namespace Convention.WindowsUI.Variant
             }
         }
     }
-
 }

@@ -265,6 +265,11 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1347483481279638995, guid: 48027c3ec4553d442a59415ffb40f209,
+        type: 3}
+      propertyPath: m_GameObjectOnSceneOnly
+      value: 
+      objectReference: {fileID: 8084070411859824784}
     - target: {fileID: 1480485710386724720, guid: 48027c3ec4553d442a59415ffb40f209,
         type: 3}
       propertyPath: m_PerformanceMode
@@ -1498,6 +1503,12 @@ RectTransform:
 --- !u!224 &6653248262168190034 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 5120793984865536582, guid: 48027c3ec4553d442a59415ffb40f209,
+    type: 3}
+  m_PrefabInstance: {fileID: 1965153785585800724}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8084070411859824784 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7743310370462074500, guid: 48027c3ec4553d442a59415ffb40f209,
     type: 3}
   m_PrefabInstance: {fileID: 1965153785585800724}
   m_PrefabAsset: {fileID: 0}

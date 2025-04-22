@@ -130,6 +130,20 @@ namespace Convention.WindowsUI.Variant
             });
         }
 
-
+        [Setting, OnlyPlayMode]
+        public void TestLog()
+        {
+            Debug.Log("Test");
+        }
+        [Setting, OnlyPlayMode]
+        public void TestWarning()
+        {
+            Debug.LogWarning("Test");
+        }
+        [Setting, OnlyPlayMode]
+        public void TestError()
+        {
+            Debug.LogError("Test");
+        }
     }
 }

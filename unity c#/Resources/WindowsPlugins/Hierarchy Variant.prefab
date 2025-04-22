@@ -83,12 +83,9 @@ MonoBehaviour:
   m_buttonText: {fileID: 6974034821669727599}
   m_Layer: {fileID: 2354064217434122065}
   TextRectTransform: {fileID: 0}
-  m_entry:
-    _ref_value: {fileID: 0}
-    childs: []
-    parentWindow: {fileID: 0}
   m_folderStats: 1
   IsEnableFocusWindow: 1
+  IsUpdateWhenTargetIsString: 1
 --- !u!1 &4429790346174012524
 GameObject:
   m_ObjectHideFlags: 0
@@ -630,7 +627,7 @@ MonoBehaviour:
   m_WindowsConfig: {fileID: 11400000, guid: bd7af352251cd7846b99be9858901829, type: 2}
   m_WindowManager: {fileID: 1053894969927359569}
   m_TargetWindowContent: 0
-  m_Entrys: []
+  m_ContentPlaneWhenNoWindow: {fileID: 0}
   ItemPrefab: {fileID: 2447206846939804910}
   m_PerformanceMode: -1
 --- !u!114 &5551824027870255850

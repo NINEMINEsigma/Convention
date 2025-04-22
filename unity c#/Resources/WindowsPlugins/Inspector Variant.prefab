@@ -445,11 +445,8 @@ MonoBehaviour:
   m_buttonText: {fileID: 7601201441173455637}
   m_Layer: {fileID: 1011510495005369172}
   TextRectTransform: {fileID: 0}
-  m_entry:
-    _ref_value: {fileID: 0}
-    childs: []
-    parentWindow: {fileID: 0}
   m_folderStats: 0
+  Title: {fileID: 0}
   m_TransformModule: {fileID: 6312532285039238740}
   m_TextModule: {fileID: 1286882541314734802}
   m_ToggleModule: {fileID: 542261476649481257}
@@ -633,6 +630,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: adbc0b509e231964f9116d4769a80da2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_targetItem: {fileID: 0}
   LocalPosition: {fileID: 8227500886192311110}
   Position: {fileID: 2968240094508948309}
   Rotation: {fileID: 4600419288882057997}
@@ -984,6 +982,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2ff2c456623f0b44b8a3151524f8a2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_targetItem: {fileID: 0}
   RawButton: {fileID: 0}
   ModernButton: {fileID: 261566660031532423}
 --- !u!224 &1522701403416262133 stripped
@@ -1281,6 +1280,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5f5aa321c5fb034cb333247eafbaa1b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_targetItem: {fileID: 0}
   TextArea: {fileID: 2116342532940773829}
   isEditing: 0
 --- !u!224 &4339561724807004525 stripped
@@ -1912,6 +1912,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2ff2c456623f0b44b8a3151524f8a2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_targetItem: {fileID: 0}
   RawButton: {fileID: 0}
   ModernButton: {fileID: 1527557516715220134}
 --- !u!114 &1527557516715220134 stripped
@@ -2481,6 +2482,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 427a4f8c9974bd14ea853c4a51a28037, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_targetItem: {fileID: 0}
   Toggle: {fileID: 4386425099327665593}
 --- !u!114 &4386425099327665593 stripped
 MonoBehaviour:
@@ -2777,7 +2779,7 @@ MonoBehaviour:
   m_WindowsConfig: {fileID: 11400000, guid: bd7af352251cd7846b99be9858901829, type: 2}
   m_WindowManager: {fileID: 3165012067934678947}
   m_TargetWindowContent: 0
-  m_Entrys: []
+  m_ContentPlaneWhenNoWindow: {fileID: 0}
   ItemPrefab: {fileID: 4413300855582294061}
   m_PerformanceMode: 255
 --- !u!114 &2838922567191884104
@@ -2792,11 +2794,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2a86b441edb5f434fb07b2f3e6e0837c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  IsWorkWithHierarchyWindow: 1
+  IsWorkWithTypeIndictaor: 1
   m_ParentHashCodeField: {fileID: 5368431023148589862}
   m_ThisHashCodeField: {fileID: 6345764011796144791}
   m_WindowManager: {fileID: 3165012067934678947}
   m_PropertiesWindow: {fileID: 5345149840428145741}
-  m_currentEntries: []
   m_TypeText: {fileID: 3367676379095441979}
 --- !u!114 &3165012067934678947 stripped
 MonoBehaviour:
@@ -4604,6 +4607,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b74cf48865e5f12469141133ccca7e21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_targetItem: {fileID: 0}
   m_Dropdown: {fileID: 5300901315342642645}
 --- !u!1001 &7327398168892914181
 PrefabInstance:
@@ -5083,6 +5087,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: be24c6df69229ae41a42cfbc76ab1ad4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_targetItem: {fileID: 0}
   ImageArea: {fileID: 454248394153281419}
   RawButton: {fileID: 7165705252352315586}
 --- !u!1001 &8791253595419866218
@@ -5365,6 +5370,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e7609e8ffb820b4ea1eadd9b8e37728, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_targetItem: {fileID: 0}
   TextArea: {fileID: 8618219603046743173}
   RawButton: {fileID: 8633591115634385976}
   isEditing: 0

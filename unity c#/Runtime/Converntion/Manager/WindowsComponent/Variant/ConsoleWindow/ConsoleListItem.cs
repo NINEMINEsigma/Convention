@@ -17,8 +17,8 @@ namespace Convention.WindowsUI.Variant
 
         public void SetupMessage(string message, string stackTrace, string color, LogType logType, string format = "<color={color}>{message}</color>")
         {
-            format = format.Replace("color", color);
-            format = format.Replace("message", message);
+            format = format.Replace("{color}", color);
+            format = format.Replace("{message}", message);
             this.title = format;
             this.stackTrace = stackTrace;
             this.logType = logType;

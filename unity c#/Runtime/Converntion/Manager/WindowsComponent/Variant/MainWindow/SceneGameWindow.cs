@@ -18,20 +18,17 @@ namespace Convention.WindowsUI.Variant
         [Resources, SerializeField] private CinemachineVirtualCameraBase ModuleCamera;
         [Resources, SerializeField,HopeNotNull] private CinemachineBrain MainCamera;
         [Resources, SerializeField, OnlyNotNullMode] private RawImage TextureRenderer;
+        [Resources, SerializeField] private GameObject m_GameObjectOnSceneOnly;
 
         public BaseWindowBar.RegisteredPageWrapper GameWindowIndex { get; private set; }
 
         public void CameraSelect(bool isScene)
         {
-            if (isScene)
+            SceneCamera.gameObject.SetActive(isScene);
+            ModuleCamera.gameObject.SetActive(!isScene);
+            if (m_GameObjectOnSceneOnly != null)
             {
-                SceneCamera.gameObject.SetActive(true);
-                ModuleCamera.gameObject.SetActive(false);
-            }
-            else
-            {
-                SceneCamera.gameObject.SetActive(false);
-                ModuleCamera.gameObject.SetActive(true);
+                m_GameObjectOnSceneOnly.SetActive(isScene);
             }
         }
 

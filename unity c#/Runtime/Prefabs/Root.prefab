@@ -2166,7 +2166,7 @@ MonoBehaviour:
   m_WindowsConfig: {fileID: 11400000, guid: bd7af352251cd7846b99be9858901829, type: 2}
   m_WindowManager: {fileID: 1953565472774793638}
   m_TargetWindowContent: 0
-  m_Entrys: []
+  m_ContentPlaneWhenNoWindow: {fileID: 0}
   ItemPrefab: {fileID: 0}
   m_PerformanceMode: 255
 --- !u!224 &5696836049090521927 stripped
