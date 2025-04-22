@@ -634,6 +634,7 @@ namespace Convention
             UnityEngine.Application.quitting += () => CoroutineStarter = null;
             RegisterBaseWrapperExtension.InitExtensionEnv();
             SO.Windows.InitExtensionEnv();
+            GlobalConfig.InitExtensionEnv();
 
             UnityExtension.InitExtensionEnv();
 
