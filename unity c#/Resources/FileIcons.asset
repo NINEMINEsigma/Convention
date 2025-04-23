@@ -12,90 +12,78 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c84cf04bd69b6c640a560080def4549b, type: 3}
   m_Name: FileIcons
   m_EditorClassIdentifier: 
-  Datas:
-    Data:
-    - Key: default
-      Value:
-        CurrentValue: file (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 1024adf990ed4c645a45f674f9f1313f, type: 3}
-        RealType: Sprite
-    - Key: folder
-      Value:
-        CurrentValue: folder (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: c9889352de45cb848b716693e6ce9150, type: 3}
-        RealType: Sprite
-    - Key: ab
-      Value:
-        CurrentValue: layer (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 5d6c89e0324de024c855f4ab7e7846b6, type: 3}
-        RealType: Sprite
-    - Key: ab.data
-      Value:
-        CurrentValue: ab.data (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: f8921074f15c144469a0ac105afee94e, type: 3}
-        RealType: Sprite
-    - Key: picture
-      Value:
-        CurrentValue: picture (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 69135347e8e8d0f4f807128899ebb4a6, type: 3}
-        RealType: Sprite
-    - Key: image
-      Value:
-        CurrentValue: picture (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 69135347e8e8d0f4f807128899ebb4a6, type: 3}
-        RealType: Sprite
-    - Key: writing
-      Value:
-        CurrentValue: writing (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 170c60fbb8945b249bb36d6c3c4e8514, type: 3}
-        RealType: Sprite
-    - Key: text
-      Value:
-        CurrentValue: writing (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 170c60fbb8945b249bb36d6c3c4e8514, type: 3}
-        RealType: Sprite
-    - Key: skys
-      Value:
-        CurrentValue: sky (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 9cfe928d67746fe40b441da5e54cbb00, type: 3}
-        RealType: Sprite
-    - Key: mat
-      Value:
-        CurrentValue: mat (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: ec4c3c4d044c6b7438b8fbc65510babc, type: 3}
-        RealType: Sprite
-    - Key: layer
-      Value:
-        CurrentValue: layer (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 5d6c89e0324de024c855f4ab7e7846b6, type: 3}
-        RealType: Sprite
-    - Key: code
-      Value:
-        CurrentValue: code (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 22967adeb0baea344aa73c382b5872f9, type: 3}
-        RealType: Sprite
-    - Key: component
-      Value:
-        CurrentValue: component (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 3520e462edef2ea41a1c3b4a56eb7866, type: 3}
-        RealType: Sprite
-    - Key: scene
-      Value:
-        CurrentValue: scene (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 2abdc19f55a13dd448618d8f6cc49559, type: 3}
-        RealType: Sprite
-    - Key: unity
-      Value:
-        CurrentValue: unity (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 65bc268cea3d23046a6ec320bf655d6a, type: 3}
-        RealType: Sprite
-    - Key: prefab
-      Value:
-        CurrentValue: unity (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 65bc268cea3d23046a6ec320bf655d6a, type: 3}
-        RealType: Sprite
-    - Key: gameobjects
-      Value:
-        CurrentValue: layer (UnityEngine.Sprite)
-        CurrentObject: {fileID: 21300000, guid: 5d6c89e0324de024c855f4ab7e7846b6, type: 3}
-        RealType: Sprite
+  uobjects:
+    m_Keys:
+    - ab
+    - code
+    - cpp
+    - py
+    - cs
+    - h
+    - hpp
+    - c
+    - dll
+    - exe
+    - default
+    - text
+    - txt
+    - folder
+    - layer
+    - mat
+    - image
+    - scene
+    - unityassets
+    - unityasset
+    - unity
+    - assets
+    - music
+    - discord
+    - email
+    - facebook
+    - instagram
+    - message
+    - share
+    - steam
+    - twitter
+    - youtube
+    - setting
+    m_Values:
+    - {fileID: 21300000, guid: f8921074f15c144469a0ac105afee94e, type: 3}
+    - {fileID: 21300000, guid: 22967adeb0baea344aa73c382b5872f9, type: 3}
+    - {fileID: 21300000, guid: 22967adeb0baea344aa73c382b5872f9, type: 3}
+    - {fileID: 21300000, guid: 22967adeb0baea344aa73c382b5872f9, type: 3}
+    - {fileID: 21300000, guid: 22967adeb0baea344aa73c382b5872f9, type: 3}
+    - {fileID: 21300000, guid: 22967adeb0baea344aa73c382b5872f9, type: 3}
+    - {fileID: 21300000, guid: 22967adeb0baea344aa73c382b5872f9, type: 3}
+    - {fileID: 21300000, guid: 22967adeb0baea344aa73c382b5872f9, type: 3}
+    - {fileID: 21300000, guid: 3520e462edef2ea41a1c3b4a56eb7866, type: 3}
+    - {fileID: 21300000, guid: 3520e462edef2ea41a1c3b4a56eb7866, type: 3}
+    - {fileID: 21300000, guid: 1024adf990ed4c645a45f674f9f1313f, type: 3}
+    - {fileID: 21300000, guid: 170c60fbb8945b249bb36d6c3c4e8514, type: 3}
+    - {fileID: 21300000, guid: 170c60fbb8945b249bb36d6c3c4e8514, type: 3}
+    - {fileID: 21300000, guid: c9889352de45cb848b716693e6ce9150, type: 3}
+    - {fileID: 21300000, guid: 5d6c89e0324de024c855f4ab7e7846b6, type: 3}
+    - {fileID: 21300000, guid: ec4c3c4d044c6b7438b8fbc65510babc, type: 3}
+    - {fileID: 21300000, guid: 69135347e8e8d0f4f807128899ebb4a6, type: 3}
+    - {fileID: 21300000, guid: 2abdc19f55a13dd448618d8f6cc49559, type: 3}
+    - {fileID: 21300000, guid: 65bc268cea3d23046a6ec320bf655d6a, type: 3}
+    - {fileID: 21300000, guid: 65bc268cea3d23046a6ec320bf655d6a, type: 3}
+    - {fileID: 21300000, guid: 65bc268cea3d23046a6ec320bf655d6a, type: 3}
+    - {fileID: 21300000, guid: 65bc268cea3d23046a6ec320bf655d6a, type: 3}
+    - {fileID: 21300000, guid: 711d85d8f3071724084b2b6e995826db, type: 3}
+    - {fileID: 21300000, guid: 5551e92ae85c3c74c90267711f41898e, type: 3}
+    - {fileID: 21300000, guid: fa0c69f173976cc4b9b0dfe1ed4f58e5, type: 3}
+    - {fileID: 21300000, guid: 0a66022f63c42cb4a8e6d6d9d740227a, type: 3}
+    - {fileID: 21300000, guid: b710fd4f8a1a2f6458c88c23c8c9ed1f, type: 3}
+    - {fileID: 21300000, guid: 37f83a999b159f44e8c4521aab385b2f, type: 3}
+    - {fileID: 21300000, guid: b2f7061cad92ce140ac1118cf9437538, type: 3}
+    - {fileID: 21300000, guid: efa9f97e28ab1224da4eed63298a9058, type: 3}
+    - {fileID: 21300000, guid: 71da071d0d11b9941b0add310fdd1d13, type: 3}
+    - {fileID: 21300000, guid: b0c1b193515520d459a406518f675817, type: 3}
+    - {fileID: 21300000, guid: 5692794a1bf347e4895d8abcdab74827, type: 3}
+  symbols:
+    m_Keys: []
+    m_Values: []
+  values:
+    m_Keys: []
+    m_Values: []

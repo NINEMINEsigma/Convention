@@ -1144,7 +1144,7 @@ class DynamicNode(Node):
                 IsInmappingSlot=IsInmappingSlot
             )
         return True
-    def delete_slot(self, name:str, IsInmappingSlot:bool=True) -> bool:
+    def remove_slot(self, name:str, IsInmappingSlot:bool=True) -> bool:
         if IsInmappingSlot:
             if name not in self.info.inmapping:
                 return False
@@ -1539,3 +1539,28 @@ class SelectorNodeInfo(StartNodeInfo):
     @override
     def Instantiate(self) -> Node:
         return SelectorNode(self)
+
+class ArrayCollectionNode(DynamicNode):
+    '''
+    数组收集节点, 属于动态节点, 用于收集数组
+    '''
+    def __init__(self, info:'ArrayCollectionNodeInfo') -> None:
+        super().__init__(info)
+
+    @override
+    async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
+        currentParameters = await self.GetParameters()
+        return list(currentParameters.values())
+
+class ArrayCollectionNodeInfo(DynamicNodeInfo):
+    '''
+    数组收集节点信息, 属于动态节点信息, 用于收集数组
+    '''
+
+    def __init__(self, **kwargs:Any) -> None:
+        super().__init__(**kwargs)
+
+    @override
+    def Instantiate(self) -> Node:
+        return ArrayCollectionNode(self)
+

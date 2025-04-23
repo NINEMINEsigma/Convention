@@ -145,7 +145,7 @@ def test_health(url:str) -> int:
     response = requests.get(f"{url}/health")
     return response.status_code
 
-# Prompt Layer - 提示词模板层
+# region Prompt Layer - 提示词模板层
 # 用于构建查询和响应的提示词模板
 # https://zhuanlan.zhihu.com/p/16350943831
 '''
@@ -188,9 +188,9 @@ def make_gpt_model_prompt_zh[T:BasePromptTemplate](cls:Typen[T]) -> T:
         "问题：{query_str}\n"
         "回答："
     )
-# End Layer
+# endregion
 
-# Query Engine Layer - 查询引擎层
+# region Query Engine Layer - 查询引擎层
 #https://docs.llamaindex.ai/en/stable/examples/query_engine/custom_query_engine/
 class AbsCustomQueryEngine(CustomQueryEngine,ABC):
     """自定义查询引擎的抽象基类"""
@@ -335,9 +335,9 @@ def make_query_engine_with_keywords(
     )
     return query_engine
 
-# End Layer
+# endregion
 
-# Index Layer And Reader Layer - 索引和读取器层
+# region Index Layer And Reader Layer - 索引和读取器层
 class VectorStoreHelper(any_class):
     """
     向量存储助手类
@@ -499,9 +499,9 @@ class IndexBuilder[Reader:BaseReader](left_value_reference[Reader]):
         reader_cls:     Type[Reader]    = SimpleDirectoryReader,
         **kwargs
         ):
-        if isinstance(data, Reader):
+        if isinstance(data, BaseReader):
             super().__init__(data)
-        elif isinstance(data, tool_file_or_str):
+        elif isinstance(data, (tool_file, str)):
             if WrapperFile(data).is_dir():
                 super().__init__(reader_cls(input_dir=UnwrapperFile2Str(data), **kwargs))
             else:
@@ -671,9 +671,9 @@ class IndexBuilder[Reader:BaseReader](left_value_reference[Reader]):
             raise
         kwargs["html_to_text"] = html_to_text
         return cls(SimpleWebPageReader(**kwargs))
-# End Layer
+# endregion
 
-# Embedding Layer - 嵌入层
+# region Embedding Layer - 嵌入层
 class CustomEmbedding(BaseEmbedding, any_class):
     """
     LlamaCPP嵌入类,用于生成文本嵌入向量
@@ -903,9 +903,9 @@ class CustomEmbedding(BaseEmbedding, any_class):
         except Exception as e:
             print(f"异步获取嵌入向量时出错: {str(e)},\n\n{data}")
             raise
-# End Layer
+# endregion
 
-# LLM Object Layer - 模型封装层
+# region LLM Object Layer - 模型封装层
 def make_system_message(content_or_blocks:str|List[TextBlock|ImageBlock|AudioBlock]) -> ChatMessage:
     if isinstance(content_or_blocks, str):
         return ChatMessage(role=MessageRole.SYSTEM, content=content_or_blocks)
@@ -1563,9 +1563,9 @@ class LLMObject(left_value_reference[LLM]):
         from llama_index.llms.openai        import OpenAI
         return cls(OpenAI(api_key=UnWrapper(api_key_file), **kwargs))
 
-# End Layer
+# endregion
 
-# Function Tool Layer - 函数工具层
+# region Function Tool Layer - 函数工具层
 def make_sync_func_tool(
     fn:             Optional[Callable[..., Any]]                = None,
     name:           Optional[str]                               = None,
@@ -1728,12 +1728,12 @@ def function_tool(
 def make_function_tool(func:Callable, *flags:Optional[Literal["async"]], **kwargs) -> FunctionTool:
     """
     将函数转换为FunctionTool工具
-    
+
     参数:
         func: 要转换的函数
         *flags: 可选标志,目前支持"async"表示异步函数
         **kwargs: 其他配置参数
-        
+
     返回:
         FunctionTool: 转换后的工具对象
     """
@@ -1743,7 +1743,7 @@ def make_function_tool(func:Callable, *flags:Optional[Literal["async"]], **kwarg
     }
     # 检查是否为异步函数
     is_async = "async" in flags
-    
+
     # 如果函数已经被@function_tool装饰过
     if func.__function_tool_status__:
         # 使用装饰器设置的配置
@@ -1756,7 +1756,7 @@ def make_function_tool(func:Callable, *flags:Optional[Literal["async"]], **kwarg
         }
         # 强制使用装饰器设置的异步标志
         is_async = func.__function_tool_async__
-        
+
         # 根据是否异步设置不同的配置
         if is_async:
             config["async_fn"] = func  # 异步函数
@@ -1766,17 +1766,17 @@ def make_function_tool(func:Callable, *flags:Optional[Literal["async"]], **kwarg
             config["fn"] = func  # 同步函数
             del config["async_fn"]
             config["async_callback"] = func.__function_tool_callback__  # 同步回调
-            
+
     # 更新额外配置
     config.update(kwargs)
-    
+
     # 创建并返回FunctionTool实例
     return FunctionTool.from_defaults(
         **config
     )
-# End Layer
+# endregion
 
-# Agent Layer - 代理层
+# region Agent Layer - 代理层
 class CustomAgentCore[_AgentRunner:AgentRunner](left_value_reference[_AgentRunner]):
     """
     基础代理类，用于管理代理相关的操作。
@@ -1819,7 +1819,7 @@ class ReActAgentCore(CustomAgentCore[ReActAgent]):
                 verbose=verbose,
                 **kwargs,
             ))
-    
+
     def chat(self, message:str, is_must_use_tool:bool = True, **kwargs:Any) -> ChatResponse:
         """聊天方法。
 
@@ -1839,7 +1839,7 @@ class ReActAgentCore(CustomAgentCore[ReActAgent]):
             "Answer: "
         else:
             context_str = f"{message}"
-        
+
         return self.ref_value.chat(
             context_str,
             **kwargs)
@@ -1851,7 +1851,7 @@ class ReActAgentCore(CustomAgentCore[ReActAgent]):
             is_must_use_tool: 是否必须使用工具。
             **kwargs: 其他参数。
         """
-        
+
         if is_must_use_tool:
             context_str = "Tools information is given you.\n"\
             "Work with tools and given the answer without prior knowledge, "\
@@ -1860,7 +1860,7 @@ class ReActAgentCore(CustomAgentCore[ReActAgent]):
             "Answer: "
         else:
             context_str = f"{message}"
-        
+
         return self.ref_value.achat(
             context_str,
             **kwargs)
@@ -1983,7 +1983,7 @@ class FunctionCallAgentCore(CustomAgentCore[FunctionCallingAgent]):
             )
         )
 
-# End Layer
+# endregion
 
 
 

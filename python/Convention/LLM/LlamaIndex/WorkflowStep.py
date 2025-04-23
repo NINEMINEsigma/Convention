@@ -2,6 +2,7 @@ from typing         import *
 from .Core          import *
 from ...Workflow    import *
 
+# region LLMLoader
 _Internal_WorkflowLLM:Dict[str, LLMObject] = {}
 def AddLLM(name: str, llm: LLMObject):
     global _Internal_WorkflowLLM
@@ -18,7 +19,6 @@ def ContainsLLM(name: str) -> bool:
 def GetAllLLMNames() -> List[str]:
     return list(_Internal_WorkflowLLM.keys())
 
-# region LLMLoader
 def LLMLoader(llm_name:str, url_or_path:Optional[str] = None):
     if ContainsLLM(llm_name):
         llmObject = GetLLM(llm_name)
@@ -188,5 +188,70 @@ _Chat = WorkflowActionWrapper(Chat.__name__, Chat, "聊天",
                               {"thinking": "str", "answer": "str"})
 # endregion
 
+# region KnowledgeDataBase
 
+class KnowledgeDataBase:
+    indexBuilder:       IndexBuilder
+    vectorStoreIndex:   IndexCore
+    keywordTableIndex:  IndexCore
+    summaryIndex:       IndexCore
+
+    def __init__(self, indexBuilder: IndexBuilder):
+        self.indexBuilder = indexBuilder
+        self.vectorStoreIndex = indexBuilder.make_vector_store_index()
+        self.keywordTableIndex = indexBuilder.make_keyword_table_index()
+        self.summaryIndex = indexBuilder.make_summary_index()
+
+_Internal_WorkflowKnowledgeDataBase:Dict[str, KnowledgeDataBase] = {}
+_Internal_KDBLoadingGuard: Dict[str, lock_guard] = {}
+'''
+key is the name of the knowledge base
+value is the path(or part of path) of the knowledge base
+'''
+def AddKDB(name: str,
+           indexBuilder: IndexBuilder|BaseReader|tool_file_or_str|Sequence[tool_file_or_str]
+           ):
+    global _Internal_WorkflowKnowledgeDataBase
+    if not isinstance(indexBuilder, IndexBuilder):
+        indexBuilder = IndexBuilder(indexBuilder)
+    _Internal_KDBLoadingGuard[name] = lock_guard(threading.Lock())
+    _Internal_WorkflowKnowledgeDataBase[name] = KnowledgeDataBase(indexBuilder)
+def RemoveKDB(name: str):
+    global _Internal_WorkflowKnowledgeDataBase
+    if name in _Internal_KDBLoadingGuard:
+        with _Internal_KDBLoadingGuard[name]:
+            _Internal_WorkflowKnowledgeDataBase.pop(name)
+def GetKDB(name: str) -> KnowledgeDataBase:
+    global _Internal_WorkflowKnowledgeDataBase
+    if name not in _Internal_KDBLoadingGuard:
+        return None
+    with _Internal_KDBLoadingGuard[name]:
+        return _Internal_WorkflowKnowledgeDataBase[name]
+def ContainsKDB(name: str) -> bool:
+    global _Internal_WorkflowKnowledgeDataBase
+    return name in _Internal_WorkflowKnowledgeDataBase
+def GetAllKDBNames() -> List[str]:
+    global _Internal_WorkflowKnowledgeDataBase
+    return list(_Internal_WorkflowKnowledgeDataBase.keys())
+
+def KnowledgeDataBaseLoader(
+    name: str,
+    indexBuilder: Optional[IndexBuilder|BaseReader|tool_file_or_str|Sequence[tool_file_or_str]] = None
+    ):
+    if not ContainsKDB(name):
+        AddKDB(name, indexBuilder)
+    kdb = GetKDB(name)
+    return {
+        "vectorStoreIndex": kdb.vectorStoreIndex,
+        "keywordTableIndex": kdb.keywordTableIndex,
+        "summaryIndex": kdb.summaryIndex
+    }
+_KnowledgeDataBaseLoader = WorkflowActionWrapper(KnowledgeDataBaseLoader.__name__, KnowledgeDataBaseLoader, "加载知识库",
+                                                {"name": "str", "indexBuilder": "Any"},
+                                                {
+                                                    "vectorStoreIndex": "VectorStoreIndex",
+                                                    "keywordTableIndex": "KeywordTableIndex",
+                                                    "summaryIndex": "SummaryIndex"
+                                                })
+# endregion
 
