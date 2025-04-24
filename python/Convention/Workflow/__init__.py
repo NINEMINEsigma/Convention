@@ -457,9 +457,10 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
     """
     节点
     """
+    _is_running: bool = False
     @property
     def IsRunning(self) -> bool:
-        return self._is_start and self._results is None
+        return self._is_running
 
     def __init__(self, info:NodeInfo) -> None:
         super().__init__(None)
@@ -575,6 +576,9 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
             else:
                 print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                     f"SetupFromInfo(info={info.SymbolName()}, title={info.title})")
+        
+        self._is_running = False
+        self._is_start = False
         self.ClearSlots()
         self.ref_value = info
         if _Internal_GetNodeID(self) != -1:
@@ -663,6 +667,7 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
         self._results = None
     @sealed
     async def RunStep(self) -> None:
+        self._is_running = True
         if self._results is not None:
             if GetInternalWorkflowDebug():
                 print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
@@ -693,6 +698,8 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
         except Exception as e:
             #self.Broadcast(WorkflowErrorEvent(error=e, from_=self), "OnStopEvent")
             raise
+        finally:
+            self._is_running = False
 
     @virtual
     async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
@@ -833,6 +840,7 @@ class ContextResult(BaseModel, any_class):
     results:    List[NodeResult] = Field(description="节点结果", default=[])
     progress:   float            = Field(description="进度", default=0.0)
     task_count: int              = Field(description="任务数量", default=0)
+    current_running_nodes: List[int] = Field(description="当前运行节点", default=[])
 
     @override
     def ToString(self) -> str:
@@ -943,6 +951,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
         return EasySave.Write(currentWorkflow, file)
 
     def LoadWorkflow(self, workflow_:tool_file_or_str|Workflow) -> Workflow:
+        self.StopWorkflow()
         workflow:Workflow = None
         if isinstance(workflow_, Workflow):
             self.ClearWorkflow()
@@ -1105,6 +1114,7 @@ class WorkflowManager(left_value_reference[Workflow], BaseBehavior):
                                                          }))
             elif node.IsRunning:
                 node_running_count += 1
+                result.current_running_nodes.append(index)
         result.progress = 1 - (node_running_count / len(self.workflow.Nodes))
         result.task_count = _Internal_Task_Count.load()
         import hashlib
@@ -1210,7 +1220,8 @@ class StepNode(Node):
     async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
         func = WorkflowActionWrapper.GetActionWrapper(self.info.funcname)
         if self._verbose:
-            print(f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> start func: {self.info.funcname}")
+            print_colorful(ConsoleFrontColor.YELLOW, 
+                           f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> start func: {self.info.funcname}")
         try:
             current_parameters = await self.GetParameters()
             coroutine_or_result = func(**current_parameters)
@@ -1220,19 +1231,26 @@ class StepNode(Node):
             else:
                 result = coroutine_or_result
             if self._verbose:
-                print(f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> "\
-                    f"end func: {self.info.funcname}, result: {ConsoleFrontColor.GREEN}{limit_str(result, 100)}{ConsoleFrontColor.YELLOW}")
+                print_colorful(ConsoleFrontColor.YELLOW, 
+                               f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> "\
+                    f"end func: {self.info.funcname}, result: {limit_str(result, 100)}{ConsoleFrontColor.YELLOW}")
             return result
         except Exception as e:
             if self._verbose:
-                print(f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> error in func: {self.info.funcname}, error: {e}")
+                print_colorful(ConsoleFrontColor.RED, 
+                               f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> error in func: {self.info.funcname}, error: {e}")
+            if self.info.default_result is not None:
+                return self.info.default_result
             raise
 
 class StepNodeInfo(NodeInfo):
     """
     步骤节点, 在工作流中触发
     """
-    funcname:action_label_type = Field(description="函数键名", default="unknown")
+    
+    funcname:       action_label_type   = Field(description="函数键名", default="unknown")
+    default_result: context_value_type  = Field(description="当函数执行失败时, 返回的默认结果, 不指定时异常将被抛出", default=None)
+    
     @override
     def Instantiate(self) -> Node:
         return StepNode(self)

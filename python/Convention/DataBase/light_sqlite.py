@@ -2,20 +2,20 @@ from typing                         import *
 from abc                            import *
 import sqlite3                      as     base
 
-from ..DataBase.AbsInterface    import *
+from .AbsInterface    import *
 
 memory_db:str = ":memory:"
 
 class light_core(abs_db):
     def __init__(self, name:str=memory_db):
-        self.connect_to(name)
         self.connection:  base.Connection    = None
+        self.connect_to(name)
     def __del__(self):
         self.close()
 
     @property
     def name(self):
-        return self.__my_database_name
+        return self._my_database_name
 
     def insert(self, table_name:str, data:dict) -> base.Cursor:
         """插入数据"""
@@ -27,30 +27,64 @@ class light_core(abs_db):
     def update(self, table_name:str, data:dict) -> base.Cursor:
         """更新数据"""
         cursor = self.connection.cursor()
-        cursor.execute(f"UPDATE {table_name} SET {', '.join([f"{key} = '{data[key]}'" for key in data.keys()])})")
+        if data:
+            cursor.execute(f"UPDATE {table_name} SET {', '.join([f"{key} = '{data[key]}'" for key in data.keys()])}")
+        else:
+            raise ValueError("更新数据时data字典不能为空")
         self.connection.commit()
         return cursor
 
     def delete(self, table_name:str, data:dict) -> base.Cursor:
         """删除数据"""
         cursor = self.connection.cursor()
-        cursor.execute(f"DELETE FROM {table_name} WHERE {', '.join([f"{key} = '{data[key]}'" for key in data.keys()])})")
+        if data:
+            cursor.execute(f"DELETE FROM {table_name} WHERE {' AND '.join([f"{key} = '{data[key]}'" for key in data.keys()])}")
+        else:
+            raise ValueError("删除数据时data字典不能为空")
         self.connection.commit()
         return cursor
 
     def select(self, table_name:str, data:dict) -> base.Cursor:
         """查询数据"""
         cursor = self.connection.cursor()
-        cursor.execute(f"SELECT * FROM {table_name} WHERE {', '.join([f"{key} = '{data[key]}'" for key in data.keys()])})")
+        if data:
+            cursor.execute(f"SELECT * FROM {table_name} WHERE {' AND '.join([f"{key} = '{data[key]}'" for key in data.keys()])}")
+        else:
+            cursor.execute(f"SELECT * FROM {table_name}")
         return cursor
+
+    def contains(self, table_name:str, data:dict) -> bool:
+        """检查数据是否存在"""
+        cursor = self.connection.cursor()
+        if data:
+            cursor.execute(f"SELECT * FROM {table_name} WHERE {' AND '.join([f"{key} = '{data[key]}'" for key in data.keys()])}")
+        else:
+            cursor.execute(f"SELECT * FROM {table_name} LIMIT 1")
+        return cursor.fetchone() is not None
+    
+    def contains_key(self, table_name:str, key_column:str, key_value) -> bool:
+        """检查主键是否存在
+        
+        Args:
+            table_name (str): 表名
+            key_column (str): 主键列名
+            key_value: 主键值
+            
+        Returns:
+            bool: 如果主键存在返回True，否则返回False
+        """
+        cursor = self.connection.cursor()
+        # 使用参数化查询以防止SQL注入
+        cursor.execute(f"SELECT 1 FROM {table_name} WHERE {key_column} = ?", (key_value,))
+        return cursor.fetchone() is not None
 
     def connect(self):
         """连接到数据库"""
-        self.connection = base.connect(self.__my_database_name)
+        self.connection = base.connect(self._my_database_name)
         self.connection.row_factory = base.Row
         return self
     def connect_to(self, name:str=memory_db):
-        self.__my_database_name = name
+        self._my_database_name = name
         self.connect()
         return self
     def close(self):
@@ -131,11 +165,16 @@ class light_core(abs_db):
         query = f"CREATE TABLE IF NOT EXISTS {table_name} ({columns_str})"
         self.execute(query)
         return self
+    
+    def contains_table(self, table_name:str) -> bool:
+        """检查表是否存在"""
+        cursor = self.connection.cursor()
+        cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'")
+        return cursor.fetchone() is not None
 
-def internal_exmple():
+def internal_exmple(db_name:str = "example.db"):
     # 示例使用
-    db = light_core("example.db")  # 指定数据库文件名
-    db.connect()
+    db = light_core(db_name)  # 指定数据库文件名
 
     # 创建表
     db.create_table("users", {
@@ -156,7 +195,7 @@ def internal_exmple():
     db.close()
 
     # 重新连接到同一个数据库文件
-    db = light_core("example.db")
+    db = light_core(db_name)
     db.connect()
 
     # 再次查询数据

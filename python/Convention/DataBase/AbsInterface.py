@@ -20,6 +20,9 @@ class abs_db(Callable[[str, Any], Any], ABC):
     @abstractmethod
     def execute(self, query:str, params=None):
         return None
+    
+    def __call__(self, query:str, params=None):
+        return self.execute(query, params)
 
 class query:
     class command:

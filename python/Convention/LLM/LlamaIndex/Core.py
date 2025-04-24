@@ -1,71 +1,86 @@
-from ...Internal                                import *
-import                                                 json
-from ...Str.Core                                import UnWrapper
-from ...File.Core                               import (
-    tool_file_or_str                            as     tool_file_or_str,
-    UnWrapper                                   as     UnwrapperFile2Str,
-    tool_file                                   as     tool_file,
-    Wrapper                                     as     WrapperFile
+from ...Internal                                            import *
+import                                                      json
+from ...Str.Core                                            import UnWrapper
+from ...File.Core                                           import (
+    tool_file_or_str                                        as     tool_file_or_str,
+    UnWrapper                                               as     UnwrapperFile2Str,
+    tool_file                                               as     tool_file,
+    Wrapper                                                 as     WrapperFile
     )
-from pydantic                                   import Field, BaseModel
-import requests                                 as     requests
-import asyncio                                  as     asyncio
-import aiohttp                                  as     aiohttp
-from llama_index.core.constants                 import *
-from llama_index.core                           import (
-    SimpleDirectoryReader                       as     SimpleDirectoryReader,
-    Settings                                    as     LlamaIndexSettings,
-    VectorStoreIndex                            as     VectorStoreIndex,
-    KeywordTableIndex                           as     KeywordTableIndex,
-    SummaryIndex                                as     SummaryIndex,
-    load_index_from_storage                     as     load_index_from_storage,
-    get_response_synthesizer                    as     get_response_synthesizer,
+from pydantic                                               import Field, BaseModel
+import requests                                             as     requests
+import asyncio                                              as     asyncio
+import aiohttp                                              as     aiohttp
+from llama_index.core.constants                             import *
+from llama_index.core                                       import (
+    SimpleDirectoryReader                                   as     SimpleDirectoryReader,
+    Settings                                                as     LlamaIndexSettings,
+    VectorStoreIndex                                        as     VectorStoreIndex,
+    KeywordTableIndex                                       as     KeywordTableIndex,
+    SummaryIndex                                            as     SummaryIndex,
+    TreeIndex                                               as     TreeIndex,
+    KnowledgeGraphIndex                                     as     KnowledgeGraphIndex,
+    load_index_from_storage                                 as     load_index_from_storage,
+    get_response_synthesizer                                as     get_response_synthesizer,
     )
-from llama_index.core.node_parser               import SentenceSplitter
-from llama_index.core.llms                      import (
-    LLM                                         as     LLM,
-    CustomLLM                                   as     CustomLLM,
-    ChatMessage                                 as     ChatMessage,
-    CompletionResponse                          as     CompletionResponse,
-    ChatResponse                                as     ChatResponse,
-    MessageRole                                 as     MessageRole,
-    TextBlock                                   as     TextBlock,
-    ImageBlock                                  as     ImageBlock,
-    AudioBlock                                  as     AudioBlock,
+from llama_index.core.node_parser                           import SentenceSplitter
+from llama_index.core.llms                                  import (
+    LLM                                                     as     LLM,
+    CustomLLM                                               as     CustomLLM,
+    ChatMessage                                             as     ChatMessage,
+    CompletionResponse                                      as     CompletionResponse,
+    ChatResponse                                            as     ChatResponse,
+    MessageRole                                             as     MessageRole,
+    TextBlock                                               as     TextBlock,
+    ImageBlock                                              as     ImageBlock,
+    AudioBlock                                              as     AudioBlock,
     )
-from llama_index.core.llms.function_calling     import FunctionCallingLLM
-from llama_index.core.embeddings                import BaseEmbedding
-from llama_index.core.schema                    import (
-    Document                                    as     Document,
-    TransformComponent                          as     TransformComponent,
-    Node                                        as     Node,
-    BaseNode                                    as     BaseNode,
-    TextNode                                    as     TextNode,
-    ImageNode                                   as     ImageNode,
+from llama_index.core.llms.function_calling                 import FunctionCallingLLM
+from llama_index.core.embeddings                            import BaseEmbedding
+from llama_index.core.schema                                import (
+    Document                                                as     Document,
+    TransformComponent                                      as     TransformComponent,
+    Node                                                    as     Node,
+    BaseNode                                                as     BaseNode,
+    TextNode                                                as     TextNode,
+    ImageNode                                               as     ImageNode,
     )
-from llama_index.core.prompts                   import BasePromptTemplate
-from llama_index.core.storage                   import StorageContext
-from llama_index.core.callbacks                 import CallbackManager
-from llama_index.core.query_engine              import CustomQueryEngine
-from llama_index.core.retrievers                import BaseRetriever, VectorIndexRetriever
-from llama_index.core.response_synthesizers     import BaseSynthesizer
-from llama_index.core.agent                     import (
-    FunctionCallingAgent                        as     FunctionCallingAgent,
-    ReActAgent                                  as     ReActAgent,
-    StructuredPlannerAgent                      as     StructuredPlannerAgent,
+from llama_index.core.prompts                               import BasePromptTemplate
+from llama_index.core.storage                               import StorageContext
+from llama_index.core.callbacks                             import CallbackManager
+from llama_index.core.query_engine                          import (
+    CustomQueryEngine                                       as     CustomQueryEngine,
+    RouterQueryEngine                                       as     RouterQueryEngine,
+    SubQuestionQueryEngine                                  as     SubQuestionQueryEngine
     )
-from llama_index.core.tools                     import FunctionTool, ToolMetadata, BaseTool
-from llama_index.core.types                     import TokenGen
-from llama_index.core.chat_engine.types         import AgentChatResponse
-from llama_index.core.memory                    import ChatMemoryBuffer, BaseMemory
+from llama_index.core.retrievers                            import BaseRetriever, VectorIndexRetriever
+from llama_index.core.response_synthesizers                 import BaseSynthesizer
+from llama_index.core.agent                                 import (
+    FunctionCallingAgent                                    as     FunctionCallingAgent,
+    ReActAgent                                              as     ReActAgent,
+    StructuredPlannerAgent                                  as     StructuredPlannerAgent,
+    )
+from llama_index.core.tools                                 import (
+    FunctionTool                                            as     FunctionTool,
+    ToolMetadata                                            as     ToolMetadata,
+    BaseTool                                                as     BaseTool,
+    QueryEngineTool                                         as     QueryEngineTool,
+    )
+from llama_index.core.memory                                import ChatMemoryBuffer, BaseMemory
+from llama_index.core.agent.runner.base                     import AgentRunner
+from llama_index.core.response_synthesizers.tree_summarize  import TreeSummarize
 
-from llama_index.core.indices.base              import BaseIndex
-from llama_index.core.readers.base              import BaseReader
-from llama_index.core.base.base_query_engine    import BaseQueryEngine
-from llama_index.core.base.response.schema      import RESPONSE_TYPE
-from llama_index.core.base.llms.types           import LLMMetadata
-from llama_index.core.vector_stores.types       import MetadataFilters, VectorStoreQueryMode
-from llama_index.core.agent.runner.base         import AgentRunner
+from llama_index.core.types                                 import TokenGen
+from llama_index.core.chat_engine.types                     import AgentChatResponse
+from llama_index.core.question_gen.types                    import BaseQuestionGenerator
+from llama_index.core.vector_stores.types                   import MetadataFilters, VectorStoreQueryMode
+
+from llama_index.core.indices.base                          import BaseIndex
+from llama_index.core.readers.base                          import BaseReader
+from llama_index.core.base.base_query_engine                import BaseQueryEngine
+from llama_index.core.base.response.schema                  import RESPONSE_TYPE
+from llama_index.core.base.base_selector                    import BaseSelector
+from llama_index.core.base.llms.types                       import LLMMetadata
 
 # https://zhuanlan.zhihu.com/p/16349452850
 # Prompt -- Reader -- Index -- Retriever -- Query Engine -- Agent --Workflow
@@ -343,21 +358,72 @@ class VectorStoreHelper(any_class):
     向量存储助手类
     """
     @classmethod
-    def make_chroma(cls,
-        path:str,
-        ) -> BaseIndex:
-        # 需要先 pip install llama-index-vector-stores-chroma
+    def make_chroma(cls, path:tool_file_or_str, name:str = "quickstart") -> BaseIndex:
+        '''
+        创建Chroma向量存储
+        
+        参数:
+            path:     向量存储路径, 创建持久化客户端(保存到磁盘)
+            name:     向量存储名称
+
+        返回:
+            向量存储实例
+        
+Simple:
+---
+from Convention.LLM.LlamaIndex.Core import (
+    IndexBuilder,
+    VectorStoreHelper,
+    CustomEmbedding,
+    make_retriever,
+    make_query_engine_with_keywords
+)
+
+# 1. 设置嵌入模型
+CustomEmbedding(url="http://localhost:8080").set_as_global_embedding()
+
+# 2. 创建向量存储
+storage_context = VectorStoreHelper.make_chroma(path="./chroma_db", name="quickstart")
+
+# 3. 加载文档并构建索引
+vector_index = IndexBuilder("./documents").make_vector_store_index(
+    storage_context=storage_context,
+    show_progress=True
+)
+
+# 4. 保存索引
+vector_index.save("./saved_index")
+
+# 5. 创建检索器
+retriever = make_retriever(
+    index=vector_index.index,
+    similarity_top_k=5
+)
+
+# 6. 创建查询引擎
+query_engine = make_query_engine_with_keywords(
+    retriever=retriever,
+    lang="zh"
+)
+
+# 7. 执行查询
+response = query_engine.query("我的问题是什么?")
+print(response)
+        
+        '''
         try:
             import chromadb
-            from llama_index.core.vector_stores.chroma import ChromaVectorStore
+            from llama_index.vector_stores.chroma import ChromaVectorStore
         except ImportError:
             InternalImportingThrow("LlamaIndex", ["llama-index-vector-stores-chroma", "chromadb"])
             raise
+        
+        path = UnWrapper(path)
         # Initialize client, setting path to save data
         db = chromadb.PersistentClient(path=path)
 
         # Create collection
-        Chroma_collection = db.get_or_create_collection("quickstart")
+        Chroma_collection = db.get_or_create_collection(name)
 
         # Assign chroma as the vector_store to the context
         vector_store = ChromaVectorStore(chroma_collection=Chroma_collection)
@@ -609,7 +675,57 @@ class IndexBuilder[Reader:BaseReader](left_value_reference[Reader]):
             transformations=transformations,
             **kwargs,
             ))
+    def make_tree_index(
+        self,
+        storage_context:    Optional[StorageContext]            = None,
+        show_progress:      bool                                = False,
+        callback_manager:   Optional[CallbackManager]           = None,
+        transformations:    Optional[List[TransformComponent]]  = None,
+        **kwargs,
+        ) -> IndexCore[TreeIndex]:
+        '''
+        构建树索引
 
+        参数:
+            storage_context: 存储上下文
+            show_progress: 是否显示进度
+            callback_manager: 回调管理器
+            transformations: 文档转换组件列表
+        '''
+        return IndexCore[TreeIndex](TreeIndex.from_documents(
+            self.documents,
+            storage_context=storage_context,
+            show_progress=show_progress,
+            callback_manager=callback_manager,
+            transformations=transformations,
+            **kwargs,
+            ))
+    def make_knowledge_graph_index(
+        self,
+        storage_context:    Optional[StorageContext]            = None,
+        show_progress:      bool                                = False,
+        callback_manager:   Optional[CallbackManager]           = None,
+        transformations:    Optional[List[TransformComponent]]  = None,
+        **kwargs,
+        ) -> IndexCore[KnowledgeGraphIndex]:
+        '''
+        构建知识图谱索引
+
+        参数:
+            storage_context: 存储上下文
+            show_progress: 是否显示进度
+            callback_manager: 回调管理器
+            transformations: 文档转换组件列表
+        '''
+        return IndexCore[KnowledgeGraphIndex](KnowledgeGraphIndex.from_documents(
+            self.documents,
+            storage_context=storage_context,
+            show_progress=show_progress,
+            callback_manager=callback_manager,
+            transformations=transformations,
+            **kwargs,
+            ))
+        
     @classmethod
     def make_vector_store_index_with_split_nodes(
         cls,
@@ -1562,6 +1678,8 @@ class LLMObject(left_value_reference[LLM]):
 
 # endregion
 
+# region Tools Layer - 工具层
+
 # region Function Tool Layer - 函数工具层
 def make_sync_func_tool(
     fn:             Optional[Callable[..., Any]]                = None,
@@ -1771,6 +1889,56 @@ def make_function_tool(func:Callable, *flags:Optional[Literal["async"]], **kwarg
     return FunctionTool.from_defaults(
         **config
     )
+# endregion
+
+# region Query Engine Tool Layer - 查询引擎工具层
+def make_query_engine_tool(
+    data:                   IndexCore|BaseQueryEngine,
+    name:                   Optional[str]               = None,
+    description:            Optional[str]               = None,
+    return_direct:          bool                        = False,
+    resolve_input_errors:   bool                        = True,
+    ) -> QueryEngineTool:
+    if isinstance(data, IndexCore):
+        data = data.query_engine
+    return QueryEngineTool.from_defaults(query_engine=data,
+                                         name=name,
+                                         description=description,
+                                         return_direct=return_direct,
+                                         resolve_input_errors=resolve_input_errors)
+def make_router_query_engine_tool(
+        query_engine_tools:     Sequence[QueryEngineTool],
+        llm:                    Optional[LLM]               = None,
+        selector:               Optional[BaseSelector]      = None,
+        summarizer:             Optional[TreeSummarize]     = None,
+        select_multi:           bool = False,
+        **kwargs: Any
+        ) -> RouterQueryEngine:
+    return RouterQueryEngine.from_defaults(query_engine_tools=query_engine_tools,
+                                           llm=llm,
+                                           selector=selector,
+                                           summarizer=summarizer,
+                                           select_multi=select_multi,
+                                           **kwargs)
+def make_sub_question_query_engine_tool(
+        query_engine_tools:     Sequence[QueryEngineTool],
+        llm:                    Optional[LLM]                   = None,
+        question_gen:           Optional[BaseQuestionGenerator] = None,
+        response_synthesizer:   Optional[BaseSynthesizer]       = None,
+        verbose:                bool                            = True,
+        use_async:              bool                            = True,
+    ) -> SubQuestionQueryEngine:
+    '''
+    适合处理复杂查询，可以将其拆分为子问题并在不同索引上执行
+    '''
+    return SubQuestionQueryEngine.from_defaults(query_engine_tools=query_engine_tools,
+                                               llm=llm,
+                                               question_gen=question_gen,
+                                               response_synthesizer=response_synthesizer,
+                                               verbose=verbose,
+                                               use_async=use_async)
+# endregion
+
 # endregion
 
 # region Agent Layer - 代理层

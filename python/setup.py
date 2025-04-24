@@ -19,4 +19,5 @@ setup(
     install_requires=[
         # 在这里添加依赖包
     ],
+    exclude_package_data={"": ["*.meta"]},
 )
