@@ -191,16 +191,18 @@ _Chat = WorkflowActionWrapper(Chat.__name__, Chat, "聊天",
 # region KnowledgeDataBase
 
 class KnowledgeDataBase:
-    indexBuilder:       IndexBuilder
     vectorStoreIndex:   IndexCore
     keywordTableIndex:  IndexCore
     summaryIndex:       IndexCore
 
-    def __init__(self, indexBuilder: IndexBuilder):
-        self.indexBuilder = indexBuilder
-        self.vectorStoreIndex = indexBuilder.make_vector_store_index()
-        self.keywordTableIndex = indexBuilder.make_keyword_table_index()
-        self.summaryIndex = indexBuilder.make_summary_index()
+    def __init__(self, 
+                 vectorStoreIndex:  IndexCore,
+                 keywordTableIndex: IndexCore,
+                 summaryIndex:      IndexCore
+                 ) -> None:
+        self.vectorStoreIndex = vectorStoreIndex
+        self.keywordTableIndex = keywordTableIndex
+        self.summaryIndex = summaryIndex
 
 _Internal_WorkflowKnowledgeDataBase:Dict[str, KnowledgeDataBase] = {}
 _Internal_KDBLoadingGuard: Dict[str, lock_guard] = {}
@@ -209,13 +211,38 @@ key is the name of the knowledge base
 value is the path(or part of path) of the knowledge base
 '''
 def AddKDB(name: str,
-           indexBuilder: IndexBuilder|BaseReader|tool_file_or_str|Sequence[tool_file_or_str]
+           indexBuilder:        Optional[IndexBuilder|BaseReader|tool_file_or_str|Sequence[tool_file_or_str]],
+           *,
+           is_load_from_cache:  bool = False,
+           cache_dir:           Optional[tool_file_or_str] = None
            ):
     global _Internal_WorkflowKnowledgeDataBase
-    if not isinstance(indexBuilder, IndexBuilder):
-        indexBuilder = IndexBuilder(indexBuilder)
-    _Internal_KDBLoadingGuard[name] = lock_guard(threading.Lock())
-    _Internal_WorkflowKnowledgeDataBase[name] = KnowledgeDataBase(indexBuilder)
+    if is_load_from_cache:
+        cache_dir = Wrapper2File(cache_dir)
+        if cache_dir.exists() == False:
+            raise ValueError(f"缓存目录不存在: {cache_dir}")
+        vecDir = cache_dir|"vector_store_index"
+        vecDir.must_exists_path()
+        keywordDir = cache_dir|"keyword_table_index"
+        keywordDir.must_exists_path()
+        summaryDir = cache_dir|"summary_index"
+        summaryDir.must_exists_path()
+        _Internal_WorkflowKnowledgeDataBase[name] = KnowledgeDataBase(IndexCore((vecDir, "vector_store_index")),
+                                                                      IndexCore((keywordDir, "keyword_table_index")),
+                                                                      IndexCore((summaryDir, "summary_index")))
+    else:
+        if not isinstance(indexBuilder, IndexBuilder):
+            indexBuilder = IndexBuilder(indexBuilder)
+        _Internal_KDBLoadingGuard[name] = lock_guard(threading.Lock())
+        kdb = _Internal_WorkflowKnowledgeDataBase[name] = KnowledgeDataBase(indexBuilder.make_vector_store_index(),
+                                                                      indexBuilder.make_keyword_table_index(),
+                                                                      indexBuilder.make_summary_index())
+        if cache_dir is not None:
+            cache_dir = Wrapper2File(cache_dir)
+            cache_dir.must_exists_path()
+            kdb.vectorStoreIndex.save(cache_dir|"vector_store_index")
+            kdb.keywordTableIndex.save(cache_dir|"keyword_table_index")
+            kdb.summaryIndex.save(cache_dir|"summary_index")
 def RemoveKDB(name: str):
     global _Internal_WorkflowKnowledgeDataBase
     if name in _Internal_KDBLoadingGuard:

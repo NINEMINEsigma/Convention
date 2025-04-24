@@ -389,11 +389,8 @@ class IndexCore[IndexType:BaseIndex](left_value_reference[IndexType]):
     """
     def __init__(
         self,
-        index:      Union[
-            IndexType,
-            Tuple[StorageContext|tool_file_or_str, str]
-        ],
-        ):
+        index: IndexType|Tuple[StorageContext|tool_file_or_str, str],
+        ) -> None:
         if isinstance(index, BaseIndex):
             super().__init__(index)
         elif isinstance(index, tuple) and len(index) == 2:

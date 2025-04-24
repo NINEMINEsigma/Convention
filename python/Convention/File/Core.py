@@ -173,6 +173,34 @@ class tool_file(any_class):
         temp = self.__or__(other)
         self.__file_path = temp.get_path()
 
+    def __eq__(self, other) -> bool:
+        """
+        判断文件路径是否相等
+        注意字符串可能不同，因为文件夹路径后缀的斜线可能被忽略
+        
+        Args:
+            other: 另一个文件对象或路径字符串
+            
+        Returns:
+            是否相等
+        """
+        if other is None:
+            return False
+        
+        # 获取比较对象的路径
+        other_path = other.get_path() if isinstance(other, tool_file) else str(other)
+        self_path = self.__file_path
+        
+        # 标准化路径，移除末尾的斜线
+        if self_path.endswith('/') or self_path.endswith('\\'):
+            self_path = self_path[:-1]
+        if other_path.endswith('/') or other_path.endswith('\\'):
+            other_path = other_path[:-1]
+            
+        # 使用系统的路径规范化函数进行比较
+        return os.path.normpath(self_path) == os.path.normpath(other_path)
+        
+
     def to_path(self):
         return Path(self.__file_path)
     def __Path__(self):
