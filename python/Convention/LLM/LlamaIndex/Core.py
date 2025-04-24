@@ -361,14 +361,14 @@ class VectorStoreHelper(any_class):
     def make_chroma(cls, path:tool_file_or_str, name:str = "quickstart") -> BaseIndex:
         '''
         创建Chroma向量存储
-        
+
         参数:
             path:     向量存储路径, 创建持久化客户端(保存到磁盘)
             name:     向量存储名称
 
         返回:
             向量存储实例
-        
+
 Simple:
 ---
 from Convention.LLM.LlamaIndex.Core import (
@@ -409,7 +409,7 @@ query_engine = make_query_engine_with_keywords(
 # 7. 执行查询
 response = query_engine.query("我的问题是什么?")
 print(response)
-        
+
         '''
         try:
             import chromadb
@@ -417,7 +417,7 @@ print(response)
         except ImportError:
             InternalImportingThrow("LlamaIndex", ["llama-index-vector-stores-chroma", "chromadb"])
             raise
-        
+
         path = UnWrapper(path)
         # Initialize client, setting path to save data
         db = chromadb.PersistentClient(path=path)
@@ -725,7 +725,7 @@ class IndexBuilder[Reader:BaseReader](left_value_reference[Reader]):
             transformations=transformations,
             **kwargs,
             ))
-        
+
     @classmethod
     def make_vector_store_index_with_split_nodes(
         cls,
@@ -803,7 +803,7 @@ class CustomEmbedding(BaseEmbedding, any_class):
         description="LlamaCPP服务的基础URL。",
     )
     timeout:    float   = Field(
-        default=60.0,
+        default=300.0,
         description="请求超时时间(秒)。",
     )
 
@@ -816,7 +816,7 @@ class CustomEmbedding(BaseEmbedding, any_class):
     def __init__(
         self,
         url: str = "http://127.0.0.1:8080",
-        timeout: float = 60.0,
+        timeout: float = 300.0,
         **kwargs: Any,
     ) -> None:
         """
@@ -1053,7 +1053,7 @@ class HttpLlamaCPP(CustomLLM, any_class):
             temperature=0.1,
             max_new_tokens=256,
             context_window=4096,
-            timeout=60.0
+            timeout=300.0
         )
 
         response = llm.complete("你好,请介绍一下自己")
@@ -1065,7 +1065,7 @@ class HttpLlamaCPP(CustomLLM, any_class):
         description="远程LlamaCPP服务器的URL。"
     )
     timeout: float = Field(
-        default=60.0,
+        default=300.0,
         description="请求超时时间(秒)。"
     )
     headers: Dict[str, str] = Field(
@@ -1080,7 +1080,7 @@ class HttpLlamaCPP(CustomLLM, any_class):
     def __init__(
         self,
         model_url:          str,
-        timeout:            float = 60.0,
+        timeout:            float = 300.0,
         headers:            Optional[Dict[str, str]] = None,
         generate_kwargs:    Optional[Dict[str, Any]] = None,
         **kwargs: Any,

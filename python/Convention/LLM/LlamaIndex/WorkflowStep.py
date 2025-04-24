@@ -1,6 +1,7 @@
 from typing         import *
 from .Core          import *
 from ...Workflow    import *
+from ...Workflow    import TextOperator
 
 # region LLMLoader
 _Internal_WorkflowLLM:Dict[str, LLMObject] = {}
@@ -81,35 +82,35 @@ _MakeKeywordQueryEngine = WorkflowActionWrapper(MakeKeywordQueryEngine.__name__,
 def MakeRetriever(
         index:                      VectorStoreIndex,
         similarity_top_k:           int                         = DEFAULT_SIMILARITY_TOP_K,
-        vector_store_query_mode:    VectorStoreQueryMode        = VectorStoreQueryMode.DEFAULT,
-        filters:                    Optional[MetadataFilters]   = None,
+        #vector_store_query_mode:    VectorStoreQueryMode        = VectorStoreQueryMode.DEFAULT,
+        #filters:                    Optional[MetadataFilters]   = None,
         alpha:                      Optional[float]             = None,
         sparse_top_k:               Optional[int]               = None,
         hybrid_top_k:               Optional[int]               = None,
-        embed_model:                Optional[BaseEmbedding]     = None,
+        #embed_model:                Optional[BaseEmbedding]     = None,
         ):
     return {
         "result": make_retriever(
             index= index,
             similarity_top_k= similarity_top_k,
-            vector_store_query_mode= vector_store_query_mode,
-            filters= filters,
+            #vector_store_query_mode= vector_store_query_mode,
+            #filters= filters,
             alpha= alpha,
             sparse_top_k= sparse_top_k,
             hybrid_top_k= hybrid_top_k,
-            embed_model= embed_model
+            #embed_model= embed_model
         )
     }
 _MakeRetriever = WorkflowActionWrapper(MakeRetriever.__name__, MakeRetriever, "创建Retriever",
                                         {
                                             "index": "VectorStoreIndex",
                                             "similarity_top_k": "int",
-                                            "vector_store_query_mode": "VectorStoreQueryMode",
-                                            "filters": "MetadataFilters",
+                                            #"vector_store_query_mode": "VectorStoreQueryMode",
+                                            #"filters": "MetadataFilters",
                                             "alpha": "float",
                                             "sparse_top_k": "int",
                                             "hybrid_top_k": "int",
-                                            "embed_model": "BaseEmbedding"
+                                            #"embed_model": "BaseEmbedding"
                                         },
                                         {"result": "VectorIndexRetriever"})
 # endregion
@@ -197,7 +198,7 @@ class KnowledgeDataBase:
     treeIndex:          IndexCore
     knowledgeGraphIndex:IndexCore
 
-    def __init__(self, 
+    def __init__(self,
                  vectorStoreIndex:  IndexCore,
                  keywordTableIndex: IndexCore,
                  summaryIndex:      IndexCore,
@@ -286,10 +287,10 @@ def GetAllKDBNames() -> List[str]:
 
 def KnowledgeDataBaseLoader(
     name: str,
-    indexBuilder: Optional[IndexBuilder|BaseReader|tool_file_or_str|Sequence[tool_file_or_str]] = None
+    data: Optional[IndexBuilder|BaseReader|tool_file_or_str|Sequence[tool_file_or_str]] = None
     ):
     if not ContainsKDB(name):
-        AddKDB(name, indexBuilder)
+        AddKDB(name, data)
     kdb = GetKDB(name)
     return {
         "vectorStoreIndex": kdb.vectorStoreIndex,
@@ -299,7 +300,7 @@ def KnowledgeDataBaseLoader(
         "knowledgeGraphIndex": kdb.knowledgeGraphIndex
     }
 _KnowledgeDataBaseLoader = WorkflowActionWrapper(KnowledgeDataBaseLoader.__name__, KnowledgeDataBaseLoader, "加载知识库",
-                                                {"name": "str", "indexBuilder": "Any"},
+                                                {"name": "str", "data": "Any"},
                                                 {
                                                     "vectorStoreIndex": "IndexCore",
                                                     "keywordTableIndex": "IndexCore",
@@ -337,4 +338,3 @@ _MakeSubQuestionQueryEngineTool = WorkflowActionWrapper(MakeSubQuestionQueryEngi
                                                         {"query_engine_tools": "Array", "llm": "Any"},
                                                         {"result": "BaseTool"})
 # endregion
-

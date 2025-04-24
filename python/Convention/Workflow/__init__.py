@@ -576,7 +576,7 @@ class Node(left_value_reference[NodeInfo], BaseBehavior):
             else:
                 print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                     f"SetupFromInfo(info={info.SymbolName()}, title={info.title})")
-        
+
         self._is_running = False
         self._is_start = False
         self.ClearSlots()
@@ -721,6 +721,7 @@ class FunctionModel(BaseModel, any_class):
     description:    Optional[str]   = Field(description="函数描述")
     parameters:     Dict[str, str]  = Field(description="函数参数")
     returns:        Dict[str, str]  = Field(description="函数返回值")
+    module:         Optional[str]   = Field(description="函数所属模块")
 
 class Workflow(BaseModel, any_class):
     """
@@ -729,7 +730,6 @@ class Workflow(BaseModel, any_class):
     Datas:        List[NodeInfo] = Field(description="节点信息", default=[])
     Nodes:        List[Node]     = Field(description="节点, 此变量需要手动同步, nodeID的懒加载目标",
                                          default=[], exclude=True)
-    Functions:    List[FunctionModel] = Field(description="函数模型", default=[])
 
     @classmethod
     def CreateTemplate(cls, one_end:Optional['EndNodeInfo']) -> Self:
@@ -765,6 +765,8 @@ class WorkflowActionWrapper(left_value_reference[Callable], invoke_callable):
         description:    Optional[str]               = None,
         parameters:     Optional[Dict[str, str]]    = None,
         returns:        Optional[Dict[str, str]]    = None,
+        *,
+        module:         Optional[str]               = None,
         ):
         super().__init__(action)
         self.name = name
@@ -774,12 +776,15 @@ class WorkflowActionWrapper(left_value_reference[Callable], invoke_callable):
                 parameters = {param.ParameterName: str(param.ParameterType) for param in methodInfo.Parameters}
             if returns is None:
                 returns = {"result": str(methodInfo.ReturnType)}
+        if module is None:
+            module = action.__module__
         if parameters is not None and returns is not None:
             self.functionModel = FunctionModel(
                 name=name,
                 description=description or action.__doc__ or "",
                 parameters=parameters,
-                returns=returns
+                returns=returns,
+                module=module
             )
         if name in __all__workflow_action_wrappers__:
             if GetInternalWorkflowDebug():
@@ -1220,7 +1225,7 @@ class StepNode(Node):
     async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
         func = WorkflowActionWrapper.GetActionWrapper(self.info.funcname)
         if self._verbose:
-            print_colorful(ConsoleFrontColor.YELLOW, 
+            print_colorful(ConsoleFrontColor.YELLOW,
                            f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> start func: {self.info.funcname}")
         try:
             current_parameters = await self.GetParameters()
@@ -1231,13 +1236,13 @@ class StepNode(Node):
             else:
                 result = coroutine_or_result
             if self._verbose:
-                print_colorful(ConsoleFrontColor.YELLOW, 
+                print_colorful(ConsoleFrontColor.YELLOW,
                                f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> "\
                     f"end func: {self.info.funcname}, result: {limit_str(result, 100)}{ConsoleFrontColor.YELLOW}")
             return result
         except Exception as e:
             if self._verbose:
-                print_colorful(ConsoleFrontColor.RED, 
+                print_colorful(ConsoleFrontColor.RED,
                                f"{self.__class__.__name__}<id={_Internal_GetNodeID(self)}> error in func: {self.info.funcname}, error: {e}")
             if self.info.default_result is not None:
                 return self.info.default_result
@@ -1247,10 +1252,10 @@ class StepNodeInfo(NodeInfo):
     """
     步骤节点, 在工作流中触发
     """
-    
+
     funcname:       action_label_type   = Field(description="函数键名", default="unknown")
     default_result: context_value_type  = Field(description="当函数执行失败时, 返回的默认结果, 不指定时异常将被抛出", default=None)
-    
+
     @override
     def Instantiate(self) -> Node:
         return StepNode(self)
@@ -1581,4 +1586,46 @@ class ArrayCollectionNodeInfo(DynamicNodeInfo):
     @override
     def Instantiate(self) -> Node:
         return ArrayCollectionNode(self)
+
+# 以下为操作核心函数
+
+def Append(array:Sequence[Any], item:Any) -> List[Any]:
+    return {
+        "result": array + [item]
+    }
+_Append = WorkflowActionWrapper(Append.__name__, Append, "添加",
+                               {"array": "Array", "item": "Any"},
+                               {"result": "Array"})
+
+def Extend(array:Sequence[Any], items:Sequence[Any]) -> List[Any]:
+    return {
+        "result": array + items
+    }
+_Extend = WorkflowActionWrapper(Extend.__name__, Extend, "扩展",
+                               {"array": "Array", "items": "Array"},
+                               {"result": "Array"})
+
+def Unpack(array:Sequence[Any], index:int) -> Any:
+    return {
+        "result": array[index]
+    }
+_Unpack = WorkflowActionWrapper(Unpack.__name__, Unpack, "解包",
+                               {"array": "Array", "index": "int"},
+                               {"result": "Any"})
+
+def Packup(left:Any, right:Any) -> Any:
+    return {
+        "result": [left, right]
+    }
+_Packup = WorkflowActionWrapper(Packup.__name__, Packup, "打包",
+                               {"left": "Any", "right": "Any"},
+                               {"result": "Array"})
+
+
+
+
+
+
+
+
 

@@ -35,6 +35,7 @@ namespace Convention.Workflow
         public string description = "unknown";
         public Dictionary<string, string> parameters = new();
         public Dictionary<string, string> returns = new();
+        public string module = "global";
     }
 
     [Serializable, ArgPackage]
@@ -82,30 +83,45 @@ namespace Convention.Workflow
         private List<SharedModule.CallbackData> callbackDatas = new();
         private HashSet<Type> registeredCallbackNodeType = new();
 
-        public List<FunctionModel> CallableFunctionModels = new();
+        public Dictionary<string, List<FunctionModel>> CallableFunctionModels = new();
+
 
         public void RegisterFunctionModel([In] FunctionModel func)
         {
-            CallableFunctionModels.Add(func);
+            if (!CallableFunctionModels.ContainsKey(func.module))
+                CallableFunctionModels[func.module] = new();
+            CallableFunctionModels[func.name].Add(func);
             Debug.Log($"[{String.Join(", ", func.returns.ToList().ConvertAll(x => $"{x.Key}: {x.Value}"))}] {func.name}" +
                 $"({String.Join(", ", func.parameters.ToList().ConvertAll(x => $"{x.Key}: {x.Value}"))}): {func.description}");
         }
         public void UnregisterFunctionModel([In] FunctionModel func)
         {
-            CallableFunctionModels.Remove(func);
+            if (!CallableFunctionModels.ContainsKey(func.module))
+                CallableFunctionModels[func.module] = new();
+            CallableFunctionModels[func.module].Remove(func);
         }
-        public List<string> GetAllFunctionName()
+        public List<string> GetAllModuleName()
         {
-            return CallableFunctionModels.ConvertAll(x => x.name);
+            return CallableFunctionModels.Keys.ToList();
         }
-        public bool ContainsFunctionModel(string functionName)
+        public List<string> GetAllFunctionName(string module)
         {
-            return CallableFunctionModels.Any(x => x.name == functionName);
+            return CallableFunctionModels[module].ConvertAll(x => x.name);
+        }
+        public bool ContainsModule(string module)
+        {
+            return CallableFunctionModels.ContainsKey(module);
+        }
+        public bool ContainsFunctionModel(string module, string functionName)
+        {
+            return ContainsModule(module) && CallableFunctionModels[module].Any(y => y.name == functionName);
         }
         [return: ReturnMayNull]
-        public FunctionModel GetFunctionModel(string functionName)
+        public FunctionModel GetFunctionModel(string module,string functionName)
         {
-            return CallableFunctionModels.FirstOrDefault(x => x.name == functionName);
+            if (ContainsModule(module))
+                return CallableFunctionModels[module].FirstOrDefault(x => x.name == functionName);
+            return null;
         }
 
         public delegate bool CustomTransformer([In] string word, out string late);
@@ -175,25 +191,6 @@ namespace Convention.Workflow
                     new StepNodeInfo(),
                     new EndNodeInfo());
             }, typeof(GraphInputWindow), typeof(GraphInspector));
-#if UNITY_EDITOR
-            if (this.GetAllFunctionName().Count() == 0)
-                this.RegisterFunctionModel(new()
-                {
-                    name = "TestFunction",
-                    parameters =
-                    {
-                        {
-                            "In", "string"
-                        }
-                    },
-                    returns =
-                    {
-                        {
-                            "Out", "string"
-                        }
-                    }
-                });
-#endif
         }
 
         private void Update()
