@@ -154,6 +154,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd0126d735f2225428b21f2121ecc526, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ExtensionModule: {fileID: 0}
   Title: {fileID: 4046833555842556639}
   LineRenderer: {fileID: 1016586783376414293}
   Anchor: {fileID: 3713718831144030180}
@@ -162,7 +163,6 @@ MonoBehaviour:
   Points: []
   IsKeepDrag: 0
   IsDirty: 0
-  OthersideKeepDrag: 0
 --- !u!120 &1016586783376414293
 LineRenderer:
   serializedVersion: 2
@@ -508,6 +508,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd0126d735f2225428b21f2121ecc526, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ExtensionModule: {fileID: 0}
   Title: {fileID: 765884743813845701}
   LineRenderer: {fileID: 5130689449658319049}
   Anchor: {fileID: 2917379487984282822}
@@ -516,7 +517,6 @@ MonoBehaviour:
   Points: []
   IsKeepDrag: 0
   IsDirty: 0
-  OthersideKeepDrag: 0
 --- !u!120 &5130689449658319049
 LineRenderer:
   serializedVersion: 2
@@ -1015,7 +1015,7 @@ RectTransform:
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 300, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_Pivot: {x: 0, y: 1}
 --- !u!222 &6301528361833911289
 CanvasRenderer:
   m_ObjectHideFlags: 0

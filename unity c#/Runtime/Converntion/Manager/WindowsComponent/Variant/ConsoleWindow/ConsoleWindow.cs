@@ -75,7 +75,6 @@ namespace Convention.WindowsUI.Variant
 
         private void Start()
         {
-            return;
             Application.logMessageReceived -= Log;
             Application.logMessageReceived += Log;
             ConsoleWindowIndex = m_WindowManager.AddContextPlane(m_plane, m_root);

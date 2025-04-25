@@ -5,6 +5,7 @@ using Convention.WindowsUI;
 using Convention.WindowsUI.Variant;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 
 namespace Convention.Workflow
 {
@@ -168,6 +169,7 @@ namespace Convention.Workflow
             Context.OnPointerDownEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnPointerDownEvent, OnPointerDown);
             Context.OnDragEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnDragEvent, OnDrag);
             Context.OnPointerClickEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnPointerClickEvent, PointerRightClickAndOpenMenu);
+            Context.OnEndDragEvent = BehaviourContextManager.InitializeContextSingleEvent(Context.OnEndDragEvent, EndDrag);
         }
 
         protected virtual void OnDestroy()
@@ -221,6 +223,17 @@ namespace Convention.Workflow
             }
         }
 
+        public void EndDrag(PointerEventData _)
+        {
+            if (Keyboard.current[Key.LeftCtrl].isPressed)
+            {
+                var vec = this.transform.localPosition;
+                float x = Mathf.Round(vec.x / 100);
+                float y = Mathf.Round(vec.y / 100);
+                transform.localPosition = new Vector3(x * 100, y * 100, 0);
+            }
+        }
+
         protected virtual void WhenSetup(NodeInfo info)
         {
 
@@ -231,21 +244,41 @@ namespace Convention.Workflow
             if (value != info)
             {
                 ClearLink();
+                Type lastType = this.info == null ? null : this.info.GetType();
                 info = value;
                 int nodeID = WorkflowManager.instance.GetGraphNodeID(this);
                 if (nodeID < 0)
                 {
                     this.info.node = this;
+                    ClearSlots();
+                    RefreshPosition();
+                    RefreshRectTransform();
+                    WhenSetup(info);
                 }
                 else
                 {
                     value.nodeID = nodeID;
                     value.node = this;
-                    BuildLink();
+                    if (lastType == value.GetType())
+                    {
+                        BuildLink();
+                        RefreshPosition();
+                        RefreshRectTransform();
+                        WhenSetup(info);
+                    }
+                    else
+                    {
+                        ClearSlots();
+                        ConventionUtility.CreateSteps().Next(() =>
+                        {
+                            BuildSlots();
+                            BuildLink();
+                            RefreshPosition();
+                            RefreshRectTransform();
+                            WhenSetup(info);
+                        }).Invoke();
+                    }
                 }
-                RefreshPosition();
-                RefreshRectTransform();
-                WhenSetup(info);
             }
         }
 

@@ -96,8 +96,6 @@ namespace Convention.Workflow
         }
         public void UnregisterFunctionModel([In] FunctionModel func)
         {
-            if (!CallableFunctionModels.ContainsKey(func.module))
-                CallableFunctionModels[func.module] = new();
             CallableFunctionModels[func.module].Remove(func);
         }
         public List<string> GetAllModuleName()
@@ -115,6 +113,10 @@ namespace Convention.Workflow
         public bool ContainsFunctionModel(string module, string functionName)
         {
             return ContainsModule(module) && CallableFunctionModels[module].Any(y => y.name == functionName);
+        }
+        public List<FunctionModel> GetAllFunctionModel(string module)
+        {
+            return CallableFunctionModels[module];
         }
         [return: ReturnMayNull]
         public FunctionModel GetFunctionModel(string module,string functionName)
@@ -254,7 +256,7 @@ namespace Convention.Workflow
             if (id >= 0)
             {
                 workflow.Nodes.RemoveAt(id);
-                workflow.Datas.Remove(node.info);
+                //workflow.Datas.Remove(node.info);
                 GameObject.Destroy(node.gameObject);
             }
             else

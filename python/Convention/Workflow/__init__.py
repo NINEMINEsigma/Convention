@@ -1605,13 +1605,13 @@ _Extend = WorkflowActionWrapper(Extend.__name__, Extend, "扩展",
                                {"array": "Array", "items": "Array"},
                                {"result": "Array"})
 
-def Unpack(array:Sequence[Any], index:int) -> Any:
+def Peek(array:Sequence[Any], index:int) -> Any:
     return {
         "result": array[index]
     }
-_Unpack = WorkflowActionWrapper(Unpack.__name__, Unpack, "解包",
-                               {"array": "Array", "index": "int"},
-                               {"result": "Any"})
+_Peek = WorkflowActionWrapper(Peek.__name__, Peek, "查看",
+                              {"array": "Array", "index": "int"},
+                              {"result": "Any"})
 
 def Packup(left:Any, right:Any) -> Any:
     return {
@@ -1621,11 +1621,20 @@ _Packup = WorkflowActionWrapper(Packup.__name__, Packup, "打包",
                                {"left": "Any", "right": "Any"},
                                {"result": "Array"})
 
+def RemoveAt(array:Sequence[Any], index:int) -> List[Any]:
+    return {
+        "result": array[:index] + array[index+1:]
+    }
+_RemoveAt = WorkflowActionWrapper(RemoveAt.__name__, RemoveAt, "移除",
+                               {"array": "Array", "index": "int"},
+                               {"result": "Array"})
 
-
-
-
-
-
+def GetRaw(instance:base_value_reference|Any) -> Any:
+    if isinstance(instance, base_value_reference):
+        return instance.ref_value
+    return instance
+_GetRaw = WorkflowActionWrapper(GetRaw.__name__, GetRaw, "获取原始值",
+                               {"instance": "Any"},
+                               {"result": "Any"})
 
 

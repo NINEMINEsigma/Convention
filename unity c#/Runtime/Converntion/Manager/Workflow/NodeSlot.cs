@@ -122,24 +122,50 @@ namespace Convention.Workflow
                 right.SetDirty();
             }
         }
+        public static void Unlink([In] NodeSlot slot, NodeSlot targetSlot)
+        {
+            int index = slot.info.targetSlots.IndexOf(targetSlot);
+            if (index != -1)
+                Unlink(slot, index);
+        }
         public static void Unlink([In] NodeSlot slot, int slotIndex)
         {
             var targetSlot = slot.info.targetSlots[slotIndex];
             slot.info.targetSlots.RemoveAt(slotIndex);
             slot.info.targetNodes.RemoveAt(slotIndex);
-            slot.info.targetNodeID = -1;
+            if (slot.info.targetSlots.Count == 0)
+            {
+                slot.info.targetNodeID = -1;
+                slot.info.targetSlotName = "";
+            }
             int r_slotIndex = targetSlot.info.targetSlots.IndexOf(slot);
-            if (targetSlot != null && r_slotIndex!=-1)
+            if (targetSlot != null && r_slotIndex != -1)
             {
                 targetSlot.info.targetSlots.RemoveAt(r_slotIndex);
                 targetSlot.info.targetNodes.RemoveAt(r_slotIndex);
-                targetSlot.info.targetNodeID = -1;
+                if (targetSlot.info.targetSlots.Count == 0)
+                {
+                    targetSlot.info.targetNodeID = -1;
+                    targetSlot.info.targetSlotName = "";
+                }
                 targetSlot.SetDirty();
             }
             slot.SetDirty();
         }
-        public static void UnlinkAll([In]NodeSlot slot)
+        public static void UnlinkAll([In] NodeSlot slot)
         {
+            foreach (var otherSlot in slot.info.targetSlots)
+            {
+                int index = otherSlot.info.targetSlots.IndexOf(slot);
+                otherSlot.info.targetSlots.RemoveAt(index);
+                otherSlot.info.targetNodes.RemoveAt(index);
+                if (otherSlot.info.targetSlots.Count == 0)
+                {
+                    otherSlot.info.targetNodeID = -1;
+                    otherSlot.info.targetSlotName = "";
+                }
+                otherSlot.SetDirty();
+            }
             slot.info.targetSlots.Clear();
             slot.info.targetNodes.Clear();
             slot.info.targetNodeID = -1;

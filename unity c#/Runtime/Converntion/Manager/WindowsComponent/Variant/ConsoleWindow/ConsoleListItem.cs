@@ -32,7 +32,7 @@ namespace Convention.WindowsUI.Variant
         [Content]
         public void OnFocusConsoleItem()
         {
-            ConsoleWindow.instance.SetStackTrace(this.stackTrace);
+            ConsoleWindow.instance.SetStackTrace(this.title + "\n\n" + this.stackTrace);
             if (!IsEnableFocusWindow)
                 return;
             if (FocusWindowIndictaor.instance != null)

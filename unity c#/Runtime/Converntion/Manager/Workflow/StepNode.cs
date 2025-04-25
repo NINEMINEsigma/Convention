@@ -59,22 +59,22 @@ namespace Convention.Workflow
                     }
                 });
             }
+            this.FunctionSelector.RefreshImmediate();
         }
 
         private void SelectFunctionModel(string moduleName)
         {
-            foreach (var funcName in WorkflowManager.instance.GetAllFunctionName(moduleName))
+            foreach (var funcModel in WorkflowManager.instance.GetAllFunctionModel(moduleName))
             {
-                var funcModel = WorkflowManager.instance.GetFunctionModel(moduleName, funcName);
-                if (funcModel.parameters.Count + funcModel.returns.Count != 0)
-                    this.FunctionSelector.CreateOption(WorkflowManager.Transformer(funcName)).toggleEvents.AddListener(y =>
+                this.FunctionSelector.CreateOption(WorkflowManager.Transformer(funcModel.name)).toggleEvents.AddListener(y =>
+                {
+                    if (y)
                     {
-                        if (y)
-                        {
-                            SetupWhenFunctionNameCatch(funcModel);
-                        }
-                    });
+                        SetupWhenFunctionNameCatch(funcModel);
+                    }
+                });
             }
+            this.FunctionSelector.RefreshImmediate();
         }
 
         public void SetupWhenFunctionNameCatch(FunctionModel funcModel)

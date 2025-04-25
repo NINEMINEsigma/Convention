@@ -338,3 +338,16 @@ _MakeSubQuestionQueryEngineTool = WorkflowActionWrapper(MakeSubQuestionQueryEngi
                                                         {"query_engine_tools": "Array", "llm": "Any"},
                                                         {"result": "BaseTool"})
 # endregion
+
+# region IndexCore Building
+
+def IndexCoreHandler(index:IndexCore):
+    return {
+        "result": index,
+        "raw_index": index.ref_value
+    }
+_IndexCoreHandler = WorkflowActionWrapper(IndexCoreHandler.__name__, IndexCoreHandler, "处理IndexCore",
+                                        {"index": "IndexCore"},
+                                        {"result": "IndexCore", "raw_index": "Any"})
+
+# endregion
