@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Convention.WindowsUI;
 using UnityEngine;
 
@@ -24,36 +25,20 @@ namespace Convention.Workflow
 
         public StepNodeInfo MyStepInfo => info as StepNodeInfo;
 
+        private void ClearSelector()
+        {
+            FunctionSelector.ClearOptions();
+        }
+
         private void OnEnable()
         {
             if (WorkflowManager.instance == null)
                 return;
-            FunctionSelector.ClearOptions();
+            ClearSelector();
             var names = WorkflowManager.instance.GetAllModuleName();
             if (names.Count > 0)
             {
-                foreach (var moduleName in names)
-                {
-                    this.FunctionSelector.CreateOption(WorkflowManager.Transformer(moduleName)).toggleEvents.AddListener(x =>
-                    {
-                        if (x)
-                        {
-                            this.FunctionSelector.ClearOptions();
-                            foreach (var funcName in WorkflowManager.instance.GetAllFunctionName(moduleName))
-                            {
-                                var funcModel = WorkflowManager.instance.GetFunctionModel(moduleName, funcName);
-                                if (funcModel.parameters.Count + funcModel.returns.Count != 0)
-                                    this.FunctionSelector.CreateOption(WorkflowManager.Transformer(funcName)).toggleEvents.AddListener(y =>
-                                    {
-                                        if (y)
-                                        {
-                                            SetupWhenFunctionNameCatch(funcModel);
-                                        }
-                                    });
-                            }
-                        }
-                    });
-                }
+                SelectModel(names);
             }
             else
             {
@@ -61,7 +46,38 @@ namespace Convention.Workflow
             }
         }
 
-        private void SetupWhenFunctionNameCatch(FunctionModel funcModel)
+        private void SelectModel(List<string> names)
+        {
+            foreach (var moduleName in names)
+            {
+                this.FunctionSelector.CreateOption(WorkflowManager.Transformer(moduleName)).toggleEvents.AddListener(x =>
+                {
+                    if (x)
+                    {
+                        ClearSelector();
+                        SelectFunctionModel(moduleName);
+                    }
+                });
+            }
+        }
+
+        private void SelectFunctionModel(string moduleName)
+        {
+            foreach (var funcName in WorkflowManager.instance.GetAllFunctionName(moduleName))
+            {
+                var funcModel = WorkflowManager.instance.GetFunctionModel(moduleName, funcName);
+                if (funcModel.parameters.Count + funcModel.returns.Count != 0)
+                    this.FunctionSelector.CreateOption(WorkflowManager.Transformer(funcName)).toggleEvents.AddListener(y =>
+                    {
+                        if (y)
+                        {
+                            SetupWhenFunctionNameCatch(funcModel);
+                        }
+                    });
+            }
+        }
+
+        public void SetupWhenFunctionNameCatch(FunctionModel funcModel)
         {
             var oriExtensionHeight = this.ExtensionHeight;
             this.ExtensionHeight = 0;

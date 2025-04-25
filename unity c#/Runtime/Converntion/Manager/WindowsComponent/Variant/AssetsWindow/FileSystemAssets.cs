@@ -45,7 +45,7 @@ namespace Convention.WindowsUI.Variant
 
         private void Start()
         {
-            var entries = m_AssetsWindow.GetComponent<PropertiesWindow>().CreateRootItemEntries(false, LoadedInRoot.Count);
+            var entries = m_AssetsWindow.MainPropertiesWindow.CreateRootItemEntries(false, LoadedInRoot.Count);
             for (int i = 0, e = LoadedInRoot.Count; i != e; i++)
             {
                 entries[i].ref_value.GetComponent<FileSystemAssetsItem>().RebuildFileInfo(LoadedInRoot[i]);

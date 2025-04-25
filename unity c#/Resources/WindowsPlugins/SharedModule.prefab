@@ -147,12 +147,12 @@ GameObject:
   - component: {fileID: 887991216147584469}
   - component: {fileID: 8335685682323092454}
   m_Layer: 0
-  m_Name: CustomMenuRelease (1)
+  m_Name: SingleInputFieldRelease
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &5427591362881815426
 RectTransform:
   m_ObjectHideFlags: 0
@@ -166,12 +166,12 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7050799602554275199}
-  m_Father: {fileID: 5582051936306306706}
+  m_Father: {fileID: 8227328622719529328}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 12.5}
-  m_SizeDelta: {x: 893, y: 399}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4423817834530012803
 CanvasRenderer:
@@ -287,6 +287,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 5427591362881815426}
   - {fileID: 7419543312956923181}
   - {fileID: 5582051936306306706}
   - {fileID: 6221211502798922477}
@@ -310,8 +311,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   SingleInputField: {fileID: 7786887164459836986}
+  SingleInputFieldRelease: {fileID: 5427591362881815426}
   CustomMenuPrefab: {fileID: 7382149556372448078}
-  CustomMenuPlane: {fileID: 0}
+  CustomMenuPlane: {fileID: 3599091420808938627}
   CustomMenuRelease: {fileID: 7129256805869604777}
   customMenus: []
 --- !u!1 &6439926860494039689
@@ -516,7 +518,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &3599091420808938627
 RectTransform:
   m_ObjectHideFlags: 0
@@ -784,10 +786,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects:
-    - targetCorrespondingSourceObject: {fileID: 3241788777981816903, guid: 37924db2d27cd6e49bf8002531a08095, type: 3}
-      insertIndex: 0
-      addedObject: {fileID: 5427591362881815426}
+    m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 37924db2d27cd6e49bf8002531a08095, type: 3}
 --- !u!224 &5582051936306306706 stripped

@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c84cf04bd69b6c640a560080def4549b, type: 3}
+  m_Name: Transformer
+  m_EditorClassIdentifier: 
+  Datas:
+    Data:
+    - Key: TextNode
+      Value:
+        CurrentValue: "\u6587\u672C\u8282\u70B9"
+        CurrentObject: {fileID: 0}
+        RealType: String
+    - Key: ValueNode
+      Value:
+        CurrentValue: "\u6570\u503C\u8282\u70B9"
+        CurrentObject: {fileID: 0}
+        RealType: String
+    - Key: ResourceNode
+      Value:
+        CurrentValue: "\u8D44\u6E90\u8282\u70B9"
+        CurrentObject: {fileID: 0}
+        RealType: String
+    - Key: StepNode
+      Value:
+        CurrentValue: "\u64CD\u4F5C\u8282\u70B9"
+        CurrentObject: {fileID: 0}
+        RealType: String
+    - Key: EndNode
+      Value:
+        CurrentValue: "\u7ED3\u675F\u8282\u70B9"
+        CurrentObject: {fileID: 0}
+        RealType: String
+    - Key: Text
+      Value:
+        CurrentValue: "\u6587\u672C"
+        CurrentObject: {fileID: 0}
+        RealType: String
+    - Key: value
+      Value:
+        CurrentValue: "\u503C"
+        CurrentObject: {fileID: 0}
+        RealType: String
+    - Key: SlotName
+      Value:
+        CurrentValue: "\u69FD\u7684\u540D\u79F0"
+        CurrentObject: {fileID: 0}
+        RealType: String
+    - Key: Delete
+      Value:
+        CurrentValue: "\u5220\u9664"
+        CurrentObject: {fileID: 0}
+        RealType: String
+    - Key: Create New Slot
+      Value:
+        CurrentValue: "\u521B\u5EFA\u65B0\u7684\u69FD"
+        CurrentObject: {fileID: 0}
+        RealType: String

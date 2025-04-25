@@ -90,7 +90,7 @@ namespace Convention.Workflow
         {
             if (!CallableFunctionModels.ContainsKey(func.module))
                 CallableFunctionModels[func.module] = new();
-            CallableFunctionModels[func.name].Add(func);
+            CallableFunctionModels[func.module].Add(func);
             Debug.Log($"[{String.Join(", ", func.returns.ToList().ConvertAll(x => $"{x.Key}: {x.Value}"))}] {func.name}" +
                 $"({String.Join(", ", func.parameters.ToList().ConvertAll(x => $"{x.Key}: {x.Value}"))}): {func.description}");
         }
@@ -243,7 +243,7 @@ namespace Convention.Workflow
             node.transform.eulerAngles = Vector3.zero;
             node.SetupFromInfo(info);
             workflow.Nodes.Add(node);
-            //node.ClearSlots();
+            node.ClearSlots();
             node.BuildSlots();
             node.MyNodeTab = GraphInputWindow.instance.RegisterOnHierarchyWindow(node.info);
             return node;

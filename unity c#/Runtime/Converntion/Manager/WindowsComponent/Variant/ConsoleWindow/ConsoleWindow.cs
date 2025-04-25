@@ -22,6 +22,8 @@ namespace Convention.WindowsUI.Variant
         [Resources, SerializeField, OnlyNotNullMode] private ModernUIToggle m_VitalSwitch;
         [Resources, SerializeField, OnlyNotNullMode] private Button m_ClearLogs;
 
+        [Setting] public string ConsoleButtonName = "Console";
+
         public void ClearLog()
         {
             foreach (var entry in m_entries)
@@ -73,6 +75,7 @@ namespace Convention.WindowsUI.Variant
 
         private void Start()
         {
+            return;
             Application.logMessageReceived -= Log;
             Application.logMessageReceived += Log;
             ConsoleWindowIndex = m_WindowManager.AddContextPlane(m_plane, m_root);
@@ -80,7 +83,7 @@ namespace Convention.WindowsUI.Variant
             {
                 m_WindowManager.SelectContextPlane(ConsoleWindowIndex);
             });
-            (buttonWrapper.button as ITitle).title = "Console";
+            (buttonWrapper.button as ITitle).title = ConsoleButtonName;
             StackTrace.interactable = false;
 
             m_MessageSwitch.ref_value = true;
@@ -128,6 +131,8 @@ namespace Convention.WindowsUI.Variant
                 }
                 m_entries.Clear();
             });
+
+            m_WindowManager.SelectContextPlane(0);
         }
 
         [Setting, OnlyPlayMode]

@@ -78,7 +78,8 @@ namespace Convention.WindowsUI.Variant
 
         public string title
         {
-            get => m_TextString; set
+            get => m_TextString;
+            set
             {
                 m_TextString = value;
                 if (value.Length > TextStringLimit)
@@ -102,10 +103,12 @@ namespace Convention.WindowsUI.Variant
 
         public virtual void Invoke()
         {
+            AssetsWindow.instance.CurrentTargetName = m_TextString;
             if (FocusItem != this)
             {
                 FocusItem = this;
-                FocusWindowIndictaor.instance.SetTargetRectTransform(this.transform as RectTransform);
+                if (FocusWindowIndictaor.instance != null)
+                    FocusWindowIndictaor.instance.SetTargetRectTransform(this.transform as RectTransform);
                 foreach (var component in this.GetComponents<IAssetsItemInvoke>())
                 {
                     component.OnAssetsItemFocus(this);
@@ -114,7 +117,8 @@ namespace Convention.WindowsUI.Variant
             else
             {
                 FocusItem = null;
-                FocusWindowIndictaor.instance.SetTargetRectTransform(null);
+                if (FocusWindowIndictaor.instance != null)
+                    FocusWindowIndictaor.instance.SetTargetRectTransform(null);
                 if (HasChildLayer)
                     Entry.rootWindow.GetComponent<AssetsWindow>().Push(title, m_ChildEntries, true);
                 foreach (var component in this.GetComponents<IAssetsItemInvoke>())
@@ -122,6 +126,7 @@ namespace Convention.WindowsUI.Variant
                     component.OnAssetsItemInvoke(this);
                 }
             }
+            AssetsWindow.instance.UpdatePathText();
         }
     }
 }

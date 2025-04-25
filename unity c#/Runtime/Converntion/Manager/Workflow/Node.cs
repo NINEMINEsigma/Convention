@@ -77,11 +77,17 @@ namespace Convention.Workflow
             return result;
         }
 
+        public static Vector2 GetPosition(Transform transform)
+        {
+            Vector3 result = transform.position - WorkflowManager.instance.ContentPlane.transform.position;
+            return new(result.x, result.y);
+        }
+
         public virtual void CopyFromNode([In] Node node)
         {
             nodeID = WorkflowManager.instance.GetGraphNodeID(node);
             title = node.title;
-            position = node.transform.position - WorkflowManager.instance.ContentPlane.transform.position;
+            position = GetPosition(node.transform);
             foreach (var (key, inslot) in node.m_Inmapping)
             {
                 inmapping[key] = inslot.info;
@@ -320,7 +326,8 @@ namespace Convention.Workflow
                 {
                     InSlotCount--;
                     var slot = InSlots[InSlotCount].ref_value.GetComponent<NodeSlot>();
-                    m_Inmapping.Add(key, slot);
+                    // 这样真的好吗
+                    m_Inmapping[key] = slot;
                     var info = slotInfo.TemplateClone();
                     info.parentNode = this;
                     slot.SetupFromInfo(info);
@@ -334,7 +341,8 @@ namespace Convention.Workflow
                 {
                     OutSlotCount--;
                     var slot = OutSlots[OutSlotCount].ref_value.GetComponent<NodeSlot>();
-                    m_Outmapping.Add(key, slot);
+                    // 通过这种方法规避了重复键, 但是也存在一些特殊的问题
+                    m_Outmapping[key] = slot;
                     var info = slotInfo.TemplateClone();
                     info.parentNode = this;
                     slot.SetupFromInfo(info);

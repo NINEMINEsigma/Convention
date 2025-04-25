@@ -96,23 +96,29 @@ namespace Convention.Workflow
         }
         public static void Link([In] NodeSlot left, [In] NodeSlot right)
         {
-            left.Linkable(right);
-            if (left.info.IsInmappingSlot&& left.info.targetSlots.Contains(right) == false)
+            if(left.info.IsInmappingSlot)
             {
-                UnlinkAll(left);
+                (left, right) = (right, left);
+            }
+            left.Linkable(right);
+            // left一定是输出端
+            if (left.info.targetSlots.Contains(right) == false)
+            {
+                UnlinkAll(right);
+
                 left.info.targetSlots.Add(right);
                 left.info.targetSlotName = right.info.slotName;
                 left.info.targetNodes.Add(right.info.parentNode);
                 left.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(right.info.parentNode);
-                left.SetDirty();
-            }
-            if (right.info.IsInmappingSlot && right.info.targetSlots.Contains(left) == false)
-            {
-                UnlinkAll(right);
+
+                right.info.targetSlots.Clear();
                 right.info.targetSlots.Add(left);
-                right.info.targetSlotName = left.info.slotName;
+                right.info.targetNodes.Clear();
                 right.info.targetNodes.Add(left.info.parentNode);
                 right.info.targetNodeID = WorkflowManager.instance.GetGraphNodeID(left.info.parentNode);
+                right.info.targetSlotName = left.info.slotName;
+
+                left.SetDirty();
                 right.SetDirty();
             }
         }
@@ -249,20 +255,16 @@ namespace Convention.Workflow
 
         [Content, Ignore, SerializeField] private bool IsKeepDrag = false;
         [Content, Ignore, SerializeField] private bool IsDirty = false;
-        [Content, Ignore, SerializeField] private bool OthersideKeepDrag = false;
         private void Update()
         {
-            if (IsDirty)
+            if (IsKeepDrag == false && IsDirty)
             {
                 Points = GetCurrentLinkingVectors();
-            }
-            if (IsKeepDrag == false && OthersideKeepDrag == false && IsDirty)
-            {
                 UpdateLineImmediate();
             }
             else if (IsDirty)
             {
-                LineRenderer.SetPositions(Points);
+                RebuildLine();
             }
         }
 
@@ -271,10 +273,15 @@ namespace Convention.Workflow
             IsDirty = true;
         }
 
-        public void UpdateLineImmediate()
+        public void RebuildLine()
         {
             LineRenderer.positionCount = Points.Length;
             LineRenderer.SetPositions(Points);
+        }
+
+        public void UpdateLineImmediate()
+        {
+            RebuildLine();
             title = $"{WorkflowManager.Transformer(info.slotName)}({WorkflowManager.Transformer(info.typeIndicator)})";
             IsDirty = false;
         }
@@ -288,6 +295,7 @@ namespace Convention.Workflow
         }
         public void DragLine(PointerEventData pointer)
         {
+            Points = new Vector3[] { Anchor.localPosition, (pointer.pointerCurrentRaycast.worldPosition - Anchor.position) * ScaleFactor + Anchor.localPosition };
             SetDirty();
         }
         public void EndDragLine(PointerEventData _)

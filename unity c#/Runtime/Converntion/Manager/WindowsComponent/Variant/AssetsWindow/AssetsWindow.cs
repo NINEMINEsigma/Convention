@@ -13,12 +13,16 @@ namespace Convention.WindowsUI.Variant
         [Resources, OnlyNotNullMode, SerializeField] private PropertiesWindow m_PropertiesWindow;
         [Resources, OnlyNotNullMode, SerializeField, Tooltip("Back Button")] private Button m_BackButton;
         [Resources, OnlyNotNullMode, SerializeField, Tooltip("Path Text")] private Text m_PathTitle;
+        [Content, OnlyPlayMode] public string CurrentTargetName;
         [Content, OnlyPlayMode, SerializeField] public List<string> pathContainer = new();
         private RegisterWrapper<AssetsWindow> m_RegisterWrapper;
 
+        public PropertiesWindow MainPropertiesWindow => m_PropertiesWindow;
+
         public void UpdatePathText()
         {
-            m_PathTitle.text = string.Join('/', pathContainer.ToArray());
+            m_PathTitle.text = string.Join('/', pathContainer.ToArray()) +
+                (string.IsNullOrEmpty(CurrentTargetName) ? "" : $":<color=blue>{CurrentTargetName}</color>");
         }
 
         protected virtual void Start()

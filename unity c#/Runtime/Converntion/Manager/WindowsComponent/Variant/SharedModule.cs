@@ -8,6 +8,7 @@ namespace Convention.WindowsUI.Variant
     public class SharedModule : MonoSingleton<SharedModule>, IWindowUIModule
     {
         [Resources, OnlyNotNullMode, SerializeField] private ModernUIInputField SingleInputField;
+        [Resources, OnlyNotNullMode, SerializeField, WhenAttribute.Not(nameof(SingleInputField), null)] private RectTransform SingleInputFieldRelease;
         [Resources, OnlyNotNullMode, SerializeField, IsInstantiated(false)] private CustomMenu CustomMenuPrefab;
         [Resources, OnlyNotNullMode, SerializeField, WhenAttribute.Not(nameof(CustomMenuPrefab), null)] private RectTransform CustomMenuPlane;
         [Resources, OnlyNotNullMode, SerializeField, WhenAttribute.Not(nameof(CustomMenuPrefab), null)] private Button CustomMenuRelease;
@@ -18,6 +19,7 @@ namespace Convention.WindowsUI.Variant
         {
             SingleInputField.AddListener(x =>
             {
+                SingleInputFieldRelease.gameObject.SetActive(false);
                 RenameCallback(x);
                 SingleInputField.gameObject.SetActive(false);
             });
@@ -39,6 +41,7 @@ namespace Convention.WindowsUI.Variant
 
         public void SingleEditString([In]string title, [In]string initText, [In]Action<string> callback)
         {
+            SingleInputFieldRelease.gameObject.SetActive(true);
             SingleInputField.gameObject.SetActive(true);
             SingleInputField.title = title;
             SingleInputField.text = initText;
