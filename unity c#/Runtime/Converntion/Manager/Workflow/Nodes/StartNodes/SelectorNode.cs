@@ -19,9 +19,9 @@ namespace Convention.Workflow
 
         [NonSerialized] private string l_select = WorkflowManager.Transformer(nameof(select));
         [InspectorDraw(InspectorDrawType.Enum, true, false, nameGenerater: nameof(l_select), enumGenerater: nameof(EnumNamesGenerater))]
-        public string select = "unknown";
+        public string select = "";
 
-        public SelectorNodeInfo() : this(WorkflowManager.Transformer(nameof(SelectorNode))) { }
+        public SelectorNodeInfo() : this("") { }
         public SelectorNodeInfo(string select, string outputName = "select")
         {
             this.select = select;
@@ -40,13 +40,16 @@ namespace Convention.Workflow
             this.title = "Selector";
         }
 
-        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        protected override NodeInfo CreateTemplate()
         {
-            return new SelectorNodeInfo()
-            {
-                select = select,
-                outmapping = outmapping
-            };
+            return new SelectorNodeInfo();
+        }
+        protected override void CloneValues([In] NodeInfo clonen)
+        {
+            var info = (SelectorNodeInfo)clonen;
+            info.select = select;
+            info.outmapping = new(outmapping);
+            base.CloneValues(clonen);
         }
     }
 
@@ -64,17 +67,13 @@ namespace Convention.Workflow
 
         protected virtual void RebuildDropDown(ModernUIDropdown dropdown, SelectorNodeInfo info)
         {
-            try
+            foreach (var name in info.EnumNamesGenerater())
             {
-                foreach (var name in info.EnumNamesGenerater())
-                {
-                    dropdown.CreateOption(name);
-                }
+                dropdown.CreateOption(name);
             }
-            catch (Exception)
-            {
-                GameObject.Destroy(this.gameObject);
-            }
+            dropdown.RefreshImmediate();
+            if (string.IsNullOrEmpty(info.select) == false)
+                dropdown.Select(info.select);
         }
 
         protected override void WhenSetup(NodeInfo info)

@@ -383,6 +383,7 @@ namespace Convention.WindowsUI
             if (target != default)
             {
                 target.ToggleItem.isOn = true;
+                title = option;
             }
         }
 

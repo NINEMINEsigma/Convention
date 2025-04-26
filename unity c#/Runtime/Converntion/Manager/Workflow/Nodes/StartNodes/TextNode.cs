@@ -30,12 +30,14 @@ namespace Convention.Workflow
             this.title = "Text";
         }
 
-        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        protected override NodeInfo CreateTemplate()
         {
-            return new TextNodeInfo()
-            {
-                text = text
-            };
+            return new TextNodeInfo();
+        }
+        protected override void CloneValues([In] NodeInfo clonen)
+        {
+            ((TextNodeInfo)clonen).text = text;
+            base.CloneValues(clonen);
         }
     }
 

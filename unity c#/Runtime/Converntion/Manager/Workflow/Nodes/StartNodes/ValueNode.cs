@@ -37,14 +37,17 @@ namespace Convention.Workflow
             this.title = "Value";
         }
 
-        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        protected override NodeInfo CreateTemplate()
         {
-            return new ValueNodeInfo()
-            {
-                value = value,
-                min = min,
-                max = max,
-            };
+            return new ValueNodeInfo();
+        }
+        protected override void CloneValues([In] NodeInfo clonen)
+        {
+            var info = ((ValueNodeInfo)clonen);
+            info.value = value;
+            info.min = min;
+            info.max = max;
+            base.CloneValues(clonen);
         }
     }
 

@@ -827,9 +827,9 @@ class NodeResult(BaseModel, any_class):
     """
     工作流结果
     """
-    nodeID:     int                             = Field(description="节点ID")
-    nodeTitle:  str                             = Field(description="节点标题")
-    result:     context_type|context_value_type = Field(description="节点结果", default={})
+    nodeID:     int             = Field(description="节点ID")
+    nodeTitle:  str             = Field(description="节点标题")
+    result:     Dict[str,str]   = Field(description="节点结果", default={})
 
     @override
     def ToString(self) -> str:
@@ -1264,21 +1264,22 @@ class EndNode(Node):
     """
     结束节点, 工作流的终端
     """
+    end_result:str
+
     def __init__(self, info:NodeInfo) -> None:
         super().__init__(info)
+        self.end_result = ""
         global _Internal_All_EndNodes
         _Internal_All_EndNodes.append(self)
     def __del__(self):
         _Internal_All_EndNodes.remove(self)
 
-    end_result:Optional[context_value_type|Dict[str, context_value_type]] = None
-
     @override
-    async def _DoRunStep(self) -> Dict[str, context_value_type]|context_value_type:
+    async def _DoRunStep(self):
         if GetInternalWorkflowDebug():
             print_colorful(ConsoleFrontColor.YELLOW, f"{self.SymbolName()}"\
                 f"<id={_Internal_GetNodeID(self)}>结束节点开始获取结果")
-        self.end_result:Dict[str, context_value_type] = await self.GetParameters()
+        self.end_result = await self.GetParameters()
         if len(self.end_result) == 1:
             self.end_result = next(iter(self.end_result.values()))
         elif len(self.end_result) == 0:

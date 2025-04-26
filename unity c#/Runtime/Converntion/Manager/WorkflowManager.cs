@@ -15,8 +15,7 @@ namespace Convention.Workflow
     {
         public int nodeID;
         public string nodeTitle;
-        // context_type or context_value_type
-        public object result;
+        public Dictionary<string, string> result;
     }
 
     [Serializable, ArgPackage]
@@ -26,6 +25,7 @@ namespace Convention.Workflow
         public List<NodeResult> results;
         public float progress;
         public int task_count;
+        public List<int> current_running_nodes;
     }
 
     [Serializable, ArgPackage]
@@ -236,34 +236,30 @@ namespace Convention.Workflow
             }
         }
 
-        public Node CreateGraphNode([In] NodeInfo info)
+        public Node CreateGraphNode([In] NodeInfo info, bool isRefresh = true)
         {
             var node = info.Instantiate();
             node.gameObject.SetActive(true);
             node.transform.SetParent(ContentPlane);
             node.transform.localScale = Vector3.one;
             node.transform.eulerAngles = Vector3.zero;
-            node.SetupFromInfo(info);
+            node.SetupFromInfo(info.TemplateClone(), isRefresh);
             workflow.Nodes.Add(node);
-            node.ClearSlots();
-            node.BuildSlots();
             node.MyNodeTab = GraphInputWindow.instance.RegisterOnHierarchyWindow(node.info);
             return node;
         }
-        public bool DestroyNode(Node node)
+        public void DestroyNode(Node node)
         {
             int id = this.GetGraphNodeID(node);
             if (id >= 0)
             {
                 workflow.Nodes.RemoveAt(id);
-                //workflow.Datas.Remove(node.info);
-                GameObject.Destroy(node.gameObject);
             }
             else
             {
                 Debug.LogError("node is not in current workflow");
             }
-            return false;
+            GameObject.Destroy(node.gameObject);
         }
         public bool ContainsNode(int id)
         {
@@ -329,23 +325,39 @@ namespace Convention.Workflow
             this.m_workflow = new();
             foreach (var info in workflow.Datas)
             {
-                this.workflow.Datas.Add(CreateGraphNode(info).info);
+                var node = CreateGraphNode(info, false);
+                this.workflow.Datas.Add(node.info);
+                node.ClearSlots();
+                node.BuildSlots();
             }
             ConventionUtility.CreateSteps().Next(() =>
             {
-                foreach (var node in this.m_workflow.Nodes)
+                for (int i = 0; i < workflow.Datas.Count; i++)
                 {
-                    node.BuildLink();
+                    var info = workflow.Datas[i];
+                    var node = GetGraphNode(i);
+                    foreach (var (key, slot) in info.inmapping)
+                    {
+                        if (slot.targetNodeID != -1)
+                            this.workflow.Nodes[i].LinkInslotToOtherNodeOutslot(GetGraphNode(slot.targetNodeID), slot.slotName, slot.targetSlotName);
+                    }
+                    node.RefreshRectTransform();
+                    node.RefreshPosition();
                 }
-            }).Next(() =>
+            }).Wait(0.1f, () =>
             {
-                foreach (var node in this.m_workflow.Nodes)
+                foreach (var node in this.workflow.Nodes)
+                {
+                    node.RefreshImmediate();
+                }
+            }).Wait(1f, () =>
+            {
+                foreach (var node in this.workflow.Nodes)
                 {
                     node.RefreshImmediate();
                 }
             }).Invoke();
             return this.workflow;
-
         }
         public Workflow LoadWorkflow(string workflowPath)
         {

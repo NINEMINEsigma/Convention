@@ -45,7 +45,7 @@ namespace Convention.Workflow
         [InspectorDraw(InspectorDrawType.Text, name: "GraphNodeTitle")]
         public string GraphNodeTitle
         {
-            get => node.title;
+            get => this.title;
             set => this.title = node.title = value;
         }
 
@@ -56,25 +56,29 @@ namespace Convention.Workflow
             WorkflowManager.Transformer(typename = this.GetType().Name[..^4]);
         }
 
-        protected virtual NodeInfo CreateTemplateNodeInfoBySelfType()
+        protected virtual NodeInfo CreateTemplate()
         {
             return new NodeInfo();
         }
-        public virtual NodeInfo TemplateClone()
+        protected virtual void CloneValues([In] NodeInfo clonen)
         {
-            NodeInfo result = CreateTemplateNodeInfoBySelfType();
-            result.nodeID = nodeID;
-            result.typename = typename;
-            result.title = string.IsNullOrEmpty(title) ? WorkflowManager.Transformer(this.GetType().Name[..^4]) : title;
-            result.position = Vector2.zero;
+            clonen.nodeID = nodeID;
+            clonen.typename = typename;
+            clonen.title = string.IsNullOrEmpty(title) ? WorkflowManager.Transformer(this.GetType().Name[..^4]) : title;
+            clonen.position = position;
             foreach (var (key, value) in inmapping)
             {
-                result.inmapping[key] = value.TemplateClone();
+                clonen.inmapping[key] = value.TemplateClone();
             }
             foreach (var (key, value) in outmapping)
             {
-                result.outmapping[key] = value.TemplateClone();
+                clonen.outmapping[key] = value.TemplateClone();
             }
+        }
+        public NodeInfo TemplateClone()
+        {
+            NodeInfo result = CreateTemplate();
+            CloneValues(result);
             return result;
         }
 
@@ -206,21 +210,7 @@ namespace Convention.Workflow
 
         public void OnDrag(PointerEventData _)
         {
-            foreach (var info in m_Inmapping)
-            {
-                if (info.Value != null)
-                    info.Value.SetDirty();
-            }
-            foreach (var info in m_Outmapping)
-            {
-                if (info.Value != null)
-                {
-                    foreach (var targetSlot in info.Value.info.targetSlots)
-                    {
-                        targetSlot.SetDirty();
-                    }
-                }
-            }
+            RefreshImmediate();
         }
 
         public void EndDrag(PointerEventData _)
@@ -231,6 +221,7 @@ namespace Convention.Workflow
                 float x = Mathf.Round(vec.x / 100);
                 float y = Mathf.Round(vec.y / 100);
                 transform.localPosition = new Vector3(x * 100, y * 100, 0);
+                RefreshImmediate();
             }
         }
 
@@ -239,59 +230,44 @@ namespace Convention.Workflow
 
         }
 
-        public void SetupFromInfo([In] NodeInfo value)
+        public void SetupFromInfo([In] NodeInfo value, bool isRefresh = true)
         {
             if (value != info)
             {
                 ClearLink();
-                Type lastType = this.info == null ? null : this.info.GetType();
+                ClearSlots();
                 info = value;
+                this.title = value.title;
                 int nodeID = WorkflowManager.instance.GetGraphNodeID(this);
-                if (nodeID < 0)
+                value.nodeID = nodeID;
+                value.node = this;
+                if (isRefresh)
                 {
-                    this.info.node = this;
-                    ClearSlots();
+                    BuildSlots();
+                    BuildLink();
                     RefreshPosition();
-                    RefreshRectTransform();
-                    WhenSetup(info);
                 }
-                else
-                {
-                    value.nodeID = nodeID;
-                    value.node = this;
-                    if (lastType == value.GetType())
-                    {
-                        BuildLink();
-                        RefreshPosition();
-                        RefreshRectTransform();
-                        WhenSetup(info);
-                    }
-                    else
-                    {
-                        ClearSlots();
-                        ConventionUtility.CreateSteps().Next(() =>
-                        {
-                            BuildSlots();
-                            BuildLink();
-                            RefreshPosition();
-                            RefreshRectTransform();
-                            WhenSetup(info);
-                        }).Invoke();
-                    }
-                }
+                WhenSetup(info);
             }
         }
 
         public void RefreshImmediate()
         {
-            //foreach (var (_, slot) in m_Inmapping)
-            //{
-            //    slot.SetDirty();
-            //}
-            //foreach (var (_, slot) in m_Outmapping)
-            //{
-            //    slot.SetDirty();
-            //}
+            foreach (var (_, slot) in m_Inmapping)
+            {
+                if (slot != null)
+                    slot.SetDirty();
+            }
+            foreach (var (_, slot) in m_Outmapping)
+            {
+                if (slot != null)
+                {
+                    foreach (var targetSlot in slot.info.targetSlots)
+                    {
+                        targetSlot.SetDirty();
+                    }
+                }
+            }
         }
         public void RefreshPosition()
         {
@@ -299,7 +275,6 @@ namespace Convention.Workflow
         }
         public void RefreshRectTransform()
         {
-            //InoutContainerPlane.AdjustSizeToContainsChilds();
             this.rectTransform.sizeDelta = new(this.rectTransform.sizeDelta.x, TitleHeight + Mathf.Max(m_Inmapping.Count, m_Outmapping.Count) * SlotHeight + ExtensionHeight);
         }
         public virtual void ClearLink()
@@ -390,17 +365,10 @@ namespace Convention.Workflow
                 foreach (var (slot_name, slot_info) in info.inmapping)
                 {
                     var targetNode = WorkflowManager.instance.GetGraphNode(slot_info.targetNodeID);
-#if UNITY_EDITOR
-                    Debug.Log($"id={WorkflowManager.instance.GetGraphNodeID(this)} Link slot<{slot_name}> to <{targetNode}, id={slot_info.targetNodeID}>", this);
-#endif
                     if (targetNode != null)
                     {
                         NodeSlot.Link(m_Inmapping[slot_name], targetNode.m_Outmapping[slot_info.targetSlotName]);
                     }
-                    //else
-                    //{
-                    //    NodeSlot.UnlinkAll(m_Inmapping[slot_name]);
-                    //}
                 }
             }
         }
@@ -432,7 +400,7 @@ namespace Convention.Workflow
     [Serializable, ArgPackage]
     public class DynamicNodeInfo : NodeInfo
     {
-        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        protected override NodeInfo CreateTemplate()
         {
             return new DynamicNodeInfo();
         }

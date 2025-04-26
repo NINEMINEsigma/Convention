@@ -32,12 +32,14 @@ namespace Convention.Workflow
             this.inmapping = new();
             this.title = "Resource";
         }
-        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        protected override NodeInfo CreateTemplate()
         {
-            return new ResourceNodeInfo()
-            {
-                resource = resource
-            };
+            return new ResourceNodeInfo();
+        }
+        protected override void CloneValues([In] NodeInfo clonen)
+        {
+            ((ResourceNodeInfo)clonen).resource = this.resource;
+            base.CloneValues(clonen);
         }
     }
 

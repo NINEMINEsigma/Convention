@@ -11,7 +11,7 @@ namespace Convention.Workflow
     [Serializable, ArgPackage]
     public class EndNodeInfo : NodeInfo
     {
-        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        protected override NodeInfo CreateTemplate()
         {
             return new EndNodeInfo();
         }

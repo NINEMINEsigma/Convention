@@ -68,10 +68,10 @@ class ESWriter(BaseModel, any_class):
                     elif rtype.IsTuple:
                         return tuple(dfs(TypeManager.GetInstance().CreateOrGetRefType(iter_), iter_) for iter_ in rinstance)
                     elif rtype.IsDictionary:
-                        return { 
+                        return {
                                 dfs(TypeManager.GetInstance().CreateOrGetRefType(key), key):
                                     dfs(TypeManager.GetInstance().CreateOrGetRefType(iter_), iter_)
-                                    for key, iter_ in rinstance.items() 
+                                    for key, iter_ in rinstance.items()
                                     }
                 except Exception as e:
                     raise ReflectionException(f"{ConsoleFrontColor.RED}容器<{rtype.RealType}>"\
@@ -274,8 +274,8 @@ class ESReader(BaseModel, any_class):
                         element_key, element_value = (rtype.GenericArgs[0], rtype.GenericArgs[1]) if len(rtype.GenericArgs) > 1 else (Any, Any)
                         return {
                             dfs(TypeManager.GetInstance().CreateOrGetRefType(element_key), keyname):
-                                dfs(TypeManager.GetInstance().CreateOrGetRefType(element_value), iter_) 
-                            for keyname, iter_ in layer.items() 
+                                dfs(TypeManager.GetInstance().CreateOrGetRefType(element_value), iter_)
+                            for keyname, iter_ in layer.items()
                             }
                 except Exception as e:
                     raise ReflectionException(f"容器<{limit_str(str(layer), 100)}>在反序列化时遇到错误:\n{e}") from e
@@ -291,6 +291,8 @@ class ESReader(BaseModel, any_class):
                         f"{rtype.print_str(verbose=True, flags=RefTypeFlag.Field|RefTypeFlag.Instance|RefTypeFlag.Public)}")
                 fields:List[FieldInfo] = self._GetFields(rtype)
                 for field in fields:
+                    if field.FieldName not in layer:
+                        continue
                     field_rtype:RefType = None
                     try:
                         if field.FieldType == list and field.ValueType.IsGeneric:

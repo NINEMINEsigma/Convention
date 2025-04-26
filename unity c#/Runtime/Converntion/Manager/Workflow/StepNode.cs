@@ -10,12 +10,16 @@ namespace Convention.Workflow
     {
         public string module = "global";
         public string funcname = "";
-        protected override NodeInfo CreateTemplateNodeInfoBySelfType()
+        protected override NodeInfo CreateTemplate()
         {
-            return new StepNodeInfo()
-            {
-                funcname = funcname
-            };
+            return new StepNodeInfo();
+        }
+        protected override void CloneValues([In] NodeInfo clonen)
+        {
+            var info = (StepNodeInfo)clonen;
+            info.module = module;
+            info.funcname = funcname;
+            base.CloneValues(clonen);
         }
     }
 
@@ -103,9 +107,8 @@ namespace Convention.Workflow
                     IsInmappingSlot = false
                 };
             }
-            this.title = funcModel.name;
             this.FunctionSelector.gameObject.SetActive(false);
-            this.ExtensionHeight = 10;
+            this.ExtensionHeight = 0;
             this.ClearLink();
             this.ClearSlots();
             this.BuildSlots();
@@ -114,6 +117,7 @@ namespace Convention.Workflow
                 this.InoutContainerPlane.rectTransform.sizeDelta.x,
                 this.InoutContainerPlane.rectTransform.sizeDelta.y + oriExtensionHeight
                 );
+            this.RefreshRectTransform();
         }
 
         protected override void WhenSetup(NodeInfo info)

@@ -48,18 +48,20 @@ namespace Convention.Workflow
         /// </summary>
         public bool IsInmappingSlot;
 
-        public virtual NodeSlotInfo TemplateClone()
+        public NodeSlotInfo TemplateClone(bool isClearn = true)
         {
-            return new()
+            NodeSlotInfo result = new()
             {
                 slotName = slotName,
-                targetNodeID = -1,
+                targetNodeID = isClearn ? -1 : this.targetNodeID,
+                targetSlotName = isClearn ? "" : this.targetSlotName,
                 typeIndicator = typeIndicator,
                 IsInmappingSlot = IsInmappingSlot
             };
+            return result;
         }
     }
-
+    
     public interface INodeSlotLinkable
     {
         public bool LinkTo([In, Opt] NodeSlot other);
