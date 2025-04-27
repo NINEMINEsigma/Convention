@@ -265,6 +265,30 @@ namespace Convention
                 ? LoadFromText<T>(request.downloadHandler.text)
                 : new();
         }
+        [return: ReturnMayNull]
+        public static IEnumerator LoadFromRequestAsync<T>([In] UnityWebRequest request,[In]Action<T> callback)
+        {
+            while (!request.isDone)
+            {
+                yield return null;
+            }
+
+            callback(request.result == UnityWebRequest.Result.Success
+                ? LoadFromText<T>(request.downloadHandler.text)
+                : default);
+        }
+        [return: ReturnNotNull]
+        public static IEnumerator LoadFromRequestNotNullAsync<T>([In] UnityWebRequest request, [In] Action<T> callback) where T : class, new()
+        {
+            while (!request.isDone)
+            {
+                yield return null;
+            }
+
+            callback(request.result == UnityWebRequest.Result.Success
+                ? LoadFromText<T>(request.downloadHandler.text)
+                : new());
+        }
 
         public object LoadAsJson()
         {

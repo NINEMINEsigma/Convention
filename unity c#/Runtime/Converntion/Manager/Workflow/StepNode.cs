@@ -88,6 +88,8 @@ namespace Convention.Workflow
             this.MyStepInfo.module = funcModel.module;
             this.MyStepInfo.funcname = funcModel.name;
             this.MyStepInfo.inmapping = new();
+            if (this.MyStepInfo.title == this.MyStepInfo.GetType().Name[..^4])
+                this.MyStepInfo.title = funcModel.name;
             foreach (var (name, type) in funcModel.parameters)
             {
                 this.MyStepInfo.inmapping[name] = new NodeSlotInfo()

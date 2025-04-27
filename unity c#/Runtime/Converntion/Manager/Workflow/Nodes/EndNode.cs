@@ -56,7 +56,7 @@ namespace Convention.Workflow
                     }),
                     new (WorkflowManager.Transformer("Delete"), x =>
                     {
-                        GameObject.Destroy(this.gameObject);
+                        WorkflowManager.instance.DestroyNode(this);
                     })
                 };
                 SharedModule.instance.OpenCustomMenu(WorkflowManager.instance.UIFocusObject, callbacks.ToArray());

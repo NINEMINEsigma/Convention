@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Convention.WindowsUI.Variant;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -57,14 +56,14 @@ namespace Convention.Workflow
             {
                 return m_workflow;
             }
-            set
-            {
-                if (m_workflow == value)
-                    return;
-                ClearWorkflowGraph();
-                m_workflow = value;
-                BuildWorkflowGraph();
-            }
+            //set
+            //{
+            //    if (m_workflow == value)
+            //        return;
+            //    ClearWorkflowGraph();
+            //    m_workflow = value;
+            //    BuildWorkflowGraph();
+            //}
         }
         private RegisterWrapper<WorkflowManager> m_RegisterWrapper;
         [Resources, OnlyNotNullMode, SerializeField] private Transform m_CameraTransform;
@@ -250,14 +249,9 @@ namespace Convention.Workflow
         }
         public void DestroyNode(Node node)
         {
-            int id = this.GetGraphNodeID(node);
-            if (id >= 0)
+            if (!workflow.Nodes.Remove(node))
             {
-                workflow.Nodes.RemoveAt(id);
-            }
-            else
-            {
-                Debug.LogError("node is not in current workflow");
+                throw new InvalidOperationException("node is not in current workflow");
             }
             GameObject.Destroy(node.gameObject);
         }
@@ -302,14 +296,14 @@ namespace Convention.Workflow
             ToolFile parent = local.GetParentDir();
             if (parent.IsExist == false)
                 throw new FileNotFoundException($"{parent} is not exist");
-            var currentWorkflow = workflow;
-            currentWorkflow.Datas.Clear();
-            foreach (var node in currentWorkflow.Nodes)
+            workflow.Datas.Clear();
+            Debug.Log(workflow.Nodes.Count);
+            foreach (var node in workflow.Nodes)
             {
                 node.info.CopyFromNode(node);
-                currentWorkflow.Datas.Add(node.info);
+                workflow.Datas.Add(node.info);
             }
-            local.data = currentWorkflow;
+            local.data = workflow;
             local.SaveAsJson();
             return local;
         }
@@ -357,6 +351,7 @@ namespace Convention.Workflow
                     node.RefreshImmediate();
                 }
             }).Invoke();
+            Debug.Log($"Current Workflow Nodes: count={this.workflow.Nodes.Count}");
             return this.workflow;
         }
         public Workflow LoadWorkflow(string workflowPath)

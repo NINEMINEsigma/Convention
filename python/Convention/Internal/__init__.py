@@ -980,6 +980,11 @@ def StopBehaviorThread():
     global INTERNAL_DEBUG
     if INTERNAL_DEBUG:
         print_colorful(ConsoleFrontColor.GREEN, "停止生命周期线程")
+        print_colorful(ConsoleFrontColor.GREEN, f"生命周期活动中的行为仍有:")
+        for behavior in _all_base_behavior:
+            print_colorful(ConsoleFrontColor.GREEN, f"\t{behavior.__class__.__name__}"\
+                f"<symbol={behavior.SymbolName()}, assembly={behavior.Assembly()}>: "\
+                f"{behavior.ToString()}")
     _SetBehaviorThreadIsRunningStats(False)
     if _behavior_thread is not None:
         _behavior_thread.join()
