@@ -35,6 +35,7 @@ namespace Convention.WindowsUI
             if (m_WindowManager)
             {
                 m_WindowManager.WindowPlane.MaximizeWindow();
+                m_WindowManager.gameObject.transform.SetAsLastSibling();
             }
         }
         [Content, OnlyPlayMode]
@@ -42,6 +43,7 @@ namespace Convention.WindowsUI
         {
             if (m_WindowManager)
             {
+                m_WindowManager.gameObject.transform.SetAsFirstSibling();
                 m_WindowManager.CloseWindow();
             }
         }

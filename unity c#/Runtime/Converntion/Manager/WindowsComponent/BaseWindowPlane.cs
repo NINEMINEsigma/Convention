@@ -17,6 +17,7 @@ namespace Convention.WindowsUI
         public RectTransform Plane => m_Plane;
 
         [Content, OnlyPlayMode, Ignore] public RectTransformInfo BeforeMaximizeWindow = null;
+        [Content, OnlyPlayMode, Ignore] public float BeforeMaximizeWindowBackgroundColorA = 1f;
         private bool IsMaximizeWindowMode = false;
         [Content, OnlyPlayMode]
         public void MaximizeWindow()
@@ -30,6 +31,14 @@ namespace Convention.WindowsUI
             m_Plane.anchorMax = Vector2.one;
             m_Plane.anchorMin = Vector2.zero;
             m_Plane.sizeDelta = Vector2.zero;
+            var backgroundPlane = m_AnimationPlane == null ? m_Plane : m_AnimationPlane;
+            if (backgroundPlane.TryGetComponent<Image>(out var image))
+            {
+                BeforeMaximizeWindowBackgroundColorA = image.color.a;
+                var color = image.color;
+                color.a = 1;
+                image.color = color;
+            }
             IsMaximizeWindowMode = true;
         }
         [Content, OnlyPlayMode]
@@ -38,6 +47,13 @@ namespace Convention.WindowsUI
             if (!IsMaximizeWindowMode)
                 return;
             BeforeMaximizeWindow.Setup(m_Plane);
+            var backgroundPlane = m_AnimationPlane == null ? m_Plane : m_AnimationPlane;
+            if (backgroundPlane.TryGetComponent<Image>(out var image))
+            {
+                var color = image.color;
+                color.a = BeforeMaximizeWindowBackgroundColorA;
+                image.color = color;
+            }
             IsMaximizeWindowMode = false;
         }
 
