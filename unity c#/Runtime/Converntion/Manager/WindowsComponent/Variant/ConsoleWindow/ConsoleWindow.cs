@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -83,7 +82,8 @@ namespace Convention.WindowsUI.Variant
                 m_WindowManager.SelectContextPlane(ConsoleWindowIndex);
             });
             (buttonWrapper.button as ITitle).title = ConsoleButtonName;
-            StackTrace.interactable = false;
+            //StackTrace.interactable = false;
+            StackTrace.InputFieldSource.Source.readOnly = true;
 
             m_MessageSwitch.ref_value = true;
             m_WarningSwitch.ref_value = true;

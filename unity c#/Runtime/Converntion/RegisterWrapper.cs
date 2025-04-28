@@ -72,7 +72,16 @@ namespace Convention
         }
         ~RegisterWrapper()
         {
-            RegisterBaseWrapperExtension.Registers.Remove(typeof(Tag));
+            Release();
+        }
+        public bool IsRelease { get; private set; }
+        public void Release()
+        {
+            if (IsRelease == false)
+            {
+                RegisterBaseWrapperExtension.Registers.Remove(typeof(Tag));
+                IsRelease = true;
+            }
         }
     }
 }

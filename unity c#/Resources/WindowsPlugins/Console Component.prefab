@@ -572,6 +572,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3241788777565864885, guid: 37924db2d27cd6e49bf8002531a08095, type: 3}
+      propertyPath: m_ReadOnly
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3241788777981816896, guid: 37924db2d27cd6e49bf8002531a08095, type: 3}
       propertyPath: m_Name
       value: StackTrace
@@ -1473,6 +1477,7 @@ MonoBehaviour:
     anchorMax: {x: 0, y: 0}
     anchorMin: {x: 0, y: 0}
     pivot: {x: 0, y: 0}
+  BeforeMaximizeWindowBackgroundColorA: 1
   AdjustSizeToContainsRect: {fileID: 0}
 --- !u!114 &5916386236659874881
 MonoBehaviour:

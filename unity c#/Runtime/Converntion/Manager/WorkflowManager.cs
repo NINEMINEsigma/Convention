@@ -210,6 +210,10 @@ namespace Convention.Workflow
         {
             CameraZ = Camera.main.transform.position.z;
         }
+        private void OnDestroy()
+        {
+            m_RegisterWrapper.Release();
+        }
 
         public void RefreshImmediate()
         {

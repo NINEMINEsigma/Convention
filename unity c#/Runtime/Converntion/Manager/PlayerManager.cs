@@ -11,11 +11,11 @@ namespace Convention
 
         [SerializeField, Resources] private CinemachineVirtualCamera m_VirtualCamera;
 
-        private RegisterWrapper<PlayerManager> m_register;
+        private RegisterWrapper<PlayerManager> m_RegisterWrapper;
 
         void Start()
         {
-            m_register = new(() => { });
+            m_RegisterWrapper = new(() => { });
 
             if (PerformanceTestManager.RunningBenchmark)
             {
@@ -35,7 +35,7 @@ namespace Convention
         }
         private void OnDestroy()
         {
-            m_register = null;
+            m_RegisterWrapper.Release();
         }
 
         public void EnableFirstPersonController()

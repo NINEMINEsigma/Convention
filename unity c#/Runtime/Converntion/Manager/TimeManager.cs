@@ -10,7 +10,7 @@ namespace Convention
     {
         public delegate void TimeDelegate(float time);
 
-        private RegisterWrapper<TimeManager> m_registerWrapper;
+        private RegisterWrapper<TimeManager> m_RegisterWrapper;
         private static TimeManager m_instance;
         public static TimeManager instance
         {
@@ -50,7 +50,6 @@ namespace Convention
             set => m_DefaultClock.focusType = value;
         }
 
-
         private void Start()
         {
             if (m_instance != null)
@@ -69,12 +68,13 @@ namespace Convention
                 time = 0
             };
             clockers.Add(m_DefaultClock);
-            m_registerWrapper = new(() => { });
+            m_RegisterWrapper = new(() => { });
             if (isLoadInHierarchy)
                 gameObject.AddComponent<HierarchyLoadedIn>();
         }
         private void OnDestroy()
         {
+            m_RegisterWrapper.Release();
             if (m_instance == this)
                 m_instance = null;
         }

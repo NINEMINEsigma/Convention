@@ -8,7 +8,7 @@ namespace Convention
     public class ActionInput : SerializedMonoBehaviour, IAnyClass
     {
         [Setting] public Dictionary<InputAction, UnityEvent> InputEvent = new();
-        [Content] public RegisterWrapper<ActionInput> register;
+        [Content] public RegisterWrapper<ActionInput> m_RegisterWrapper;
 
         [return: ReturnNotNull]
         public string SymbolName()
@@ -18,12 +18,17 @@ namespace Convention
 
         private void Start()
         {
-            register = new RegisterWrapper<ActionInput>(() => { });
+            m_RegisterWrapper = new RegisterWrapper<ActionInput>(() => { });
             foreach (var item in InputEvent)
             {
                 item.Key.performed += (call) => item.Value.Invoke();
                 item.Key.Enable();
             }
+        }
+
+        private void OnDestroy()
+        {
+            m_RegisterWrapper.Release();
         }
     }
 }

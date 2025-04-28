@@ -14,7 +14,7 @@ namespace Convention
 {
     public class SceneTransitionManager : MonoSingleton<SceneTransitionManager>
     {
-        private RegisterWrapper<SceneTransitionManager> register;
+        private RegisterWrapper<SceneTransitionManager> m_RegisterWrapper;
 
         public override bool IsDontDestroyOnLoad => true;
 
@@ -64,7 +64,12 @@ namespace Convention
 
             SetupInitialState();
 
-            register = new(() => { });
+            m_RegisterWrapper = new(() => { });
+        }
+
+        private void OnDestroy()
+        {
+            m_RegisterWrapper.Release();
         }
 
         #region Awake

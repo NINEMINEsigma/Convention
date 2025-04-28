@@ -15,17 +15,24 @@ namespace Convention.WindowsUI
         private bool use_GridLayoutGroup => layoutGroupType == LayoutGroupType.GridLayoutGroup && gridLayoutGroup;
 
         // -----------------
+
+        [Setting] public bool IsMaxInTop = true;
+        [Setting] public bool IsMinInButtm = true;
+
         public bool hasLayoutGroup => layoutGroupType != LayoutGroupType.None;
 
         [Resources, Setting, HopeNotNull] public SO.Windows WindowConfig;
         [Resources, SerializeField, HopeNotNull] private RectTransform BarPlane;
         [Resources, SerializeField, HopeNotNull] private WindowManager m_WindowManager;
         [Resources, HopeNotNull] public WindowUIModule ButtonPrefab;
+
         [Content, OnlyPlayMode]
         public void MinimizeWindow()
         {
             if (m_WindowManager)
             {
+                if (IsMinInButtm)
+                    m_WindowManager.transform.SetAsFirstSibling();
                 m_WindowManager.WindowPlane.ExitMaximizeWindowMode();
             }
         }
@@ -35,7 +42,8 @@ namespace Convention.WindowsUI
             if (m_WindowManager)
             {
                 m_WindowManager.WindowPlane.MaximizeWindow();
-                m_WindowManager.gameObject.transform.SetAsLastSibling();
+                if (IsMaxInTop)
+                    m_WindowManager.transform.SetAsLastSibling();
             }
         }
         [Content, OnlyPlayMode]
@@ -43,7 +51,6 @@ namespace Convention.WindowsUI
         {
             if (m_WindowManager)
             {
-                m_WindowManager.gameObject.transform.SetAsFirstSibling();
                 m_WindowManager.CloseWindow();
             }
         }

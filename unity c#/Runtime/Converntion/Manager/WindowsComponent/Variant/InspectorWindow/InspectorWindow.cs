@@ -10,7 +10,7 @@ namespace Convention.WindowsUI.Variant
     public class InspectorWindow : WindowsComponent, ISingleton<InspectorWindow>
     {
         public static InspectorWindow instance { get; private set; }
-        private RegisterWrapper<InspectorWindow> registerWrapper;
+        private RegisterWrapper<InspectorWindow> m_RegisterWrapper;
         private object target;
 
         [Setting] public bool IsWorkWithHierarchyWindow = true;
@@ -32,6 +32,10 @@ namespace Convention.WindowsUI.Variant
                 m_PropertiesWindow = GetComponent<PropertiesWindow>();
         }
 
+        private void OnDestroy()
+        {
+            m_RegisterWrapper.Release();
+        }
 
         private void Start()
         {
@@ -40,7 +44,7 @@ namespace Convention.WindowsUI.Variant
             if (m_PropertiesWindow == null)
                 m_PropertiesWindow = GetComponent<PropertiesWindow>();
 
-            registerWrapper = new(() => { });
+            m_RegisterWrapper = new(() => { });
             instance = this;
 
             if (IsWorkWithHierarchyWindow == true)

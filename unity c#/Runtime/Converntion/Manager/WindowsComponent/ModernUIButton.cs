@@ -28,6 +28,7 @@ namespace Convention.WindowsUI
                 transform.localScale = new Vector3(0f, 0f, 0f);
                 colorImg = GetComponent<UnityEngine.UI.Image>();
                 colorImg.color = new Color(startColor.r, startColor.g, startColor.b, startColor.a);
+                colorImg.raycastTarget = false;
             }
 
             void Update()

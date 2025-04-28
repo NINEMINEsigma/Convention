@@ -16,6 +16,10 @@ namespace Convention.WindowsUI.Variant
         [Content, OnlyPlayMode] public string CurrentTargetName;
         [Content, OnlyPlayMode, SerializeField] public List<string> pathContainer = new();
         private RegisterWrapper<AssetsWindow> m_RegisterWrapper;
+        private void OnDestroy()
+        {
+            m_RegisterWrapper.Release();
+        }
 
         public PropertiesWindow MainPropertiesWindow => m_PropertiesWindow;
 

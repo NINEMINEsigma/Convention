@@ -1,7 +1,4 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 namespace Convention.WindowsUI.Variant
@@ -40,14 +37,9 @@ namespace Convention.WindowsUI.Variant
             TextArea.InputFieldSource.Source.onSelect.AddListener(x => isEditing = true);
         }
 
-        public override void OnInspectorItemInit(InspectorItem item)
-        {
-            base.OnInspectorItemInit(item);
-        }
-
         private void OnEnable()
         {
-            TextArea.interactable = targetItem.AbleChangeType;
+            TextArea.InputFieldSource.Source.readOnly = !targetItem.AbleChangeType;
             if (targetItem.AbleChangeType)
             {
                 try

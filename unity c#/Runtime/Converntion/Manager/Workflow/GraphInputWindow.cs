@@ -16,7 +16,7 @@ namespace Convention.Workflow
 
         [Resources, SerializeField, HopeNotNull, Header(nameof(HierarchyWindow))] private HierarchyWindow MyHierarchyWindow;
 
-        private RegisterWrapper<GraphInputWindow> RegisterWrapper;
+        private RegisterWrapper<GraphInputWindow> m_RegisterWrapper;
 
         private PropertiesWindow.ItemEntry StartNodeInputsTab, FunctionsTab, EndNodeOutputsTab;
 
@@ -42,7 +42,7 @@ namespace Convention.Workflow
             {
                 SharedModule.instance.OpenCustomMenu(this.transform as RectTransform, new SharedModule.CallbackData("test", go => { }));
             });
-            RegisterWrapper = new(() =>
+            m_RegisterWrapper = new(() =>
             {
                 StartNodeInputsTab = MyHierarchyWindow.CreateRootItemEntryWithBinders(new TitleClass(nameof(StartNodeInputsTab)))[0];
                 StartNodeInputsTab.GetHierarchyItem().title = WorkflowManager.Transformer("StartNodes");
@@ -53,6 +53,10 @@ namespace Convention.Workflow
             }, typeof(HierarchyWindow));
         }
 
+        private void OnDestroy()
+        {
+            m_RegisterWrapper.Release();
+        }
         private void Reset()
         {
             MyHierarchyWindow = GetComponent<HierarchyWindow>();    
