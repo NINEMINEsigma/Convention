@@ -23,7 +23,7 @@ namespace Convention.WindowsUI.Variant
             Target = Targets[TargetIndex = (TargetIndex + 1) % Targets.Count];
         }
 
-        private void FixedUpdate()
+        private void LateUpdate()
         {
             if (Target != null)
                 RectTransformInfo.UpdateAnimationPlane(Target, RectBox, Speed, 0, true);

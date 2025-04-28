@@ -4,7 +4,7 @@ using UnityEngine.Events;
 
 namespace Convention.WindowsUI
 {
-    public partial class InputField : WindowUIModule, IText, IActionInvoke<string>
+    public partial class InputField : WindowUIModule, IInputField
     {
         [Resources, HopeNotNull] public TMP_InputField Source;
         [Resources] public TMP_Text placeholder;

@@ -45,7 +45,7 @@ from llama_index.core.schema                                import (
     TextNode                                                as     TextNode,
     ImageNode                                               as     ImageNode,
     )
-from llama_index.core.prompts                               import BasePromptTemplate
+from llama_index.core.prompts                               import BasePromptTemplate, PromptTemplate
 from llama_index.core.storage                               import StorageContext
 from llama_index.core.callbacks                             import CallbackManager
 from llama_index.core.query_engine                          import (
@@ -2030,7 +2030,7 @@ class ReActAgentCore(CustomAgentCore[ReActAgent]):
             context_str,
             **kwargs)
 
-    def get_prompt(self) -> str:
+    def get_prompt(self) -> Dict[str, BasePromptTemplate]:
         return self.ref_value.get_prompts()
     def update_prompts(self, prompts_dict: Dict[str, BasePromptTemplate]) -> None:
         self.ref_value.update_prompts(prompts_dict)

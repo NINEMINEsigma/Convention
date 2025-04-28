@@ -623,6 +623,31 @@ namespace Convention
             this.description = description;
         }
     }
+    [System.AttributeUsage(AttributeTargets.All, Inherited = true, AllowMultiple = true)]
+    public class TypeCheckAttribute : Attribute
+    {
+        public readonly Type[] typens;
+        public readonly string description;
+
+        public TypeCheckAttribute(string description, params Type[] typens)
+        {
+            this.typens = typens;
+            this.description = description;
+        }
+
+        public TypeCheckAttribute(params Type[] typens) : this("Type Check Failed: value is not sub class of " +
+            $"{string.Join(",", typens.ToList().ConvertAll(x => x.Name))}" +
+            ", current is ${type}", typens)
+        {
+
+        }
+
+        public bool Check(object target)
+        {
+            return target != null &&
+                typens.Any(x => target.GetType().IsSubclassOf(x) || x.IsInterface && target.GetType().GetInterface(x.Name) != null);
+        }
+    }
 
 
     public static partial class ConventionUtility

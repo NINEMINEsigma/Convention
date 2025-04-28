@@ -175,7 +175,6 @@ def first_if_not[_T](
         default:    Optional[_T]            = None
         ) -> Optional[_T]:
     return first_if(iter, lambda x: not pr(x), default)
-
 def last_if[_T](
         iter:       Iterable[_T],
         pr:         Callable[[_T], bool],
@@ -643,7 +642,7 @@ class atomic[_T](any_class):
     _value: _T
     locker: threading.Lock
     _is_in_with: bool
-    
+
     def __init__(
         self,
         value:  Optional[_T]                = None,
@@ -724,7 +723,7 @@ InternalGlobalLockerCount = atomic[int](0)
 
 class lock_guard(any_class):
     _locker:        Union[threading._RLock, threading.Lock]
-    
+
     def __init__(
         self,
         lock:   Optional[Union[threading.RLock, threading.Lock]] = None

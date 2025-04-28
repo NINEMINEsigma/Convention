@@ -70,7 +70,7 @@ namespace Convention.WindowsUI
             new RectTransformInfo(m_Plane).Setup(m_AnimationPlane);
         }
 
-        private void FixedUpdate()
+        private void LateUpdate()
         {
             if (IsEnableAnimation && m_Plane && m_AnimationPlane)
             {

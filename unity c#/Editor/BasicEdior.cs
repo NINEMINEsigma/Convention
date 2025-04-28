@@ -147,6 +147,7 @@ namespace Convention
             bool HasSerializeField = field.GetCustomAttributes(typeof(SerializeField), true).Length != 0;
             bool HasOpt = field.GetCustomAttributes(typeof(OptAttribute), true).Length != 0;
             bool HasArgPackage = field.GetCustomAttributes(typeof(ArgPackageAttribute), true).Length != 0;
+            object currentFieldValue = field.GetValue(target);
 
             if (HasOnlyPlayMode && Application.isPlaying == false)
             {
@@ -161,12 +162,29 @@ namespace Convention
                         return;
                 }
             }
+            bool IsTypenCheckFailed = false;
+            foreach (var attr in field.GetCustomAttributes<TypeCheckAttribute>(true))
+            {
+                if (attr.Check(currentFieldValue) == false)
+                {
+                    GUILayout.BeginVertical(EditorStyles.helpBox);
+                    HelpBox(attr.description.Replace("${type}", currentFieldValue == null 
+                        ? "null" 
+                        : currentFieldValue.GetType().Name), MessageType.Error);
+                    IsTypenCheckFailed = true;
+                    break;
+                }
+            }
             if (HasOnlyNotNullMode || HasHopeNotNullMode)
                 DisplayOnlyNotNull(field, isCheckIgnore);
             else if (isCheckIgnore && (HasIgnore || (field.IsPublic == false && !HasSerializeField)))
                 IgnoreField(field);
             else
                 DisplayDefaultField(field, isCheckIgnore);
+            if (IsTypenCheckFailed)
+            {
+                GUILayout.EndVertical();
+            }
 
             void OnlyDisplayOnPlayMode(FieldInfo field, bool isCheckIgnore)
             {

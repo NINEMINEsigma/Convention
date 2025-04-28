@@ -12,12 +12,12 @@ namespace Convention.WindowsUI.Variant
         private RegisterWrapper<ConversationWindow> m_RegisterWrapper;
 
         [Resources, Header("HeadLine"), OnlyNotNullMode] public Image HeadIcon;
-        [Resources, OnlyNotNullMode] public Text HeadText = new();
+        [Resources, OnlyNotNullMode] public ModernUIInputField HeadText = new();
         [Resources] public List<Text> HeadTitles = new();
         private List<PropertiesWindow.ItemEntry> m_entries = new();
 
-        [Setting, Header("Roles Icon"), SerializeField, HopeNotNull] private ScriptableObject m_RolesIcon;
-        [Setting, SerializeField, OnlyNotNullMode] private Sprite m_DefaultRoleIcon;
+        [Resources, Header("Roles Icon"), SerializeField, HopeNotNull] private ScriptableObject m_RolesIcon;
+        [Resources, SerializeField, OnlyNotNullMode] private Sprite m_DefaultRoleIcon;
 
         public Sprite GetRoleIconSprite([In] string role)
         {
