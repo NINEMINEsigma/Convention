@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Convention.Internal;
 using UnityEditor;
 using UnityEngine;
@@ -677,10 +678,21 @@ namespace Convention
         }
 #endif
 
+        public static int MainThreadID { get; private set; }
+        public static bool CurrentThreadIsMainThread()
+        {
+            return MainThreadID == Thread.CurrentThread.ManagedThreadId;
+        }
+
         private static CoroutineMonoStarterUtil CoroutineStarter;
 
         private class CoroutineMonoStarterUtil : MonoBehaviour
         {
+            private void Update()
+            {
+                MainThreadID = Thread.CurrentThread.ManagedThreadId;
+            }
+
             private void OnDestroy()
             {
                 CoroutineStarter = null;

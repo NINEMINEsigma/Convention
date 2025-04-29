@@ -265,6 +265,9 @@ class type_class(object):
             return True
         else:
             return False
+    @virtual
+    def __hash__(self) -> int:
+        return self.GetHashCode()
 
     @classmethod
     def class_name(cls) -> str:
@@ -278,6 +281,10 @@ class type_class(object):
     @virtual
     def GetAssembly(self) -> str:
         return self.__class__.Assembly()
+
+    @virtual
+    def GetHashCode(self) -> int:
+        return hash(id(self))
 
 class base_value_reference[_T](type_class):
     _ref_value:     Optional[_T]        = None
@@ -744,9 +751,11 @@ class thread_instance(threading.Thread, any_class):
         self,
         call:           Action[None],
         *,
-        is_del_join:    bool = True
+        is_del_join:    bool = True,
+        **kwargs
         ):
-        super().__init__(target=call)
+        kwargs.update({"target": call})
+        super().__init__(**kwargs)
         self.is_del_join = is_del_join
         self.start()
     def __del__(self):
