@@ -225,7 +225,7 @@ class type_class(object):
     else:
         def __init__(self):
             pass
-    def GetType(self):
+    def GetType(self) -> type:
         return type(self)
     @virtual
     def SymbolName(self) -> str:
