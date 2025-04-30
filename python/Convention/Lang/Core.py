@@ -232,3 +232,123 @@ def run_async_coroutine(coro: Coroutine) -> Any:
                 "Detected nested async. Please use nest_asyncio.apply() to allow nested event loops."
                 "Or, use async entry methods like `aquery()`, `aretriever`, `achat`, etc."
             )
+
+# 动态库加载
+
+import ctypes
+
+class DynamicFunctionInfo(left_value_reference[ctypes._FuncPointer]):
+    def __init__(self, 
+                 func: ctypes._FuncPointer,
+                 name:      str, 
+                 argtypes:  List[Type[ctypes._CDataMeta]], 
+                 restype:   Type[ctypes._CDataMeta]
+                 ) -> None:
+        super().__init__(func)
+        self._name = name
+        self._argtypes = argtypes
+        self._restype = restype
+        
+    @property
+    def name(self) -> str:
+        return self._name
+    
+    @property
+    def argtypes(self) -> List[Type[ctypes._CDataMeta]]:
+        return self._argtypes
+    
+    @property
+    def restype(self) -> Type[ctypes._CDataMeta]:
+        return self._restype 
+        
+    def __call__(self, *args):
+        for index, arg in enumerate(args):
+            args[index] = self.argtypes[index](arg)
+        return ctypes.cast(self.ref_value(*args), self.restype)
+
+class DynamicLibrary(left_value_reference[ctypes.CDLL]):
+    '''
+示例:
+---
+    C++部分
+    ```c++
+#include <iostream>
+
+extern "C" {
+    int add(int a, int b) {
+        return a + b;
+    }
+    
+    void print_hello() {
+        std::cout << "Hello from C++!" << std::endl;
+    }
+}
+    
+    ```
+    python调用
+    ```python
+import ctypes
+
+# 加载动态链接库
+# 注意：在Windows上使用.dll，在Linux上使用.so
+lib = ctypes.CDLL('./example.dll')  # Windows
+# lib = ctypes.CDLL('./libexample.so')  # Linux
+
+# 调用C++函数
+result = lib.add(5, 3)
+print(f"5 + 3 = {result}")
+
+# 调用无返回值的函数
+lib.print_hello()
+    ```
+    
+##    定义结构
+    ```python
+import ctypes
+
+# 定义C结构体
+class Point(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_int),
+                ("y", ctypes.c_int)]
+
+# 加载库
+lib = ctypes.CDLL('./example.dll')
+
+# 设置函数参数和返回类型
+lib.create_point.argtypes = [ctypes.c_int, ctypes.c_int]
+lib.create_point.restype = ctypes.POINTER(Point)
+
+# 调用函数
+point = lib.create_point(10, 20)
+print(f"Point: ({point.contents.x}, {point.contents.y})")
+    ```
+    
+    '''
+    
+    def __init__(self, path: str):
+        self.path = ctypes.CDLL(path)
+        self.lib = ctypes.CDLL(path)
+
+    def __getattr__(self, item: str) -> Any:
+        return getattr(self.lib, item)
+
+    def SetupFunction(self, 
+                      name:      str, 
+                      argtypes:  List[Type[ctypes._CDataMeta]], 
+                      restype:   Type[ctypes._CDataMeta]
+                      ) -> DynamicFunctionInfo:
+        '''
+        设置函数参数和返回类型
+        '''
+        func = getattr(self.lib, name)
+        func.argtypes = argtypes
+        func.restype = restype
+        
+        return DynamicFunctionInfo(func, name, argtypes, restype)
+        
+    def CallFunction(self, name: str, *args) -> Any:
+        '''
+        调用函数
+        '''
+        return getattr(self.lib, name)(*args)
+

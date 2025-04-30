@@ -64,6 +64,7 @@ project("Convention")
 
 # Project
 add_subdirectory("Convention")
+add_subdirectory("ConventionEngine")
 # EasySave with Convention-Build
 add_subdirectory("EasySave")
 # Test Demo

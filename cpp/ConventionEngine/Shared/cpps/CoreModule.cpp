@@ -1,0 +1,3 @@
+#include "CoreModule.h"
+
+CEObject

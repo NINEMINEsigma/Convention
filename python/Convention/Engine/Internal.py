@@ -1,7 +1,10 @@
 '''
+生命周期对象的真实原件位于<原空间>中, 在<构建环境>中通过构建生成镜像的副本, 
+作为<像空间>在<运行环境>中运行
+
 <编辑环境>:
     生命周期对象的在此环境下不会执行<更新>系列生命周期方法
-    在此环境中可以取得<编辑权限>, 可以对对象进行编辑, 可以转移至<构建环境>
+    在此环境中可以取得编辑<原空间>中对象的权限, 可以对对象进行编辑, 可以转移至<构建环境>
 
     <层级视图>:
         <编辑环境>下查找对象的中间件
@@ -24,13 +27,16 @@
 
 '''
 
-from enum import Enum
-from ..Internal import *
+from enum           import Enum
+from ..Internal     import *
+from ..Lang.Core    import *
 
 class _Environment(BaseModel, any_class):
-    _Name: str = PrivateAttr(default="")
-    _IsEditor: bool = PrivateAttr(default=False)
-    _IsBuild: bool = PrivateAttr(default=False)
+    _Name:      str = PrivateAttr(default="")
+    _IsEditor:  bool = PrivateAttr(default=False)
+    _IsBuild:   bool = PrivateAttr(default=False)
+    
+    _Scenes:    list['Scene'] = PrivateAttr(default=[])
 
     @property
     def IsEditor(self) -> bool:
@@ -156,92 +162,36 @@ class CEObject(BaseModel, any_class):
 
     生命周期引擎对象的基类, 所有需要实现生命周期的对象都继承自该类
     '''
-    def __init__(self, *args, **kwargs):
-        BaseModel.__init__(self, *args, **kwargs)
+    def __init__(self):
+        BaseModel.__init__(self)
         any_class.__init__(self)
-
-    _CachedPtr:                             int = PrivateAttr(default=-1)
-    _InstanceID:                            int = PrivateAttr(default=-1)
-    _EngineRuntimeErrorString:              str = PrivateAttr(default="")
-    _OffsetOfInstanceIDInCPlusPlusObject:   int = PrivateAttr(default=-1)
-    _ObjectIsNullMessage:                   str = PrivateAttr(default="将实例化的对象为空。")
-    _CloneDestroyedMessage:                 str = PrivateAttr(default="实例化失败，因为克隆体在创建过程中被销毁。"\
-                                                                      "如果Behaviour.Awake中调用了DestroyImmediate，可能会发生这种情况。")
-
-    _Name:                                  str = PrivateAttr(default="")
-    _HideFlags:                       HideFlags = PrivateAttr(default=HideFlags.Default)
-
+        
+    _m_hideFlags:   HideFlags   = PrivateAttr(default=HideFlags.Default)
+    _m_name:        str         = PrivateAttr(default="")
+    
+    @property
+    def hideFlags(self) -> HideFlags:
+        return self._m_hideFlags
+    @hideFlags.setter
+    def hideFlags(self, value:HideFlags):
+        self._m_hideFlags = value
+        
     @property
     def name(self) -> str:
-        return CEObject._GetName(self)
+        return self._m_name
     @name.setter
     def name(self, value:str):
-        CEObject._SetName(self, value)
-
-    @staticmethod
-    def _GetName(obj:'CEObject') -> str:
-        return obj._Name
-    @staticmethod
-    def _SetName(obj:'CEObject', name:str):
-        obj._Name = name
-
-    @sealed
-    def _GetCachedPtr(self) -> int:
-        return self._CachedPtr
-
-    @override
-    def GetAssembly(self) -> str:
-        return "Engine"
-    @override
-    def GetSymbolName(self) -> str:
-        return "Object"
-    @override
-    def ToString(self) -> str:
-        return self.GetType().__name__
-
-    @classmethod
-    def class_name(cls) -> str:
-        return cls.__name__
-    @override
-    def __str__(self) -> str:
-        return self.ToString()
-
-    @override
-    def GetHashCode(self) -> int:
-        return self._InstanceID
-
-    @virtual
-    def __eq__(self, other:'CEObject') -> bool:
-        if other is not CEObject:
-            return False
-        return
-
-    @sealed
-    def EnsureRunningOnMainThread(self):
-        if not threading.current_thread().ident == _GetMainThreadID():
-            raise RuntimeError(f"{self.EnsureRunningOnMainThread.__name__}必须在引擎的主线程中执行")
-
+        self._m_name = value
+        
+    def CurrentThreadIsMainThread(self) -> bool:
+        return _GetMainThreadID() == threading.get_ident()
+    
     @staticmethod
     @sealed
-    def _IsNativeObjectAlive(o:'CEObject') -> bool:
-        if o._GetCachedPtr() != 0:
-            return True
-        return CEObject.DoesObjectWithInstanceIDExist(o._GetInstanceID())
-
-    @staticmethod
-    @sealed
-    def _CompareBaseObject(lhs:Optional['CEObject'], rhs:Optional['CEObject']) -> bool:
-        if lhs is None and rhs is None:
-            return True
-        if rhs is None:
-            return not CEObject._IsNativeObjectAlive(lhs)
-        if lhs is None:
-            return not CEObject._IsNativeObjectAlive(rhs)
-        return lhs._InstanceID == rhs._InstanceID
-
-    @staticmethod
-    @sealed
-    def DoesObjectWithInstanceIDExist(instance_id:int) -> bool:
-        raise NotImplementedError()
-
-
+    async def InstantiateAsync[_T:CEObject](original: _T, callback: Optional[Action[_T]]=None) -> _T:
+        if callback is None:
+            callback = lambda _: _
+        
+        
+    
+    
