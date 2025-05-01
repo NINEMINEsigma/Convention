@@ -1,6 +1,6 @@
 message("Visual-Algorithm: --- ----- ----- ----- ----- --")
 
-include_directories(../Convention)
+include_directories(${CMAKE_INSTALL_PREFIX}/include)
 function(VA_target_execute name)
     message(STATUS ${name}.cpp build-in VA)
     add_executable(${name} ${name}.cpp)

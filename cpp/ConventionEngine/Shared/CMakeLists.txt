@@ -1,6 +1,7 @@
 message("Convention Engine Kernel: --- ----- ----- ----- ----- --")
 
 include_directories(./)
+include_directories(${CMAKE_INSTALL_PREFIX}/include)
 
 add_library(ConventionEngineKernel SHARED ./cpps/CoreModule.cpp)
 target_link_libraries(ConventionEngineKernel Convention)
