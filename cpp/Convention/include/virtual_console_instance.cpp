@@ -1,4 +1,4 @@
-#include "Convention/console_instance.h"
+#include "Convention/instance/console_instance.h"
 
 
 // Get the ANSI escape code for a given ConsoleColor

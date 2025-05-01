@@ -1,7 +1,7 @@
 #ifndef __FILE_CONVENTION_CONSOLE_INSTANCE
 #define __FILE_CONVENTION_CONSOLE_INSTANCE
 
-#include "Convention/Interface.h"
+#include "Convention/instance/Interface.h"
 #ifdef _WINDOWS
 #include "Windows.h"
 #endif

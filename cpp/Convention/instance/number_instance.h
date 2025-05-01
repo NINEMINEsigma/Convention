@@ -1,7 +1,7 @@
 #ifndef __FILE_CONVENTION_NUMBER_INSTANCE
 #define __FILE_CONVENTION_NUMBER_INSTANCE
 
-#include "Convention/Interface.h"
+#include "Convention/instance/Interface.h"
 
 template<typename _Number>
 struct number_ex_indicator

@@ -1,6 +1,6 @@
 #ifdef _WINDOWS
 
-#include "Convention\process_instance.h"
+#include "Convention/instance/process_instance.h"
 
 using namespace std;
 using process_instance = instance<process_indicator, true>;

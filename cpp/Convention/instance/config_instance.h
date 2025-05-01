@@ -1,6 +1,6 @@
 #ifndef __FILE_CONVENTION_CONFIG_INSTANCE
 #define __FILE_CONVENTION_CONFIG_INSTANCE
-#include "Convention/Interface.h"
+#include "Convention/instance/Interface.h"
 
 struct config_indicator
 {

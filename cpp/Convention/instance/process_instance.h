@@ -1,7 +1,7 @@
 #ifndef __FILE_CONVENTION_PROCESS_INSTANCER
 #define __FILE_CONVENTION_PROCESS_INSTANCER
 
-#include "Convention/Interface.h"
+#include "Convention/instance/Interface.h"
 
 struct process_indicator
 {

@@ -1,9 +1,9 @@
-#ifndef __FILE_CONVENTION_ENGINE_INTERNAL
+﻿#ifndef __FILE_CONVENTION_ENGINE_INTERNAL
 
 #define __FILE_CONVENTION_ENGINE_INTERNAL
 
-#include "Config.h"
-#include "Instance.h"
+#include "Convention/Config.h"
+#include "Convention/Instance.h"
 
 namespace ConventionEngine
 {
@@ -19,13 +19,14 @@ namespace ConventionEngine
 		void* operator new(size_t size);
 
 	public:
+		void operator delete(void* ptr, size_t size);
 		virtual ~CEObject();
 
 		_Notnull_ constexpr const char* GetName() const;
 		void SetName(_In_ const char* name);
 	};
 
-	
+
 	using CEError = size_t;
 	using CEHandle = int_fast64_t;
 }
@@ -37,7 +38,7 @@ extern "C"
 	void InitConventionEngine(size_t memory_size);
 	void ClearConventionEngine();
 	void QuitConventionEngine();
-	
+
 	void GC_ConventionEngine();
 
 	CE CEHandle GetCEHandle(_In_opt_ CE CEObject* ptr);

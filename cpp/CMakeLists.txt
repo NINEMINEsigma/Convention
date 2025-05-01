@@ -8,6 +8,8 @@ add_compile_definitions(__PLATFORM_NAME="${PLATFORM_NAME}")
 add_compile_definitions(__PLATFORM_VERSION="${PLATFORM_VERSION}")
 add_compile_definitions(__PLATFORM_EXTENSION="${PLATFORM_EXTENSION}")
 
+include_directories(./)
+
 function(BoostRefer)
     
     # ºÏ≤È «∑Ò∆Ù”√Boost
@@ -68,7 +70,7 @@ add_subdirectory("ConventionEngine")
 # EasySave with Convention-Build
 #add_subdirectory("EasySave")
 # Test Demo
-add_subdirectory("Test")
+#add_subdirectory("Test")
 # Visual Algorithm with Convention-Build
 #add_subdirectory("Visual-Algorithm")
 

@@ -1,7 +1,7 @@
 #ifndef __FILE_CONVENTION_MUSIC_INSTANCE
 #define __FILE_CONVENTION_MUSIC_INSTANCE
 
-#include "Convention/Interface.h"
+#include "Convention/instance/Interface.h"
 
 
 #if _WINDOWS

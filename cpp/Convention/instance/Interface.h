@@ -1,7 +1,7 @@
 #ifndef __FILE_INCLUDE_INTERNAL
 #define __FILE_INCLUDE_INTERNAL
 
-#include "Internal.h"
+#include "Convention/Internal.h"
 
 // define _shared to control real behaviour
 template<typename _Type>

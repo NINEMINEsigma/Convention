@@ -1,19 +1,19 @@
 #ifndef __FILE_INSTANCE
 #define __FILE_INSTANCE
 
-#include "Convention/any_class_instance.h"
-#include "Convention/app_instance.h"
-#include "Convention/config_instance.h"
-#include "Convention/console_instance.h"
-#include "Convention/ffmpeg_instance.h"
-#include "Convention/file_instance.h"
-#include "Convention/music_instance.h"
-#include "Convention/number_instance.h"
-#include "Convention/process_instance.h"
-#include "Convention/stream_instance.h"
-#include "Convention/time_instance.h"
-#include "Convention/std_instance.h"
-#include "Convention/web_instance.h"
+#include "Convention/instance/any_class_instance.h"
+#include "Convention/instance/app_instance.h"
+#include "Convention/instance/config_instance.h"
+#include "Convention/instance/console_instance.h"
+#include "Convention/instance/ffmpeg_instance.h"
+#include "Convention/instance/file_instance.h"
+#include "Convention/instance/music_instance.h"
+#include "Convention/instance/number_instance.h"
+#include "Convention/instance/process_instance.h"
+#include "Convention/instance/stream_instance.h"
+#include "Convention/instance/time_instance.h"
+#include "Convention/instance/std_instance.h"
+#include "Convention/instance/web_instance.h"
 
 template<typename _Type, typename... _Args>
 auto make_instance(_Args&&... args)

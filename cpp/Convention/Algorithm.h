@@ -1,7 +1,7 @@
 #ifndef __FILE_ALGORITHM
 #define __FILE_ALGORITHM
 
-#include "Config.h"
+#include "Convention/Config.h"
 
 template<
 	// std::set<_Elem>::iterator

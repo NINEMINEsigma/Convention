@@ -3,14 +3,22 @@
 
 using namespace std;
 
+class A
+{
+public:
+	void* operator new(size_t size)
+	{
+		cout << "A" << endl;
+		return ::operator new(size);
+	}
+};
+
+class B :public A
+{
+public:
+};
 
 int main()
 {
-	map<int, int> mapper;
-	mapper[5] = 5;
-	mapper[3] = 3;
-	for (auto&& [_,value] : mapper)
-	{
-		cout << value << endl;
-	}
+	A* ptr = new B();
 }

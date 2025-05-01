@@ -1,9 +1,9 @@
 #ifndef __FILE_CONVENTION
 #define __FILE_CONVENTION
 
-#include "Config.h"
-#include "Internal.h"
-#include "Instance.h"
-#include "Algorithm.h"
+#include "Convention/Config.h"
+#include "Convention/Internal.h"
+#include "Convention/Instance.h"
+#include "Convention/Algorithm.h"
 
 #endif // !__FILE_CONVENTION

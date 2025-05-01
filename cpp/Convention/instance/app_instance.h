@@ -1,8 +1,8 @@
 #ifndef __FILE_CONVENTION_APP_INSTANCE
 #define __FILE_CONVENTION_APP_INSTANCE
 
-#include "Convention/Interface.h"
-#include "Convention/file_instance.h"
+#include "Convention/instance/Interface.h"
+#include "Convention/instance/file_instance.h"
 
 #ifdef _WINDOWS
 #include <Windows.h>

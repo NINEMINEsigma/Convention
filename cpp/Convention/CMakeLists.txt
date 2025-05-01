@@ -2,24 +2,27 @@ message("Convention: --- ----- ----- ----- ----- --")
 
 BoostRefer()
 
-aux_source_directory    (./include cpps)
-file(GLOB Convention_Header_List Convention/*.h)
-file(GLOB Root_Header_List *.h)
+file(GLOB Root_Headers *.h)
+message("Root_Headers: ${Root_Headers}")
+aux_source_directory(./include  cpps)
+file(GLOB Instance_Headers instance/*.h)
+message("Instance_Headers: ${Instance_Headers}")
 
-message("Convention files: ${Convention_Header_List};${Root_Header_List}")
 
-include_directories(.)
-add_library(Convention ${cpps} ${Convention_Header_List} ${Root_Header_List})
+add_library(Convention-Static   STATIC ${cpps})
+add_library(Convention-Shared   SHARED ${cpps})
 
-set_target_properties(Convention PROPERTIES PUBLIC_HEADER "${Root_Header_List}")
-
-install(FILES ${Convention_Header_List}
+install(FILES ${Root_Headers}
         DESTINATION                         ${CMAKE_INSTALL_PREFIX}/include/Convention)
-install(TARGETS Convention 
-        PUBLIC_HEADER DESTINATION           ${CMAKE_INSTALL_PREFIX}/include/
+install(FILES ${Instance_Headers}
+        DESTINATION                         ${CMAKE_INSTALL_PREFIX}/include/Convention/instance)
+install(TARGETS Convention-Static
         RUNTIME DESTINATION                 ${CMAKE_INSTALL_PREFIX}/bin
         LIBRARY DESTINATION                 ${CMAKE_INSTALL_PREFIX}/lib
         ARCHIVE DESTINATION                 ${CMAKE_INSTALL_PREFIX}/lib/static)
-
+install(TARGETS Convention-Shared
+        RUNTIME DESTINATION                 ${CMAKE_INSTALL_PREFIX}/bin
+        LIBRARY DESTINATION                 ${CMAKE_INSTALL_PREFIX}/lib
+        ARCHIVE DESTINATION                 ${CMAKE_INSTALL_PREFIX}/lib/static)
 
 message("Convention: ----- ----- ----- ----- -----")

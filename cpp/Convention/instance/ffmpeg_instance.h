@@ -1,8 +1,8 @@
 #ifndef __FILE_CONVENTION_FFMPEG_INSTANCE
 #define __FILE_CONVENTION_FFMPEG_INSTANCE
 
-#include "Convention/Interface.h"
-#include "Convention/process_instance.h"
+#include "Convention/instance/Interface.h"
+#include "Convention/instance/process_instance.h"
 #include <vector>
 #include <map>
 

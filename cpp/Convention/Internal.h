@@ -1,7 +1,7 @@
 #ifndef __FILE_INTERNAL
 #define __FILE_INTERNAL
 
-#include "Config.h"
+#include "Convention/Config.h"
 
 extern std::string typename2classname(const std::string& str) noexcept;
 

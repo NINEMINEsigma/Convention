@@ -1,7 +1,7 @@
 #ifndef __FILE_CONVENTION_WEB_INSTANCE
 #define __FILE_CONVENTION_WEB_INSTANCE
 
-#include "Convention/Interface.h"
+#include "Convention/instance/Interface.h"
 
 
 struct web_indicator

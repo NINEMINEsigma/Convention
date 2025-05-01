@@ -1,7 +1,7 @@
 ﻿#ifndef __FILE_CONVENTION_STD_INSTANCE
 #define __FILE_CONVENTION_STD_INSTANCE
 
-#include "Convention/Interface.h"
+#include "Convention/instance/Interface.h"
 
 
 template<typename _Ty>

@@ -1,7 +1,7 @@
 ﻿#ifndef __FILE_CONVENTION_TIME_INSTANCE
 #define __FILE_CONVENTION_TIME_INSTANCE
 
-#include "Convention/Interface.h"
+#include "Convention/instance/Interface.h"
 #include <chrono>
 #include <ctime>
 #include <iomanip>

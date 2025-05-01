@@ -1,5 +1,5 @@
 #ifdef _WINDOWS
-#include "Convention/console_instance.h"
+#include "Convention/instance/console_instance.h"
 
 using namespace std;
 using console = ::instance<console_indicator, true>;

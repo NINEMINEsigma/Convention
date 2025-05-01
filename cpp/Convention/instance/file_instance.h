@@ -1,10 +1,10 @@
 #ifndef __FILE_CONVENTION_FILE_INSTANCE
 #define __FILE_CONVENTION_FILE_INSTANCE
 
-#include "Convention/Interface.h"
+#include "Convention/instance/Interface.h"
 #include <filesystem>
 #include <optional>
-#include "Convention/stream_instance.h"
+#include "Convention/instance/stream_instance.h"
 
 extern bool is_binary_file(const std::filesystem::path& path);
 extern std::filesystem::path get_extension_name(const std::filesystem::path& path);
