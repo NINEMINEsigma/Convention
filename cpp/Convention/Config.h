@@ -1312,6 +1312,18 @@ struct string_indicator
 		const char_indicator::tag* source,
 		const size_t size
 	);
+
+	static size_t c_strlen(const char* str);
+	static char* c_strcpy(
+		char* dest,
+		const char* source
+	);
+	static int c_strcpy_s(
+		char* dest,
+		const char* source,
+		const size_t size
+	);
+
 	template<typename T>
 	static tag to_string(const T& value);
 };

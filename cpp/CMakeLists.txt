@@ -66,11 +66,11 @@ project("Convention")
 add_subdirectory("Convention")
 add_subdirectory("ConventionEngine")
 # EasySave with Convention-Build
-add_subdirectory("EasySave")
+#add_subdirectory("EasySave")
 # Test Demo
 add_subdirectory("Test")
 # Visual Algorithm with Convention-Build
-add_subdirectory("Visual-Algorithm")
+#add_subdirectory("Visual-Algorithm")
 
 message("Root: CMAKE_CXX_STANDARD = ${CMAKE_CXX_STANDARD}" )
 message("Root: CMAKE_CXX_FLAGS = ${CMAKE_CXX_FLAGS}")

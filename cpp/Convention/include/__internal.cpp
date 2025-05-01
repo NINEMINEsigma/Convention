@@ -53,6 +53,26 @@ char_indicator::tag* string_indicator::strcpy_s(
 	return string_indicator::Traits::copy(dest, source, std::min(size, strlen(source)));
 }
 
+size_t string_indicator::c_strlen(const char* str)
+{
+	return ::strlen(str);
+}
+char* string_indicator::c_strcpy(
+	char* dest,
+	const char* source
+)
+{
+	return ::strcpy(dest, source);
+}
+errno_t string_indicator::c_strcpy_s(
+	char* dest,
+	const char* source,
+	const size_t size
+)
+{
+	return ::strcpy_s(dest, std::min(size, c_strlen(source)), source);
+}
+
 std::string typename2classname(const std::string& str) noexcept
 {
 	if (str.substr(0, 6) == "class ")

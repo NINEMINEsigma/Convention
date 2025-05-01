@@ -5,23 +5,37 @@
 #include "Config.h"
 #include "Instance.h"
 
-class CEObject
+namespace ConventionEngine
 {
-public:
-	using string = std::string;
+	class CEObject
+	{
+	public:
+		constexpr static size_t name_max_length = __NameMaxLength;
+	private:
+		int m_instanceID = -1;
+		char m_name[name_max_length] = { 0 };
 
-private:
-	intptr_t m_cachedPtr = 0;
-	int m_instanceID = -1;
-	string m_name;
+	public:
 
+		constexpr const char* GetName() const;
+		void SetName(const char* name);
+	};
 
-public:
-	string name() noexcept;
-	void named(const string& name);
-private:
+	using CEHandle = int_fast64_t;
+}
 
-};
+#define CE ConventionEngine::
 
+extern "C"
+{
+	void InitConventionEngine(size_t memory_size);
+	void ClearConventionEngine();
+	void QuitConventionEngine();
+	CE CEHandle GetCEHandle(CE CEObject* ptr);
+	CE CEObject* GetCEObject(CE CEHandle handle);
+
+	const char* GetName(CE CEHandle handle);
+	void SetName(CE CEHandle handle, const char* name);
+}
 
 #endif // !__FILE_CONVENTION_ENGINE_INTERNAL
