@@ -20,5 +20,7 @@ public:
 
 int main()
 {
-	A* ptr = new B();
+	A* ptr = new A();
+	void* vptr = ptr;
+	B* bptr = static_cast<B*>(vptr);
 }

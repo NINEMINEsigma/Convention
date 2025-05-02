@@ -870,6 +870,10 @@ Enable warning C4005 to find the forbidden define.
 
 #define _allocator_ret_ __declspec(allocator)
 
+#else
+
+#define _allocator_ret_ __declspec(allocator)
+
 #endif // _MSC_VER
 
 #pragma region __TEST_MICROSOFT_IMPLEMENTATION
