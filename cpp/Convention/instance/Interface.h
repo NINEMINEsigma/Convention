@@ -82,7 +82,7 @@ _OS& operator<<(_OS& os, const instance<_Type, false>& ins)
 }
 
 #define instance_move_operator(internal) public:\
-explicit instance(instance&& other) noexcept:_Mybase(std::move(other))\
+instance(instance&& other) noexcept:_Mybase(std::move(other))\
 {\
     this->move(std::move(other));\
 }\

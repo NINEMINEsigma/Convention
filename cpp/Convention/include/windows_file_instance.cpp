@@ -1,4 +1,4 @@
-#if defined(_WIN32) || defined(_WIN64)
+﻿#if defined(_WIN32) || defined(_WIN64)
 #include "Convention/instance/file_instance.h"
 #include <windows.h>
 #include <shlwapi.h>

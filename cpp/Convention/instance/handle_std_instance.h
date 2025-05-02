@@ -61,13 +61,8 @@ public:
 	explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
 	explicit instance(std::initializer_list<_Elem> data) :_Mybase(new tag(data)) {}
 	template<typename... _Args>
-	instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+	instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
 	instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;
-	}
 	instance_move_operator(public) {}
 
 	copy_func_return_auto_with_noexcept(begin);
@@ -554,13 +549,8 @@ public:
 	explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
 	explicit instance(std::initializer_list<_Elem> data) :_Mybase(new tag(data)) {}
 	template<typename... _Args>
-	instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+	instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
 	instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;	
-	}
 	instance_move_operator(public) {}
 
 	copy_func_return_auto_with_noexcept(begin);
@@ -834,29 +824,6 @@ public:
 			return result;
 		}
 	}
-	template<typename _IndexIter, typename _Replacement>
-	instance& replace(_IndexIter begin, _IndexIter end, const _Replacement& replacement)
-	{
-		this->get()->replace(begin, end, replacement);
-		return *this;
-	}
-	template<typename _Target, typename _Replacement>
-	instance& replace(const _Target& target, const _Replacement& replacement, size_t count = static_cast<size_t>(-1))
-	{
-		size_t pos = 0;
-		size_t replaced_count = 0;
-		auto& str = *this->get();
-
-		while ((pos = str.find(target, pos)) != std::string::npos && replaced_count < count)
-		{
-			str.replace(pos, target.size(), replacement);
-			pos += replacement.size();
-			replaced_count++;
-		}
-
-		return *this;
-	}
-
 
 
 	virtual std::string ToString() const noexcept override
@@ -866,46 +833,6 @@ public:
 		return str;
 	}
 
-	template<typename _Right>
-	bool operator==(const _Right& other) const
-	{
-		return this->compare(other) == 0;
-	}
-	template<typename _Right>
-	bool operator!=(const _Right& other) const
-	{
-		return !this->operator==(other);
-	}
-
-	auto operator+(const instance& other) const
-	{
-		return (**this) + *other;
-	}
-	auto operator+(const tag& other) const
-	{
-		(**this) += other;
-		return *this;
-	}
-	auto operator+(const _Elem* other) const
-	{
-		(**this) += other;
-		return *this;
-	}
-	auto& operator+=(const instance& other)
-	{
-		**this += *other;
-		return *this;	
-	}
-	auto& operator+=(const tag& other)
-	{
-		**this += other;
-		return *this;
-	}
-	auto& operator+=(const _Elem* other)
-	{
-		**this += other;
-		return *this;
-	}
 };
 template<typename _Elem, typename _Traits, typename _Alloc>
 class instance<view_indicator<std::basic_string<_Elem, _Traits, _Alloc>>, true> :public instance<std::basic_string<_Elem, _Traits, _Alloc>, false>
@@ -1242,16 +1169,6 @@ public:
 		return str;
 	}
 
-	template<typename _Right>
-	bool operator==(const _Right& other) const
-	{
-		return this->size() == other.size() && this->compare(other) == 0;
-	}
-	template<typename _Right>
-	bool operator!=(const _Right& other) const
-	{
-		return !this->operator==(other);
-	}
 };
 template<typename _Elem, typename _Traits, typename _Alloc, typename _OS>
 decltype(auto) operator<<(_OS& os, const instance<view_indicator<std::basic_string<_Elem, _Traits, _Alloc>>, true>& str)
@@ -1286,13 +1203,8 @@ public:
 	instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
 	explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
 	template<typename... _Args>
-	instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+	instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
 	instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;
-	}
 	instance_move_operator(public) {}
 
 	copy_func_return_auto_with_noexcept(begin);
@@ -1513,13 +1425,8 @@ public:
 	instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
 	explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
 	template<typename... _Args>
-	instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+	instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
 	instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;
-	}
 	instance_move_operator(public) {}
 
 	copy_func_return_auto_with_noexcept(begin);
@@ -1689,13 +1596,8 @@ public:
 	instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
 	explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
 	template<typename... _Args>
-	instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+	instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
 	instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;
-	}
 	instance_move_operator(public) {}
 
 	copy_func_return_auto_with_noexcept(begin);
@@ -1758,13 +1660,8 @@ public:
     instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
     explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
     template<typename... _Args>
-    instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+    instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
     instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;
-	}
     instance_move_operator(public) {}
 
     copy_func_return_auto_with_noexcept(begin);
@@ -1893,13 +1790,8 @@ public:
     instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
     explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
     template<typename... _Args>
-    instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+    instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
     instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;
-	}
     instance_move_operator(public) {}
 
     copy_func_return_auto_with_noexcept(begin);
@@ -1966,13 +1858,8 @@ public:
     instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
     explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
     template<typename... _Args>
-    instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+    instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
     instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;
-	}
     instance_move_operator(public) {}
 
     copy_func_return_auto_with_noexcept(begin);
@@ -2132,13 +2019,8 @@ public:
     instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
     explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
     template<typename... _Args>
-    instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+    instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
     instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;
-	}
     instance_move_operator(public) {}
 
     copy_func_return_auto_with_noexcept(begin);
@@ -2321,13 +2203,8 @@ public:
     instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
     explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
     template<typename... _Args>
-    instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+    instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
     instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;
-	}
     instance_move_operator(public) {}
 
     copy_func_return_auto_with_noexcept(empty);
@@ -2362,13 +2239,8 @@ public:
     instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
     explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
     template<typename... _Args>
-    instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+    instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
     instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;
-	}
     instance_move_operator(public) {}
 
     copy_func_return_auto_with_noexcept(empty);
@@ -2406,13 +2278,8 @@ public:
     instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
     explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
     template<typename... _Args>
-    instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
+    instance(_Args... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
     instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;
-	}
     instance_move_operator(public) {}
 
     copy_func_return_auto_with_noexcept(empty);

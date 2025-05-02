@@ -1,4 +1,4 @@
-#ifndef __FILE_CONVENTION_NUMBER_INSTANCE
+﻿#ifndef __FILE_CONVENTION_NUMBER_INSTANCE
 #define __FILE_CONVENTION_NUMBER_INSTANCE
 
 #include "Convention/instance/Interface.h"

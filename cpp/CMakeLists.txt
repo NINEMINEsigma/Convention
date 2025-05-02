@@ -1,4 +1,4 @@
-# Make Setting
+Ôªø# Make Setting
 option(__FILE_CONVENTION_FFMPEG_INSTANCE "disable ffmpeg_instance" OFF)
 option(__IS_REF_BOOST "is import boost" OFF)
 
@@ -11,13 +11,11 @@ add_compile_definitions(__PLATFORM_EXTENSION="${PLATFORM_EXTENSION}")
 include_directories(./)
 
 function(BoostRefer)
-    
-    # ºÏ≤È «∑Ò∆Ù”√Boost
+
     if(__IS_REF_BOOST)
         message("Convention: Boost support enabled")
         add_compile_definitions(__REF_BOOST)
-        
-        # ≤È’“Boostø‚
+
         find_package(Boost)
         if(Boost_FOUND)
             include_directories(${Boost_INCLUDE_DIRS})
@@ -28,7 +26,7 @@ function(BoostRefer)
             message("Convention: Boost not found, but __IS_REF_BOOST is enabled")
         endif(Boost_FOUND)
     endif(__IS_REF_BOOST)
-    
+
 endfunction(BoostRefer)
 
 # All Configs
@@ -50,7 +48,7 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 # Set CMP0076 Policy NEW
-cmake_policy(SET CMP0076 NEW) 
+cmake_policy(SET CMP0076 NEW)
 
 
 # Message Platfrom
@@ -60,7 +58,15 @@ message("Root: ${PLATFORM_NAME}-${PLATFORM_VERSION}-${PLATFORM_EXTENSION}")
 add_compile_definitions(_PTHREADS)
 
 # Project
-project("Convention")
+project("Convention-All")
+
+# ËÆæÁΩÆÊûÑÂª∫ÂÖ±‰∫´Â∫ì
+set(BUILD_SHARED_LIBS ON)
+
+# Á°Æ‰øùÂú®Windows‰∏ä‰∏∫DLLÁîüÊàêÂØºÂÖ•Â∫ì
+if(WIN32)
+  set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
 
 # Sub Project(buf from third-party)
 

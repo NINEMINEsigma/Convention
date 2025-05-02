@@ -1,0 +1,24 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+# 如果项目有依赖，在此处添加find_dependency()调用
+
+# 定义check_required_components宏如果它不存在
+if(NOT COMMAND check_required_components)
+  macro(check_required_components _NAME)
+    foreach(comp ${${_NAME}_FIND_COMPONENTS})
+      if(NOT TARGET ${_NAME}::${comp})
+        if(${_NAME}_FIND_REQUIRED_${comp})
+          set(${_NAME}_FOUND FALSE)
+          message(FATAL_ERROR "Required ${_NAME} component '${comp}' is missing")
+        endif()
+      endif()
+    endforeach()
+  endmacro()
+endif()
+
+# 引入导出的目标
+include("${CMAKE_CURRENT_LIST_DIR}/ConventionTargets.cmake")
+
+# 检查必要的组件
+check_required_components(Convention)

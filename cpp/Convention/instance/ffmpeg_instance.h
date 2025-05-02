@@ -1,4 +1,4 @@
-#ifndef __FILE_CONVENTION_FFMPEG_INSTANCE
+﻿#ifndef __FILE_CONVENTION_FFMPEG_INSTANCE
 #define __FILE_CONVENTION_FFMPEG_INSTANCE
 
 #include "Convention/instance/Interface.h"
