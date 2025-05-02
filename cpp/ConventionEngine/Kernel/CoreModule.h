@@ -122,6 +122,11 @@ extern "C"
 	 */
 	void GC_ConventionEngine();
 
+	size_t GetEngineTotalMemory();
+	size_t GetEngineTotalFreeMemory();
+	size_t GetEngineLargestFreeBlock();
+	size_t GetEngineAllocatedMemory();
+
 	/**
 	 * @brief 获取对象句柄
 	 *

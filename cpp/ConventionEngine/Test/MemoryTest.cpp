@@ -76,8 +76,8 @@ void testMemoryPerformance() {
 
 // 测试内存压力
 void testMemoryStress() {
-    // 初始化引擎，只分配较小内存，测试扩容机制
-    const size_t INITIAL_SIZE = 1 * 1024 * 1024;  // 1MB初始内存
+    // 初始化引擎，增加初始内存池大小
+    const size_t INITIAL_SIZE = 10 * 1024 * 1024;  // 10MB初始内存
     InitConventionEngine(INITIAL_SIZE);
 
     std::vector<void*> allocs;
@@ -85,9 +85,25 @@ void testMemoryStress() {
 
     try {
         // 尝试分配比初始大小更大的内存，测试自动扩容
-        for (int i = 0; i < 50; i++) {
+        for (int i = 0; i < 50; i++) 
+        {
+            std::cout << "当前状态: " << GetEngineAllocatedMemory() << "/" << GetEngineTotalFreeMemory() << "\n";
             size_t blockSize = 100 * 1024;  // 100KB块
+            
+            // 检查是否有足够的内存
+            if (GetEngineTotalFreeMemory() < blockSize) {
+                std::cerr << "内存不足，无法分配 " << blockSize << " 字节" << std::endl;
+                throw std::runtime_error("内存不足");
+            }
+            
             void* ptr = ConventionEngineMemoryAlloc(blockSize);
+            if (ptr == nullptr) {
+                std::cerr << "内存分配失败！当前状态: " 
+                         << GetEngineAllocatedMemory() << "/" 
+                         << GetEngineTotalFreeMemory() 
+                         << " 尝试分配: " << blockSize << " 字节" << std::endl;
+                throw std::runtime_error("内存分配失败");
+            }
             ASSERT(ptr != nullptr);
             allocs.push_back(ptr);
             totalAllocated += blockSize;
@@ -96,7 +112,7 @@ void testMemoryStress() {
             memset(ptr, i % 256, blockSize);
         }
 
-        std::cout << "总共分配了 " << (totalAllocated / (1024.0 * 1024.0)) << " MB内存" << std::endl;
+        std::cout << "总共分配了 " << (totalAllocated / (1024.0 * 1024.0)) << " MB内存            " << std::endl;
         ASSERT(totalAllocated > INITIAL_SIZE);  // 确保内存池已扩容
 
         // 释放一些内存

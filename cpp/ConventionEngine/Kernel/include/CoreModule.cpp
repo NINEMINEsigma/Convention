@@ -180,6 +180,7 @@ private:
 
 	void* RawMemoryBuffer = nullptr;
 	size_t RawMemoryBufferSize = 0;
+	size_t FreeSize = 0;
 
 	std::multimap<size_t, void*> FreeBlockContainer = {};
 	std::map<void*, size_t> FreeRBlockContainer = {};
@@ -529,6 +530,11 @@ public:
 		FreeRBlockContainer[ptr] = merged_size;
 	}
 
+	size_t GetTotalMemory()
+	{
+		return RawMemoryBufferSize;
+	}
+
 	// 获取当前内存使用情况的方法
 	size_t GetTotalFreeMemory() const
 	{
@@ -795,6 +801,26 @@ void GC_ConventionEngine()
 
 	// 释放旧缓冲区
 	::free(old_buffer);
+}
+
+size_t GetEngineTotalMemory()
+{
+	return Raw.GetTotalMemory();
+}
+
+size_t GetEngineTotalFreeMemory()
+{
+	return Raw.GetTotalFreeMemory();
+}
+
+size_t GetEngineLargestFreeBlock()
+{
+	return Raw.GetLargestFreeBlock();
+}
+
+size_t GetEngineAllocatedMemory()
+{
+	return Raw.GetAllocatedMemory();
 }
 
 #pragma endregion
