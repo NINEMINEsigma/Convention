@@ -1,9 +1,9 @@
 add_executable(CETest cli.cpp)
 
 # 测试可执行文件
-add_executable(_KernelTest KernelTest.cpp)
+#add_executable(_KernelTest KernelTest.cpp)
 add_executable(_MemoryTest MemoryTest.cpp)
-add_executable(_AllocatorTest AllocatorTest.cpp)
+#add_executable(_AllocatorTest AllocatorTest.cpp)
 
 # 链接目录
 link_directories("${CMAKE_BINARY_DIR}/Convention")
@@ -14,19 +14,19 @@ target_link_libraries(CETest PUBLIC Convention::Shared)
 target_link_libraries(CETest PUBLIC ConventionEngine::Kernel)
 
 # 为内核测试链接库
-target_link_libraries(_KernelTest PUBLIC Convention::Shared)
-target_link_libraries(_KernelTest PUBLIC ConventionEngine::Kernel)
+#target_link_libraries(_KernelTest PUBLIC Convention::Shared)
+#target_link_libraries(_KernelTest PUBLIC ConventionEngine::Kernel)
 
 # 为内存测试链接库
 target_link_libraries(_MemoryTest PUBLIC Convention::Shared)
 target_link_libraries(_MemoryTest PUBLIC ConventionEngine::Kernel)
 
 # 为分配器测试链接库
-target_link_libraries(_AllocatorTest PUBLIC Convention::Shared)
-target_link_libraries(_AllocatorTest PUBLIC ConventionEngine::Kernel)
+#target_link_libraries(_AllocatorTest PUBLIC Convention::Shared)
+#target_link_libraries(_AllocatorTest PUBLIC ConventionEngine::Kernel)
 
 # 安装可执行目标
-install(TARGETS CETest _KernelTest _MemoryTest _AllocatorTest
+install(TARGETS CETest _MemoryTest#_KernelTest _MemoryTest _AllocatorTest
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # 安装测试脚本

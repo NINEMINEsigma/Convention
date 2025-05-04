@@ -163,106 +163,6 @@ extern "C"
 namespace ConventionEngine
 {
 	/**
-	 * @class CEObject
-	 * @brief ConventionEngine的基础对象类
-	 *
-	 * 所有ConventionEngine管理的对象都应该继承自此类。
-	 * 提供内存管理、命名、实例化等基本功能。
-	 */
-	class CEObject: public any_class
-	{
-	public:
-		/**
-		 * @brief 对象名称的最大长度常量
-		 */
-		constexpr static size_t name_max_length = __NameMaxLength;
-	private:
-		/**
-		 * @brief 对象实例ID
-		 */
-		int m_instanceID = -1;
-
-		/**
-		 * @brief 对象名称
-		 */
-		char m_name[name_max_length] = { 0 };
-
-		/**
-		 * @brief 对象是否被修改标志
-		 */
-		bool m_dirty = false;
-
-	protected:
-
-		/**
-		 * @brief 创建一个与当前对象相同类型的新对象
-		 *
-		 * 此方法用于多态对象的克隆，派生类应重写此方法以创建正确的对象类型
-		 *
-		 * @return 新创建的对象指针
-		 */
-		virtual CEObject* CreateObject() const;
-
-		/**
-		 * @brief 将当前对象的值克隆到目标对象
-		 *
-		 * 派生类应重写此方法以复制所有相关成员变量
-		 *
-		 * @param target 目标对象指针
-		 */
-		virtual void CloneValuesTo(_In_ CEObject* target) const;
-
-	public:
-		/**
-		 * @brief 重载new运算符，使用内存池分配内存
-		 *
-		 * @param size 请求分配的内存大小
-		 * @return 分配的内存块指针
-		 */
-		void* operator new(size_t size);
-		/**
-		 * @brief 重载delete运算符，使用内存池释放内存
-		 *
-		 * @param ptr 要释放的内存块指针
-		 * @param size 内存块大小
-		 */
-		void operator delete(void* ptr, size_t size);
-
-		/**
-		 * @brief 虚析构函数，确保正确释放派生类资源
-		 */
-		virtual ~CEObject();
-
-		/**
-		 * @brief 获取对象名称
-		 *
-		 * @return 对象名称的字符串指针，永不为空
-		 */
-		_Notnull_ constexpr const char* GetName() const;
-
-		/**
-		 * @brief 设置对象名称
-		 *
-		 * @param name 新的对象名称
-		 */
-		void SetName(_In_ const char* name);
-
-		/**
-		 * @brief 创建当前对象的副本
-		 *
-		 * 使用CreateObject创建对象，然后使用CloneValuesTo复制值
-		 *
-		 * @return 新创建的对象副本指针
-		 */
-		CEObject* Instantiate() const;
-
-		/**
-		 * @brief 将对象标记为已修改
-		 */
-		void SetDirty();
-	};
-
-	/**
 	 * @class CEAllocator
 	 * @brief 自定义内存分配器，与STL容器兼容
 	 *
@@ -500,162 +400,230 @@ namespace ConventionEngine
 		}
 
 		template<typename... Args>
-		_Ty* CreatePtr(Args&&... args)
+		_NODISCARD _Ty* CreatePtr(Args&&... args)
 		{
 			_Ty* ptr = this->allocate(sizeof(_Ty));
 			this->construct(ptr, std::forward<Args>(args)...);
 			return ptr;
 		}
-	};
 
-	template<typename _Ty, typename... Args>
-	instance<_Ty> make_ce_instance(Args&&... args)
-	{
-		auto alloc = CEAllocator<_Ty>();
-		_Ty* ptr = alloc.allocate(sizeof(_Ty));
-		alloc.construct(ptr, std::forward<Args>(args)...);
-		return make_instance<_Ty>(ptr);
-	}
+		void DestoryPtr(_In_ _Ty* ptr)
+		{
+			this->destroy(ptr);
+			this->deallocate(ptr, sizeof(_Ty));
+		}
 
-	template<typename _Ty>
-	class CEInstance :public instance<_Ty, true>
-	{
-	private:
-	public:
-		using _Mybase = instance<_Ty, true>;
-		using tag = _Ty;
-		constexpr CEInstance(nullptr_t): _Mybase(nullptr) {}
-		explicit CEInstance(_Ty*) = delete;
-		template<typename... Args>
-		CEInstance(Args&&... args) : _Mybase(CEAllocator<_Ty>().CreatePtr(std::forward<Args>(args)...)) {}
-		CEInstance(const CEInstance& other) :_Mybase(other) {}
-		CEInstance(CEInstance&& other) :_Mybase(std::move(other)) {}
-		CEInstance& operator=(const CEInstance& other)
+		void DestoryPtr(_Inout_ _Ty*& ptr)
 		{
-			_Mybase::operator=(other);
-			return *this;
+			this->destroy(ptr);
+			this->deallocate(ptr, sizeof(_Ty));
+			ptr = nullptr;
 		}
-		CEInstance& operator=(CEInstance&& other)
+
+		void DestoryPtr(_Inout_ _Ty** ptr)
 		{
-			_Mybase::operator=(std::move(other));
-			return std::move(*this);
-		}
-	public:
-		virtual ~CEInstance()
-		{
-			if (this->use_count() <= 1)
-			{
-				CEAllocator<_Ty> alloc;
-				alloc.destroy(this->get());
-				alloc.deallocate(this->get(), sizeof(_Ty));
-			}
+			this->destroy(*ptr);
+			this->deallocate(*ptr, sizeof(_Ty));
+			*ptr = nullptr;
 		}
 	};
 
 	/**
-	 * @namespace Types
-	 * @brief 提供使用CEAllocator的标准库容器类型别名
+	 * @class CEPtr
+	 * @brief ConventionEngine的智能指针类
 	 *
-	 * 此命名空间定义了一系列使用CEAllocator的STL容器的别名，
-	 * 使用这些容器可以自动利用ConventionEngine的内存管理机制。
+	 * 此类用于管理ConventionEngine对象的生命周期，
+	 * 提供引用计数和内存管理功能。
+	 *
+	 * @tparam _Ty 指向的对象类型
 	 */
-	namespace Types
+	template<typename _Ty>
+	class CEPtr final : public any_class
 	{
+		template<typename _OtherTy>
+		friend class CEPtr;
+	public:
+		/*static_assert(std::is_base_of_v<CEObject, _Ty>, "The Convention Engine Ptr must use a subclass that "
+			"inherits from CEObject");*/
+	private:
+		using handle_instance = instance<CEHandle, true>;
+		handle_instance m_instance;
+		void* operator new(size_t size) = delete;
+		explicit CEPtr(handle_instance handle) noexcept
+			: m_instance(handle) {}
+	public:
+		CEPtr()
+			: m_instance(new CEHandle(GetHandle(CEAllocator<_Ty>().CreatePtr()))) {}
+		template<typename _Other>
+		CEPtr(const CEPtr<_Other>& other) noexcept 
+			: m_instance(static_cast<handle_instance::_shared>(other.m_instance))
+		{
+			static_assert(std::is_base_of_v<_Ty, _Other>, "cast is invaild");
+		}
+		CEPtr(const CEPtr& other) noexcept 
+			: m_instance(static_cast<handle_instance::_shared>(other.m_instance)) {}
+		CEPtr(CEPtr&& other) noexcept 
+			: m_instance(std::move(other.m_instance)) {}
+		/*template<typename... _Args>
+		CEPtr(_Args&&... args) : CEPtr(CEAllocator<_Ty>().CreatePtr(std::forward<_Args>(args)...)) {}*/
+		CEPtr& operator=(const CEPtr& other) noexcept
+		{
+			m_instance = other.m_instance;
+			return *this;
+		}
+		CEPtr& operator=(CEPtr&& other) noexcept
+		{
+			m_instance = std::move(other.m_instance);
+			return *this;
+		}
+		~CEPtr()
+		{
+			if (m_instance.use_count() <= 1)
+			{
+				CEAllocator<_Ty>().DestoryPtr(get());
+			}
+		}
+
+		_Ty* get() const
+		{
+			if (m_instance.is_empty())
+				return nullptr;
+			return static_cast<_Ty*>(GetPtr(*m_instance));
+		}
+
+		operator _Ty* () const
+		{
+			return get();
+		}
+
+		operator _Ty& () const
+		{
+			return *get();
+		}
+
+		_Ty* operator->() const
+		{
+			return get();
+		}
+		_Ty* operator*() const
+		{
+			return get();
+		}
+
+		template<typename _Other>
+		CEPtr<_Other> cast()
+		{
+			static_assert(std::is_base_of_v<_Ty, _Other> || std::is_base_of_v<_Other, _Ty>, "cast is invaild");
+			return CEPtr<_Other>(this->m_instance);
+		}
+	private:
+	};
+
+	/**
+	 * @class CEObject
+	 * @brief ConventionEngine的基础对象类
+	 *
+	 * 所有ConventionEngine管理的对象都应该继承自此类。
+	 * 提供内存管理、命名、实例化等基本功能。
+	 */
+	class CEObject: public any_class
+	{
+	public:
 		/**
-		 * @typedef STDString
-		 * @brief 标准库字符串类型别名
+		 * @brief 对象名称的最大长度常量
 		 */
-		using STDString = std::string;
+		constexpr static size_t name_max_length = __NameMaxLength;
+	private:
+		/**
+		 * @brief 对象实例ID
+		 */
+		int m_instanceID = -1;
 
 		/**
-		 * @typedef STDWString
-		 * @brief 标准库宽字符串类型别名
+		 * @brief 对象名称
 		 */
-		using STDWString = std::wstring;
+		char m_name[name_max_length] = { 0 };
 
 		/**
-		 * @typedef String
-		 * @brief 使用CEAllocator的字符串类型
+		 * @brief 对象是否被修改标志
 		 */
-		using String = CEInstance<std::basic_string<char, std::char_traits<char>, CEAllocator<char>>>;
+		bool m_dirty = false;
+
+	protected:
 
 		/**
-		 * @typedef WString
-		 * @brief 使用CEAllocator的宽字符串类型
-		 */
-		using WString = CEInstance<std::basic_string<wchar_t, std::char_traits<wchar_t>, CEAllocator<wchar_t>>>;
-
-		/**
-		 * @typedef Vector
-		 * @brief 使用CEAllocator的向量容器
+		 * @brief 创建一个与当前对象相同类型的新对象
 		 *
-		 * @tparam T 元素类型
+		 * 此方法用于多态对象的克隆，派生类应重写此方法以创建正确的对象类型
+		 *
+		 * @return 新创建的对象指针
 		 */
-		template<typename T>
-		using Vector = CEInstance<std::vector<T, CEAllocator<T>>>;
+		virtual CEPtr<CEObject> CreateObject() const abstract;
 
 		/**
-		 * @typedef List
-		 * @brief 使用CEAllocator的链表容器
+		 * @brief 将当前对象的值克隆到目标对象
 		 *
-		 * @tparam T 元素类型
+		 * 派生类应重写此方法以复制所有相关成员变量
+		 *
+		 * @param target 目标对象指针
 		 */
-		template<typename T>
-		using List = CEInstance<std::list<T, CEAllocator<T>>>;
+		virtual void CloneValuesTo(_In_ CEPtr<CEObject> target) const;
+
+		template<typename _Ty>
+		friend class CEPtr;
+		template<typename _Ty>
+		friend class CEAllocator;
 
 		/**
-		 * @typedef Deque
-		 * @brief 使用CEAllocator的双端队列容器
+		 * @brief 重载new运算符，使用内存池分配内存
 		 *
-		 * @tparam T 元素类型
+		 * @param size 请求分配的内存大小
+		 * @return 分配的内存块指针
 		 */
-		template<typename T>
-		using Deque = CEInstance<std::deque<T, CEAllocator<T>>>;
+		void* operator new(size_t size);
+		CEObject();
+	public:
+		/**
+		 * @brief 重载delete运算符，使用内存池释放内存
+		 *
+		 * @param ptr 要释放的内存块指针
+		 * @param size 内存块大小
+		 */
+		void operator delete(void* ptr, size_t size);
 
 		/**
-		 * @typedef Map
-		 * @brief 使用CEAllocator的映射容器
-		 *
-		 * @tparam K 键类型
-		 * @tparam V 值类型
-		 * @tparam Compare 比较器类型
+		 * @brief 虚析构函数，确保正确释放派生类资源
 		 */
-		template<typename K, typename V, typename Compare = std::less<K>>
-		using Map = CEInstance<std::map<K, V, Compare, CEAllocator<std::pair<const K, V>>>>;
+		virtual ~CEObject();
 
 		/**
-		 * @typedef UnorderedMap
-		 * @brief 使用CEAllocator的无序映射容器
+		 * @brief 获取对象名称
 		 *
-		 * @tparam K 键类型
-		 * @tparam V 值类型
-		 * @tparam Hash 哈希函数类型
-		 * @tparam Eq 相等比较器类型
+		 * @return 对象名称的字符串指针，永不为空
 		 */
-		template<typename K, typename V, typename Hash = std::hash<K>, typename Eq = std::equal_to<K>>
-		using UnorderedMap = CEInstance<std::unordered_map<K, V, Hash, Eq, CEAllocator<std::pair<const K, V>>>>;
+		_Notnull_ constexpr const char* GetName() const;
 
 		/**
-		 * @typedef Set
-		 * @brief 使用CEAllocator的集合容器
+		 * @brief 设置对象名称
 		 *
-		 * @tparam T 元素类型
-		 * @tparam Compare 比较器类型
+		 * @param name 新的对象名称
 		 */
-		template<typename T, typename Compare = std::less<T>>
-		using Set = CEInstance<std::set<T, Compare, CEAllocator<T>>>;
+		void SetName(_In_ const char* name);
 
 		/**
-		 * @typedef UnorderedSet
-		 * @brief 使用CEAllocator的无序集合容器
+		 * @brief 创建当前对象的副本
 		 *
-		 * @tparam T 元素类型
-		 * @tparam Hash 哈希函数类型
-		 * @tparam Eq 相等比较器类型
+		 * 使用CreateObject创建对象，然后使用CloneValuesTo复制值
+		 *
+		 * @return 新创建的对象副本指针
 		 */
-		template<typename T, typename Hash = std::hash<T>, typename Eq = std::equal_to<T>>
-		using UnorderedSet = CEInstance<std::unordered_set<T, Hash, Eq, CEAllocator<T>>>;
-	}
+		CEPtr<CEObject> Instantiate() const;
+
+		/**
+		 * @brief 将对象标记为已修改
+		 */
+		void SetDirty();
+	};
 }
 
 /**
@@ -692,7 +660,7 @@ template class ConventionEngine::CEAllocator<std::pair<const std::string, int>>;
 
 namespace ConventionEngine
 {
-	class Scene :public CEObject
+	/*class Scene :public CEObject
 	{
 	public:
 
@@ -725,7 +693,7 @@ namespace ConventionEngine
 		virtual CEObject* CreateObject() const override;
 	public:
 
-	};
+	};*/
 }
 
 #endif // !__FILE_CONVENTION_ENGINE_INTERNAL
