@@ -1,6 +1,6 @@
 #ifndef EVAL_INIT_HPP
 #define EVAL_INIT_HPP
-#include "eval.hpp"
+#include "Convention/instance/eval/eval.hpp"
 #include<cmath>
 
 namespace eval_init

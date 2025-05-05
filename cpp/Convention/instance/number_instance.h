@@ -2,6 +2,7 @@
 #define __FILE_CONVENTION_NUMBER_INSTANCE
 
 #include "Convention/instance/Interface.h"
+#include "Convention/instance/eval/eval_init.hpp"
 
 template<typename _Number>
 struct number_ex_indicator
@@ -106,7 +107,7 @@ public:
 
 struct number_structure
 {
-	number_structure() noexcept : molecule(0), denominator(1) {}
+	number_structure() noexcept : molecule(0), denominator(1), sign(false) {}
 	//新增一个构造函数，接受浮点数与精度并处理为分数
 	template<typename _Float>
 	number_structure(_Float value) noexcept
@@ -116,6 +117,7 @@ struct number_structure
 		{
 			molecule = 0;
 			denominator = 1;
+			sign = false;
 			return;
 		}
 
@@ -154,18 +156,13 @@ struct number_structure
 		
 		// 将浮点数转换为分数
 		_Float abs_value = std::fabs(value);
-		long long mol = static_cast<long long>(abs_value * precision + 0.5); // +0.5用于四舍五入
+		molecule = static_cast<size_t>(abs_value * precision + 0.5); // +0.5用于四舍五入
 		denominator = precision;
-		
-		// 恢复符号
-		if (value < 0) 
-		{
-			mol = -mol;
-		}
+		sign = (value < 0);
 		
 		// 计算最大公约数进行约分
-		size_t gcd_val = std::gcd(std::abs(mol), denominator);
-		molecule = mol / static_cast<long long>(gcd_val);
+		size_t gcd_val = std::gcd(molecule, denominator);
+		molecule /= gcd_val;
 		denominator /= gcd_val;
 	}
 	
@@ -174,41 +171,43 @@ struct number_structure
 	number_structure(_Float value, size_t precision) noexcept
 	{
 		// 处理特殊情况
-		if (value == 0) {
+		if (value == 0) 
+		{
 			molecule = 0;
 			denominator = 1;
+			sign = false;
 			return;
 		}
 
 		// 将浮点数转换为分数
 		_Float abs_value = std::fabs(value);
-		long long mol = static_cast<long long>(abs_value * precision + 0.5); // +0.5用于四舍五入
+		molecule = static_cast<size_t>(abs_value * precision + 0.5); // +0.5用于四舍五入
 		denominator = precision;
-		
-		// 恢复符号
-		if (value < 0) {
-			mol = -mol;
-		}
+		sign = (value < 0);
 		
 		// 计算最大公约数进行约分
-		size_t gcd_val = std::gcd(std::abs(mol), denominator);
-		molecule = mol / static_cast<long long>(gcd_val);
+		size_t gcd_val = std::gcd(molecule, denominator);
+		molecule /= gcd_val;
 		denominator /= gcd_val;
 	}
 	
-	number_structure(long long molecule, size_t denominator) noexcept: molecule(molecule), denominator(denominator) {}
-	number_structure(const number_structure& other) noexcept : molecule(other.molecule), denominator(other.denominator) {}
+	number_structure(size_t mol, size_t den, bool is_negative = false) noexcept
+		: molecule(mol), denominator(den), sign(is_negative) {}
+	number_structure(const number_structure& other) noexcept 
+		: molecule(other.molecule), denominator(other.denominator), sign(other.sign) {}
 	number_structure& operator=(const number_structure& other) noexcept
 	{
 		this->molecule = other.molecule;
 		this->denominator = other.denominator;
+		this->sign = other.sign;
 		return *this;
 	}
 
 	template<typename _NumberType, typename _MidType = long double>
 	_NumberType value() const
 	{
-		return static_cast<_NumberType>(static_cast<_MidType>(molecule) / static_cast<_MidType>(denominator));
+		_MidType result = static_cast<_MidType>(molecule) / static_cast<_MidType>(denominator);
+		return static_cast<_NumberType>(sign ? -result : result);
 	}
 
 	template<typename _NumberType>
@@ -220,12 +219,12 @@ struct number_structure
 	// 符号相关的辅助函数
 	bool is_negative() const noexcept
 	{
-		return molecule < 0;
+		return sign && molecule != 0;
 	}
 
 	bool is_positive() const noexcept
 	{
-		return molecule > 0;
+		return !sign && molecule != 0;
 	}
 
 	bool is_zero() const noexcept
@@ -233,9 +232,223 @@ struct number_structure
 		return molecule == 0;
 	}
 
-	long long molecule = 0;
+	// 辅助函数：简化分数
+	inline number_structure simplify() const noexcept
+	{
+		if (molecule == 0) return number_structure(0, 1, false);
+		
+		size_t g = std::gcd(molecule, denominator);
+		return number_structure(molecule / g, denominator / g, sign);
+	}
+
+	inline number_structure& let_simplify() noexcept
+	{
+		if (molecule == 0) return;
+
+		size_t g = std::gcd(molecule, denominator);
+		molecule = molecule / g;
+		denominator = denominator / g;
+	}
+
+	// 加法运算符
+	number_structure operator+(const number_structure& other) const noexcept
+	{
+		// 计算最小公倍数作为新分母
+		size_t lcm = (denominator * other.denominator) / std::gcd(denominator, other.denominator);
+
+		// 通分后的分子值
+		size_t a_mol = molecule * (lcm / denominator);
+		size_t b_mol = other.molecule * (lcm / other.denominator);
+
+		// 考虑符号进行加法运算
+		if (sign == other.sign)
+		{
+			return number_structure(a_mol + b_mol, lcm, sign).simplify();
+		}
+		else
+		{
+			bool stats = a_mol >= b_mol;
+			return number_structure(stats ? (a_mol - b_mol) : (b_mol - a_mol), lcm, stats ? sign : other.sign).simplify();
+		}
+	}
+
+	// 减法运算符
+	number_structure operator-(const number_structure& other) const noexcept
+	{
+		// 计算最小公倍数作为新分母
+		size_t lcm = (denominator * other.denominator) / std::gcd(denominator, other.denominator);
+		
+		// 通分后的分子值
+		size_t a_mol = molecule * (lcm / denominator);
+		size_t b_mol = other.molecule * (lcm / other.denominator);
+		
+		// 考虑符号进行减法运算
+		if (sign != other.sign) 
+		{
+			return number_structure(a_mol + b_mol, lcm, sign).simplify();
+		}
+		else 
+		{
+			bool stats = a_mol >= b_mol;
+			return number_structure(stats ? (a_mol - b_mol) : (b_mol - a_mol), lcm, stats ? sign : !sign).simplify();
+		}
+	}
+
+	// 乘法运算符
+	number_structure operator*(const number_structure& other) const noexcept
+	{	
+		return number_structure(molecule * other.molecule, denominator * other.denominator, sign == other.sign).simplify();
+	}
+
+	template<typename _NumberTy>
+	number_structure operator*(const _NumberTy& other) const noexcept
+	{
+		if constexpr (std::is_integral_v<_NumberTy>)
+		{
+			return number_structure(molecule * other, denominator, sign == (other > 0)).simplify();
+		}
+		else
+		{
+			return *this * number_structure(other);
+		}
+	}
+
+	// 除法运算符
+	number_structure operator/(const number_structure& other) const
+	{
+		if (other.molecule == 0)
+		{
+			throw std::runtime_error("The divisor cannot be zero");
+		}
+
+		return number_structure(molecule * other.denominator, denominator * other.molecule, sign == other.sign).simplify();
+	}
+
+	template<typename _NumberTy>
+	number_structure operator/(const _NumberTy& other) const
+	{
+		if (other == 0)
+		{
+			throw std::runtime_error("The divisor cannot be zero");
+		}
+
+		return *this * (1.0 / other);
+	}
+
+	// 复合赋值运算符
+	number_structure& operator+=(const number_structure& other) noexcept
+	{
+		*this = *this + other;
+		return *this;
+	}
+
+	number_structure& operator-=(const number_structure& other) noexcept
+	{
+		*this = *this - other;
+		return *this;
+	}
+
+	template<typename _NumberTy>
+	number_structure& operator*=(const _NumberTy& other) noexcept
+	{
+		*this = *this * other;
+		return *this;
+	}
+
+	template<typename _NumberTy>
+	number_structure& operator/=(const _NumberTy& other)
+	{
+		*this = *this / other;
+		return *this;
+	}
+
+	int compare(const number_structure& other) const noexcept
+	{
+		if (sign != other.sign) 
+		{
+			return sign ? -1.0 : 1.0;
+		}
+
+		size_t a_compare = molecule * other.denominator;
+		size_t b_compare = other.molecule * denominator;
+
+		if (a_compare == b_compare)
+			return 0.0;
+
+		return (a_compare > b_compare) ? 1.0 : -1.0; 
+	}
+
+	template<typename _Ret = double>
+	_Ret coefficient(const number_structure& data) const noexcept
+	{
+		return (data / *this).value<_Ret>();
+	}
+
+	// 比较运算符
+	bool operator==(const number_structure& other) const noexcept
+	{
+		// 考虑符号和值进行比较
+		if (molecule == 0 && other.molecule == 0) 
+			return true;
+		
+		return molecule * other.denominator == other.molecule * denominator;
+	}
+
+	bool operator!=(const number_structure& other) const noexcept
+	{
+		return !(*this == other);
+	}
+
+	bool operator<(const number_structure& other) const noexcept
+	{
+		return compare(other) < 0;
+	}
+
+	bool operator>(const number_structure& other) const noexcept
+	{
+		return compare(other) > 0;
+	}
+
+	bool operator<=(const number_structure& other) const noexcept
+	{
+		return !(*this > other);
+	}
+
+	bool operator>=(const number_structure& other) const noexcept
+	{
+		return !(*this < other);
+	}
+
+	static number_structure parse(const std::string& str);
+
+	// 一元运算符
+	number_structure operator-() const noexcept
+	{
+		return number_structure(molecule, denominator, !sign);
+	}
+
+	// 字符串表示
+	std::string ToString() const noexcept
+	{
+		return (sign ? "-" : "") + std::to_string(molecule) + "/" + std::to_string(denominator);
+	}
+
+	size_t molecule = 0;
 	size_t denominator = 1;
+	bool sign = false; // false表示正数，true表示负数
 };
+
+number_structure number_structure::parse(const std::string& str)
+{
+	// 创建double类型的计算器实例
+	auto calc = eval_init::create_real_eval<double>();
+
+	// 解析表达式
+	auto expr = calc.parse(str);
+
+	// 计算表达式
+	return calc.evaluate(expr);
+}
 
 template<>
 class instance<number_structure, true> :instance<number_structure, false>
@@ -246,6 +459,7 @@ public:
 	instance() : _Mybase(new _NumberType()) {}
 	instance(_NumberType* ptr) :_Mybase(ptr) {}
 	instance(_NumberType value) :_Mybase(new _NumberType(value)) {}
+	instance(const std::string& str) : _Mybase(new _NumberType(_NumberType::parse(str))) {}
 	virtual ~instance() {}
 
 	template<typename _Ret, typename _MidType = long double>
@@ -260,146 +474,93 @@ public:
 		return this->value<_Ret, double>();
 	}
 
-	// 辅助函数：简化分数
-	inline _NumberType simplify(_NumberType num) const 
-	{
-		if (num.molecule == 0) return _NumberType(0, 1);
-		
-		size_t g = std::gcd(std::abs(num.molecule), num.denominator);
-		return _NumberType(num.molecule / static_cast<long long>(g), num.denominator / g);
-	}
-
+	// 通过使用number_structure内部的操作符进行转发
 	instance operator+(const instance& other) const 
 	{
-		const auto& a = *this->get();
-		const auto& b = *other.get();
-
-		// 计算最小公倍数作为新分母
-		size_t lcm = (a.denominator * b.denominator) / std::gcd(a.denominator, b.denominator);
-		
-		// 通分后相加
-		long long new_molecule = (a.molecule * static_cast<long long>(lcm / a.denominator)) + 
-		                          (b.molecule * static_cast<long long>(lcm / b.denominator));
-		
-		// 简化结果
-		return instance(simplify(_NumberType(new_molecule, lcm)));
+		return instance(*this->get() + *other.get());
 	}
 
-	instance operator-(const instance& other) const {
-		const auto& a = *this->get();
-		const auto& b = *other.get();
-		
-		// 计算最小公倍数作为新分母
-		size_t lcm = (a.denominator * b.denominator) / std::gcd(a.denominator, b.denominator);
-		
-		// 通分后相减
-		long long new_molecule = (a.molecule * static_cast<long long>(lcm / a.denominator)) - 
-		                          (b.molecule * static_cast<long long>(lcm / b.denominator));
-		
-		// 简化结果
-		return instance(simplify(_NumberType(new_molecule, lcm)));
+	instance operator-(const instance& other) const 
+	{
+		return instance(*this->get() - *other.get());
 	}
 
-	instance operator*(const instance& other) const {
-		const auto& a = *this->get();
-		const auto& b = *other.get();
-		
-		// 分子分母相乘
-		long long new_molecule = a.molecule * b.molecule;
-		size_t new_denominator = a.denominator * b.denominator;
-		
-		// 简化结果
-		return instance(simplify(_NumberType(new_molecule, new_denominator)));
+	instance operator*(const instance& other) const 
+	{
+		return instance(*this->get() * *other.get());
 	}
 
-	instance operator/(const instance& other) const {
-		const auto& a = *this->get();
-		const auto& b = *other.get();
-		
-		if (b.molecule == 0) {
-			throw std::runtime_error("除数不能为零");
-		}
-		
-		// 乘以倒数，注意处理分母的符号
-		long long new_molecule = a.molecule * static_cast<long long>(b.denominator);
-		long long b_mol = b.molecule;
-		size_t new_denominator = a.denominator * std::abs(b_mol);
-		
-		// 处理符号位
-		if (b_mol < 0) {
-			new_molecule = -new_molecule;
-		}
-		
-		// 简化结果
-		return instance(simplify(_NumberType(new_molecule, new_denominator)));
+	instance operator/(const instance& other) const 
+	{
+		return instance(*this->get() / *other.get());
 	}
 
 	// 复合赋值运算符
-	instance& operator+=(const instance& other) {
-		*this = *this + other;
+	instance& operator+=(const instance& other) 
+	{
+		**this += *other.get();
 		return *this;
 	}
 
-	instance& operator-=(const instance& other) {
-		*this = *this - other;
+	instance& operator-=(const instance& other) 
+	{
+		**this -= *other.get();
 		return *this;
 	}
 
-	instance& operator*=(const instance& other) {
-		*this = *this * other;
+	instance& operator*=(const instance& other) 
+	{
+		**this *= *other.get();
 		return *this;
 	}
 
-	instance& operator/=(const instance& other) {
-		*this = *this / other;
+	instance& operator/=(const instance& other) 
+	{
+		**this /= *other.get();
 		return *this;
 	}
 
 	// 比较运算符
-	bool operator==(const instance& other) const {
-		// 通分后比较分子是否相等
-		const auto& a = *this->get();
-		const auto& b = *other.get();
-		return (a.molecule * static_cast<long long>(b.denominator)) == 
-		       (b.molecule * static_cast<long long>(a.denominator));
+	bool operator==(const instance& other) const 
+	{
+		return **this == *other.get();
 	}
 
-	bool operator!=(const instance& other) const {
-		return !(*this == other);
+	bool operator!=(const instance& other) const 
+	{
+		return **this != *other.get();
 	}
 
-	bool operator<(const instance& other) const {
-		const auto& a = *this->get();
-		const auto& b = *other.get();
-		return (a.molecule * static_cast<long long>(b.denominator)) < 
-		       (b.molecule * static_cast<long long>(a.denominator));
+	bool operator<(const instance& other) const 
+	{
+		return **this < *other.get();
 	}
 
-	bool operator>(const instance& other) const {
-		const auto& a = *this->get();
-		const auto& b = *other.get();
-		return (a.molecule * static_cast<long long>(b.denominator)) > 
-		       (b.molecule * static_cast<long long>(a.denominator));
+	bool operator>(const instance& other) const 
+	{
+		return **this > *other.get();
 	}
 
-	bool operator<=(const instance& other) const {
-		return !(*this > other);
+	bool operator<=(const instance& other) const 
+	{
+		return **this <= *other.get();
 	}
 
-	bool operator>=(const instance& other) const {
-		return !(*this < other);
+	bool operator>=(const instance& other) const 
+	{
+		return **this >= *other.get();
 	}
 
 	// 一元运算符
-	instance operator-() const {
-		const auto& a = *this->get();
-		return instance(_NumberType(-a.molecule, a.denominator));
+	instance operator-() const 
+	{
+		return instance(-(**this));
 	}
 
 	// 字符串表示
-	virtual std::string ToString() const noexcept override {
-		const auto& a = *this->get();
-		return std::to_string(a.molecule) + "/" + std::to_string(a.denominator);
+	virtual std::string ToString() const noexcept override 
+	{
+		return this->get()->ToString();
 	}
 };
 
