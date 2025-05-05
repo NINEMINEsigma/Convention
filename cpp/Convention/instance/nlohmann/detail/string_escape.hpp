@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <nlohmann/detail/abi_macros.hpp>
+#include <Convention/instance/nlohmann/detail/abi_macros.hpp>
 
 NLOHMANN_JSON_NAMESPACE_BEGIN
 namespace detail

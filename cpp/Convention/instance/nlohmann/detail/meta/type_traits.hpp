@@ -16,13 +16,13 @@
 #if defined(__cpp_lib_byte) && __cpp_lib_byte >= 201603L
     #include <cstddef> // byte
 #endif
-#include <nlohmann/detail/iterators/iterator_traits.hpp>
-#include <nlohmann/detail/macro_scope.hpp>
-#include <nlohmann/detail/meta/call_std/begin.hpp>
-#include <nlohmann/detail/meta/call_std/end.hpp>
-#include <nlohmann/detail/meta/cpp_future.hpp>
-#include <nlohmann/detail/meta/detected.hpp>
-#include <nlohmann/json_fwd.hpp>
+#include <Convention/instance/nlohmann/detail/iterators/iterator_traits.hpp>
+#include <Convention/instance/nlohmann/detail/macro_scope.hpp>
+#include <Convention/instance/nlohmann/detail/meta/call_std/begin.hpp>
+#include <Convention/instance/nlohmann/detail/meta/call_std/end.hpp>
+#include <Convention/instance/nlohmann/detail/meta/cpp_future.hpp>
+#include <Convention/instance/nlohmann/detail/meta/detected.hpp>
+#include <Convention/instance/nlohmann/json_fwd.hpp>
 
 NLOHMANN_JSON_NAMESPACE_BEGIN
 /*!

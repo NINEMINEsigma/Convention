@@ -9,13 +9,15 @@
 #pragma once
 
 #include <utility> // declval, pair
-#include <nlohmann/detail/meta/detected.hpp>
-#include <nlohmann/thirdparty/hedley/hedley.hpp>
+#include <type_traits> // conditional, enable_if, is_constructible, is_integral, is_same, remove_cv, remove_reference
+
+#include <Convention/instance/nlohmann/detail/meta/detected.hpp>
+#include <Convention/instance/nlohmann/thirdparty/hedley/hedley.hpp>
 
 // This file contains all internal macro definitions (except those affecting ABI)
 // You MUST include macro_unscope.hpp at the end of json.hpp to undef all of them
 
-#include <nlohmann/detail/abi_macros.hpp>
+#include <Convention/instance/nlohmann/detail/abi_macros.hpp>
 
 // exclude unsupported compilers
 #if !defined(JSON_SKIP_UNSUPPORTED_COMPILER_CHECK)

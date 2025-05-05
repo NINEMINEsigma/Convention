@@ -11,13 +11,13 @@
 #include <iterator> // iterator, random_access_iterator_tag, bidirectional_iterator_tag, advance, next
 #include <type_traits> // conditional, is_const, remove_const
 
-#include <nlohmann/detail/exceptions.hpp>
-#include <nlohmann/detail/iterators/internal_iterator.hpp>
-#include <nlohmann/detail/iterators/primitive_iterator.hpp>
-#include <nlohmann/detail/macro_scope.hpp>
-#include <nlohmann/detail/meta/cpp_future.hpp>
-#include <nlohmann/detail/meta/type_traits.hpp>
-#include <nlohmann/detail/value_t.hpp>
+#include <Convention/instance/nlohmann/detail/exceptions.hpp>
+#include <Convention/instance/nlohmann/detail/iterators/internal_iterator.hpp>
+#include <Convention/instance/nlohmann/detail/iterators/primitive_iterator.hpp>
+#include <Convention/instance/nlohmann/detail/macro_scope.hpp>
+#include <Convention/instance/nlohmann/detail/meta/cpp_future.hpp>
+#include <Convention/instance/nlohmann/detail/meta/type_traits.hpp>
+#include <Convention/instance/nlohmann/detail/value_t.hpp>
 
 NLOHMANN_JSON_NAMESPACE_BEGIN
 namespace detail

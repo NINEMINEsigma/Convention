@@ -12,8 +12,8 @@
 #include <string> // string
 #include <utility> // forward
 
-#include <nlohmann/detail/meta/cpp_future.hpp>
-#include <nlohmann/detail/meta/detected.hpp>
+#include <Convention/instance/nlohmann/detail/meta/cpp_future.hpp>
+#include <Convention/instance/nlohmann/detail/meta/detected.hpp>
 
 NLOHMANN_JSON_NAMESPACE_BEGIN
 namespace detail

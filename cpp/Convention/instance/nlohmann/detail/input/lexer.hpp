@@ -18,10 +18,10 @@
 #include <utility> // move
 #include <vector> // vector
 
-#include <nlohmann/detail/input/input_adapters.hpp>
-#include <nlohmann/detail/input/position_t.hpp>
-#include <nlohmann/detail/macro_scope.hpp>
-#include <nlohmann/detail/meta/type_traits.hpp>
+#include <Convention/instance/nlohmann/detail/input/input_adapters.hpp>
+#include <Convention/instance/nlohmann/detail/input/position_t.hpp>
+#include <Convention/instance/nlohmann/detail/macro_scope.hpp>
+#include <Convention/instance/nlohmann/detail/meta/type_traits.hpp>
 
 NLOHMANN_JSON_NAMESPACE_BEGIN
 namespace detail

@@ -8,9 +8,12 @@
 
 #pragma once
 
-// restore clang diagnostic settings
+// restore GCC/clang diagnostic settings
+#if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
+    #pragma GCC diagnostic pop
+#endif
 #if defined(__clang__)
-    #pragma clang diagnostic pop
+    #pragma GCC diagnostic pop
 #endif
 
 // clean up
@@ -26,6 +29,30 @@
 #undef JSON_NO_UNIQUE_ADDRESS
 #undef JSON_DISABLE_ENUM_SERIALIZATION
 #undef JSON_USE_GLOBAL_UDLS
+
+#if defined(JSON_HAS_CPP_20)
+    #undef JSON_HAS_CPP_20
+#endif
+#if defined(JSON_HAS_CPP_17)
+    #undef JSON_HAS_CPP_17
+#endif
+#if defined(JSON_HAS_CPP_14)
+    #undef JSON_HAS_CPP_14
+#endif
+#if defined(JSON_HAS_CPP_11)
+    #undef JSON_HAS_CPP_11
+#endif
+
+#if defined(JSON_HAS_FILESYSTEM)
+    #undef JSON_HAS_FILESYSTEM
+#endif
+#if defined(JSON_HAS_EXPERIMENTAL_FILESYSTEM)
+    #undef JSON_HAS_EXPERIMENTAL_FILESYSTEM
+#endif
+
+#if defined(JSON_HAS_THREE_WAY_COMPARISON)
+    #undef JSON_HAS_THREE_WAY_COMPARISON
+#endif
 
 #ifndef JSON_TEST_KEEP_MACROS
     #undef JSON_CATCH
@@ -43,4 +70,4 @@
     #undef JSON_USE_LEGACY_DISCARDED_VALUE_COMPARISON
 #endif
 
-#include <nlohmann/thirdparty/hedley/hedley_undef.hpp>
+#include <Convention/instance/nlohmann/thirdparty/hedley/hedley_undef.hpp>

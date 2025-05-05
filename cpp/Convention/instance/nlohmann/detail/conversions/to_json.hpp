@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include <nlohmann/detail/macro_scope.hpp> // JSON_HAS_CPP_17
+#include <Convention/instance/nlohmann/detail/macro_scope.hpp> // JSON_HAS_CPP_17
 #ifdef JSON_HAS_CPP_17
     #include <optional> // optional
 #endif
@@ -23,11 +23,11 @@
 #include <valarray> // valarray
 #include <vector> // vector
 
-#include <nlohmann/detail/iterators/iteration_proxy.hpp>
-#include <nlohmann/detail/meta/cpp_future.hpp>
-#include <nlohmann/detail/meta/std_fs.hpp>
-#include <nlohmann/detail/meta/type_traits.hpp>
-#include <nlohmann/detail/value_t.hpp>
+#include <Convention/instance/nlohmann/detail/iterators/iteration_proxy.hpp>
+#include <Convention/instance/nlohmann/detail/meta/cpp_future.hpp>
+#include <Convention/instance/nlohmann/detail/meta/std_fs.hpp>
+#include <Convention/instance/nlohmann/detail/meta/type_traits.hpp>
+#include <Convention/instance/nlohmann/detail/value_t.hpp>
 
 NLOHMANN_JSON_NAMESPACE_BEGIN
 namespace detail
