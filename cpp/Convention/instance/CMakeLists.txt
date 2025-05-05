@@ -1,0 +1,7 @@
+set(INSTALL_INSTANCE ${CMAKE_INSTALL_INCLUDEDIR}/Convention/instance)
+
+# 安装当前目录下
+install(DIRECTORY ./ 
+        DESTINATION ${INSTALL_INSTANCE}/
+        FILES_MATCHING PATTERN "*.*"
+        PATTERN "*.cpp" EXCLUDE)

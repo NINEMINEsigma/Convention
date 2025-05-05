@@ -18,6 +18,7 @@ private:
 public:
     using _shared = _shared_ptr<_Type>;
     using _MyType = _Type;
+	using _MyAlloc = std::allocator<_Type>;
     static constexpr bool _is_extension = _Extension;
 private:
     void* operator new(size_t t) { return ::operator new(t); }

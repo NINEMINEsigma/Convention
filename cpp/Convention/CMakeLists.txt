@@ -12,8 +12,7 @@ include(GNUInstallDirs)
 file(GLOB Root_Headers *.h)
 message("Root_Headers: ${Root_Headers}")
 aux_source_directory(./include  cpps)
-file(GLOB Instance_Headers instance/*.h)
-message("Instance_Headers: ${Instance_Headers}")
+add_subdirectory(./instance)
 
 # 创建库
 add_library(Convention-Static STATIC ${cpps})
@@ -54,8 +53,6 @@ target_include_directories(Convention-Shared PUBLIC
 # 安装头文件
 install(FILES ${Root_Headers}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Convention)
-install(FILES ${Instance_Headers}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Convention/instance)
 
 # 安装库文件并生成导出目标
 install(TARGETS Convention-Static
