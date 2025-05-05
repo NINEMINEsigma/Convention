@@ -14,6 +14,7 @@
 #include "Convention/instance/time_instance.h"
 #include "Convention/instance/std_instance.h"
 #include "Convention/instance/web_instance.h"
+#include "Convention/instance/json_instance.h"
 
 template<typename _Type, typename... _Args>
 auto make_instance(_Args&&... args)
