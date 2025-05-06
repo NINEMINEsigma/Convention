@@ -450,6 +450,11 @@ number_structure number_structure::parse(const std::string& str)
 	return calc.evaluate(expr);
 }
 
+auto operator "" _eval(const char* str)
+{
+	return number_structure::parse(str);
+}
+
 template<>
 class instance<number_structure, true> :instance<number_structure, false>
 {

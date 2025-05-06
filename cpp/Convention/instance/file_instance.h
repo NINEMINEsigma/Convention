@@ -386,4 +386,6 @@ private:
 
 };
 
+using tool_file = instance<std::filesystem::path, true>;
+
 #endif // !__FILE_CONVENTION_FILE_INSTANCE
