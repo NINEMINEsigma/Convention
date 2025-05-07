@@ -10,9 +10,14 @@ from ..MathEx.Core          import *
 #from ..Str.Core            import UnWrapper as Unwrapper2Str
 from ..File.Core            import tool_file, Wrapper as Wrapper2File, tool_file_or_str, is_image_file, loss_file, static_loss_file_dir
 from ..Visual.OpenCV        import ImageObject, tool_file_cvex, WrapperFile2CVEX, Wrapper as Wrapper2Image, get_new_noise
-from PIL.Image              import Image as PILImage
+from PIL.Image              import (
+    Image                   as     PILImage,
+    fromarray               as     PILFromArray,
+    open                    as     PILOpen
+)
 from PIL.ImageFile          import ImageFile as PILImageFile
 import cv2                  as     cv2
+from io import BytesIO
 
 class data_visual_generator:
     def __init__(self, file:tool_file_or_str):
@@ -1059,4 +1064,242 @@ def get_config_of_convert_to_gray() -> ColorSpaceAugmentConfig:
 
 # region end
 
+# region image convert
+
+class BasicConvertConfig(BaseModel, ABC):
+    name: str = "unknown"
+
+    @abstractmethod
+    def convert(
+        self,
+        origin: ImageObject
+    ) -> Tuple[Dict[str, Any], ImageObject]:
+        '''
+        result:
+            (change config, image)
+        '''
+        raise NotImplementedError()
+class PNGConvertConfig(BasicConvertConfig):
+    name: str = "png"
+    compression_level: int = 6  # 0-9, 9为最高压缩率
+
+    @override
+    def convert(
+        self,
+        origin: ImageObject
+    ) -> Tuple[Dict[str, Any], ImageObject]:
+        change_config = {
+            "compression_level": self.compression_level
+        }
+        # 转换为PIL Image以使用其PNG保存功能
+        pil_image = PILFromArray(cv2.cvtColor(origin.image, cv2.COLOR_BGR2RGB))
+        # 创建内存文件对象
+        buffer = BytesIO()
+        # 保存为PNG
+        pil_image.save(buffer, format='PNG', optimize=True, compress_level=self.compression_level)
+        # 从内存读取图像数据
+        buffer.seek(0)
+        result = PILOpen(buffer)
+        # 转换回OpenCV格式
+        result = cv2.cvtColor(np.array(result), cv2.COLOR_RGB2BGR)
+        return (change_config, ImageObject(result))
+class JPGConvertConfig(BasicConvertConfig):
+    name: str = "jpg"
+    quality: int = 95  # 0-100, 100为最高质量
+
+    @override
+    def convert(
+        self,
+        origin: ImageObject
+    ) -> Tuple[Dict[str, Any], ImageObject]:
+        change_config = {
+            "quality": self.quality
+        }
+        # 转换为PIL Image
+        pil_image = PILFromArray(cv2.cvtColor(origin.image, cv2.COLOR_BGR2RGB))
+        # 创建内存文件对象
+        buffer = BytesIO()
+        # 保存为JPG
+        pil_image.save(buffer, format='JPEG', quality=self.quality)
+        # 从内存读取图像数据
+        buffer.seek(0)
+        result = PILOpen(buffer)
+        # 转换回OpenCV格式
+        result = cv2.cvtColor(np.array(result), cv2.COLOR_RGB2BGR)
+        return (change_config, ImageObject(result))
+class ICOConvertConfig(BasicConvertConfig):
+    name: str = "ico"
+    size: Tuple[int, int] = (16, 16)
+
+    @override
+    def convert(
+        self,
+        origin: ImageObject
+    ) -> Tuple[Dict[str, Any], ImageObject]:
+        change_config = {
+            "size": self.size
+        }
+        return (change_config, ImageObject(origin.get_resize_image(*self.size)))
+class BMPConvertConfig(BasicConvertConfig):
+    name: str = "bmp"
+
+    @override
+    def convert(
+        self,
+        origin: ImageObject
+    ) -> Tuple[Dict[str, Any], ImageObject]:
+        change_config = {}
+        # 直接使用OpenCV保存为BMP
+        _, buffer = cv2.imencode('.bmp', origin.image)
+        # 解码回图像
+        result = cv2.imdecode(buffer, cv2.IMREAD_COLOR)
+        return (change_config, ImageObject(result))
+class WebPConvertConfig(BasicConvertConfig):
+    name: str = "webp"
+    quality: int = 80  # 0-100, 100为最高质量
+
+    @override
+    def convert(
+        self,
+        origin: ImageObject
+    ) -> Tuple[Dict[str, Any], ImageObject]:
+        change_config = {
+            "quality": self.quality
+        }
+        # 转换为PIL Image
+        pil_image = PILFromArray(cv2.cvtColor(origin.image, cv2.COLOR_BGR2RGB))
+        # 创建内存文件对象
+        buffer = BytesIO()
+        # 保存为WebP
+        pil_image.save(buffer, format='WEBP', quality=self.quality)
+        # 从内存读取图像数据
+        buffer.seek(0)
+        result = PILOpen(buffer)
+        # 转换回OpenCV格式
+        result = cv2.cvtColor(np.array(result), cv2.COLOR_RGB2BGR)
+        return (change_config, ImageObject(result))
+class ImageConvertConfig(BaseModel):
+    png: Optional[PNGConvertConfig] = None
+    jpg: Optional[JPGConvertConfig] = None
+    ico: Optional[ICOConvertConfig] = None
+    bmp: Optional[BMPConvertConfig] = None
+    webp: Optional[WebPConvertConfig] = None
+    log_call: Optional[Callable[[Union[str, Dict[str, Any]]], None]] = None
+
+    def get_all_configs(self) -> List[BasicConvertConfig]:
+        return [
+            self.png,
+            self.jpg,
+            self.ico,
+            self.bmp,
+            self.webp
+        ]
+
+    def _inject_log(self, *args, **kwargs):
+        if self.log_call is not None:
+            self.log_call(*args, **kwargs)
+
+    def convert(
+        self,
+        origin: ImageObject
+    ) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, ImageObject]]:
+        result: Dict[str, ImageObject] = {}
+        result_change_config: Dict[str, Dict[str, Any]] = {}
+        convert_configs: List[BasicConvertConfig] = self.get_all_configs()
+
+        for item in convert_configs:
+            if item is not None:
+                result_change_config[item.name], result[item.name] = item.convert(ImageObject(origin.image))
+                self._inject_log(f"conversion<{item.name}> change config: {result_change_config[item.name]}")
+
+        return (result_change_config, result)
+
+    def convert_to(
+        self,
+        input: Union[tool_file, str, ImageObject, np.ndarray, PILImage, PILImageFile],
+        output_dir: tool_file_or_str,
+        *,
+        must_output_dir_exist: bool = False,
+        output_file_name: str = "output.png",
+        callback: Optional[Action[Dict[str, Dict[str, Any]]]] = None,
+    ) -> Dict[str, ImageObject]:
+        # 初始化环境和变量
+        origin_image: ImageObject = self.__init_origin_image(input)
+        result_dir: tool_file = self.__init_result_dir(output_dir, must_output_dir_exist)
+
+        # 转换
+        self._inject_log(f"输出<{output_file_name}>开始转换")
+        change_config, result = self._inject_convert(
+            origin_image=origin_image,
+            result_dir=result_dir,
+            output_file_name=output_file_name,
+        )
+
+        # 结果
+        if callback is not None:
+            callback(change_config)
+        return result
+
+    def __init_origin_image(self, input: Union[tool_file, str, ImageObject, np.ndarray, PILImage, PILImageFile]) -> ImageObject:
+        origin_image: ImageObject = None
+        # check
+        if isinstance(input, (tool_file, str)):
+            inputfile = WrapperFile2CVEX(input)
+            if inputfile.data is not None:
+                origin_image = inputfile.data
+            else:
+                origin_image = inputfile.load()
+        elif isinstance(input, (ImageObject, np.ndarray, PILImage, PILImageFile)):
+            origin_image = Wrapper2Image(input)
+        else:
+            raise TypeError(f"input<{input}> is not support type")
+        return origin_image
+
+    def __init_result_dir(self, output_dir: tool_file_or_str, must_output_dir_exist: bool) -> tool_file:
+        if output_dir is None or isinstance(output_dir, loss_file):
+            return static_loss_file_dir
+        result_dir: tool_file = Wrapper2File(output_dir)
+        # check exist
+        stats: bool = True
+        if result_dir.exists() is False:
+            if must_output_dir_exist:
+                result_dir.must_exists_path()
+            else:
+                stats = False
+        if stats is False:
+            raise FileExistsError(f"output_dir<{result_dir}> is not exist")
+        # check dir stats
+        if result_dir.is_dir() is False:
+            if must_output_dir_exist:
+                result_dir.back_to_parent_dir()
+            else:
+                raise FileExistsError(f"output_dir<{result_dir}> is not a dir")
+        # result
+        return result_dir
+
+    def _inject_convert(
+        self,
+        origin_image: ImageObject,
+        result_dir: tool_file,
+        output_file_name: str
+    ) -> Tuple[Dict[str, Dict[str, Any]], Dict[str, ImageObject]]:
+        self._inject_log(f"output<{output_file_name}> is start convert")
+        result_dict, result_images = self.convert(origin_image)
+        if not (result_dir is None or isinstance(result_dir, loss_file)):
+            for key, value in result_images.items():
+                current_dir = result_dir|key
+                current_result_file = current_dir|output_file_name
+                value.save_image(current_result_file, True)
+        return result_dict, result_images
+
+def image_convert(
+    config: ImageConvertConfig,
+    source,
+    *args,
+    **kwargs
+):
+    if isinstance(source, ImageObject):
+        return config.convert(source, *args, **kwargs)
+
+# region end
 
