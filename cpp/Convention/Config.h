@@ -8,6 +8,16 @@
 #define abstract =0
 #endif
 
+#define disable_symbol
+
+#pragma region __if(_not)_exists
+
+#define If_Exists __if_exists
+
+#define If_Not_Exists __if_not_exists
+
+#pragma endregion
+
 struct decltype_any_unit
 {
 	template<typename value_type>
@@ -922,33 +932,6 @@ public:
 	_Ptr_Name = &_Ptr_Org[0]								\
 
 #endif // __USE_BASE_PTR
-
-#pragma endregion
-
-#pragma region __if(_not)_exists
-
-#if defined(__USE_IF_EXISTS) || defined(_DEBUG) || defined(_USE_Non_Portable_Features)
-
-//Variadic
-//__if_exists
-#define If_Exists(_Symbol)			\
-	__if_exists(_Symbol){			\
-
-//Variadic
-//__if_not_exists
-#define If_Not_Exists(_Symbol)			\
-	__if_not_exists(_Symbol){			\
-
-//Variadic
-//__if_not_exists
-#define Else_Exists(_Symbol)			\
-	}__if_not_exists(_Symbol){			\
-
-//Variadic
-//__if_exists
-#define End_Exists }
-
-#endif // __USE_IF_EXISTS
 
 #pragma endregion
 
