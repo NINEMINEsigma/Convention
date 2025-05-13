@@ -1,0 +1,1 @@
+#include "ConventionEngine/Runtime/GlobalConfig.h"

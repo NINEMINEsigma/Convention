@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include <shared_mutex>
 
-using namespace ConventionEngine;
+using namespace ConventionEngine::Kernel;
 
 /*
                                +---------------------+

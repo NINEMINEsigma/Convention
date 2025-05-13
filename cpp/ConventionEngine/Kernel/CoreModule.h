@@ -55,10 +55,18 @@
 #define __RawT_Max_Thread_Cache_Free_Blocks 64
 #endif // !__RawT_Max_Thread_Cache_Free_Blocks
 
-#define CE ConventionEngine::
+#define CEKernel ConventionEngine::Kernel::
 
-namespace ConventionEngine
+namespace ConventionEngine::Kernel
 {
+	constexpr const char* const CE_VERSION = "0.1.0";
+	constexpr const char* const CE_BUILD_DATE = __DATE__;
+	constexpr const char* const CE_BUILD_TIME = __TIME__;
+	constexpr const char* const CE_BUILD_COMPILER = __VERSION__;
+	constexpr const char* const CE_BUILD_COMPILER_ID = __COMPILER_ID__;
+	constexpr const char* const CE_BUILD_COMPILER_VERSION = __COMPILER_VERSION__;
+	constexpr const char* const CE_BUILD_COMPILER_NAME = __COMPILER_NAME__;
+
 	/**
 	 * @typedef CEError
 	 * @brief 错误代码类型
@@ -133,7 +141,7 @@ extern "C"
 	 * @param ptr 对象指针
 	 * @return 对象句柄，失败时返回-1
 	 */
-	CE CEHandle GetHandle(_In_opt_ void* ptr);
+	CEKernel CEHandle GetHandle(_In_opt_ void* ptr);
 
 	/**
 	 * @brief 通过句柄获取对象指针
@@ -141,7 +149,7 @@ extern "C"
 	 * @param handle 对象句柄
 	 * @return 对象指针，失败时可能为空
 	 */
-	_Ret_maybenull_ void* GetPtr(CE CEHandle handle);
+	_Ret_maybenull_ void* GetPtr(CEKernel CEHandle handle);
 
 	/**
 	 * @brief 获取对象名称
@@ -149,7 +157,7 @@ extern "C"
 	 * @param handle 对象句柄
 	 * @return 对象名称字符串，永不为空
 	 */
-	_Ret_notnull_ const char* GetName(CE CEHandle handle);
+	_Ret_notnull_ const char* GetName(CEKernel CEHandle handle);
 
 	/**
 	 * @brief 设置对象名称
@@ -157,10 +165,10 @@ extern "C"
 	 * @param handle 对象句柄
 	 * @param name 新名称
 	 */
-	void SetName(CE CEHandle handle, _In_ const char* name);
+	void SetName(CEKernel CEHandle handle, _In_ const char* name);
 }
 
-namespace ConventionEngine
+namespace ConventionEngine::Kernel
 {
 	/**
 	 * @class CEAllocator

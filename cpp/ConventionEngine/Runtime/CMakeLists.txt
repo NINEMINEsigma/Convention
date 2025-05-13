@@ -5,7 +5,7 @@ add_library(ConventionEngineRuntime SHARED "${cpps}")
 
 target_link_libraries(ConventionEngineRuntime PUBLIC Convention-Shared)
 
-set_target_properties(ConventionEngineRuntime PROPERTIES PUBLIC_HEADER Behaviour.h)
+set_target_properties(ConventionEngineRuntime PROPERTIES PUBLIC_HEADER GlobalConfig.h)
 
 install(TARGETS ConventionEngineRuntime
         PUBLIC_HEADER DESTINATION           ${CMAKE_INSTALL_PREFIX}/include/ConventionEngine/Runtime

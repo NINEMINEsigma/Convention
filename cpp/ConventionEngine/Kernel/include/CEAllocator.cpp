@@ -2,7 +2,7 @@
 
 // 显式实例化CEAllocator的定义部分
 
-namespace ConventionEngine
+namespace ConventionEngine::Kernel
 {
     // 实现String和WString相关的显式实例化
     template class CEAllocator<char>;
