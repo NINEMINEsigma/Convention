@@ -4,8 +4,6 @@
 #include "Convention/instance/nlohmann/json.hpp"
 using namespace nlohmann::literals;
 
-#include "Convention/instance/file_instance.h"
-
 // 使用json_indicator<_Ty, true>继承json_indicator<_Ty, false>
 // 以实现功能
 template<typename _Ty, bool is_extension = false>

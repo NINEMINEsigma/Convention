@@ -30,7 +30,7 @@ class GlobalConfig(any_class):
             ):
         # build up data folder
         if data_dir is None:
-            data_dir = tool_file(os.path.abspath('.'))
+            data_dir = tool_file(os.path.abspath('./'))
         self.data_dir:tool_file = data_dir if isinstance(data_dir, tool_file) else tool_file(Unwrapper2Str(data_dir))
         if self.data_dir.is_dir() is False:
             self.data_dir.back_to_parent_dir()
@@ -175,25 +175,13 @@ _ProjectConfig_FileFocus:tool_file_or_str = "Assets/"
 class ProjectConfig(GlobalConfig):
     def __init__(self, load=True):
         super().__init__(ProjectConfig.GetProjectAssets(), is_try_create_data_dir=True, load=load)
-        
+
     @staticmethod
     def SetProjectAssets(path:tool_file_or_str):
         global _ProjectConfig_FileFocus
         _ProjectConfig_FileFocus = path
-    
+
     @staticmethod
     def GetProjectAssets():
         global _ProjectConfig_FileFocus
         return _ProjectConfig_FileFocus
-    
-
-if __name__ == "__main__":
-    pass
-
-
-
-
-
-
-
-

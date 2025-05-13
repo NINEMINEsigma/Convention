@@ -4,7 +4,10 @@
 #include "Convention/instance/Interface.h"
 #include <filesystem>
 #include <optional>
+#include <any>
 #include "Convention/instance/stream_instance.h"
+
+#include "Convention/instance/nlohmann/json.hpp"
 
 extern bool is_binary_file(const std::filesystem::path& path);
 extern std::filesystem::path get_extension_name(const std::filesystem::path& path);
@@ -18,6 +21,8 @@ public:
 
 	using path = std::filesystem::path;
 	using _Stream = instance<std::ios_base, true>;
+
+	using DataType = std::optional<std::any>;
 private:
 	using _Mybase = instance<path, false>;
 public:
@@ -31,9 +36,14 @@ public:
 			this->must_exist_path();
 	}
 	instance(path path_) :_Mybase(new path(path_)) {}
+	instance(const instance& data) noexcept:_Mybase(data) {}
 	instance_move_operator(public)
 	{
 		this->stream = std::move(other.stream);
+		if (other.data.has_value())
+		{
+			this->data = std::move(other.data.value());
+		}
 	}
 	virtual ~instance() {}
 
@@ -237,6 +247,10 @@ public:
 		**this = this->get()->parent_path();
 		return *this;
 	}
+	instance get_parent_dir()
+	{
+		return this->get()->parent_path();
+	}
 	size_t dir_count() const
 	{
 		size_t result = 0;
@@ -384,8 +398,46 @@ public:
 	);
 private:
 
+public:
+	DataType data;
+
+	static std::vector<std::string> text_readable_file_type;
+	static std::vector<std::string> audio_file_type;
+	static std::vector<std::string> image_file_type;
+	static std::string temp_tool_file_path_name;
+
+	DataType Load()
+	{
+		std::string suffix = std::to_string(this->get()->extension());
+		if (suffix == ".json")
+		{
+			nlohmann::json j;
+			this->stream >> j;
+			this->data = j;
+		}
+		else if (suffix == ".xml")
+		{
+			// Load XML data
+		}
+		else if (suffix == ".txt")
+		{
+			std::string str;
+			this->stream >> str;
+			this->data = str;
+		}
+		else if (suffix == ".csv")
+		{
+
+		}
+
+	}
 };
 
 using tool_file = instance<std::filesystem::path, true>;
+
+std::vector<std::string> tool_file::text_readable_file_type = { "txt", "md", "json", "csv", "xml", "xlsx", "xls", "docx", "doc", "svg" };
+std::vector<std::string> tool_file::audio_file_type = {"mp3", "ogg", "wav"};
+std::vector<std::string> tool_file::image_file_type = { "'png", "jpg", "jpeg", "bmp", "svg", "ico" };
+std::string tool_file::temp_tool_file_path_name = "temp.tool_file";
 
 #endif // !__FILE_CONVENTION_FILE_INSTANCE
