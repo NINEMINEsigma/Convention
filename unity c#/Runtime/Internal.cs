@@ -162,6 +162,12 @@ namespace Convention
         {
             typeof(T).GetProperty("instance", BindingFlags.Static | BindingFlags.Public).SetValue(null, value);
         }
+
+        public static string nowf()
+        {
+            return DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+        }
+        public static string Nowf => nowf();
     }
 
     public abstract class Singleton<T> : AnyClass, ISingleton<T> where T : Singleton<T>

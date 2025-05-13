@@ -1,5 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using UnityEngine;
 
 namespace Convention
@@ -29,9 +31,9 @@ namespace Convention
         {
             Left,
             Right,
-            Both
+            Center
         }
-        public static string FillString([In]object data, int maxLength=50,char fillChar=' ', Side side = Side.Right)
+        public static string FillString([In] object data, int maxLength = 50, char fillChar = ' ', Side side = Side.Right)
         {
             return FillString(data.ToString(), maxLength, fillChar, side);
         }
@@ -46,7 +48,7 @@ namespace Convention
                     return fillStr + data;
                 case Side.Right:
                     return data + fillStr;
-                case Side.Both:
+                case Side.Center:
                     int leftLength = (maxLength - data.Length) / 2;
                     int rightLength = maxLength - leftLength - data.Length;
                     return new string(fillChar, leftLength) + data + new string(fillChar, rightLength);
@@ -54,5 +56,15 @@ namespace Convention
                     return data;
             }
         }
+
+        public static List<string> BytesToStrings([In] IEnumerable<byte[]> bytes)
+        {
+            return BytesToStrings(bytes, Encoding.UTF8);
+        }
+        public static List<string> BytesToStrings([In] IEnumerable<byte[]> bytes, Encoding encoding)
+        {
+            return bytes.ToList().ConvertAll(x => encoding.GetString(x));
+        }
+
     }
 }

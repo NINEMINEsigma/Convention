@@ -419,6 +419,40 @@ namespace Convention
         public bool IsAssetBundle => this.ExtensionIs(AssetBundleExtension);
         #endregion
         #region Operator
+        [return: ReturnNotNull, ReturnSelf]
+        public ToolFile Write([In] string data)
+        {
+            if (Stream != null && Stream.CanWrite)
+            {
+                using var sw = new StreamWriter(Stream);
+                sw.Write(data);
+                sw.Flush();
+            }
+            else
+            {
+                using var fs = new FileStream(FullPath, FileMode.Append, FileAccess.Write);
+                using var sw = new StreamWriter(fs);
+                sw.Write(data);
+                sw.Flush();
+            }
+            return this;
+        }
+        [return: ReturnNotNull, ReturnSelf]
+        public ToolFile Write([In] byte[] bytes)
+        {
+            if (Stream != null && Stream.CanWrite)
+            {
+                Stream.Write(bytes);
+                Stream.Flush();
+            }
+            else
+            {
+                using var fs = new FileStream(FullPath, FileMode.Append, FileAccess.Write);
+                fs.Write(bytes, 0, bytes.Length);
+                fs.Flush();
+            }
+            return this;
+        }
         [return: ReturnNotNull, ReturnNotSelf]
         public static ToolFile operator |([In] ToolFile left, [In] string rightPath)
         {
@@ -498,6 +532,12 @@ namespace Convention
                 File.Delete(FullPath);
             return this;
         }
+        /// <summary>
+        /// same to <see cref="Delete"/>
+        /// </summary>
+        /// <returns></returns>
+        [return: ReturnSelf]
+        public ToolFile Remove() => Delete();
         public ToolFile MustExistsPath()
         {
             this.Close();

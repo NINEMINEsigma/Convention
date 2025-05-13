@@ -1,17 +1,20 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using Newtonsoft.Json;
 using UnityEngine;
 
 namespace Convention
 {
-    public class GlobalConfig : AnyClass, IEnumerable<KeyValuePair<string,object>>
+    public class GlobalConfig : AnyClass, IEnumerable<KeyValuePair<string, object>>
     {
         public static string ConstConfigFile = "config.json";
+
         public static void InitExtensionEnv()
         {
             ConstConfigFile = "config.json";
+            ProjectConfig.InitExtensionEnv();
         }
 
         public static void GenerateEmptyConfigJson([In] ToolFile file)
@@ -29,7 +32,7 @@ namespace Convention
         private ToolFile DataDir;
         private Dictionary<string, object> data_pair = new();
 
-        public GlobalConfig([In, Opt] string dataDir, bool isTryCreateDataDir = false, bool isLoad = true) 
+        public GlobalConfig([In, Opt] string dataDir, bool isTryCreateDataDir = false, bool isLoad = true)
             : this(new ToolFile(dataDir), isTryCreateDataDir, isLoad) { }
         public GlobalConfig([In, Opt] ToolFile dataDir, bool isTryCreateDataDir = false, bool isLoad = true)
         {
@@ -38,9 +41,9 @@ namespace Convention
             this.DataDir = dataDir;
             if (this.DataDir.IsDir() == false)
                 this.DataDir.BackToParentDir();
-            if (this.DataDir.Exists()==false)
+            if (this.DataDir.Exists() == false)
             {
-                if(isTryCreateDataDir)
+                if (isTryCreateDataDir)
                     this.DataDir.MustExistsPath();
                 else
                     throw new Exception($"Data dir not found: {this.DataDir}");
@@ -106,7 +109,7 @@ namespace Convention
             return true;
         }
 
-        public object this[[In]string key]
+        public object this[[In] string key]
         {
             get
             {
@@ -152,11 +155,11 @@ namespace Convention
         public GlobalConfig LoadProperties()
         {
             var configFile = this.ConfigFile;
-            if(configFile.Exists()==false)
+            if (configFile.Exists() == false)
             {
                 data_pair = new();
             }
-            else 
+            else
             {
                 var data = configFile.LoadAsRawJson<Dictionary<string, Dictionary<string, object>>>();
                 if (data.ContainsKey("properties"))
@@ -176,10 +179,84 @@ namespace Convention
             return this.GetFile(ConfigFile.GetFilename(true) + "_log.txt", true);
         }
         public ToolFile LogFile => GetLogFile();
-        public virtual void Log(string messageType, string message, string color)
+
+        protected virtual void DoLog(LogType logType, string messageType, string message, Action<string> logger)
         {
             configLogging_tspace = Mathf.Max(configLogging_tspace, messageType.Length);
-            var what =$"{}: {message}"
+            var what = $"{StringExtension.FillString(messageType, configLogging_tspace, side: StringExtension.Side.Center)}: {message}";
+            logger(what);
+            var log = LogFile;
+            log.Open(System.IO.FileMode.Append);
+            log.Write($"[{ConventionUtility.nowf()}]{what}");
+        }
+        public virtual void Log(string messageType, string message)
+        {
+            DoLog(LogType.Log, messageType, message, Debug.Log);
+        }
+        public void LogMessage(string message)
+        {
+            DoLog(LogType.Log, "Message", message, Debug.Log);
+        }
+        public void LogWarning(string message)
+        {
+            DoLog(LogType.Warning, "Warning", message, Debug.LogWarning);
+        }
+        public void LogError(string message)
+        {
+            DoLog(LogType.Error, "Error", message, Debug.LogError);
+        }
+        public void LogPropertyNotFound(string message, object @default = null)
+        {
+            if (@default != null)
+            {
+                message = $"{message} (default: {@default})";
+            }
+            DoLog(LogType.Error, "Property not found", message, Debug.LogWarning);
+        }
+        public void LogMessageOfPleaseCompleteConfiguration()
+        {
+            var message = "Please complete configuration";
+            LogError(message);
+        }
+
+        public GlobalConfig LogClear()
+        {
+            LogFile.Delete();
+            return this;
+        }
+
+        public object FindItem([In] string key, object @default = null)
+        {
+            if (Contains(key))
+            {
+                return this[key];
+            }
+            else
+            {
+                LogPropertyNotFound(key, @default);
+                return @default;
+            }
+        }
+    }
+
+    public class ProjectConfig:GlobalConfig
+    {
+        private static string ProjectConfigFileFocus = "Assets/";
+
+        public static new void InitExtensionEnv()
+        {
+            ProjectConfigFileFocus = "Assets/";
+        }
+
+        public ProjectConfig(bool isLoad = true) : base(ProjectConfigFileFocus, true, isLoad) { }
+
+        public static void SetProjectConfigFileFocus([In] string path)
+        {
+            ProjectConfigFileFocus = path;
+        }
+        public static string GetProjectConfigFileFocus()
+        {
+            return ProjectConfigFileFocus;
         }
     }
 }
