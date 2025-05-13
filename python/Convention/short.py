@@ -40,7 +40,6 @@ from .Str.Core import (
     UnWrapper               as Unwrapper2Str,
     Able_UnWrapper          as Able_Unwrapper2Str,
     limit_str,
-    link,
     list_byte_to_list_string, list_byte_to_string,
     Combine,
     word_segmentation,

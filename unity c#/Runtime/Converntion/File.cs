@@ -166,6 +166,11 @@ namespace Convention
             else
                 return LoadAsText();
         }
+        public T LoadAsRawJson<T>()
+        {
+            this.data = JsonUtility.FromJson<T>(LoadAsText());
+            return (T)this.data;
+        }
         public object LoadAsJson()
         {
             this.data = ES3Plugin.Load(FullPath);
@@ -290,25 +295,33 @@ namespace Convention
                 SaveAsText(newpath);
             SaveAsBinary(newpath);
         }
+        public void SaveAsRawJson([In][Opt] string newpath = null)
+        {
+            SaveAsText(JsonUtility.ToJson(this.data), newpath);
+        }
         public void SaveAsJson([In][Opt] string newpath = null)
         {
             ES3Plugin.Save(newpath ?? FullPath, this.data);
         }
-        public void SaveAsText([In][Opt] string newpath = null)
+        private void SaveAsText([In] string data, [In][Opt] string newpath = null)
         {
             if (Stream != null && Stream.CanWrite)
             {
                 using var sw = new StreamWriter(Stream);
-                sw.Write((string)this.data);
+                sw.Write(data);
                 sw.Flush();
             }
             else
             {
                 using var fs = new FileStream(newpath ?? FullPath, FileMode.CreateNew, FileAccess.Write);
                 using var sw = new StreamWriter(fs);
-                sw.Write((string)this.data);
+                sw.Write(data);
                 sw.Flush();
             }
+        }
+        public void SaveAsText([In][Opt] string newpath = null)
+        {
+            SaveAsText((string)this.data, newpath);
         }
         public static void SaveDataAsBinary([In] string path, [In] byte[] outdata, [In][Opt] FileStream Stream = null)
         {
@@ -485,7 +498,7 @@ namespace Convention
                 File.Delete(FullPath);
             return this;
         }
-        public ToolFile MustExistPath()
+        public ToolFile MustExistsPath()
         {
             this.Close();
             this.TryCreateParentPath();

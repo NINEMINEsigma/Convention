@@ -661,6 +661,7 @@ namespace Convention
             RegisterBaseWrapperExtension.InitExtensionEnv();
             SO.Windows.InitExtensionEnv();
             GlobalConfig.InitExtensionEnv();
+            StringExtension.InitExtensionEnv();
 
             UnityExtension.InitExtensionEnv();
 

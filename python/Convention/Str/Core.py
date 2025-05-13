@@ -7,7 +7,7 @@ import xml.etree.ElementTree    as     ET
 from xml.dom                    import minidom
 import                                 math
 
-def limit_str(data, max_length:int=50):
+def limit_str(data, max_length:int=50) -> str:
     s:str = data if data is str else str(data)
     if len(s) <= max_length:
         return s
@@ -20,7 +20,11 @@ def limit_str(data, max_length:int=50):
         # 截取头尾部分并连接
         return s[:head_length] + inside_str + s[-tail_length:]
 
-def fill_str(data, max_length:int=50, fill_char:str=" ", side:Literal["left", "right", "center"]="right"):
+def fill_str(data:Any, 
+             max_length:    int = 50, 
+             fill_char:     str = " ",
+             side:          Literal["left", "right", "center"] = "right"
+             ) -> str:
     s:str = data if data is str else str(data)
     char = fill_char[0]
     if len(s) >= max_length:
@@ -36,9 +40,6 @@ def fill_str(data, max_length:int=50, fill_char:str=" ", side:Literal["left", "r
             return char * left + s + char * right
         else:
             raise ValueError(f"Unsupported side: {side}")
-
-def link(symbol:str, strs:list):
-    return symbol.join(strs)
 
 def list_byte_to_list_string(lines:List[bytes], encoding='utf-8') -> List[str]:
     return [line.decode(encoding) for line in lines]

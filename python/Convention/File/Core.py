@@ -551,6 +551,8 @@ class tool_file(any_class):
         self.close()
         self.__file_path = self.get_dir()
         return self
+    def get_parent_dir(self):
+        return tool_file(self.get_dir())
     def dir_count(self, ignore_folder:bool = True):
         iter    = self.dir_iter()
         result  = 0

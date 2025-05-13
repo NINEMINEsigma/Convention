@@ -16,7 +16,7 @@ class GlobalConfig(any_class):
     configLogging_tspace:   int         = len("Property not found")
 
     def get_config_file(self):
-        return self.data_dir|self.__const_config_file
+        return self.data_dir|self._const_config_file
 
     @property
     def config_file(self):
@@ -40,9 +40,9 @@ class GlobalConfig(any_class):
             else:
                 raise FileNotFoundError(f"Can't find data dir: {self.data_dir.get_dir()}")
         # build up init data file
-        self.__data_pair:Dict[str, Any] = {}
+        self._data_pair:Dict[str, Any] = {}
         global const_config_file
-        self.__const_config_file = const_config_file
+        self._const_config_file = const_config_file
         config_file = self.config_file
         if config_file.exists() is False:
             generate_empty_config_json(config_file)
@@ -51,12 +51,6 @@ class GlobalConfig(any_class):
     def __del__(self):
         #self.save_properties()
         pass
-
-    def save_temp_data(self, any_data):
-        self.data_dir.data = any_data
-        self.data_dir.save()
-    def load_temp_data(self):
-        return self.data_dir.load()
 
     def get_file(self, file:str, is_must:bool=False):
         result = self.data_dir|file
@@ -85,41 +79,42 @@ class GlobalConfig(any_class):
         result = self.data_dir|file
         if result.exists():
             return False
-        if result.back_to_parent_dir().exists() is False:
+        if result.get_parent_dir().exists() is False:
             return False
         result.create()
         return True
 
-    def __setitem__(self, key:str, value:str):
-        self.__data_pair[key] = value
-    def __getitem__(self, key:str):
-        return self.__data_pair[key]
-    def __contains__(self, key:str):
-        return key in self.__data_pair
+    def __setitem__(self, key:str, value:Any) -> str:
+        self._data_pair[key] = value
+        return value
+    def __getitem__(self, key:str) -> Any:
+        return self._data_pair[key]
+    def __contains__(self, key:str) -> bool:
+        return key in self._data_pair
     def __delitem__(self, key:str):
-        del self.__data_pair[key]
+        del self._data_pair[key]
     def __iter__(self):
-        return iter(self.__data_pair)
+        return iter(self._data_pair)
     def __len__(self):
-        return len(self.__data_pair)
+        return len(self._data_pair)
 
     def save_properties(self):
         config = self.config_file
         config.open('w', encoding='utf-8')
         config.data = {
-            "properties": self.__data_pair
+            "properties": self._data_pair
         }
         config.save()
         return self
     def __internal_load_properties(self):
         config = self.config_file
         if config.exists() is False:
-            self.__data_pair = {}
+            self._data_pair = {}
         else:
             config.load()
             if "properties" in config.data:
                 for property_name in config.data["properties"]:
-                    self.__data_pair[property_name] = config.data["properties"][property_name]
+                    self._data_pair[property_name] = config.data["properties"][property_name]
             else:
                 raise ValueError("Can't find properties in config file")
         return self
@@ -128,7 +123,7 @@ class GlobalConfig(any_class):
         return self
 
     def print_source_pair(self):
-        print(self.__data_pair)
+        print(self._data_pair)
 
     def get_log_file(self) -> tool_file:
         return self.get_file(self.config_file.get_filename(True)+"_log.txt", True)
@@ -169,8 +164,8 @@ class GlobalConfig(any_class):
         return self
 
     def FindItem(self, key:str, default=None):
-        if key in self.__data_pair:
-            return self.__data_pair[key]
+        if key in self._data_pair:
+            return self._data_pair[key]
         else:
             self.LogPropertyNotFound(key, default)
             return default
