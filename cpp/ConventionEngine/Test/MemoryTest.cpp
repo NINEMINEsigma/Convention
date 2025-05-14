@@ -12,16 +12,16 @@
 #define StatsLog() std::cout << "当前状态: " << GetEngineAllocatedMemory() << "/" << GetEngineTotalMemory() << "\n";
 
 // 创建用于测试的派生类
-class MemTestObject : public CE CEObject 
+class MemTestObject : public CEKernel CEObject 
 {
 private:
 protected:
-    virtual CE CEPtr<CEObject> CreateObject() const override 
+    virtual CEKernel CEPtr<CEObject> CreateObject() const override
     {
-        return CE CEPtr<MemTestObject>();
+        return CEKernel CEPtr<MemTestObject>();
     }
 
-    virtual void CloneValuesTo(_In_ CE CEPtr<CEObject> target) const override 
+    virtual void CloneValuesTo(_In_ CEKernel CEPtr<CEObject> target) const override 
     {
 		auto testTarget = target.cast<MemTestObject>();
         testTarget->data = this->data;

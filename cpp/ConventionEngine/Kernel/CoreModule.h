@@ -62,10 +62,6 @@ namespace ConventionEngine::Kernel
 	constexpr const char* const CE_VERSION = "0.1.0";
 	constexpr const char* const CE_BUILD_DATE = __DATE__;
 	constexpr const char* const CE_BUILD_TIME = __TIME__;
-	constexpr const char* const CE_BUILD_COMPILER = __VERSION__;
-	constexpr const char* const CE_BUILD_COMPILER_ID = __COMPILER_ID__;
-	constexpr const char* const CE_BUILD_COMPILER_VERSION = __COMPILER_VERSION__;
-	constexpr const char* const CE_BUILD_COMPILER_NAME = __COMPILER_NAME__;
 
 	/**
 	 * @typedef CEError
@@ -180,7 +176,7 @@ namespace ConventionEngine::Kernel
 	 * @tparam _Ty 分配器管理的元素类型
 	 */
 	template <class _Ty>
-	class CEAllocator: public any_class
+	class CEAllocator : public any_class
 	{
 	public:
 		static_assert(!std::is_const_v<_Ty>, "The C++ Standard forbids containers of const elements "
@@ -458,20 +454,24 @@ namespace ConventionEngine::Kernel
 		handle_instance m_instance;
 		void* operator new(size_t size) = delete;
 		explicit CEPtr(handle_instance handle) noexcept
-			: m_instance(handle) {}
+			: m_instance(handle) {
+		}
 	public:
 		CEPtr()
-			: m_instance(new CEHandle(GetHandle(CEAllocator<_Ty>().CreatePtr()))) {}
+			: m_instance(new CEHandle(GetHandle(CEAllocator<_Ty>().CreatePtr()))) {
+		}
 		template<typename _Other>
-		CEPtr(const CEPtr<_Other>& other) noexcept 
+		CEPtr(const CEPtr<_Other>& other) noexcept
 			: m_instance(static_cast<handle_instance::_shared>(other.m_instance))
 		{
 			static_assert(std::is_base_of_v<_Ty, _Other>, "cast is invaild");
 		}
-		CEPtr(const CEPtr& other) noexcept 
-			: m_instance(static_cast<handle_instance::_shared>(other.m_instance)) {}
-		CEPtr(CEPtr&& other) noexcept 
-			: m_instance(std::move(other.m_instance)) {}
+		CEPtr(const CEPtr& other) noexcept
+			: m_instance(static_cast<handle_instance::_shared>(other.m_instance)) {
+		}
+		CEPtr(CEPtr&& other) noexcept
+			: m_instance(std::move(other.m_instance)) {
+		}
 		/*template<typename... _Args>
 		CEPtr(_Args&&... args) : CEPtr(CEAllocator<_Ty>().CreatePtr(std::forward<_Args>(args)...)) {}*/
 		CEPtr& operator=(const CEPtr& other) noexcept
@@ -534,7 +534,7 @@ namespace ConventionEngine::Kernel
 	 * 所有ConventionEngine管理的对象都应该继承自此类。
 	 * 提供内存管理、命名、实例化等基本功能。
 	 */
-	class CEObject: public any_class
+	class CEObject : public any_class
 	{
 	public:
 		/**
@@ -632,76 +632,40 @@ namespace ConventionEngine::Kernel
 		 */
 		void SetDirty();
 	};
-}
 
-/**
- * @brief 显式实例化常用类型的分配器
- *
- * 这些实例化声明确保编译器生成这些特定类型的分配器代码
- */
-// 字符串类型
-template class ConventionEngine::CEAllocator<char>;
-template class ConventionEngine::CEAllocator<wchar_t>;
+	/**
+	 * @brief 显式实例化常用类型的分配器
+	 *
+	 * 这些实例化声明确保编译器生成这些特定类型的分配器代码
+	 */
+	 // 字符串类型
+	template class CEAllocator<char>;
+	template class CEAllocator<wchar_t>;
 
-// 基本数据类型
-template class ConventionEngine::CEAllocator<int>;
-template class ConventionEngine::CEAllocator<float>;
-template class ConventionEngine::CEAllocator<double>;
-template class ConventionEngine::CEAllocator<long>;
-template class ConventionEngine::CEAllocator<unsigned int>;
-template class ConventionEngine::CEAllocator<unsigned long>;
-template class ConventionEngine::CEAllocator<bool>;
+	// 基本数据类型
+	template class CEAllocator<int>;
+	template class CEAllocator<float>;
+	template class CEAllocator<double>;
+	template class CEAllocator<long>;
+	template class CEAllocator<unsigned int>;
+	template class CEAllocator<unsigned long>;
+	template class CEAllocator<bool>;
 
-// 常用STL容器对应的pair类型
-template class ConventionEngine::CEAllocator<std::pair<const int, int>>;
-template class ConventionEngine::CEAllocator<std::pair<const std::string, std::string>>;
-template class ConventionEngine::CEAllocator<std::pair<const int, std::string>>;
-template class ConventionEngine::CEAllocator<std::pair<const std::string, int>>;
+	// 常用STL容器对应的pair类型
+	template class CEAllocator<std::pair<const int, int>>;
+	template class CEAllocator<std::pair<const std::string, std::string>>;
+	template class CEAllocator<std::pair<const int, std::string>>;
+	template class CEAllocator<std::pair<const std::string, int>>;
 
-/**
- * @def QuickCreateObject
- * @brief 快速定义CreateObject方法的宏
- *
- * @param name 类名
- */
+	/**
+	 * @def QuickCreateObject
+	 * @brief 快速定义CreateObject方法的宏
+	 *
+	 * @param name 类名
+	 */
 #define QuickCreateObject(name) CEObject* name::CreateObject() const {return new name();}
 
-namespace ConventionEngine
-{
-	/*class Scene :public CEObject
-	{
-	public:
-
-	private:
-
-	protected:
-		virtual CEObject* CreateObject() const override;
-	public:
-
-	};
-
-	class SceneObject : public CEObject
-	{
-	public:
-
-	private:
-
-	protected:
-		virtual CEObject* CreateObject() const override;
-	public:
-	};
-
-	class Component :public CEObject
-	{
-	public:
-
-	private:
-
-	protected:
-		virtual CEObject* CreateObject() const override;
-	public:
-
-	};*/
 }
+
 
 #endif // !__FILE_CONVENTION_ENGINE_INTERNAL

@@ -14,7 +14,9 @@ namespace ConventionEngine
 		using dataTypePairValueType = std::any;
 		using dataTypePair = std::map<dataTypePairKeyType, dataTypePairValueType>;
 	private:
+		tool_file data_dir;
 		dataTypePair data_pair;
+		std::string my_const_config_file;
 	public:
 		int configLogging_tspace = 0;
 		static std::string const_config_file;
@@ -35,13 +37,16 @@ namespace ConventionEngine
 		tool_file GetConfigFile();
 
 		tool_file GetFile(const std::string& file, bool isMustExist = false) const;
-		tool_file EraseFile(const std::string& file) const;
-		tool_file RemoveFile(const std::string& file) const;
-		tool_file GenerateFile(const std::string& file) const;
+		bool EraseFile(const std::string& file) const;
+		bool RemoveFile(const std::string& file) const;
+		bool CreateFileWhenNotExist(const std::string& file) const;
 
 		dataTypePairValueType& operator[](const dataTypePairKeyType& key);
 		bool Contains(const dataTypePairKeyType& key) const;
 		bool RemoveItem(const dataTypePairKeyType& key);
+		size_t DataPairSize() const;
+		typename dataTypePair::iterator begin();
+		typename dataTypePair::iterator end();
 
 		GlobalConfig& SaveProperties();
 		GlobalConfig& LoadProperties();

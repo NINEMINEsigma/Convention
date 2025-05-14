@@ -7,8 +7,6 @@ using namespace std;
 
 int main()
 {
-	InitConventionEngine(1024);
-	QuitConventionEngine();
-	InitConventionEngine(1024);
-	QuitConventionEngine();
+	std::filesystem::path p = "xx.xx";
+	cout << p.extension() << endl;
 }

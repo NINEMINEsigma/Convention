@@ -371,6 +371,15 @@ public:
 		return *this;
 	}
 
+	void write(const std::string& data)
+	{
+		this->get_stream<std::ofstream&>() << data;
+	}
+	void write(_In_ const char* data, size_t size)
+	{
+		this->get_stream<std::ofstream&>().write(data, size);
+	}
+
 	using monitor_callback = std::function<void(const std::string&, const path&)>;
 	instance& compress(const path& output_path = "", const std::string& format = "cab");
 	instance& decompress(const path& output_path = "");
@@ -400,44 +409,75 @@ private:
 
 public:
 	DataType data;
+	using json = nlohmann::json;
 
 	static std::vector<std::string> text_readable_file_type;
 	static std::vector<std::string> audio_file_type;
 	static std::vector<std::string> image_file_type;
 	static std::string temp_tool_file_path_name;
 
-	DataType Load()
-	{
-		std::string suffix = std::to_string(this->get()->extension());
-		if (suffix == ".json")
-		{
-			nlohmann::json j;
-			this->stream >> j;
-			this->data = j;
-		}
-		else if (suffix == ".xml")
-		{
-			// Load XML data
-		}
-		else if (suffix == ".txt")
-		{
-			std::string str;
-			this->stream >> str;
-			this->data = str;
-		}
-		else if (suffix == ".csv")
-		{
+#pragma region Load
 
-		}
+	DataType& Load()
+	{
+		return this->data;
+	}
+
+	auto& LoadAsJson()
+	{
+		this->data = json::parse(**this);
+		return std::any_cast<json&>(this->data);
+	}
+
+#pragma endregion
+
+#pragma region Save
+
+	template<typename _DataType = void>
+	void Save() const
+	{
 
 	}
+	template<typename _DataType = void>
+	void SaveAsJson() const
+	{
+		SaveAsJson<_DataType>(**this);
+	}
+	template<typename _DataType, typename _Path>
+	void SaveAsJson(const _Path& newPath) const
+	{
+		const std::filesystem::path path = newPath;
+		open(std::ios::out);
+		json json_data;
+		if (data.has_value())
+		{
+			auto& real_data = data.value();
+			if constexpr (std::is_same_v<_DataType, json>)
+			{
+				json_data = std::any_cast<json>(real_data);
+			}
+			else
+			{
+				if (real_data.type() == typeid(json))
+				{
+					json_data = std::any_cast<json>(real_data);
+				}
+				else
+				{
+					json_data = json(std::any_cast<_DataType>(real_data));
+				}
+			}
+			auto str = json_data.dump(4);
+			this->write(str);
+		}
+	}
+
+
+#pragma endregion
+
+
 };
 
 using tool_file = instance<std::filesystem::path, true>;
-
-std::vector<std::string> tool_file::text_readable_file_type = { "txt", "md", "json", "csv", "xml", "xlsx", "xls", "docx", "doc", "svg" };
-std::vector<std::string> tool_file::audio_file_type = {"mp3", "ogg", "wav"};
-std::vector<std::string> tool_file::image_file_type = { "'png", "jpg", "jpeg", "bmp", "svg", "ico" };
-std::string tool_file::temp_tool_file_path_name = "temp.tool_file";
 
 #endif // !__FILE_CONVENTION_FILE_INSTANCE

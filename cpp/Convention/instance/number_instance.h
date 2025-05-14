@@ -243,11 +243,12 @@ struct number_structure
 
 	inline number_structure& let_simplify() noexcept
 	{
-		if (molecule == 0) return;
+		if (molecule == 0) return *this;
 
 		size_t g = std::gcd(molecule, denominator);
 		molecule = molecule / g;
 		denominator = denominator / g;
+		return *this;
 	}
 
 	// 加法运算符

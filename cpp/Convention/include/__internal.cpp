@@ -206,4 +206,9 @@ std::filesystem::path get_base_filename(const std::filesystem::path& path)
 	return path.filename();
 }
 
+std::vector<std::string> tool_file::text_readable_file_type = { "txt", "md", "json", "csv", "xml", "xlsx", "xls", "docx", "doc", "svg" };
+std::vector<std::string> tool_file::audio_file_type = { "mp3", "ogg", "wav" };
+std::vector<std::string> tool_file::image_file_type = { "'png", "jpg", "jpeg", "bmp", "svg", "ico" };
+std::string tool_file::temp_tool_file_path_name = "temp.tool_file";
+
 

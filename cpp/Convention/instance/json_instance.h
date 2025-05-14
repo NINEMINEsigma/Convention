@@ -18,10 +18,7 @@ struct json_indicator
 
 	static json parse_from_str(const std::string& str);
 
-	static json parse_from_file(const std::istream& stream)
-	{
-		return json::parse(stream);
-	}
+	static json parse_from_file(const std::istream& stream);
 
 	template<typename _ST>
 	static json parse_from_file(const _ST& stream);
@@ -46,21 +43,21 @@ struct json_indicator
 
 template<typename _Ty, bool is_extension>
 template<typename _Input>
-json_indicator<_Ty, is_extension>::json 
+typename json_indicator<_Ty, is_extension>::json 
 json_indicator<_Ty, is_extension>::parse(const _Input& data)
 {
 	return json::parse(data);
 }
 
 template<typename _Ty, bool is_extension>
-json_indicator<_Ty, is_extension>::json  
+typename json_indicator<_Ty, is_extension>::json  
 json_indicator<_Ty, is_extension>::parse_from_str(const std::string& str)
 {
 	return json::parse(str);
 }
 
 template<typename _Ty, bool is_extension>
-json_indicator<_Ty, is_extension>::json
+typename json_indicator<_Ty, is_extension>::json
 json_indicator<_Ty, is_extension>::parse_from_file(const std::istream& stream)
 {
 	return json::parse(stream);
@@ -68,7 +65,7 @@ json_indicator<_Ty, is_extension>::parse_from_file(const std::istream& stream)
 
 template<typename _Ty, bool is_extension>
 template<typename _ST>
-json_indicator<_Ty, is_extension>::json
+typename json_indicator<_Ty, is_extension>::json
 json_indicator<_Ty, is_extension>::parse_from_file(const _ST& stream)
 {
 	return json::parse(stream);
@@ -86,7 +83,8 @@ std::string json_indicator<_Ty, is_extension>::dump(const json& data, bool isPre
 // 使用json_indicator<_Ty, true>继承json_indicator<_Ty, false>
 // 以实现功能
 template<typename _Ty>
-class instance<json_indicator<_Ty, true>, true> : public instance<json_indicator<_Ty, true>::json, false>
+class instance<json_indicator<_Ty, true>, true> 
+	: public instance<typename json_indicator<_Ty, true>::json, false>
 {
 public:
 	using _MyIndictaor = json_indicator<_Ty, true>;
@@ -136,6 +134,31 @@ public:
 	}
 };
 
-
+template<>
+class instance<typename json_indicator<void, true>::json, true>
+	: public instance<json_indicator<void, true>, true>
+{
+public:
+	using _Mybase = instance<json_indicator<void, true>, true>;
+	instance(const std::string& data, bool is_raw_string = false) :
+		_Mybase(data, is_raw_string) {
+	}
+	instance(const std::istream& stream) : _Mybase(stream) {}
+	instance(const tool_file& file) : _Mybase(file) {}
+	instance(const json& data) noexcept : _Mybase(data) {}
+	instance(json&& data) noexcept : _Mybase(std::move(data)) {}
+	instance& operator=(const json& data) noexcept
+	{
+		_Mybase::operator=(data);
+		return *this;
+	}
+	instance& operator=(json&& data) noexcept
+	{
+		_Mybase::operator=(std::move(data));
+		return *this;
+	}
+	instance_move_operator(public) {}
+	virtual ~instance() {}
+};
 
 #endif // !__FILE_CONVENTION_JSON_INSTANCE
