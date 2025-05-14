@@ -206,6 +206,81 @@ std::filesystem::path get_base_filename(const std::filesystem::path& path)
 	return path.filename();
 }
 
+namespace convention_kit
+{
+	bool is_arithmetic_type(const type_info& type)
+	{
+		if (
+			type == typeid(int) ||
+			type == typeid(unsigned int) ||
+			type == typeid(long) ||
+			type == typeid(unsigned long) ||
+			type == typeid(long long) ||
+			type == typeid(unsigned long long) ||
+			type == typeid(float) ||
+			type == typeid(double) ||
+			type == typeid(long double))
+		{
+			return true;
+		}
+		return false;
+	}
+	bool is_string_type(const type_info& type)
+	{
+		if (
+			type == typeid(std::string) ||
+			type == typeid(std::wstring) ||
+			type == typeid(std::u16string) ||
+			type == typeid(std::u32string) ||
+			type == typeid(std::string_view) ||
+			type == typeid(std::wstring_view) ||
+			type == typeid(std::u16string_view) ||
+			type == typeid(std::u32string_view) ||
+			type == typeid(const char*)
+			)
+		{
+			return true;
+		}
+		return false;
+	}
+	bool is_floating_type(const type_info& type)
+	{
+		if (
+			type == typeid(float) ||
+			type == typeid(double) ||
+			type == typeid(long double))
+		{
+			return true;
+		}
+		return false;
+	}
+	bool is_integral_type(const type_info& type)
+	{
+		if (
+			type == typeid(int) ||
+			type == typeid(unsigned int) ||
+			type == typeid(long) ||
+			type == typeid(unsigned long) ||
+			type == typeid(long long) ||
+			type == typeid(unsigned long long))
+		{
+			return true;
+		}
+		return false;
+	}
+	bool is_unsigned_integral_type(const type_info& type)
+	{
+		if (
+			type == typeid(unsigned int) ||
+			type == typeid(unsigned long) ||
+			type == typeid(unsigned long long))
+		{
+			return true;
+		}
+		return false;
+	}
+}
+
 std::vector<std::string> tool_file::text_readable_file_type = { "txt", "md", "json", "csv", "xml", "xlsx", "xls", "docx", "doc", "svg" };
 std::vector<std::string> tool_file::audio_file_type = { "mp3", "ogg", "wav" };
 std::vector<std::string> tool_file::image_file_type = { "'png", "jpg", "jpeg", "bmp", "svg", "ico" };

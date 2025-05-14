@@ -163,6 +163,12 @@ namespace convention_kit
 	{
 		return value * vectorial_direction(pr);
 	}
+	
+	bool is_arithmetic_type(const type_info& type);
+	bool is_string_type(const type_info& type);
+	bool is_floating_type(const type_info& type);
+	bool is_integral_type(const type_info& type);
+	bool is_unsigned_integral_type(const type_info& type);
 }
 
 #endif // !__FILE_INTERNAL

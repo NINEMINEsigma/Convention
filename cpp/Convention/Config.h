@@ -1640,7 +1640,10 @@ struct is_specialization : std::false_type {};
 
 // 特化模板
 template<template<typename...> class Template, typename... Args>
-struct is_specialization<Template<Args...>, Template> : std::true_type {};
+struct is_specialization<Template<Args...>, Template> : std::true_type
+{
+	using tags = std::tuple<Args...>;
+};
 
 #pragma endregion
 
@@ -1651,6 +1654,8 @@ struct is_specialization<Template<Args...>, Template> : std::true_type {};
 #endif
 
 #define PrettyFunctionName() __PRETTY_FUNCTION__
+
+
 
 #pragma endregion
 

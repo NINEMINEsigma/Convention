@@ -10,6 +10,9 @@ template<typename _Ty, bool is_extension = false>
 struct json_indicator
 {
 	using tag = _Ty;
+	using object_reference = std::conditional_t<
+		std::is_same_v<_Ty, void>, std::any, _Ty
+	>&;
 	using json = nlohmann::json;
 	constexpr static bool value = !std::is_same_v<_Ty, void>;
 
@@ -25,19 +28,74 @@ struct json_indicator
 
 	static std::string dump(const json& data, bool isPretty);
 
-	virtual void Serialize(json& data, _In_ const _Ty* const ptr)
+	virtual void Serialize(json& data, const object_reference object)
 	{
-		data["value"] = *ptr;
+		ObjectSerialize(data, object);
 	}
 
-	virtual void Deserialize(json& data, _Out_ _Ty* ptr)
+	void ObjectSerialize(json::reference cell, const object_reference object)
 	{
-		data.at("value").get_to(*ptr);
+		if constexpr (std::is_same_v<
+			std::remove_reference_t<object_reference>, std::any
+		>)
+		{
+			const auto& type = object.type();
+			if (convention_kit::is_floating_type(type))
+			{
+				cell = std::any_cast<long double>(object);
+			}
+			else if (convention_kit::is_integral_type(type))
+			{
+				if (convention_kit::is_unsigned_integral_type(type))
+					cell = std::any_cast<unsigned long long>(object);
+				else
+					cell = std::any_cast<long long>(object);
+			}
+			else if (convention_kit::is_string_type(type))
+			{
+				if (type == typeid(std::string))
+					cell = std::any_cast<std::string>(object);
+				else if (type == typeid(std::wstring))
+					cell = std::any_cast<std::wstring>(object);
+				else if (type == typeid(std::u16string))
+					cell = std::any_cast<std::u16string>(object);
+				else if (type == typeid(std::u32string))
+					cell = std::any_cast<std::u32string>(object);
+				else if (type == typeid(std::string_view))
+					cell = std::any_cast<std::string_view>(object);
+				else if (type == typeid(std::wstring_view))
+					cell = std::any_cast<std::wstring_view>(object);
+				else if (type == typeid(std::u16string_view))
+					cell = std::any_cast<std::u16string_view>(object);
+				else if (type == typeid(std::u32string_view))
+					cell = std::any_cast<std::u32string_view>(object);
+				else
+				{
+					throw std::runtime_error(
+						std::string("Unsupported string type for serialization: ") + type.name()
+					);
+				}
+			}
+			else
+			{
+				throw std::runtime_error(
+					std::string("Unsupported type for serialization: ") + type.name()
+				);
+			}
+		}
+		else if constexpr (!std::is_same_v<_Ty, void>)
+			cell = *ptr;
 	}
 
-	void Deserialize(const std::string& data, _Out_ _Ty* ptr)
+	virtual void Deserialize(json& data, object_reference object)
 	{
-		Deserialize(parse_from_str(data), ptr);
+		ObjectDeserialize(data, object);
+	}
+
+	template<typename _OutTy>
+	void ObjectDeserialize(json::reference cell, _OutTy& object)
+	{
+		cell.get_to(object);
 	}
 };
 
@@ -122,43 +180,25 @@ public:
 	virtual ~instance() {}
 
 	template<typename _ObjTy>
-	std::string Serialize(_In_opt_ const _ObjTy* const data)
+	std::string Serialize(const typename _MyIndictaor::object_reference data)
 	{
 		GetIndicator().Serialize(**this, data);
 		return _MyIndictaor::dump(**this, true);
 	}
 
-	void Deserialize(_Out_ _Ty* ptr) const
+	template<typename _ObjTy>
+	std::string Serialize(const std::string& key,
+		const typename _MyIndictaor::object_reference data
+	)
+	{
+		GetIndicator().Serialize(**this[key], data);
+		return _MyIndictaor::dump(**this, true);
+	}
+
+	void Deserialize(typename _MyIndictaor::object_reference ptr) const
 	{
 		GetIndicator().Deserialize(**this, ptr);
 	}
-};
-
-template<>
-class instance<typename json_indicator<void, true>::json, true>
-	: public instance<json_indicator<void, true>, true>
-{
-public:
-	using _Mybase = instance<json_indicator<void, true>, true>;
-	instance(const std::string& data, bool is_raw_string = false) :
-		_Mybase(data, is_raw_string) {
-	}
-	instance(const std::istream& stream) : _Mybase(stream) {}
-	instance(const tool_file& file) : _Mybase(file) {}
-	instance(const json& data) noexcept : _Mybase(data) {}
-	instance(json&& data) noexcept : _Mybase(std::move(data)) {}
-	instance& operator=(const json& data) noexcept
-	{
-		_Mybase::operator=(data);
-		return *this;
-	}
-	instance& operator=(json&& data) noexcept
-	{
-		_Mybase::operator=(std::move(data));
-		return *this;
-	}
-	instance_move_operator(public) {}
-	virtual ~instance() {}
 };
 
 #endif // !__FILE_CONVENTION_JSON_INSTANCE

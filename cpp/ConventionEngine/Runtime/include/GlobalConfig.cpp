@@ -135,7 +135,7 @@ GlobalConfig& GlobalConfig::SaveProperties()
 }
 )", true);
 	//TODO
-	config.data = ()
+	config.data = (nlohmann::json)*jsondata;
 }
 GlobalConfig& GlobalConfig::LoadProperties()
 {
