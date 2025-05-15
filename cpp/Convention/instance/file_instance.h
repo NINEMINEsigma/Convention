@@ -37,6 +37,16 @@ public:
 	}
 	instance(path path_) :_Mybase(new path(path_)) {}
 	instance(const instance& data) noexcept:_Mybase(data) {}
+	instance& operator=(const instance& data) noexcept
+	{
+		_Mybase::operator=(data);
+		this->stream = data.stream;
+		if (data.data.has_value())
+		{
+			this->data = data.data.value();
+		}
+		return *this;
+	}
 	instance_move_operator(public)
 	{
 		this->stream = std::move(other.stream);

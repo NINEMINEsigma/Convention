@@ -11,7 +11,7 @@ namespace ConventionEngine
 	{
 	public:
 		using dataTypePairKeyType = std::string;
-		using dataTypePairValueType = std::any;
+		using dataTypePairValueType = std::string;
 		using dataTypePair = std::map<dataTypePairKeyType, dataTypePairValueType>;
 	private:
 		tool_file data_dir;
@@ -34,7 +34,7 @@ namespace ConventionEngine
 		);
 		~GlobalConfig();
 
-		tool_file GetConfigFile();
+		tool_file GetConfigFile() const;
 
 		tool_file GetFile(const std::string& file, bool isMustExist = false) const;
 		bool EraseFile(const std::string& file) const;
@@ -62,29 +62,32 @@ namespace ConventionEngine
 			const std::string& message,
 			ConsoleBackgroundColor color
 		) const;
-		GlobalConfig& LogMessage(
+		void LogMessage(
 			const std::string& message,
 			ConsoleColor color
 		) const;
-		GlobalConfig& LogMessage(
+		void LogMessage(
 			const std::string& message,
 			ConsoleBackgroundColor color
 		) const;
-		GlobalConfig& LogMessage(
+		void LogMessage(
 			const std::string& message
 		) const;
-		GlobalConfig& LogWarning(const std::string& message) const;
-		GlobalConfig& LogError(const std::string& message) const;
-		GlobalConfig& LogPropertyNotFound(const std::string& key) const;
-		GlobalConfig& LogPropertyNotFound(
+		void LogWarning(const std::string& message) const;
+		void LogError(const std::string& message) const;
+		void LogPropertyNotFound(const std::string& key) const;
+		void LogPropertyNotFound(
 			const std::string& key,
 			const std::string& defaultMessage
 		) const;
-		GlobalConfig& LogMessageOfPleaseCompleteConfiguration() const;
+		void LogMessageOfPleaseCompleteConfiguration() const;
 
-		GlobalConfig& LogClear() const;
+		void LogClear() const;
 
-		dataTypePairValueType& FindItem(
+		const dataTypePairValueType& FindItem(
+			const dataTypePairKeyType& key
+		) const;
+		const dataTypePairValueType& FindItem(
 			const dataTypePairKeyType& key,
 			const dataTypePairValueType& defaultValue
 		) const;
@@ -93,12 +96,12 @@ namespace ConventionEngine
 	class ProjectConfig : public GlobalConfig
 	{
 	public:
-		static std::string ProjectConfigFileFocus;
+		static tool_file ProjectConfigFileFocus;
 		ProjectConfig(bool isLoad = true);
 		~ProjectConfig();
 
 		static void SetProjectAssets(const std::string& path);
-		static std::string GetProjectAssets();
+		static std::filesystem::path GetProjectAssets();
 	};
 }
 

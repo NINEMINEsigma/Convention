@@ -12,6 +12,11 @@ public:
 	explicit instance(_shared&& rv) :_Mybase(std::move(rv)) {}
 	template<typename... _Args>
 	instance(_Args&&... args) :_Mybase(std::forward<_Args>(args)...) {}
+	instance& operator=(const instance& other) noexcept
+	{
+		_Mybase::operator=(other);
+		return *this;
+	}
 	instance_move_operator(public)
 	{
 

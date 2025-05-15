@@ -30,11 +30,7 @@ struct json_indicator
 
 	virtual void Serialize(json& data, const object_reference object)
 	{
-		ObjectSerialize(data, object);
-	}
-
-	void ObjectSerialize(json::reference cell, const object_reference object)
-	{
+		auto&& cell = data;
 		if constexpr (std::is_same_v<
 			std::remove_reference_t<object_reference>, std::any
 		>)
@@ -76,6 +72,14 @@ struct json_indicator
 					);
 				}
 			}
+			else if (type == typeid(bool))
+			{
+				cell = std::any_cast<bool>(object);
+			}
+			else if (type == typeid(char))
+			{
+				cell = std::any_cast<char>(object);
+			}
 			else
 			{
 				throw std::runtime_error(
@@ -84,17 +88,12 @@ struct json_indicator
 			}
 		}
 		else if constexpr (!std::is_same_v<_Ty, void>)
-			cell = *ptr;
+			cell = object;
 	}
 
 	virtual void Deserialize(json& data, object_reference object)
 	{
-		ObjectDeserialize(data, object);
-	}
-
-	template<typename _OutTy>
-	void ObjectDeserialize(json::reference cell, _OutTy& object)
-	{
+		auto&& cell = data;
 		cell.get_to(object);
 	}
 };
@@ -198,6 +197,16 @@ public:
 	void Deserialize(typename _MyIndictaor::object_reference ptr) const
 	{
 		GetIndicator().Deserialize(**this, ptr);
+	}
+
+	void Deserialize(const std::string& key, typename _MyIndictaor::object_reference ptr) const
+	{
+		GetIndicator().Deserialize((**this)[key], ptr);
+	}
+
+	auto&& operator[](const std::string& key)
+	{
+		return (**this)[key];
 	}
 };
 

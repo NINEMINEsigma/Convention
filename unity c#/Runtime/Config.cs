@@ -655,6 +655,7 @@ namespace Convention
     {
 #if UNITY_EDITOR
         [UnityEditor.MenuItem("Convention/InitExtensionEnv", priority = 100000)]
+#endif
         public static void InitExtensionEnv()
         {
             UnityEngine.Application.quitting += () => CoroutineStarter = null;
@@ -667,6 +668,7 @@ namespace Convention
 
             ES3Plugin.InitExtensionEnv();
         }
+#if UNITY_EDITOR
         [UnityEditor.MenuItem("Convention/SetupURPDefined", priority = 1024)]
         public static void AddURPDefined()
         {
