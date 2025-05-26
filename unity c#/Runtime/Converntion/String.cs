@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +11,8 @@ namespace Convention
     {
         public static void InitExtensionEnv()
         {
-
+            CurrentStringTransformer = null;
+            MyLazyTransformer.Clear();
         }
 
         public static string LimitString([In] object data, int maxLength = 50)
@@ -66,5 +68,67 @@ namespace Convention
             return bytes.ToList().ConvertAll(x => encoding.GetString(x));
         }
 
+        private static Dictionary<string, string> MyLazyTransformer = new();
+
+        public class StringTransformer : AnyClass
+        {
+            [Serializable,ArgPackage]
+            public class StringContentTree
+            {
+                public string leaf = null;
+                public Dictionary<string, StringContentTree> branch = null;
+            }
+
+            private StringContentTree contents;
+
+            public StringTransformer([In] string transformerFile)
+            {
+                var file = new ToolFile(transformerFile);
+                contents = file.LoadAsRawJson<StringContentTree>();
+            }
+
+            public string Transform([In] string stringName)
+            {
+                if (contents == null || contents.branch == null)
+                    return stringName;
+                var keys = stringName.Split('.');
+                StringContentTree current = contents;
+                foreach (var k in keys)
+                {
+                    if (current.branch != null && current.branch.TryGetValue(k, out var next))
+                    {
+                        current = next;
+                    }
+                    else
+                    {
+                        return stringName; // If any key is not found, return the original key
+                    }
+                }
+                return current.leaf ?? stringName; // Return leaf or original key if leaf is null
+            }
+        }
+
+        private static StringTransformer MyCurrentStringTransformer = null;
+        public static StringTransformer CurrentStringTransformer
+        {
+            get => MyCurrentStringTransformer;
+            set
+            {
+                if (MyCurrentStringTransformer != value)
+                {
+                    MyLazyTransformer.Clear();
+                    MyCurrentStringTransformer = value;
+                }
+            }
+        }
+
+        public static string Transform([In] string stringName)
+        {
+            if (MyLazyTransformer.TryGetValue(stringName, out var result))
+                return result;
+            return MyLazyTransformer[stringName] = CurrentStringTransformer != null
+                ? CurrentStringTransformer.Transform(stringName)
+                : stringName;
+        }
     }
 }

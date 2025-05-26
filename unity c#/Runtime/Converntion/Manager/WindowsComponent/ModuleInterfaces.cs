@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using UnityEngine.Events;
 
 namespace Convention.WindowsUI
@@ -6,29 +7,46 @@ namespace Convention.WindowsUI
 
     public class WindowUIModule : MonoAnyBehaviour, IWindowUIModule { }
 
-    public interface IText:IAnyClass
+    public static partial class UIInterfaceExtension
+    {
+        public static void Transform(this IText self)
+        {
+            try
+            {
+                string result = self.text;
+                foreach (Match match in Regex.Matches(self.text, @"$$.*?$$"))
+                {
+                    result = result.Replace(match.Value, StringExtension.Transform(match.Value[2..^2]));
+                }
+                self.text = result;
+            }
+            catch (System.Exception) { }
+        }
+    }
+
+    public interface IText : IAnyClass
     {
         string text { get; set; }
     }
 
-    public interface ITitle:IAnyClass
+    public interface ITitle : IAnyClass
     {
         string title { get; set; }
     }
 
-    public interface IInteractable:IAnyClass
+    public interface IInteractable : IAnyClass
     {
-        bool interactable { get; set;}
+        bool interactable { get; set; }
     }
 
-    public interface IActionInvoke: IInteractable
+    public interface IActionInvoke : IInteractable
     {
         IActionInvoke AddListener(params UnityAction[] action);
         IActionInvoke RemoveListener(params UnityAction[] action);
         IActionInvoke RemoveAllListeners();
     }
 
-    public interface IActionInvoke<Args>: IInteractable
+    public interface IActionInvoke<Args> : IInteractable
     {
         IActionInvoke<Args> AddListener(params UnityAction<Args>[] action);
         IActionInvoke<Args> RemoveListener(params UnityAction<Args>[] action);
