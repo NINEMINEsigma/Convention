@@ -3,9 +3,9 @@ BoostRefer()
 
 add_executable(TEST main.cpp)
 include_directories(${PROJECT_SOURCE_DIR}/Convention)
-target_link_libraries(TEST Convention)
 install(TARGETS TEST 
         RUNTIME DESTINATION                 ${CMAKE_INSTALL_PREFIX}/bin)
+target_link_libraries(TEST Convention::Shared)
 
 #add_executable(Music_Player music_player.cpp)
 #target_link_libraries(Music_Player Convention)

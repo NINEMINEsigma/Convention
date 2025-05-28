@@ -275,6 +275,68 @@ namespace convention_kit
 				*j = std::move(key);
 			}
 		}
+
+		/**
+		 * @brief 归并排序算法实现（迭代版本）
+		 * @tparam _Iter 迭代器类型
+		 * @tparam _Comp 比较器类型，默认使用std::less<>
+		 * @param begin 序列起始迭代器
+		 * @param end 序列结束迭代器
+		 * @param comp 比较器对象
+		 * @complexity O(nlogn)，其中n为序列长度
+		 * @details
+		 * 归并排序，使用自底向上的方法。
+		 * 算法首先将序列视为n个长度为1的子序列，然后逐步合并相邻的有序子序列，
+		 * 直到整个序列有序。这种实现避免了递归调用的栈开销。
+		 */
+		template<typename _Iter, typename _Comp = std::less<>,
+			typename value_type = typename std::iterator_traits<_Iter>::value_type,
+			typename _Buffer = std::vector<value_type>>
+		void MergeSort(_Iter begin, _Iter end, _Comp comp = _Comp())
+		{
+			auto length = std::distance(begin, end);
+			if (length <= 1) return;
+
+			_Buffer buffer(length);
+
+			// 自底向上归并，size表示每次归并的子序列大小
+			for (auto size = 1; size < length; size *= 2)
+			{
+				// 对每对相邻的子序列进行归并
+				for (auto left = begin; left < end; left = std::next(left, 2 * size))
+				{
+					auto mid = std::next(left, std::min<std::ptrdiff_t>(size, length - std::distance(begin, left)));
+					auto right = std::next(mid, std::min<std::ptrdiff_t>(size, length - std::distance(begin, mid)));
+
+					// 合并两个有序子序列
+					auto l = left;
+					auto r = mid;
+					auto dest = buffer.begin() + std::distance(begin, left);
+
+					while (l != mid && r != right)
+					{
+						if (comp(*r, *l))
+						{
+							*dest = std::move(*r);
+							++r;
+						}
+						else
+						{
+							*dest = std::move(*l);
+							++l;
+						}
+						++dest;
+					}
+
+					// 复制剩余元素
+					std::move(l, mid, dest);
+					std::move(r, right, dest);
+				}
+
+				// 将buffer中的排序结果复制回原序列
+				std::move(buffer.begin(), buffer.begin() + length, begin);
+			}
+		}
 	}
 
 	/**
