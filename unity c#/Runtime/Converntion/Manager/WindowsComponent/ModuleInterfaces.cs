@@ -27,12 +27,14 @@ namespace Convention.WindowsUI
             }
         }
 
+        private const string ExpressionPattern = @"\$\$.*?\$\$";
+
         public static void Transform(this IText self)
         {
             try
             {
                 string result = self.text;
-                foreach (Match match in Regex.Matches(self.text, @"\$\$.*?\$\$"))
+                foreach (Match match in Regex.Matches(self.text, ExpressionPattern))
                 {
                     result = result.Replace(match.Value, StringExtension.Transform(match.Value[2..^2]));
                 }
@@ -46,7 +48,7 @@ namespace Convention.WindowsUI
             try
             {
                 string result = self.title;
-                foreach (Match match in Regex.Matches(self.title, @"\$\$.*?\$\$"))
+                foreach (Match match in Regex.Matches(self.title, ExpressionPattern))
                 {
                     result = result.Replace(match.Value, StringExtension.Transform(match.Value[2..^2]));
                 }
