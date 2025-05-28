@@ -2,7 +2,7 @@
 BoostRefer()
 
 add_executable(TEST main.cpp)
-include_directories(${CMAKE_INSTALL_PREFIX}/include)
+include_directories(${PROJECT_SOURCE_DIR}/Convention)
 target_link_libraries(TEST Convention)
 install(TARGETS TEST 
         RUNTIME DESTINATION                 ${CMAKE_INSTALL_PREFIX}/bin)

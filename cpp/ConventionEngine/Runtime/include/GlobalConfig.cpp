@@ -60,7 +60,7 @@ tool_file GlobalConfig::GetConfigFile() const
 	return data_dir | my_const_config_file;
 }
 
-tool_file GlobalConfig::GetFile(const std::string& file, bool isMustExist = false) const
+tool_file GlobalConfig::GetFile(const std::string& file, bool isMustExist) const
 {
 	auto result = data_dir | file;
 	if (isMustExist)
@@ -146,6 +146,7 @@ GlobalConfig& GlobalConfig::SaveProperties()
 	}
 	config.data = (nlohmann::json)*jsondata;
 	config.Save();
+	return *this;
 }
 GlobalConfig& GlobalConfig::LoadProperties()
 {

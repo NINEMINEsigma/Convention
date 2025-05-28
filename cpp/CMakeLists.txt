@@ -76,7 +76,7 @@ add_subdirectory("ConventionEngine")
 # EasySave with Convention-Build
 #add_subdirectory("EasySave")
 # Test Demo
-#add_subdirectory("Test")
+add_subdirectory("Test")
 # Visual Algorithm with Convention-Build
 #add_subdirectory("Visual-Algorithm")
 

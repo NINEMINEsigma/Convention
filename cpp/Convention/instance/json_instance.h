@@ -23,9 +23,6 @@ struct json_indicator
 
 	static json parse_from_file(const std::istream& stream);
 
-	template<typename _ST>
-	static json parse_from_file(const _ST& stream);
-
 	static std::string dump(const json& data, bool isPretty);
 
 	virtual void Serialize(json& data, const object_reference object)
@@ -117,15 +114,8 @@ template<typename _Ty, bool is_extension>
 typename json_indicator<_Ty, is_extension>::json
 json_indicator<_Ty, is_extension>::parse_from_file(const std::istream& stream)
 {
-	return json::parse(stream);
-}
-
-template<typename _Ty, bool is_extension>
-template<typename _ST>
-typename json_indicator<_Ty, is_extension>::json
-json_indicator<_Ty, is_extension>::parse_from_file(const _ST& stream)
-{
-	return json::parse(stream);
+	//return json::parse(stream);
+	throw std::runtime_error("not support");
 }
 
 template<typename _Ty, bool is_extension>
@@ -158,8 +148,8 @@ public:
 
 	instance(const std::string& data, bool is_raw_string = false) :
 		_Mybase(new json(is_raw_string
-			? _MyInside::parse_from_str(data)
-			: _MyInside::parse_from_file(std::ifstream(data))
+			? _MyIndictaor::parse_from_str(data)
+			: _MyIndictaor::parse_from_file(std::ifstream(data))
 		)) {}
 	instance(const std::istream& stream) : _Mybase(new json(json::parse(stream))) {}
 	instance(const tool_file& file) : _Mybase(new json(json::parse(file.get_stream(std::ios_base::in)))) {}

@@ -28,7 +28,6 @@ private:
 public:
 	_Stream stream = nullptr;
 
-	instance() = delete;
 	instance(nullptr_t) = delete;
 	instance(const _shared& shared_path, bool is_must_exist=true) :_Mybase(shared_path)
 	{
@@ -36,6 +35,7 @@ public:
 			this->must_exist_path();
 	}
 	instance(path path_) :_Mybase(new path(path_)) {}
+	instance() :instance(".") {}
 	instance(const instance& data) noexcept:_Mybase(data) {}
 	instance& operator=(const instance& data) noexcept
 	{
@@ -433,10 +433,10 @@ public:
 		return this->data;
 	}
 
-	auto& LoadAsJson()
+	auto LoadAsJson()
 	{
-		this->data = json::parse(**this);
-		return std::any_cast<json&>(this->data);
+		this->data = json::parse(this->get()->string());
+		return std::any_cast<json>(this->data);
 	}
 
 #pragma endregion
