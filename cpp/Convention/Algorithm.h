@@ -124,6 +124,62 @@ namespace convention_kit
 			}
 			return true;
 		}
+
+		/**
+		 * @brief 检查序列是否单调
+		 * @tparam _Iter 迭代器类型
+		 * @param begin 序列起始迭代器
+		 * @param end 序列结束迭代器
+		 * @return 如果序列单调则返回true，否则返回false
+		 * @complexity O(logn)，其中n为序列长度
+		 * @details
+		 * 使用二分查找的思想检查序列的单调性。
+		 * 如果序列中存在峰值或谷值，则序列非单调。
+		 *
+		 * 使用示例：
+		 * @code
+		 * std::vector<int> vec1 = {1, 2, 3, 4, 5}; // 单调递增
+		 * std::vector<int> vec2 = {5, 4, 3, 2, 1}; // 单调递减
+		 * std::vector<int> vec3 = {1, 3, 2, 4, 5}; // 非单调
+		 * bool is_monotonic1 = IsMonotonically(vec1.begin(), vec1.end()); // true
+		 * bool is_monotonic2 = IsMonotonically(vec2.begin(), vec2.end()); // true
+		 * bool is_monotonic3 = IsMonotonically(vec3.begin(), vec3.end()); // false
+		 * @endcode
+		 */
+		template<typename _Iter>
+		bool IsMonotonically(_Iter begin, _Iter end)
+		{
+			using _Ty = typename std::iterator_traits<_Iter>::value_type;
+			auto n = std::distance(begin, end);
+
+			// 空序列或单元素序列认为是单调的
+			if (n <= 1) return true;
+
+			// 检查序列是递增还是递减
+			bool is_increasing = *(begin + 1) >= *begin;
+
+			// 使用二分查找寻找峰值或谷值
+			std::function<bool(_Iter, _Iter)> findPeak = [&](auto head, auto tail) -> bool
+            {
+				if (std::distance(head, tail) <= 1)
+					return true;
+
+				auto mid = head + (std::distance(head, tail) - 1) / 2;
+				bool left_valid = mid == head ||
+					(is_increasing ? *mid >= *(mid - 1) : *mid <= *(mid - 1));
+				bool right_valid = mid == tail - 1 ||
+					(is_increasing ? *mid <= *(mid + 1) : *mid >= *(mid + 1));
+
+				// 如果当前位置违反单调性，返回false
+				if (!left_valid || !right_valid)
+					return false;
+
+				// 递归检查左右两部分
+				return findPeak(head, mid) && findPeak(mid + 1, tail);
+			};
+
+			return findPeak(begin, end);
+		}
 	}
 
 	/**
