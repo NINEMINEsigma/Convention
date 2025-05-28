@@ -337,6 +337,96 @@ namespace convention_kit
 				std::move(buffer.begin(), buffer.begin() + length, begin);
 			}
 		}
+
+		/**
+		 * @brief 三路快速排序算法实现（非递归版本）
+		 * @tparam _Iter 迭代器类型
+		 * @tparam _Comp 比较器类型，默认使用std::less<>
+		 * @param begin 序列起始迭代器
+		 * @param end 序列结束迭代器
+		 * @param comp 比较器对象
+		 * @complexity 平均O(nlogn)，最坏O(n²)，其中n为序列长度
+		 * @details
+		 * 三路快速排序的非递归实现，特别适合处理有大量重复元素的序列。
+		 * 算法将序列分为三部分：小于、等于和大于基准元素。
+		 * 使用栈存储待处理的区间，避免递归调用。
+		 */
+		template<typename _Iter, typename _Comp = std::less<>>
+		void QuickSort3Way(_Iter begin, _Iter end, _Comp comp = _Comp())
+		{
+			if (begin == end) return;
+
+			// 用于存储待处理区间的栈
+			struct Range {
+				_Iter left;
+				_Iter right;
+				Range(_Iter l, _Iter r) : left(l), right(r) {}
+			};
+			std::vector<Range> stack;
+			stack.emplace_back(begin, end);
+
+			while (!stack.empty())
+			{
+				auto [left, right] = stack.back();
+				stack.pop_back();
+
+				if (left == right || std::next(left) == right)
+					continue;
+
+				// 选择基准元素（这里使用中间元素）
+				auto pivot_pos = left + (std::distance(left, right) / 2);
+				auto pivot = std::move(*pivot_pos);
+				std::iter_swap(pivot_pos, std::prev(right));
+
+				// 三路分区
+				auto lt = left;      // 小于区域的右边界
+				auto gt = std::prev(right); // 大于区域的左边界
+				auto i = left;       // 当前扫描位置
+
+				while (i != gt)
+				{
+					if (comp(*i, pivot))
+					{
+						std::iter_swap(i, lt);
+						++lt;
+						++i;
+					}
+					else if (comp(pivot, *i))
+					{
+						--gt;
+						std::iter_swap(i, gt);
+					}
+					else
+					{
+						++i;
+					}
+				}
+
+				// 将基准元素放回正确位置
+				std::iter_swap(gt, std::prev(right));
+				++gt;
+
+				// 将左右两个子区间压入栈中
+				// 为了平衡，先压入较大的区间
+				auto left_size = std::distance(left, lt);
+				auto right_size = std::distance(gt, right);
+
+				if (left_size < right_size)
+				{
+					if (gt != right)
+						stack.emplace_back(gt, right);
+					if (left != lt)
+						stack.emplace_back(left, lt);
+				}
+				else
+				{
+					if (left != lt)
+						stack.emplace_back(left, lt);
+					if (gt != right)
+						stack.emplace_back(gt, right);
+				}
+			}
+		}
 	}
 
 	/**
@@ -347,7 +437,84 @@ namespace convention_kit
 	 */
 	namespace Find
 	{
+		/**
+		 * @brief 查找序列中第k个元素（如果序列经过排序）
+		 * @tparam _Iter 迭代器类型
+		 * @tparam _Comp 比较器类型，默认使用std::less<>
+		 * @param begin 序列起始迭代器
+		 * @param end 序列结束迭代器
+		 * @param k 要查找的位置（从0开始）
+		 * @param comp 比较器对象
+		 * @return 返回第k个元素的值
+		 * @complexity 平均O(n)，最坏O(n²)，其中n为序列长度
+		 * @details
+		 * 使用快速选择算法的非递归实现。
+		 * 该算法不会对整个序列进行排序，而是快速定位到第k个元素。
+		 * 注意：该函数会修改输入序列的顺序。
+		 */
+		template<typename _Iter, typename _Comp = std::less<>>
+		typename std::iterator_traits<_Iter>::value_type
+		NthElement(_Iter begin, _Iter end, size_t k, _Comp comp = _Comp())
+		{
+			using value_type = typename std::iterator_traits<_Iter>::value_type;
 
+			if (begin == end || k >= static_cast<size_t>(std::distance(begin, end)))
+				throw std::out_of_range("k is out of range");
+
+			// 用于存储待处理区间的栈
+			struct Range {
+				_Iter left;
+				_Iter right;
+				Range(_Iter l, _Iter r) : left(l), right(r) {}
+			};
+			std::vector<Range> stack;
+			stack.emplace_back(begin, end);
+
+			while (!stack.empty())
+			{
+				auto [left, right] = stack.back();
+				stack.pop_back();
+
+				// 选择基准元素（使用中间元素）
+				auto pivot_pos = left + (std::distance(left, right) / 2);
+				value_type pivot = std::move(*pivot_pos);
+				std::iter_swap(pivot_pos, std::prev(right));
+
+				// 分区过程
+				auto store = left;
+				for (auto it = left; it != std::prev(right); ++it)
+				{
+					if (comp(*it, pivot))
+					{
+						std::iter_swap(store, it);
+						++store;
+					}
+				}
+				std::iter_swap(store, std::prev(right));
+
+				// 计算基准元素的位置
+				auto pivot_index = std::distance(begin, store);
+
+				// 如果找到了第k个元素
+				if (pivot_index == k)
+				{
+					return *store;
+				}
+				// 如果第k个元素在左半部分
+				else if (k < pivot_index)
+				{
+					stack.emplace_back(left, store);
+				}
+				// 如果第k个元素在右半部分
+				else
+				{
+					stack.emplace_back(std::next(store), right);
+				}
+			}
+
+			// 这里实际上不会到达，因为如果k有效，一定会在循环中返回
+			throw std::runtime_error("Algorithm failed to find the nth element");
+		}
 	}
 }
 
