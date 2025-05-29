@@ -1,9 +1,9 @@
-#ifndef __FILE_CONVENTION
-#define __FILE_CONVENTION
+#ifndef CONVENTION_KIT_CONVENTION_H
+#define CONVENTION_KIT_CONVENTION_H
 
 #include "Convention/Config.h"
 #include "Convention/Internal.h"
 #include "Convention/Instance.h"
 #include "Convention/Algorithm.h"
 
-#endif // !__FILE_CONVENTION
+#endif // !CONVENTION_KIT_CONVENTION_H

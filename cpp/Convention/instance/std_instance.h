@@ -1,36 +1,37 @@
-﻿#ifndef __FILE_CONVENTION_STD_INSTANCE
-#define __FILE_CONVENTION_STD_INSTANCE
+﻿#pragma once
+
+#ifndef CONVENTION_KIT_STD_INSTANCE_H
+#define CONVENTION_KIT_STD_INSTANCE_H
 
 #include "Convention/instance/Interface.h"
 
-
-template<typename _Ty>
-struct view_indicator
+template<typename TType>
+struct ViewIndicator
 {
-	using tag = _Ty;
+	using tag = TType;
 	constexpr static bool value = true;
 };
 
-namespace convention_kit
+namespace ConventionKit
 {
-	template<typename _Ty>
-	using view = view_indicator<_Ty>;
+	template<typename TType>
+	using view = ViewIndicator<TType>;
 }
 
-template<typename _Elem, typename _Alloc>
-class instance<std::vector<_Elem, _Alloc>, true>;
-template<typename _Elem, typename _Alloc>
-class instance<view_indicator<std::vector<_Elem, _Alloc>>, true>;
+template<typename TElement, typename TAlloc>
+class instance<std::vector<TElement, TAlloc>, true>;
+template<typename TElement, typename TAlloc>
+class instance<ViewIndicator<std::vector<TElement, TAlloc>>, true>;
 
-template<typename _T_Ins,typename... _Args>
-auto make_view(instance<_T_Ins> data, _Args&&...args)
+template<typename TInstance, typename... TArgs>
+auto MakeView(instance<TInstance> data, TArgs&&...args)
 {
-	return instance<view_indicator<_T_Ins>>(data, std::forward<_Args>(args)...);
+	return instance<ViewIndicator<TInstance>>(data, std::forward<TArgs>(args)...);
 }
-template<typename _T_Ins, typename... _Args>
-auto make_view(instance<view_indicator<_T_Ins>> data, _Args&&...args)
+template<typename TInstance, typename... TArgs>
+auto MakeView(instance<ViewIndicator<TInstance>> data, TArgs&&...args)
 {
-	return instance<view_indicator<_T_Ins>>(data, std::forward<_Args>(args)...);
+	return instance<ViewIndicator<TInstance>>(data, std::forward<TArgs>(args)...);
 }
 
 #define copy_func(name) auto name() const {this->get()->name();}
@@ -42,103 +43,105 @@ auto make_view(instance<view_indicator<_T_Ins>> data, _Args&&...args)
 
 #pragma region std::vector
 
-template<typename _Elem,typename _Alloc>
-class instance<std::vector<_Elem, _Alloc>, true> :public instance<std::vector<_Elem, _Alloc>, false>
+template<typename TElement, typename TAlloc>
+class instance<std::vector<TElement, TAlloc>, true> :public instance<std::vector<TElement, TAlloc>, false>
 {
 public:
-	using _Mybase = instance<std::vector<_Elem, _Alloc>,false>;
-	using _Element = _Elem;
-	using _Allocator = _Alloc;
-	using tag = std::vector<_Elem, _Alloc>;
-	using iterator = typename tag::iterator;
-	using const_iterator = typename tag::const_iterator;
-	using view_instance = instance<view_indicator<tag>, true>;
-	instance() :_Mybase(new tag()) {}
-	instance(nullptr_t) :_Mybase(nullptr) {}
-	instance(tag* data) :_Mybase(data) {}
-	instance(typename _Mybase::_shared& data) :_Mybase(data) {}
-	instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
-	explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
-	explicit instance(std::initializer_list<_Elem> data) :_Mybase(new tag(data)) {}
-	template<typename... _Args>
-	instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
-	instance(instance& data) :_Mybase(data) {}
+	using TMybase = instance<std::vector<TElement, TAlloc>, false>;
+	using ElementType = TElement;
+	using AllocatorType = TAlloc;
+	using tag = std::vector<TElement, TAlloc>;
+	using Iterator = typename tag::iterator;
+	using ConstIterator = typename tag::const_iterator;
+	using ViewInstance = instance<ViewIndicator<tag>, true>;
+
+	instance() :TMybase(new tag()) {}
+	instance(nullptr_t) :TMybase(nullptr) {}
+	instance(tag* data) :TMybase(data) {}
+	instance(typename TMybase::TShared& data) :TMybase(data) {}
+	instance(typename TMybase::TShared&& data) :TMybase(std::move(data)) {}
+	explicit instance(tag&& data) :TMybase(new tag(std::move(data))) {}
+	explicit instance(std::initializer_list<TElement> data) :TMybase(new tag(data)) {}
+	template<typename... TArgs>
+	instance(TArgs&&... args) : TMybase(new tag(std::forward<TArgs>(args)...)) {}
+	instance(instance& data) :TMybase(data) {}
 	auto& operator=(const instance& other) noexcept
 	{
-		_Mybase::operator=(other);
+		TMybase::operator=(other);
 		return *this;
 	}
 	instance_move_operator(public) {}
 
-	copy_func_return_auto_with_noexcept(begin);
-	copy_func_return_auto_with_noexcept(end);
-	copy_func_return_auto_with_noexcept(cbegin);
-	copy_func_return_auto_with_noexcept(cend);
-	copy_func_return_auto_with_noexcept(rbegin);
-	copy_func_return_auto_with_noexcept(rend);
-	copy_func_return_auto_with_noexcept(crbegin);
-	copy_func_return_auto_with_noexcept(crend);
-	void reserve(size_t size) const
+	copy_func_return_auto_with_noexcept(Begin);
+	copy_func_return_auto_with_noexcept(End);
+	copy_func_return_auto_with_noexcept(CBegin);
+	copy_func_return_auto_with_noexcept(CEnd);
+	copy_func_return_auto_with_noexcept(RBegin);
+	copy_func_return_auto_with_noexcept(REnd);
+	copy_func_return_auto_with_noexcept(CRBegin);
+	copy_func_return_auto_with_noexcept(CREnd);
+
+	void Reserve(size_t size) const
 	{
 		this->get()->reserve(size);
 	}
-	void resize(size_t size) const
+	void Resize(size_t size) const
 	{
 		this->get()->resize(size);
 	}
-	template<typename... _Args>
-	void push_back(_Args... args) const
+	template<typename... TArgs>
+	void PushBack(TArgs... args) const
 	{
-		this->get()->push_back(std::forward<_Args>(args)...);
+		this->get()->push_back(std::forward<TArgs>(args)...);
 	}
-	void pop_back() const noexcept
+	void PopBack() const noexcept
 	{
 		return this->get()->pop_back();
 	}
-	copy_func_return_auto_with_noexcept(size);
-	copy_func_with_noexcept(clear);
-	decltype(auto) at(int index) const
+	copy_func_return_auto_with_noexcept(Size);
+	copy_func_with_noexcept(Clear);
+	decltype(auto) At(int index) const
 	{
 		if (index < 0)
-			index = this->size() + index;
+			index = this->Size() + index;
 		return this->get()->at(index);
 	}
-	copy_func_return_declauto_with_noexcept(front);
-	copy_func_return_declauto_with_noexcept(back);
-	copy_func_return_auto_with_noexcept(capacity);
-	auto data() const
+	copy_func_return_declauto_with_noexcept(Front);
+	copy_func_return_declauto_with_noexcept(Back);
+	copy_func_return_auto_with_noexcept(Capacity);
+	auto Data() const
 	{
 		return this->get()->data();
 	}
-	const auto cdata() const
+	const auto CData() const
 	{
 		return this->get()->data();
 	}
-	bool data_empty() const noexcept
+	bool IsEmpty() const noexcept
 	{
 		return this->get()->empty();
 	}
-	auto erase(const_iterator iter) const
+	auto Erase(ConstIterator iter) const
 	{
 		return this->get()->erase(iter);
 	}
-	auto erase(const_iterator head, const_iterator end) const
+	auto Erase(ConstIterator head, ConstIterator end) const
 	{
 		return this->get()->erase(head, end);
 	}
-	size_t erase(const _Elem& value, size_t ignore = 0, size_t countdown = static_cast<size_t>(-1)) const
+	size_t Erase(const TElement& value, size_t ignore = 0, size_t countdown = static_cast<size_t>(-1)) const
 	{
 		int counter = ignore;
 		counter = -counter;
-		auto start = this->begin();
+		auto start = this->Begin();
 		while (counter < countdown)
 		{
-			auto iter = std::find(start, this->end(), value);
-			if (iter != this->end())
+			auto iter = std::find(start, this->End(), value);
+			if (iter != this->End())
 			{
 				if (counter >= 0)
 				{
-					this->erase(iter);
+					this->Erase(iter);
 				}
 				else
 				{
@@ -150,499 +153,105 @@ public:
 		}
 		return counter;
 	}
-	template<typename... _Args>
-	auto insert(const_iterator front_iter, _Args&&... args)
+	template<typename... TArgs>
+	auto Insert(ConstIterator frontIter, TArgs&&... args)
 	{
-		return this->get()->insert(front_iter, std::forward<_Args>(args)...);
+		return this->get()->insert(frontIter, std::forward<TArgs>(args)...);
 	}
-	template<typename... _Args>
-	auto insert(size_t front_pos, _Args&&... args)
+	template<typename... TArgs>
+	auto Insert(size_t frontPos, TArgs&&... args)
 	{
-		return this->get()->insert(this->begin() + front_pos, std::forward<_Args>(args)...);
+		return this->get()->insert(this->Begin() + frontPos, std::forward<TArgs>(args)...);
 	}
 	decltype(auto) operator[](int index) const
 	{
-		return this->at(index);
+		return this->At(index);
 	}
-	copy_func(shrink_to_fit);
+	copy_func(ShrinkToFit);
 };
-template<typename _Elem, typename _Alloc>
-class instance<view_indicator<std::vector<_Elem, _Alloc>>, true> :public instance<std::vector<_Elem, _Alloc>, false>
+
+template<typename TElement, typename TAlloc>
+class instance<ViewIndicator<std::vector<TElement, TAlloc>>, true> :public instance<std::vector<TElement, TAlloc>, false>
 {
 private:
-	size_t _Myhead, _Mytail;
+	size_t mHead, mTail;
 public:
-	template<typename _Inside>
-	friend int move_view(instance<view_indicator<_Inside>, true>& data, int offset);
-	using _Mybase = instance<std::vector<_Elem, _Alloc>, false>;
-	using _Element = _Elem;
-	using _Allocator = _Alloc;
-	using tag = std::vector<_Elem, _Alloc>;
-	using iterator = typename tag::iterator;
-	using const_iterator = typename tag::const_iterator;
-	using shared_from_instance = instance<std::vector<_Elem, _Alloc>, true>;
-	instance() :_Mybase(nullptr) {}
-	instance(typename _Mybase::_shared& data, int head, int tail)
-		:_Mybase(data),
-		_Myhead(head < 0 ? std::max<size_t>(0, data->size() - head) : std::max<size_t>(0, head)),
-		_Mytail(tail < 0 ? std::max<size_t>(0, data->size() + tail) : std::min<size_t>(data->size(), tail))
+	template<typename TInside>
+	friend int MoveView(instance<ViewIndicator<TInside>, true>& data, int offset);
+	using TMybase = instance<std::vector<TElement, TAlloc>, false>;
+	using ElementType = TElement;
+	using AllocatorType = TAlloc;
+	using tag = std::vector<TElement, TAlloc>;
+	using Iterator = typename tag::iterator;
+	using ConstIterator = typename tag::const_iterator;
+	using SharedFromInstance = instance<std::vector<TElement, TAlloc>, true>;
+
+	instance() :TMybase(nullptr) {}
+	instance(typename TMybase::TShared& data, int head, int tail)
+		:TMybase(data),
+		mHead(head < 0 ? std::max<size_t>(0, data->size() - head) : std::max<size_t>(0, head)),
+		mTail(tail < 0 ? std::max<size_t>(0, data->size() + tail) : std::min<size_t>(data->size(), tail))
 	{
-		_Myhead = std::min(_Myhead, data->size());
-		_Mytail = std::min(_Mytail, data->size());
-		if (_Myhead > _Mytail)
-			std::swap(_Myhead, _Mytail);
+		mHead = std::min(mHead, data->size());
+		mTail = std::min(mTail, data->size());
+		if (mHead > mTail)
+			std::swap(mHead, mTail);
 	}
-	instance(const instance& data) :_Mybase(data), _Myhead(data._Myhead), _Mytail(data._Mytail) {}
+	instance(const instance& data) :TMybase(data), mHead(data.mHead), mTail(data.mTail) {}
 	instance_move_operator(public)
 	{
-		this->_Myhead = other._Myhead;
-		this->_Mytail = other._Mytail;
+		this->mHead = other.mHead;
+		this->mTail = other.mTail;
+	}
+	virtual ~instance() {}
+
+	void Rebind(typename TMybase::TShared& data, int head, int tail)
+	{
+		TMybase::operator=(data);
+		mHead = head < 0 ? std::max<size_t>(0, data->size() - head) : std::max<size_t>(0, head);
+		mTail = tail < 0 ? std::max<size_t>(0, data->size() + tail) : std::min<size_t>(data->size(), tail);
+		mHead = std::min(mHead, data->size());
+		mTail = std::min(mTail, data->size());
+		if (mHead > mTail)
+			std::swap(mHead, mTail);
 	}
 
-	void rebind(typename _Mybase::_shared& data, int head, int tail)
+	size_t Size() const noexcept
 	{
-		_Mybase::operator=(data);
-		_Myhead = (head < 0 ? std::max<size_t>(0, data->size() - head) : std::max<size_t>(0, head));
-		_Mytail = (tail < 0 ? std::max<size_t>(0, data->size() - tail) : std::min<size_t>(data->size(), tail));
-		_Myhead = std::min(_Myhead, data->size());
-		_Mytail = std::min(_Mytail, data->size());
-		if (_Myhead > _Mytail)
-			std::swap(_Myhead, _Mytail);
+		return mTail - mHead;
 	}
-	constexpr auto get_head() const noexcept
+	void Clear() noexcept
 	{
-		return _Myhead;
+		mHead = mTail = 0;
 	}
-	constexpr auto get_tail() const noexcept
-	{
-		return _Mytail;
-	}
-	
-	auto begin() const noexcept
-	{
-		return this->get()->begin() + _Myhead;
-	}
-	auto end() const noexcept
-	{
-		return this->get()->begin() + _Mytail;
-	}
-	auto cbegin() const noexcept
-	{
-		return this->get()->cbegin() + _Myhead;
-	}
-	auto cend() const noexcept
-	{
-		return this->get()->cend() + _Mytail;
-	}
-	auto rbegin() const noexcept
-	{
-		return this->get()->rbegin() + (this->get()->size() - _Mytail);
-	}
-	auto rend() const noexcept
-	{
-		return this->get()->rbegin() + (this->get()->size() - _Myhead);
-	}
-	auto crbegin() const noexcept
-	{
-		return this->get()->crbegin() + (this->get()->size() - _Mytail);
-	}
-	auto crend() const noexcept
-	{
-		return this->get()->crbegin() + (this->get()->size() - _Myhead);
-	}
-	size_t size() const noexcept
-	{
-		return std::max<size_t>(0, _Mytail - _Myhead);
-	}
-	void clear() noexcept
-	{
-		_Mytail = _Myhead;
-		this->get()->erase(this->begin(), this->end());
-	}
-	decltype(auto) at(int index) const
+	decltype(auto) At(int index) const
 	{
 		if (index < 0)
-			index = this->size() + index;
-		index += _Myhead;
-		if (index < _Mytail)
-			return this->get()->at(_Myhead + index);
-		throw std::overflow_error("view.at overflow");
+			index = this->Size() + index;
+		return this->get()->at(mHead + index);
 	}
-	const auto& front() const
+	bool IsEmpty() const noexcept
 	{
-		return *(this->begin());
+		return mHead == mTail;
 	}
-	const auto& back() const
+	auto Erase(ConstIterator head, ConstIterator end)
 	{
-		return *(--this->end());
-	}
-	auto data() const
-	{
-		return this->get()->data() + _Myhead;
-	}
-	const auto cdata() const
-	{
-		return this->get()->data() + _Myhead;
-	}
-	bool data_empty() const noexcept
-	{
-		return _Mytail - _Myhead == 0;
-	}
-	auto erase(const_iterator iter)
-	{
-		_Mytail--;
-		return this->get()->erase(iter);
-	}
-	auto erase(const_iterator head, const_iterator end)
-	{
-		_Mytail -= std::distance(head, end);
+		mTail -= std::distance(head, end);
 		return this->get()->erase(head, end);
 	}
-	size_t erase(const _Elem& value, size_t ignore = 0, size_t countdown = static_cast<size_t>(-1))
+	size_t Erase(const TElement& value, size_t ignore = 0, size_t countdown = static_cast<size_t>(-1))
 	{
 		int counter = ignore;
 		counter = -counter;
-		auto start = this->begin();
+		auto start = this->Begin();
 		while (counter < countdown)
 		{
-			auto iter = std::find(start, this->end(), value);
-			if (iter != this->end())
+			auto iter = std::find(start, this->End(), value);
+			if (iter != this->End())
 			{
 				if (counter >= 0)
 				{
-					this->erase(iter);
-				}
-				else
-				{
-					start = ++iter;
-				}
-				counter++;
-			}
-			else break;
-		}
-		_Mytail = std::max(_Myhead, _Mytail - std::max(0, counter));
-		return counter;
-	}
-	template<typename... _Args>
-	auto insert(const_iterator front_iter, _Args&&... args)
-	{
-		_Mytail++;
-		return this->get()->insert(front_iter, std::forward<_Args>(args)...);
-	}
-	template<typename... _Args>
-	auto insert(size_t front_pos, _Args&&... args)
-	{
-		_Mytail++;
-		return this->get()->insert(this->begin() + front_pos, std::forward<_Args>(args)...);
-	}
-	decltype(auto) operator[](int index) const
-	{
-		return this->at(index);
-	}
-};
-
-template<typename _Elem, typename _Alloc>
-std::ostream& operator<<(std::ostream& os,const std::vector<_Elem, _Alloc>& data)
-{
-	for (auto i=data.begin(),e=data.end();i!=e;i++)
-	{
-		if (i != data.begin())
-		{
-			if constexpr (std::is_same_v<char, _Elem> || std::is_same_v<wchar_t, _Elem>)
-				os << ',';
-			else if constexpr (std::is_same_v<bool, _Elem>)
-				os << ' ';
-			else
-				os << "\t, ";
-		}
-		os << *i;
-	}
-	return os;
-}
-template<typename _Elem, typename _Alloc>
-std::ostream& operator<<(std::ostream& os, const typename instance<std::vector<_Elem, _Alloc>, false>& data)
-{
-	for (auto i = data.begin(), e = data.end(); i != e; i++)
-	{
-		if (i != data.begin())
-		{
-			if constexpr (std::is_same_v<char, _Elem> || std::is_same_v<wchar_t, _Elem>)
-				os << ',';
-			else if constexpr (std::is_same_v<bool, _Elem>)
-				os << ' ';
-			else
-				os << "\t, ";
-		}
-		os << *i;
-	}
-	return os;
-}
-template<typename _Elem, typename _Alloc>
-std::ostream& operator<<(std::ostream& os, const typename instance<view_indicator<std::vector<_Elem, _Alloc>>, true>& data)
-{
-	for (auto i = data.begin(), e = data.end(); i != e; i++)
-	{
-		if (i != data.begin())
-		{
-			if constexpr (std::is_same_v<char, _Elem> || std::is_same_v<wchar_t, _Elem>)
-				os << ',';
-			else if constexpr (std::is_same_v<bool, _Elem>)
-				os << ' ';
-			else
-				os << "\t, ";
-		}
-		os << *i;
-	}
-	return os;
-}
-
-template<typename _Elem, typename _Alloc>
-std::vector<instance<view_indicator<std::vector<_Elem, _Alloc>>, true>> make_matrix(
-	instance<std::vector<_Elem, _Alloc>, true> data,
-	size_t row_size,
-	size_t col_size,
-	size_t maxend
-)
-{
-	using _Inside = instance<view_indicator<std::vector<_Elem, _Alloc>>, true>;
-	std::vector<_Inside> result(row_size);
-	for (size_t i = 0, e = row_size; i < e; i++)
-	{
-		result[i].rebind(data, i * col_size, std::min(maxend, (i + 1) * col_size));
-	}
-	if (row_size * col_size < maxend)
-	{
-		result.push_back(_Inside(data, row_size * col_size, maxend));
-	}
-	return result;
-}
-template<typename _Elem, typename _Alloc>
-std::vector<instance<view_indicator<std::vector<_Elem, _Alloc>>, true>> make_matrix(
-	instance<view_indicator<std::vector<_Elem, _Alloc>>, true> data,
-	size_t row_size,
-	size_t col_size,
-	size_t maxend
-)
-{
-	using _Inside = instance<view_indicator<std::vector<_Elem, _Alloc>>, true>;
-	std::vector<_Inside> result(row_size);
-	for (size_t i = 0, e = row_size; i < e; i++)
-	{
-		result[i].rebind(data, i * col_size, std::min(maxend, (i + 1) * col_size));
-	}
-	if (row_size * col_size < maxend)
-	{
-		result.push_back(_Inside(data, row_size * col_size, maxend));
-	}
-	return result;
-}
-template<typename _Elem, typename _Alloc>
-std::vector<instance<view_indicator<std::vector<_Elem, _Alloc>>, true>> make_matrix(
-	instance<std::vector<_Elem, _Alloc>, true> data
-)
-{
-	size_t size = data.size();
-	double logsize = std::log2(size);
-	return make_matrix(data, logsize, logsize, size);
-}
-template<typename _Elem, typename _Alloc>
-std::vector<instance<view_indicator<std::vector<_Elem, _Alloc>>, true>> make_matrix(
-	instance<view_indicator<std::vector<_Elem, _Alloc>>, true> data
-)
-{
-	size_t size = data.size();
-	double logsize = std::log2(size);
-	return make_matrix(data, logsize, logsize, size);
-}
-
-template<typename _Elem, typename _Alloc,typename _OutsideAlloc>
-std::ostream& operator<<(std::ostream& os, const std::vector<instance<view_indicator<std::vector<_Elem, _Alloc>>, true>, _OutsideAlloc>& data)
-{
-	os << "[\n";
-	for (auto&& i : data)
-	{
-		if (i.data_empty())
-			os << "<empty>,\n";
-		else
-			os << i << ",\n";
-	}
-	os << "]";
-	return os;
-}
-
-#pragma endregion
-
-#pragma region std::string
-
-template<typename _Iter1, typename _Iter2,typename _VecMatrix>
-size_t levenshtein_distance_with_custom_buffer(
-	_Iter1 first_begin, _Iter1 first_end,
-	_Iter2 second_begin, _Iter2 second_end,
-	_VecMatrix& buffer_matrix, bool matrix_init
-)
-{
-	size_t first_length = std::distance(first_begin, first_end);
-	size_t second_length = std::distance(second_begin, second_end);
-	if (matrix_init)
-	{
-		buffer_matrix.resize(first_length + 1);
-		for (auto&& i : buffer_matrix)
-			i.resize(second_length + 1, 0);
-	}
-	for (int k = 0; k <= first_length; k++) buffer_matrix[k][0] = k;
-	for (int k = 0; k <= second_length; k++) buffer_matrix[0][k] = k;
-	for (int i = 1; i <= first_length; i++)
-	{
-		for (int j = 1; j <= second_length; j++)
-		{
-			int cost = (*(first_begin + i - 1) == *(second_begin + j - 1)) ? 1 : 0;
-			buffer_matrix[i][j] = std::min({
-				buffer_matrix[i - 1][j - 1] + cost,
-				buffer_matrix[i][j - 1] + 1,
-				buffer_matrix[i - 1][j] + 1
-				});
-		}
-	}
-	return buffer_matrix[first_length][second_length];
-}
-template<typename _Iter1,typename _Iter2>
-size_t levenshtein_distance(
-	_Iter1 first_begin, _Iter1 first_end,
-	_Iter2 second_begin, _Iter2 second_end
-)
-{
-	std::vector<std::vector<int>> matrix;
-	return levenshtein_distance_with_custom_buffer(first_begin, first_end, second_begin, second_end, matrix, true);
-}
-template<typename _Pr, typename _Iter1, typename _Iter2 >
-int fuzzy_distance(
-	_Iter1 first_begin, _Iter1 first_end,
-	_Iter2 second_begin, _Iter2 second_end,
-	_Pr _DisCounter
-)
-{
-	return _DisCounter(first_begin, first_end, second_begin, second_end);
-}
-template< typename _Pr, typename... _DistanceCounters, typename _Iter1, typename _Iter2>
-int fuzzy_distance(
-	_Iter1 first_begin, _Iter1 first_end,
-	_Iter2 second_begin, _Iter2 second_end,
-	_Pr _DisCounter,
-	_DistanceCounters... _DisCounters
-)
-{
-	return
-		_DisCounter(first_begin, first_end, second_begin, second_end) +
-		fuzzy_distance(first_begin, first_end, second_begin, second_end, _DisCounters...);
-}
-template<typename _Elem, typename _Traits, typename _Alloc>
-class instance<std::basic_string<_Elem, _Traits, _Alloc>, true> :public instance<std::basic_string<_Elem, _Traits, _Alloc>, false>
-{
-public:
-	using tag = std::basic_string<_Elem, _Traits, _Alloc>;
-	using _Mybase = instance<tag, false>;
-	using _Element = _Elem;
-	using _My_Traits = _Traits;
-	using _Allocator = _Alloc;
-	using iterator = typename tag::iterator;
-	using const_iterator = typename tag::const_iterator;
-	using view_instance = instance<view_indicator<tag>, true>;
-	instance() :_Mybase(new tag()) {}
-	instance(tag* data) :_Mybase(data) {}
-	instance(typename _Mybase::_shared& data) :_Mybase(data) {}
-	instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
-	explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
-	explicit instance(std::initializer_list<_Elem> data) :_Mybase(new tag(data)) {}
-	template<typename... _Args>
-	instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
-	instance(instance& data) :_Mybase(data) {}
-	auto& operator=(const instance& other) noexcept
-	{
-		_Mybase::operator=(other);
-		return *this;	
-	}
-	instance_move_operator(public) {}
-
-	copy_func_return_auto_with_noexcept(begin);
-	copy_func_return_auto_with_noexcept(end);
-	copy_func_return_auto_with_noexcept(cbegin);
-	copy_func_return_auto_with_noexcept(cend);
-	copy_func_return_auto_with_noexcept(rbegin);
-	copy_func_return_auto_with_noexcept(rend);
-	copy_func_return_auto_with_noexcept(crbegin);
-	copy_func_return_auto_with_noexcept(crend);
-	template<typename... _Args>
-	instance& append(_Args&&... args)
-	{
-		this->get()->append(std::forward<_Args>(args)...);
-		return *this;
-	}
-	instance& append(const typename _Mybase::_shared& data)
-	{
-		this->get()->append(*data);
-		return *this;
-	}
-	void reserve(size_t size) const
-	{
-		this->get()->reserve(size);
-	}
-	void resize(size_t size) const
-	{
-		this->get()->resize(size);
-	}
-	template<typename... _Args>
-	void push_back(_Args... args) const
-	{
-		this->get()->push_back(std::forward<_Args>(args)...);
-	}
-	void pop_back() const noexcept
-	{
-		return this->get()->pop_back();
-	}
-	copy_func_return_auto_with_noexcept(size);
-	copy_func_with_noexcept(clear);
-	decltype(auto) at(int index) const
-	{
-		if (index < 0)
-			index = this->size() + index;
-		return this->get()->at(index);
-	}
-	copy_func_return_declauto_with_noexcept(front);
-	copy_func_return_declauto_with_noexcept(back);
-	copy_func_return_auto_with_noexcept(capacity);
-	auto data() const
-	{
-		return this->get()->data();
-	}
-	const auto cdata() const
-	{
-		return this->get()->data();
-	}
-	bool data_empty() const noexcept
-	{
-		return this->get()->empty();
-	}
-	auto erase(const_iterator iter) const
-	{
-		return this->get()->erase(iter);
-	}
-	auto erase(const_iterator head, const_iterator end) const
-	{
-		return this->get()->erase(head, end);
-	}
-	size_t erase(const _Elem& value, size_t ignore = 0, size_t countdown = static_cast<size_t>(-1)) const
-	{
-		int counter = ignore;
-		counter = -counter;
-		auto start = this->begin();
-		while (counter < countdown)
-		{
-			auto iter = std::find(start, this->end(), value);
-			if (iter != this->end())
-			{
-				if (counter >= 0)
-				{
-					this->erase(iter);
+					this->Erase(iter);
 				}
 				else
 				{
@@ -654,837 +263,234 @@ public:
 		}
 		return counter;
 	}
-	template<typename... _Args>
-	auto insert(const_iterator front_iter, _Args&&... args)
-	{
-		return this->get()->insert(front_iter, std::forward<_Args>(args)...);
-	}
-	template<typename... _Args>
-	auto insert(size_t front_pos, _Args&&... args)
-	{
-		return this->get()->insert(this->begin() + front_pos, std::forward<_Args>(args)...);
-	}
 	decltype(auto) operator[](int index) const
 	{
-		return this->at(index);
-	}
-	auto deep_copy() const
-	{
-		return instance(**this);
-	}
-	auto shallow_copy() const noexcept
-	{
-		return instance(*this);
-	}
-	copy_func_return_auto_with_noexcept(c_str);
-	auto substr(int offset = 0, int Count = static_cast<size_t>(-1))
-	{
-		if (offset < 0)
-			offset = this->size() - offset;
-		if (Count < 0)
-			Count = this->size() - Count;
-		return this->get()->substr(offset, Count);
-	}
-	template<typename _Right>
-	bool start_with(const _Right& str) const noexcept
-	{
-		return this->size() >= str.size() && _Traits::compare(this->data(), str.data(), str.size()) == 0;
-	}
-	bool start_with(const _Elem* ptr) const noexcept
-	{
-		return start_with(tag(ptr));
-	}
-	template<typename _Right>
-	bool end_with(const _Right& str) const noexcept
-	{
-		return this->size() >= str.size() && _Traits::compare(this->data() + this->size() - str.size(), str.data(), str.size()) == 0;
-	}
-	bool end_with(const _Elem* ptr) const noexcept
-	{
-		return end_with(tag(ptr));
-	}
-	template<typename _Right>
-	bool contains(const _Right& str) const noexcept
-	{
-		if (this->size() < str.size())
-			return false;
-		for (int offset = 0, end = this->size() - str.size(); offset < end; offset++)
-		{
-			if (_Traits::compare(this->data() + offset, str.data(), str.size()) == 0)
-				return true;
-		}
-		return false;
-	}
-	bool contains(const _Elem* ptr) const noexcept
-	{
-		return contains(tag(ptr));
-	}
-	template<typename _Right>
-	int compare(const _Right& str) const noexcept
-	{
-		return _Traits::compare(this->data(), str.data(), std::min(this->size(), str.size()));
-	}
-	auto compare(const _Elem* ptr) const noexcept
-	{
-		return compare(tag(ptr));
-	}
-	int compare(const typename _Mybase::_shared& right)
-	{
-		return this->get()->compare(*right);
-	}
-	copy_func_return_auto_with_noexcept(length);
-	copy_func(shrink_to_fit);
-	template<typename _Target>
-	size_t edit_distance(const _Target& target) const
-	{
-		return levenshtein_distance(this->begin(), this->end(), target.cbegin(), target.cend());
-	}
-	template<size_t length>
-	size_t edit_distance(const _Elem target[length]) const
-	{
-		return levenshtein_distance(this->begin(), this->end(), &target[0], &target[length - 1]);
-	}
-	size_t edit_distance(_In_ const _Elem* target) const
-	{
-		return edit_distance(tag(target));
-	}
-	template<typename _Right>
-	int first(const _Right& str) const noexcept
-	{
-		if (this->size() < str.size())
-			return -1;
-		for (int offset = 0, end = this->size() - str.size(); offset < end; offset++)
-		{
-			if (_Traits::compare(this->data() + offset, str.data(), str.size()) == 0)
-				return offset;
-		}
-		return -1;
-	}
-	int first(const _Elem& ch) const noexcept
-	{
-		if (this->size() != 0)
-			for (int offset = 0, end = this->size(); offset < end; offset++)
-				if (this->at(offset) == ch)
-					return offset;
-		return -1;
-	}
-	int first(_In_ const _Elem* ptr) const noexcept
-	{
-		return first(tag(ptr));
-	}
-	template<typename _Right>
-	int last(const _Right& str) const noexcept
-	{
-		if (this->size() < str.size())
-			return -1;
-		for (int offset = this->size() - str.size() - 1, end = 0; offset >= end; offset--)
-		{
-			if (_Traits::compare(this->data() + offset, str.data(), str.size()) == 0)
-				return offset;
-		}
-		return -1;
-	}
-	int last(const _Elem& ch) const noexcept
-	{
-		if (this->size() != 0)
-			for (int offset = this->size() - 1, end = 0; offset >= end; offset--)
-				if (this->at(offset) == ch)
-					return offset;
-		return -1;
-	}
-	int last(_In_ const _Elem* ptr) const noexcept
-	{
-		return last(tag(ptr));
-	}
-	template<typename _Param>
-	tag join(_Param&& arg)
-	{
-		return tag(std::forward(arg));
-	}
-	template<typename _First, typename... _Params>
-	tag join(_First&& first, _Params&&... args)
-	{
-		return tag(std::forward<_First>(first)) + join(std::forward<_Params>(args)...);
-	}
-	template<typename... Args>
-	auto format_s(void* buffer, size_t buffer_size, Args&&... args)
-	{
-		if constexpr (std::is_same_v<_Elem, char>)
-		{
-			sprintf_s((char*)buffer, buffer_size, **this, std::forward<Args>(args)...);
-		}
-		else if constexpr (std::is_same_v<_Elem, wchar_t>)
-		{
-			swprintf_s((wchar_t*)buffer, buffer_size, **this, std::forward<Args>(args)...);
-		}
-	}
-	template<typename... Args>
-	auto format(Args&&... args)
-	{
-		if constexpr (std::is_same_v<_Elem, char>)
-		{
-			std::string result(1024, 0);
-			sprintf_s(result.data(), 1024, **this, std::forward<Args>(args)...);
-			return result;
-		}
-		else if constexpr (std::is_same_v<_Elem, wchar_t>)
-		{
-			std::wstring result(1024, 0);
-			swprintf_s(result.data(), 1024, **this, std::forward<Args>(args)...);
-			return result;
-		}
-	}
-	template<typename _IndexIter, typename _Replacement>
-	instance& replace(_IndexIter begin, _IndexIter end, const _Replacement& replacement)
-	{
-		this->get()->replace(begin, end, replacement);
-		return *this;
-	}
-	template<typename _Target, typename _Replacement>
-	instance& replace(const _Target& target, const _Replacement& replacement, size_t count = static_cast<size_t>(-1))
-	{
-		size_t pos = 0;
-		size_t replaced_count = 0;
-		auto& str = *this->get();
-
-		while ((pos = str.find(target, pos)) != std::string::npos && replaced_count < count)
-		{
-			str.replace(pos, target.size(), replacement);
-			pos += replacement.size();
-			replaced_count++;
-		}
-
-		return *this;
-	}
-
-
-
-	virtual std::string ToString() const noexcept override
-	{
-		std::string str(sizeof(char) * this->size(), 0);
-		::memmove(str.data(), this->data(), this->size());
-		return str;
-	}
-
-	template<typename _Right>
-	bool operator==(const _Right& other) const
-	{
-		return this->compare(other) == 0;
-	}
-	template<typename _Right>
-	bool operator!=(const _Right& other) const
-	{
-		return !this->operator==(other);
-	}
-
-	auto operator+(const instance& other) const
-	{
-		return (**this) + *other;
-	}
-	auto operator+(const tag& other) const
-	{
-		(**this) += other;
-		return *this;
-	}
-	auto operator+(const _Elem* other) const
-	{
-		(**this) += other;
-		return *this;
-	}
-	auto& operator+=(const instance& other)
-	{
-		**this += *other;
-		return *this;	
-	}
-	auto& operator+=(const tag& other)
-	{
-		**this += other;
-		return *this;
-	}
-	auto& operator+=(const _Elem* other)
-	{
-		**this += other;
-		return *this;
+		return this->At(index);
 	}
 };
-template<typename _Elem, typename _Traits, typename _Alloc>
-class instance<view_indicator<std::basic_string<_Elem, _Traits, _Alloc>>, true> :public instance<std::basic_string<_Elem, _Traits, _Alloc>, false>
-{
-	size_t _Myhead, _Mytail;
-public:
-	using tag = std::basic_string<_Elem, _Traits, _Alloc>;
-	using _Mybase = instance<tag, false>;
-	using _Element = _Elem;
-	using _My_Traits = _Traits;
-	using _Allocator = _Alloc;
-	using iterator = typename tag::iterator;
-	using const_iterator = typename tag::const_iterator;
-	using shared_from_instance = instance<tag, true>;
-	instance() :_Mybase(nullptr) {}
-	instance(typename _Mybase::_shared& data, int head, int tail)
-		:_Mybase(data),
-		_Myhead(head < 0 ? std::max<size_t>(0, data->size() - head) : std::max<size_t>(0, head)),
-		_Mytail(tail < 0 ? std::max<size_t>(0, data->size() + tail) : std::min<size_t>(data->size(), tail))
-	{
-		_Myhead = std::min(_Myhead, data->size());
-		_Mytail = std::min(_Mytail, data->size());
-		if (_Myhead > _Mytail)
-			std::swap(_Myhead, _Mytail);
-	}
-	instance(const instance& data) :_Mybase(data), _Myhead(data._Myhead), _Mytail(data._Mytail) {}
-	instance_move_operator(public)
-	{
-		this->_Myhead = other._Myhead;
-		this->_Mytail = other._Mytail;
-	}
-
-	void rebind(typename _Mybase::_shared& data, int head, int tail)
-	{
-		_Mybase::operator=(data);
-		_Myhead = (head < 0 ? std::max<size_t>(0, data->size() - head) : std::max<size_t>(0, head));
-		_Mytail = (tail < 0 ? std::max<size_t>(0, data->size() - tail) : std::min<size_t>(data->size(), tail));
-		_Myhead = std::min(_Myhead, data->size());
-		_Mytail = std::min(_Mytail, data->size());
-		if (_Myhead > _Mytail)
-			std::swap(_Myhead, _Mytail);
-	}
-	constexpr auto get_head() const noexcept
-	{
-		return _Myhead;
-	}
-	constexpr auto get_tail() const noexcept
-	{
-		return _Mytail;
-	}
-
-	auto begin() const noexcept 
-	{
-		return this->get()->begin() + _Myhead;
-	}
-	auto end() const noexcept 
-	{
-		return this->get()->begin() + _Mytail;
-	}
-	auto cbegin() const noexcept 
-	{
-		return this->get()->cbegin() + _Myhead;
-	}
-	auto cend() const noexcept 
-	{
-		return this->get()->cbegin() + _Mytail;
-	}
-	auto rbegin() const noexcept
-	{
-		return this->get()->rbegin() + _Myhead;
-	}
-	auto rend() const noexcept
-	{
-		return this->get()->rbegin() + _Myhead;
-	}
-	auto crbegin() const noexcept
-	{
-		return this->get()->crbegin() + _Myhead;
-	}
-	auto crend() const noexcept
-	{
-		return this->get()->crbegin() + _Myhead;
-	}
-	auto size() const noexcept 
-	{
-		return _Mytail - _Myhead;
-	};
-	decltype(auto) at(int index) const
-	{
-		if (index < 0)
-			index = this->size() + index;
-		return this->get()->at(index + _Myhead);
-	}
-	const auto& front() const
-	{
-		return *(this->begin() + _Myhead);
-	};
-	const auto& back() const
-	{
-		return *std::prev(this->end());
-	};
-	auto data() const
-	{
-		return this->get()->data() + _Myhead;
-	}
-	const auto* cdata() const
-	{
-		return this->get()->data() + _Myhead;
-	}
-	bool data_empty() const noexcept
-	{
-		return _Mytail - _Myhead == 0;
-	}
-	auto erase(const_iterator iter) const
-	{
-		return this->get()->erase(iter);
-	}
-	auto erase(const_iterator head, const_iterator end) const
-	{
-		return this->get()->erase(head, end);
-	}
-	size_t erase(const _Elem& value, size_t ignore = 0, size_t countdown = static_cast<size_t>(-1)) const
-	{
-		int counter = ignore;
-		counter = -counter;
-		auto start = this->begin();
-		while (counter < countdown)
-		{
-			auto iter = std::find(start, this->end(), value);
-			if (iter != this->end())
-			{
-				if (counter >= 0)
-				{
-					this->erase(iter);
-				}
-				else
-				{
-					start = ++iter;
-				}
-				counter++;
-			}
-			else break;
-		}
-		return counter;
-	}
-	template<typename... _Args>
-	auto insert(const_iterator front_iter, _Args&&... args)
-	{
-		return this->get()->insert(front_iter, std::forward<_Args>(args)...);
-	}
-	template<typename... _Args>
-	auto insert(size_t front_pos, _Args&&... args)
-	{
-		return this->get()->insert(this->begin() + front_pos, std::forward<_Args>(args)...);
-	}
-	decltype(auto) operator[](int index) const
-	{
-		return this->at(index);
-	}
-	auto shallow_copy() const noexcept
-	{
-		return instance(*this);
-	}
-	copy_func_return_auto_with_noexcept(c_str);
-	auto substr(int offset = 0, int Count = static_cast<size_t>(-1))
-	{
-		if (offset < 0)
-			offset = this->size() - offset;
-		if (Count < 0)
-			Count = this->size() - Count;
-		return this->get()->substr(offset + _Myhead, Count);
-	}
-	template<typename _Right>
-	bool start_with(const _Right& str) const noexcept
-	{
-		return this->size() >= str.size() && _Traits::compare(this->data(), str.data(), str.size()) == 0;
-	}
-	bool start_with(const _Elem* ptr) const noexcept
-	{
-		return start_with(tag(ptr));
-	}
-	template<typename _Right>
-	bool end_with(const _Right& str) const noexcept
-	{
-		return this->size() >= str.size() && _Traits::compare(this->data() + this->size() - str.size(), str.data(), str.size()) == 0;
-	}
-	bool end_with(const _Elem* ptr) const noexcept
-	{
-		return end_with(tag(ptr));
-	}
-	template<typename _Right>
-	bool contains(const _Right& str) const noexcept
-	{
-		if (this->size() < str.size())
-			return false;
-		for (int offset = 0, end = this->size() - str.size(); offset < end; offset++)
-		{
-			if (_Traits::compare(this->data() + offset, str.data(), str.size()) == 0)
-				return true;
-		}
-		return false;
-	}
-	bool contains(const _Elem* ptr) const noexcept
-	{
-		return contains(tag(ptr));
-	}
-	template<typename _Right>
-	int compare(const _Right& str) const noexcept
-	{
-		return _Traits::compare(this->data() + _Myhead, str.data(), std::min(this->size(), str.size()));
-	}
-	auto compare(const _Elem* ptr) const noexcept
-	{
-		//return contains_compare(tag(ptr));
-		return compare(tag(ptr));
-	}
-	int compare(const typename _Mybase::_shared& right)
-	{
-		return this->get()->compare(*right);
-	}
-	auto length() const noexcept 
-	{
-		return _Mytail - _Myhead;
-	}
-	template<typename _Target>
-	size_t edit_distance(const _Target& target) const
-	{
-		return levenshtein_distance(this->begin(), this->end(), target.cbegin(), target.cend());
-	}
-	template<size_t length>
-	size_t edit_distance(const _Elem target[length]) const
-	{
-		return levenshtein_distance(this->begin(), this->end(), &target[0], &target[length - 1]);
-	}
-	size_t edit_distance(_In_ const _Elem* target) const
-	{
-		return edit_distance(tag(target));
-	}
-	template<typename _Right>
-	int first(const _Right& str) const noexcept
-	{
-		if (this->size() < str.size())
-			return -1;
-		for (int offset = 0, end = this->size() - str.size(); offset < end; offset++)
-		{
-			if (_Traits::compare(this->data() + offset, str.data(), str.size()) == 0)
-				return offset;
-		}
-		return -1;
-	}
-	int first(const _Elem& ch) const noexcept
-	{
-		if (this->size() != 0)
-			for (int offset = 0, end = this->size(); offset < end; offset++)
-				if (this->at(offset) == ch)
-					return offset;
-		return -1;
-	}
-	int first(_In_ const _Elem* ptr) const noexcept
-	{
-		return first(tag(ptr));
-	}
-	template<typename _Right>
-	int last(const _Right& str) const noexcept
-	{
-		if (this->size() < str.size())
-			return -1;
-		for (int offset = this->size() - str.size() - 1, end = 0; offset >= end; offset--)
-		{
-			if (_Traits::compare(this->data() + offset, str.data(), str.size()) == 0)
-				return offset;
-		}
-		return -1;
-	}
-	int last(const _Elem& ch) const noexcept
-	{
-		if (this->size() != 0)
-			for (int offset = this->size() - 1, end = 0; offset >= end; offset--)
-				if (this->at(offset) == ch)
-					return offset;
-		return -1;
-	}
-	int last(_In_ const _Elem* ptr) const noexcept
-	{
-		return last(tag(ptr));
-	}
-	template<typename _Param>
-	tag join(_Param&& arg)
-	{
-		return tag(std::forward(arg));
-	}
-	template<typename _First, typename... _Params>
-	tag join(_First&& first, _Params&&... args)
-	{
-		return tag(std::forward<_First>(first)) + join(std::forward<_Params>(args)...);
-	}
-	template<typename... Args>
-	auto format_s(void* buffer, size_t buffer_size, Args&&... args)
-	{
-		if constexpr (std::is_same_v<_Elem, char>)
-		{
-			sprintf_s((char*)buffer, buffer_size, **this, std::forward<Args>(args)...);
-		}
-		else if constexpr (std::is_same_v<_Elem, wchar_t>)
-		{
-			swprintf_s((wchar_t*)buffer, buffer_size, **this, std::forward<Args>(args)...);
-		}
-	}
-	template<typename... Args>
-	auto format(Args&&... args)
-	{
-		if constexpr (std::is_same_v<_Elem, char>)
-		{
-			std::string result(1024, 0);
-			sprintf_s(result.data(), 1024, **this, std::forward<Args>(args)...);
-			return result;
-		}
-		else if constexpr (std::is_same_v<_Elem, wchar_t>)
-		{
-			std::wstring result(1024, 0);
-			swprintf_s(result.data(), 1024, **this, std::forward<Args>(args)...);
-			return result;
-		}
-	}
-	auto get_view() const
-	{
-		return std::basic_string_view(this->get()->data() + _Myhead, this->size());
-	}
-
-	virtual std::string ToString() const noexcept override
-	{
-		std::string str(sizeof(char) * this->size(), 0);
-		::memmove(str.data(), this->data(), this->size());
-		return str;
-	}
-
-	template<typename _Right>
-	bool operator==(const _Right& other) const
-	{
-		return this->size() == other.size() && this->compare(other) == 0;
-	}
-	template<typename _Right>
-	bool operator!=(const _Right& other) const
-	{
-		return !this->operator==(other);
-	}
-};
-template<typename _Elem, typename _Traits, typename _Alloc, typename _OS>
-decltype(auto) operator<<(_OS& os, const instance<view_indicator<std::basic_string<_Elem, _Traits, _Alloc>>, true>& str)
-{
-	os << str.get_view();
-	return os;
-}
-template<typename _Type>
-constexpr bool is_string_or_string_instance_v = 
-	internal::is_string_v<_Type>||
-	(internal::is_instance_v<_Type>&&(typename _Type::_Element == char||typename _Type::_Element == wchar_t));
 
 #pragma endregion
 
 #pragma region std::list
 
-template<typename _Elem, typename _Alloc>
-class instance<std::list<_Elem, _Alloc>, true> :public instance<std::list<_Elem, _Alloc>, false>
+template<typename TElement, typename TAlloc>
+class instance<std::list<TElement, TAlloc>, true> :public instance<std::list<TElement, TAlloc>, false>
 {
 public:
-	using tag = std::list<_Elem, _Alloc>;
-	using _Mybase = instance<tag, false>;
-	using _Element = _Elem;
-	using _Allocator = _Alloc;
-	using iterator = typename tag::iterator;
-	using const_iterator = typename tag::const_iterator;
-	using view_instance = instance<view_indicator<tag>, true>;
+	using tag = std::list<TElement, TAlloc>;
+	using TMybase = instance<tag, false>;
+	using ElementType = TElement;
+	using AllocatorType = TAlloc;
+	using Iterator = typename tag::iterator;
+	using ConstIterator = typename tag::const_iterator;
+	using ViewInstance = instance<ViewIndicator<tag>, true>;
 
-	instance() :_Mybase(new tag()) {}
-	instance(tag* data) :_Mybase(data) {}
-	instance(typename _Mybase::_shared& data) :_Mybase(data) {}
-	instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
-	explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
-	template<typename... _Args>
-	instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
-	instance(instance& data) :_Mybase(data) {}
+	instance() :TMybase(new tag()) {}
+	instance(tag* data) :TMybase(data) {}
+	instance(typename TMybase::TShared& data) :TMybase(data) {}
+	instance(typename TMybase::TShared&& data) :TMybase(std::move(data)) {}
+	explicit instance(tag&& data) :TMybase(new tag(std::move(data))) {}
+	template<typename... TArgs>
+	instance(TArgs&&... args) : TMybase(new tag(std::forward<TArgs>(args)...)) {}
+	instance(instance& data) :TMybase(data) {}
 	auto& operator=(const instance& other) noexcept
 	{
-		_Mybase::operator=(other);
+		TMybase::operator=(other);
 		return *this;
 	}
 	instance_move_operator(public) {}
 
-	copy_func_return_auto_with_noexcept(begin);
-	copy_func_return_auto_with_noexcept(end);
-	copy_func_return_auto_with_noexcept(cbegin);
-	copy_func_return_auto_with_noexcept(cend);
-	copy_func_return_auto_with_noexcept(rbegin);
-	copy_func_return_auto_with_noexcept(rend);
-	copy_func_return_auto_with_noexcept(crbegin);
-	copy_func_return_auto_with_noexcept(crend);
+	copy_func_return_auto_with_noexcept(Begin);
+	copy_func_return_auto_with_noexcept(End);
+	copy_func_return_auto_with_noexcept(CBegin);
+	copy_func_return_auto_with_noexcept(CEnd);
+	copy_func_return_auto_with_noexcept(RBegin);
+	copy_func_return_auto_with_noexcept(REnd);
+	copy_func_return_auto_with_noexcept(CRBegin);
+	copy_func_return_auto_with_noexcept(CREnd);
 
-	template<typename... _Args>
-	void push_back(_Args... args) const
+	template<typename... TArgs>
+	void PushBack(TArgs... args) const
 	{
-		this->get()->push_back(std::forward<_Args>(args)...);
+		this->get()->push_back(std::forward<TArgs>(args)...);
 	}
 
-	template<typename... _Args>
-	void push_front(_Args... args) const
+	template<typename... TArgs>
+	void PushFront(TArgs... args) const
 	{
-		this->get()->push_front(std::forward<_Args>(args)...);
+		this->get()->push_front(std::forward<TArgs>(args)...);
 	}
 
-	void pop_back() const noexcept
+	void PopBack() const noexcept
 	{
 		this->get()->pop_back();
 	}
 
-	void pop_front() const noexcept
+	void PopFront() const noexcept
 	{
 		this->get()->pop_front();
 	}
 
-	copy_func_return_auto_with_noexcept(size);
-	copy_func_with_noexcept(clear);
+	copy_func_return_auto_with_noexcept(Size);
+	copy_func_with_noexcept(Clear);
 
-	decltype(auto) front() const
+	decltype(auto) Front() const
 	{
 		return this->get()->front();
 	}
 
-	decltype(auto) back() const
+	decltype(auto) Back() const
 	{
 		return this->get()->back();
 	}
 
-	bool data_empty() const noexcept
+	bool IsEmpty() const noexcept
 	{
 		return this->get()->empty();
 	}
 
-	auto erase(const_iterator iter) const
+	auto Erase(ConstIterator iter) const
 	{
 		return this->get()->erase(iter);
 	}
 
-	auto erase(const_iterator head, const_iterator end) const
+	auto Erase(ConstIterator head, ConstIterator end) const
 	{
 		return this->get()->erase(head, end);
 	}
 
-	template<typename... _Args>
-	auto insert(const_iterator pos, _Args&&... args)
+	template<typename... TArgs>
+	auto Insert(ConstIterator pos, TArgs&&... args)
 	{
-		return this->get()->insert(pos, std::forward<_Args>(args)...);
+		return this->get()->insert(pos, std::forward<TArgs>(args)...);
 	}
 
-	auto splice(const_iterator pos, tag& other)
+	auto Splice(ConstIterator pos, tag& other)
 	{
 		return this->get()->splice(pos, other);
 	}
 
-	auto splice(const_iterator pos, tag& other, const_iterator it)
+	auto Splice(ConstIterator pos, tag& other, ConstIterator it)
 	{
 		return this->get()->splice(pos, other, it);
 	}
 
-	auto splice(const_iterator pos, tag& other, const_iterator first, const_iterator last)
+	auto Splice(ConstIterator pos, tag& other, ConstIterator first, ConstIterator last)
 	{
 		return this->get()->splice(pos, other, first, last);
 	}
 
-	void remove(const _Elem& value)
+	void Remove(const ElementType& value)
 	{
 		this->get()->remove(value);
 	}
 
-	template<typename _Pred>
-	void remove_if(_Pred pred)
+	template<typename TPred>
+	void RemoveIf(TPred pred)
 	{
 		this->get()->remove_if(pred);
 	}
 
-	void unique()
+	void Unique()
 	{
 		this->get()->unique();
 	}
 
-	template<typename _BinaryPred>
-	void unique(_BinaryPred pred)
+	template<typename TBinaryPred>
+	void Unique(TBinaryPred pred)
 	{
 		this->get()->unique(pred);
 	}
 
-	void sort()
+	void Sort()
 	{
 		this->get()->sort();
 	}
 
-	template<typename _Compare>
-	void sort(_Compare comp)
+	template<typename TCompare>
+	void Sort(TCompare comp)
 	{
 		this->get()->sort(comp);
 	}
 
-	void reverse() noexcept
+	void Reverse() noexcept
 	{
 		this->get()->reverse();
 	}
 
-	void merge(tag& other)
+	void Merge(tag& other)
 	{
 		this->get()->merge(other);
 	}
 
-	template<typename _Compare>
-	void merge(tag& other, _Compare comp)
+	template<typename TCompare>
+	void Merge(tag& other, TCompare comp)
 	{
 		this->get()->merge(other, comp);
 	}
 };
-template<typename _Elem, typename _Alloc>
-class instance<view_indicator<std::list<_Elem, _Alloc>>, true> :public instance<std::list<_Elem, _Alloc>, false>
+
+template<typename TElement, typename TAlloc>
+class instance<ViewIndicator<std::list<TElement, TAlloc>>, true> :public instance<std::list<TElement, TAlloc>, false>
 {
 public:
-	using tag = std::list<_Elem, _Alloc>;
-	using _Mybase = instance<tag, false>;
+	using tag = std::list<TElement, TAlloc>;
+	using TMybase = instance<tag, false>;
 private:
-	typename tag::iterator _Myhead;
-	typename tag::iterator _Mytail;
-	size_t _Mysize;
+	typename tag::iterator mHead;
+	typename tag::iterator mTail;
+	size_t mSize;
 public:
-	using _Element = _Elem;
-	using _Allocator = _Alloc;
-	using iterator = typename tag::iterator;
-	using const_iterator = typename tag::const_iterator;
-	using shared_from_instance = instance<tag, true>;
+	using ElementType = TElement;
+	using AllocatorType = TAlloc;
+	using Iterator = typename tag::iterator;
+	using ConstIterator = typename tag::const_iterator;
+	using SharedFromInstance = instance<tag, true>;
 
-	instance() :_Mybase(nullptr), _Mysize(0) {}
-	instance(typename _Mybase::_shared& data, iterator head, iterator tail)
-		:_Mybase(data), _Myhead(head), _Mytail(tail)
+	instance() :TMybase(nullptr), mSize(0) {}
+	instance(typename TMybase::TShared& data, Iterator head, Iterator tail)
+		:TMybase(data), mHead(head), mTail(tail)
 	{
-		_Mysize = std::distance(head, tail);
+		mSize = std::distance(head, tail);
 	}
 
-	instance(const instance& data) 
-		:_Mybase(data), _Myhead(data._Myhead), _Mytail(data._Mytail), _Mysize(data._Mysize) {}
+	instance(const instance& data)
+		:TMybase(data), mHead(data.mHead), mTail(data.mTail), mSize(data.mSize) {}
 
 	instance_move_operator(public)
 	{
-		this->_Myhead = other._Myhead;
-		this->_Mytail = other._Mytail;
-		this->_Mysize = other._Mysize;
+		this->mHead = other.mHead;
+		this->mTail = other.mTail;
+		this->mSize = other.mSize;
 	}
 
-	auto begin() const noexcept { return _Myhead; }
-	auto end() const noexcept { return _Mytail; }
-	auto cbegin() const noexcept { return _Myhead; }
-	auto cend() const noexcept { return _Mytail; }
+	auto Begin() const noexcept { return mHead; }
+	auto End() const noexcept { return mTail; }
+	auto CBegin() const noexcept { return mHead; }
+	auto CEnd() const noexcept { return mTail; }
 
-	size_t size() const noexcept { return _Mysize; }
+	size_t Size() const noexcept { return mSize; }
 
-	bool data_empty() const noexcept { return _Mysize == 0; }
+	bool IsEmpty() const noexcept { return mSize == 0; }
 
-	decltype(auto) front() const { return *_Myhead; }
-	decltype(auto) back() const { return *std::prev(_Mytail); }
+	decltype(auto) Front() const { return *mHead; }
+	decltype(auto) Back() const { return *std::prev(mTail); }
 
-	auto erase(const_iterator pos)
+	auto Erase(ConstIterator pos)
 	{
-		if (pos == _Myhead) ++_Myhead;
-		if (pos == _Mytail) --_Mytail;
-		--_Mysize;
+		if (pos == mHead) ++mHead;
+		if (pos == mTail) --mTail;
+		--mSize;
 		return this->get()->erase(pos);
 	}
 
-	template<typename... _Args>
-	auto insert(const_iterator pos, _Args&&... args)
+	template<typename... TArgs>
+	auto Insert(ConstIterator pos, TArgs&&... args)
 	{
-		if (pos == _Myhead) --_Myhead;
-		if (pos == _Mytail) ++_Mytail;
-		++_Mysize;
-		return this->get()->insert(pos, std::forward<_Args>(args)...);
+		if (pos == mHead) --mHead;
+		if (pos == mTail) ++mTail;
+		++mSize;
+		return this->get()->insert(pos, std::forward<TArgs>(args)...);
 	}
 };
 
@@ -1492,178 +498,190 @@ public:
 
 #pragma region std::map
 
-template<typename _Key, typename _Ty, typename _Compare, typename _Alloc>
-class instance<std::map<_Key, _Ty, _Compare, _Alloc>, true> :public instance<std::map<_Key, _Ty, _Compare, _Alloc>, false>
+template<typename TKey, typename TValue, typename TCompare, typename TAlloc>
+class instance<std::map<TKey, TValue, TCompare, TAlloc>, true> :public instance<std::map<TKey, TValue, TCompare, TAlloc>, false>
 {
 public:
-	using tag = std::map<_Key, _Ty, _Compare, _Alloc>;
-	using _Mybase = instance<tag, false>;
-	using key_type = _Key;
-	using mapped_type = _Ty;
-	using value_type = std::pair<const _Key, _Ty>;
-	using key_compare = _Compare;
-	using allocator_type = _Alloc;
-	using iterator = typename tag::iterator;
-	using const_iterator = typename tag::const_iterator;
-	using view_instance = instance<view_indicator<tag>, true>;
+	using tag = std::map<TKey, TValue, TCompare, TAlloc>;
+	using TMybase = instance<tag, false>;
+	using KeyType = TKey;
+	using ValueType = TValue;
+	using CompareType = TCompare;
+	using AllocatorType = TAlloc;
+	using Iterator = typename tag::iterator;
+	using ConstIterator = typename tag::const_iterator;
+	using ViewInstance = instance<ViewIndicator<tag>, true>;
 
-	instance() :_Mybase(new tag()) {}
-	instance(tag* data) :_Mybase(data) {}
-	instance(typename _Mybase::_shared& data) :_Mybase(data) {}
-	instance(typename _Mybase::_shared&& data) :_Mybase(std::move(data)) {}
-	explicit instance(tag&& data) :_Mybase(new tag(std::move(data))) {}
-	template<typename... _Args>
-	instance(_Args&&... args) : _Mybase(new tag(std::forward<_Args>(args)...)) {}
-	instance(instance& data) :_Mybase(data) {}
+	instance() :TMybase(new tag()) {}
+	instance(tag* data) :TMybase(data) {}
+	instance(typename TMybase::TShared& data) :TMybase(data) {}
+	instance(typename TMybase::TShared&& data) :TMybase(std::move(data)) {}
+	explicit instance(tag&& data) :TMybase(new tag(std::move(data))) {}
+	template<typename... TArgs>
+	instance(TArgs&&... args) : TMybase(new tag(std::forward<TArgs>(args)...)) {}
+	instance(instance& data) :TMybase(data) {}
 	auto& operator=(const instance& other) noexcept
 	{
-		_Mybase::operator=(other);
+		TMybase::operator=(other);
 		return *this;
 	}
 	instance_move_operator(public) {}
 
-	copy_func_return_auto_with_noexcept(begin);
-	copy_func_return_auto_with_noexcept(end);
-	copy_func_return_auto_with_noexcept(cbegin);
-	copy_func_return_auto_with_noexcept(cend);
-	copy_func_return_auto_with_noexcept(rbegin);
-	copy_func_return_auto_with_noexcept(rend);
-	copy_func_return_auto_with_noexcept(crbegin);
-	copy_func_return_auto_with_noexcept(crend);
+	copy_func_return_auto_with_noexcept(Begin);
+	copy_func_return_auto_with_noexcept(End);
+	copy_func_return_auto_with_noexcept(CBegin);
+	copy_func_return_auto_with_noexcept(CEnd);
+	copy_func_return_auto_with_noexcept(RBegin);
+	copy_func_return_auto_with_noexcept(REnd);
+	copy_func_return_auto_with_noexcept(CRBegin);
+	copy_func_return_auto_with_noexcept(CREnd);
 
-	copy_func_return_auto_with_noexcept(size);
-	copy_func_with_noexcept(clear);
+	copy_func_return_auto_with_noexcept(Size);
+	copy_func_with_noexcept(Clear);
 
-	bool data_empty() const noexcept
+	bool IsEmpty() const noexcept
 	{
 		return this->get()->empty();
 	}
 
-	auto find(const key_type& key) const
+	auto Erase(ConstIterator iter) const
+	{
+		return this->get()->erase(iter);
+	}
+
+	auto Erase(ConstIterator head, ConstIterator end) const
+	{
+		return this->get()->erase(head, end);
+	}
+
+	template<typename... TArgs>
+	auto Insert(TArgs&&... args)
+	{
+		return this->get()->insert(std::forward<TArgs>(args)...);
+	}
+
+	template<typename... TArgs>
+	auto InsertOrAssign(TArgs&&... args)
+	{
+		return this->get()->insert_or_assign(std::forward<TArgs>(args)...);
+	}
+
+	template<typename... TArgs>
+	auto TryEmplace(TArgs&&... args)
+	{
+		return this->get()->try_emplace(std::forward<TArgs>(args)...);
+	}
+
+	auto Find(const KeyType& key) const
 	{
 		return this->get()->find(key);
 	}
 
-	size_t count(const key_type& key) const
-	{
-		return this->get()->count(key);
-	}
-
-	auto lower_bound(const key_type& key) const
+	auto LowerBound(const KeyType& key) const
 	{
 		return this->get()->lower_bound(key);
 	}
 
-	auto upper_bound(const key_type& key) const
+	auto UpperBound(const KeyType& key) const
 	{
 		return this->get()->upper_bound(key);
 	}
 
-	auto equal_range(const key_type& key) const
+	auto EqualRange(const KeyType& key) const
 	{
 		return this->get()->equal_range(key);
 	}
 
-	template<typename... _Args>
-	auto insert(_Args&&... args)
+	size_t Count(const KeyType& key) const
 	{
-		return this->get()->insert(std::forward<_Args>(args)...);
+		return this->get()->count(key);
 	}
 
-	template<typename... _Args>
-	auto emplace(_Args&&... args)
+	bool Contains(const KeyType& key) const
 	{
-		return this->get()->emplace(std::forward<_Args>(args)...);
+		return this->get()->contains(key);
 	}
 
-	auto erase(const_iterator pos)
-	{
-		return this->get()->erase(pos);
-	}
-
-	auto erase(const_iterator first, const_iterator last)
-	{
-		return this->get()->erase(first, last);
-	}
-
-	size_t erase(const key_type& key)
-	{
-		return this->get()->erase(key);
-	}
-
-	mapped_type& operator[](const key_type& key)
+	ValueType& operator[](const KeyType& key) const
 	{
 		return (*this->get())[key];
 	}
 
-	mapped_type& operator[](key_type&& key)
-	{
-		return (*this->get())[std::move(key)];
-	}
-
-	mapped_type& at(const key_type& key)
-	{
-		return this->get()->at(key);
-	}
-
-	const mapped_type& at(const key_type& key) const
+	ValueType& At(const KeyType& key) const
 	{
 		return this->get()->at(key);
 	}
 };
 
-// 不能使用字符串作为返回值, 因为没有考虑宽窄字符的转换, 需要注入到字符串中需要使用stringstream
-template<typename _OS, typename _Key, typename _Ty, typename _Compare, typename _Alloc>
-_OS& map_easy_json(
-	_OS& os, 
-	typename const std::map<_Key, _Ty, _Compare, _Alloc>::iterator& begin,
-	typename const std::map<_Key, _Ty, _Compare, _Alloc>::iterator& end,
-	bool is_format = true
-)
+template<typename TKey, typename TValue, typename TCompare, typename TAlloc>
+class instance<ViewIndicator<std::map<TKey, TValue, TCompare, TAlloc>>, true> :public instance<std::map<TKey, TValue, TCompare, TAlloc>, false>
 {
-	size_t layer = 0;
-    os << "{";
-    for (auto iter = begin; iter != end; ++iter)
-    {
-        if (iter != begin)
-            os << ", ";
-        if (is_format)
-        {
-            os << std::endl << std::string(layer * 4, ' ');
-        }
-		if constexpr(is_string_or_string_instance_v<_Ty>)
-		{
-			os << "\"" << iter->first << "\": \"" << iter->second << "\"";
-		}
-		else
-		{
-			os << "\"" << iter->first << "\": " << iter->second;
-		}
-        if (is_format)
-        {
-            os << std::endl;
-            layer++;
-        }
-    }
-    if (is_format)
-    {
-        os.seekp(-1, std::ios_base::cur);
-        os << std::endl << std::string(layer * 4, ' ');
-        os << "}";
-    }
-    else
-    {
-        os << "}";
-    }
-    return os;
-}
+public:
+	using tag = std::map<TKey, TValue, TCompare, TAlloc>;
+	using TMybase = instance<tag, false>;
+private:
+	typename tag::iterator mHead;
+	typename tag::iterator mTail;
+	size_t mSize;
+public:
+	using KeyType = TKey;
+	using ValueType = TValue;
+	using CompareType = TCompare;
+	using AllocatorType = TAlloc;
+	using Iterator = typename tag::iterator;
+	using ConstIterator = typename tag::const_iterator;
+	using SharedFromInstance = instance<tag, true>;
 
-template<typename _OS, typename _Key, typename _Ty, typename _Compare, typename _Alloc>
-_OS& operator<<(_OS& os, const instance<std::map<_Key, _Ty, _Compare, _Alloc>, false>& data)
-{
-	map_easy_json(os, data.begin(), data.end(), true);
-    return os;
-}
+	instance() :TMybase(nullptr), mSize(0) {}
+	instance(typename TMybase::TShared& data, Iterator head, Iterator tail)
+		:TMybase(data), mHead(head), mTail(tail)
+	{
+		mSize = std::distance(head, tail);
+	}
+
+	instance(const instance& data)
+		:TMybase(data), mHead(data.mHead), mTail(data.mTail), mSize(data.mSize) {}
+
+	instance_move_operator(public)
+	{
+		this->mHead = other.mHead;
+		this->mTail = other.mTail;
+		this->mSize = other.mSize;
+	}
+
+	auto Begin() const noexcept { return mHead; }
+	auto End() const noexcept { return mTail; }
+	auto CBegin() const noexcept { return mHead; }
+	auto CEnd() const noexcept { return mTail; }
+
+	size_t Size() const noexcept { return mSize; }
+
+	bool IsEmpty() const noexcept { return mSize == 0; }
+
+	decltype(auto) Front() const { return *mHead; }
+	decltype(auto) Back() const { return *std::prev(mTail); }
+
+	auto Erase(ConstIterator pos)
+	{
+		if (pos == mHead) ++mHead;
+		if (pos == mTail) --mTail;
+		--mSize;
+		return this->get()->erase(pos);
+	}
+
+	template<typename... TArgs>
+	auto Insert(TArgs&&... args)
+	{
+		auto result = this->get()->insert(std::forward<TArgs>(args)...);
+		if (result.second)
+		{
+			if (result.first < mHead) --mHead;
+			if (result.first >= mTail) ++mTail;
+			++mSize;
+		}
+		return result;
+	}
+};
 
 #pragma endregion
 
@@ -1734,7 +752,7 @@ public:
 #pragma region std::unordered_map
 
 template<typename _Key, typename _Ty, typename _Hash, typename _KeyEq, typename _Alloc>
-class instance<std::unordered_map<_Key, _Ty, _Hash, _KeyEq, _Alloc>, true> 
+class instance<std::unordered_map<_Key, _Ty, _Hash, _KeyEq, _Alloc>, true>
     :public instance<std::unordered_map<_Key, _Ty, _Hash, _KeyEq, _Alloc>, false>
 {
 public:
@@ -1816,7 +834,7 @@ public:
 
 template<typename _Key, typename _Ty, typename _Hash, typename _KeyEq, typename _Alloc>
 std::ostream& map_easy_json(
-	std::ostream& os, 
+	std::ostream& os,
 	typename const std::unordered_map<_Key, _Ty, _Hash, _KeyEq, _Alloc>::iterator& begin,
 	typename const std::unordered_map<_Key, _Ty, _Hash, _KeyEq, _Alloc>::iterator& end,
 	bool is_format = true
@@ -1870,7 +888,7 @@ std::ostream& operator<<(std::ostream& os, const instance<std::unordered_map<_Ke
 #pragma region std::unordered_set
 
 template<typename _Key, typename _Hash, typename _KeyEq, typename _Alloc>
-class instance<std::unordered_set<_Key, _Hash, _KeyEq, _Alloc>, true> 
+class instance<std::unordered_set<_Key, _Hash, _KeyEq, _Alloc>, true>
     :public instance<std::unordered_set<_Key, _Hash, _KeyEq, _Alloc>, false>
 {
 public:
@@ -2066,14 +1084,14 @@ public:
 
     instance() :_Mybase(nullptr), _Myhead(0), _Mytail(0) {}
     instance(typename _Mybase::_shared& data, size_t head, size_t tail)
-        :_Mybase(data), 
+        :_Mybase(data),
         _Myhead(std::min(head, data->size())),
         _Mytail(std::min(tail, data->size()))
     {
         if (_Myhead > _Mytail) std::swap(_Myhead, _Mytail);
     }
 
-    instance(const instance& data) 
+    instance(const instance& data)
         :_Mybase(data), _Myhead(data._Myhead), _Mytail(data._Mytail) {}
 
     instance_move_operator(public)
@@ -2169,7 +1187,7 @@ public:
 	{
 		return this->get()->remove_if(pr)
 	}
-	
+
 	template<typename _Data>
 	auto merge(_Data&& data) const
 	{
@@ -2228,7 +1246,7 @@ public:
     }
 };
 template<typename _Elem, typename _Alloc>
-class instance<view_indicator<std::forward_list<_Elem, _Alloc>>, true> 
+class instance<view_indicator<std::forward_list<_Elem, _Alloc>>, true>
     :public instance<std::forward_list<_Elem, _Alloc>, false>
 {
 public:
@@ -2254,11 +1272,11 @@ public:
         _Mybefore_head = this->get()->before_begin();
         while (std::next(_Mybefore_head) != _Myhead && std::next(_Mybefore_head) != this->get()->cend())
             ++_Mybefore_head;
-        
+
         _Mysize = std::distance(_Myhead, _Mytail);
     }
 
-    instance(const instance& data) 
+    instance(const instance& data)
         :_Mybase(data), _Myhead(data._Myhead), _Mytail(data._Mytail),
         _Mybefore_head(data._Mybefore_head), _Mysize(data._Mysize) {}
 
@@ -2389,7 +1407,7 @@ public:
 #pragma region std::priority_queue
 
 template<typename _Ty, typename _Container, typename _Compare>
-class instance<std::priority_queue<_Ty, _Container, _Compare>, true> 
+class instance<std::priority_queue<_Ty, _Container, _Compare>, true>
     :public instance<std::priority_queue<_Ty, _Container, _Compare>, false>
 {
 public:
@@ -2575,4 +1593,4 @@ auto move_view(instance<view_indicator<_Inside>, true>&& data, int offset)
 	return data;
 }
 
-#endif // !__FILE_CONVENTION_STD_INSTANCE
+#endif // !CONVENTION_KIT_STD_INSTANCE_H

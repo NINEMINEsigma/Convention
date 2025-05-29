@@ -1,4 +1,6 @@
-﻿#ifndef __FILE_CONVENTION_STD_INSTANCE
+﻿#pragma once
+
+#ifndef __FILE_CONVENTION_STD_INSTANCE
 #define __FILE_CONVENTION_STD_INSTANCE
 
 #include "Convention/instance/Interface.h"
@@ -11,7 +13,7 @@ struct view_indicator
 	constexpr static bool value = true;
 };
 
-namespace convention_kit
+namespace ConventionKit
 {
 	template<typename _Ty>
 	using view = view_indicator<_Ty>;
@@ -212,7 +214,7 @@ public:
 	{
 		return _Mytail;
 	}
-	
+
 	auto begin() const noexcept
 	{
 		return this->get()->begin() + _Myhead;
@@ -884,19 +886,19 @@ public:
 		return _Mytail;
 	}
 
-	auto begin() const noexcept 
+	auto begin() const noexcept
 	{
 		return this->get()->begin() + _Myhead;
 	}
-	auto end() const noexcept 
+	auto end() const noexcept
 	{
 		return this->get()->begin() + _Mytail;
 	}
-	auto cbegin() const noexcept 
+	auto cbegin() const noexcept
 	{
 		return this->get()->cbegin() + _Myhead;
 	}
-	auto cend() const noexcept 
+	auto cend() const noexcept
 	{
 		return this->get()->cbegin() + _Mytail;
 	}
@@ -916,7 +918,7 @@ public:
 	{
 		return this->get()->crbegin() + _Myhead;
 	}
-	auto size() const noexcept 
+	auto size() const noexcept
 	{
 		return _Mytail - _Myhead;
 	};
@@ -1053,7 +1055,7 @@ public:
 	{
 		return this->get()->compare(*right);
 	}
-	auto length() const noexcept 
+	auto length() const noexcept
 	{
 		return _Mytail - _Myhead;
 	}
@@ -1177,7 +1179,7 @@ decltype(auto) operator<<(_OS& os, const instance<view_indicator<std::basic_stri
 	return os;
 }
 template<typename _Type>
-constexpr bool is_string_or_string_instance_v = 
+constexpr bool is_string_or_string_instance_v =
 	internal::is_string_v<_Type>||
 	(internal::is_instance_v<_Type>&&(typename _Type::_Element == char||typename _Type::_Element == wchar_t));
 
@@ -1360,7 +1362,7 @@ public:
 		_Mysize = std::distance(head, tail);
 	}
 
-	instance(const instance& data) 
+	instance(const instance& data)
 		:_Mybase(data), _Myhead(data._Myhead), _Mytail(data._Mytail), _Mysize(data._Mysize) {}
 
 	instance_move_operator(public)
@@ -1522,7 +1524,7 @@ public:
 // 不能使用字符串作为返回值, 因为没有考虑宽窄字符的转换, 需要注入到字符串中需要使用stringstream
 template<typename _OS, typename _Key, typename _Ty, typename _Compare, typename _Alloc>
 _OS& map_easy_json(
-	_OS& os, 
+	_OS& os,
 	typename const std::map<_Key, _Ty, _Compare, _Alloc>::iterator& begin,
 	typename const std::map<_Key, _Ty, _Compare, _Alloc>::iterator& end,
 	bool is_format = true
@@ -1636,7 +1638,7 @@ public:
 #pragma region std::unordered_map
 
 template<typename _Key, typename _Ty, typename _Hash, typename _KeyEq, typename _Alloc>
-class instance<std::unordered_map<_Key, _Ty, _Hash, _KeyEq, _Alloc>, true> 
+class instance<std::unordered_map<_Key, _Ty, _Hash, _KeyEq, _Alloc>, true>
     :public instance<std::unordered_map<_Key, _Ty, _Hash, _KeyEq, _Alloc>, false>
 {
 public:
@@ -1713,7 +1715,7 @@ public:
 
 template<typename _Key, typename _Ty, typename _Hash, typename _KeyEq, typename _Alloc>
 std::ostream& map_easy_json(
-	std::ostream& os, 
+	std::ostream& os,
 	typename const std::unordered_map<_Key, _Ty, _Hash, _KeyEq, _Alloc>::iterator& begin,
 	typename const std::unordered_map<_Key, _Ty, _Hash, _KeyEq, _Alloc>::iterator& end,
 	bool is_format = true
@@ -1767,7 +1769,7 @@ std::ostream& operator<<(std::ostream& os, const instance<std::unordered_map<_Ke
 #pragma region std::unordered_set
 
 template<typename _Key, typename _Hash, typename _KeyEq, typename _Alloc>
-class instance<std::unordered_set<_Key, _Hash, _KeyEq, _Alloc>, true> 
+class instance<std::unordered_set<_Key, _Hash, _KeyEq, _Alloc>, true>
     :public instance<std::unordered_set<_Key, _Hash, _KeyEq, _Alloc>, false>
 {
 public:
@@ -1953,14 +1955,14 @@ public:
 
     instance() :_Mybase(nullptr), _Myhead(0), _Mytail(0) {}
     instance(typename _Mybase::_shared& data, size_t head, size_t tail)
-        :_Mybase(data), 
+        :_Mybase(data),
         _Myhead(std::min(head, data->size())),
         _Mytail(std::min(tail, data->size()))
     {
         if (_Myhead > _Mytail) std::swap(_Myhead, _Mytail);
     }
 
-    instance(const instance& data) 
+    instance(const instance& data)
         :_Mybase(data), _Myhead(data._Myhead), _Mytail(data._Mytail) {}
 
     instance_move_operator(public)
@@ -2051,7 +2053,7 @@ public:
 	{
 		return this->get()->remove_if(pr)
 	}
-	
+
 	template<typename _Data>
 	auto merge(_Data&& data) const
 	{
@@ -2110,7 +2112,7 @@ public:
     }
 };
 template<typename _Elem, typename _Alloc>
-class instance<view_indicator<std::forward_list<_Elem, _Alloc>>, true> 
+class instance<view_indicator<std::forward_list<_Elem, _Alloc>>, true>
     :public instance<std::forward_list<_Elem, _Alloc>, false>
 {
 public:
@@ -2136,11 +2138,11 @@ public:
         _Mybefore_head = this->get()->before_begin();
         while (std::next(_Mybefore_head) != _Myhead && std::next(_Mybefore_head) != this->get()->cend())
             ++_Mybefore_head;
-        
+
         _Mysize = std::distance(_Myhead, _Mytail);
     }
 
-    instance(const instance& data) 
+    instance(const instance& data)
         :_Mybase(data), _Myhead(data._Myhead), _Mytail(data._Mytail),
         _Mybefore_head(data._Mybefore_head), _Mysize(data._Mysize) {}
 
@@ -2261,7 +2263,7 @@ public:
 #pragma region std::priority_queue
 
 template<typename _Ty, typename _Container, typename _Compare>
-class instance<std::priority_queue<_Ty, _Container, _Compare>, true> 
+class instance<std::priority_queue<_Ty, _Container, _Compare>, true>
     :public instance<std::priority_queue<_Ty, _Container, _Compare>, false>
 {
 public:

@@ -10,11 +10,11 @@
 
 using namespace std;
 
-std::string platform_indicator::generate_platform_message() noexcept
+std::string platform_indicator::GeneratePlatformMessage() noexcept
 {
 	return std::string("Platform: ") + __PLATFORM_NAME + "-" + __PLATFORM_VERSION + "-" + __PLATFORM_EXTENSION;
 }
-int platform_indicator::keyboard_input() noexcept
+int platform_indicator::KeyboardInput() noexcept
 {
 #ifdef _WINDOWS
 	if (_kbhit())
@@ -26,7 +26,7 @@ int platform_indicator::keyboard_input() noexcept
 	FD_ZERO(&rfds);
 	FD_SET(0, &rfds);
 	tv.tv_sec = 0;
-	tv.tv_usec = 1; //ÉèÖÃµÈ´ý³¬Ê±Ê±¼ä
+	tv.tv_usec = 1; //ï¿½ï¿½ï¿½ÃµÈ´ï¿½ï¿½ï¿½Ê±Ê±ï¿½ï¿½
 	if (select(1, &rfds, NULL, NULL, &tv) > 0)
 		return getchar();
 #endif // _WINDOWS
@@ -84,22 +84,22 @@ std::string typename2classname(const std::string& str) noexcept
 
 extern "C"
 {
-	_Ret_maybenull_ void* find_target_flag_class_ptr(
+	_Ret_maybenull_ void* FindTargetFlagClassPtr(
 		_In_reads_bytes_(length) const void* head, size_t length,
-		_In_reads_bytes_(flag_length) const void* target_flag, size_t flag_length,
-		size_t flag_offset
+		_In_reads_bytes_(flagLength) const void* targetFlag, size_t flagLength,
+		size_t flagOffset
 	)
 	{
 		for (size_t i = 0; i != length; i++)
 		{
-			if (0 == memcmp(reinterpret_cast<void*>(reinterpret_cast<size_t>(head) + i), target_flag, flag_length))
+			if (0 == memcmp(reinterpret_cast<void*>(reinterpret_cast<size_t>(head) + i), targetFlag, flagLength))
 			{
-				return reinterpret_cast<void*>(reinterpret_cast<size_t>(head) + i - flag_offset);
+				return reinterpret_cast<void*>(reinterpret_cast<size_t>(head) + i - flagOffset);
 			}
 		}
 		return nullptr;
 	}
-	_Ret_maybenull_ any_class* find_any_class_ptr(
+	_Ret_maybenull_ any_class* FindAnyClassPtr(
 		_In_reads_bytes_(length) const void* head, size_t length
 	)
 	{
@@ -118,13 +118,13 @@ extern "C"
 std::tuple<
 	std::map<std::string, std::string>,
 	std::vector<std::pair<std::string, std::string>>
-> make_config(int argc, char** argv)
+> MakeConfig(int argc, char** argv)
 {
 	std::map<std::string, std::string> first;
 	std::vector<std::pair<std::string, std::string>> second;
 	std::string key;
 	std::string value;
-	bool is_key = true;
+	bool isKey = true;
 	if (argc > 0)
 	{
 		first["execute"] = argv[0];
@@ -143,34 +143,34 @@ std::tuple<
 
 		if (argv[i][0] == '-')
 		{
-			if (is_key)
+			if (isKey)
 				key = argv[i];
 			else
 				first[key] = value;
-			is_key = false;
+			isKey = false;
 			key = argv[i];
 			while (key.front() == '-')
 			{
 				key.erase(key.begin());
 				if (key.size() == 0)
 				{
-					is_key = true;
+					isKey = true;
 					break;
 				}
 			}
 		}
-		else if (is_key==false)
+		else if (isKey==false)
 		{
 			first[key] = argv[i];
-			is_key = true;
+			isKey = true;
 		}
 		else
 		{
 			first[argv[i]] = "";
-			is_key = true;
+			isKey = true;
 		}
 	}
-	if (is_key == false)
+	if (isKey == false)
 	{
 		first[key] = "";
 		second.push_back({ key,"" });
@@ -182,7 +182,7 @@ std::tuple<
 }
 
 // file_instance.h
-bool is_binary_file(const std::filesystem::path& path)
+bool IsBinaryFile(const std::filesystem::path& path)
 {
 	std::ifstream fs(path, std::ios::in | std::ios::binary);
 	void* buffer = no_warning_6387(malloc(sizeof(char)));
@@ -197,18 +197,18 @@ bool is_binary_file(const std::filesystem::path& path)
 	}
 	return false;
 }
-std::filesystem::path get_extension_name(const std::filesystem::path& path)
+std::filesystem::path GetExtensionName(const std::filesystem::path& path)
 {
 	return path.extension();
 }
-std::filesystem::path get_base_filename(const std::filesystem::path& path)
+std::filesystem::path GetBaseFilename(const std::filesystem::path& path)
 {
 	return path.filename();
 }
 
-namespace convention_kit
+namespace ConventionKit
 {
-	bool is_arithmetic_type(const type_info& type)
+	bool IsArithmeticType(const type_info& type)
 	{
 		if (
 			type == typeid(int) ||
@@ -225,7 +225,7 @@ namespace convention_kit
 		}
 		return false;
 	}
-	bool is_string_type(const type_info& type)
+	bool IsStringType(const type_info& type)
 	{
 		if (
 			type == typeid(std::string) ||
@@ -243,7 +243,7 @@ namespace convention_kit
 		}
 		return false;
 	}
-	bool is_floating_type(const type_info& type)
+	bool IsFloatingType(const type_info& type)
 	{
 		if (
 			type == typeid(float) ||
@@ -254,7 +254,7 @@ namespace convention_kit
 		}
 		return false;
 	}
-	bool is_integral_type(const type_info& type)
+	bool IsIntegralType(const type_info& type)
 	{
 		if (
 			type == typeid(int) ||
@@ -268,7 +268,7 @@ namespace convention_kit
 		}
 		return false;
 	}
-	bool is_unsigned_integral_type(const type_info& type)
+	bool IsUnsignedIntegralType(const type_info& type)
 	{
 		if (
 			type == typeid(unsigned int) ||

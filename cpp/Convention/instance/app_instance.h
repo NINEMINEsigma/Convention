@@ -1,5 +1,5 @@
-#ifndef __FILE_CONVENTION_APP_INSTANCE
-#define __FILE_CONVENTION_APP_INSTANCE
+#ifndef CONVENTION_KIT_APP_INSTANCE_H
+#define CONVENTION_KIT_APP_INSTANCE_H
 
 #include "Convention/instance/Interface.h"
 #include "Convention/instance/file_instance.h"
@@ -24,7 +24,7 @@ template<>
 class instance<platform_indicator, true> :public any_class
 {
 private:
-	std::filesystem::path inject_persistent_path() const
+	std::filesystem::path InjectPersistentPath() const
 	{
 		std::filesystem::path result;
 		auto p = ::getenv("HOME");
@@ -33,16 +33,16 @@ private:
 			result = std::filesystem::path(p);
 		else
 		{
-			PWSTR path_tmp;
-			auto get_folder_path_ret = SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &path_tmp);
+			PWSTR pathTmp;
+			auto getFolderPathRet = SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, nullptr, &pathTmp);
 			/* Error check */
-			if (get_folder_path_ret != S_OK)
+			if (getFolderPathRet != S_OK)
 			{
-				CoTaskMemFree(path_tmp);
+				CoTaskMemFree(pathTmp);
 				return std::filesystem::path(CNTEXT(CURRENT_COM_NAME)) / CNTEXT(CURRENT_APP_NAME);
 			}
-			std::filesystem::path path = path_tmp;
-			CoTaskMemFree(path_tmp);
+			std::filesystem::path path = pathTmp;
+			CoTaskMemFree(pathTmp);
 			result = path / CNTEXT(CURRENT_COM_NAME) / CNTEXT(CURRENT_APP_NAME);
 		}
 #else
@@ -70,39 +70,39 @@ public:
 	instance(const instance&) = delete;
 	virtual ~instance() {}
 
-	using string_value_type = const string_indicator::tag&;
+	using StringValueType = const string_indicator::tag&;
 
-	string_value_type platform() const noexcept
+	StringValueType Platform() const noexcept
 	{
-		static auto str = make_string(__PLATFORM_NAME);
+		static auto str = MakeString(__PLATFORM_NAME);
 		return str;
 	}
-	string_value_type platform_version() const noexcept
+	StringValueType PlatformVersion() const noexcept
 	{
-		static auto str = make_string(__PLATFORM_VERSION);
+		static auto str = MakeString(__PLATFORM_VERSION);
 		return str;
 	}
-	string_value_type extension() const noexcept
+	StringValueType Extension() const noexcept
 	{
-		static auto str = make_string(__PLATFORM_EXTENSION);
+		static auto str = MakeString(__PLATFORM_EXTENSION);
 		return str;
 	}
-	const std::filesystem::path& application_path() const noexcept
+	const std::filesystem::path& ApplicationPath() const noexcept
 	{
 		static auto path = std::filesystem::current_path();
 		return path;
 	}
-	const std::filesystem::path& streaming_assets_path() const noexcept
+	const std::filesystem::path& StreamingAssetsPath() const noexcept
 	{
-		static auto path = application_path() / "StreamingAssets/";
+		static auto path = ApplicationPath() / "StreamingAssets/";
 		return path;
 	}
-	const std::filesystem::path& persistent_path() const noexcept
+	const std::filesystem::path& PersistentPath() const noexcept
 	{
-		static auto path = this->inject_persistent_path();
+		static auto path = this->InjectPersistentPath();
 		return path;
 	}
-	
+
 };
 
-#endif // !__FILE_CONVENTION_APP_INSTANCE
+#endif // !CONVENTION_KIT_APP_INSTANCE_H

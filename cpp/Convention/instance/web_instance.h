@@ -1,28 +1,28 @@
-#ifndef __FILE_CONVENTION_WEB_INSTANCE
-#define __FILE_CONVENTION_WEB_INSTANCE
+#ifndef CONVENTION_KIT_WEB_INSTANCE_H
+#define CONVENTION_KIT_WEB_INSTANCE_H
 
 #include "Convention/instance/Interface.h"
 
 
-struct web_indicator
+struct WebIndicator
 {
 #if defined(_WIN64)||defined(_WIN32)
-	using socket_type = unsigned long long;
+	using SocketType = unsigned long long;
 
 #endif
-	struct broadcast
+	struct Broadcast
 	{
-		struct server
+		struct Server
 		{
-			socket_type serverSocket;
-			std::vector<socket_type> clientSockets;
+			SocketType serverSocket;
+			std::vector<SocketType> clientSockets;
 			std::mutex clientsMutex;
 			bool running = false;
 			int PORT = 8888;
 		};
-		struct client
+		struct Client
 		{
-			socket_type clientSocket;
+			SocketType clientSocket;
 			std::atomic<bool> running = false;
 			const char* SERVER_IP = "127.0.0.1";
 			int PORT = 8888;
@@ -33,47 +33,47 @@ struct web_indicator
 };
 
 template<>
-class instance<web_indicator::broadcast::server, true> :public instance<web_indicator::broadcast::server, false>
+class instance<WebIndicator::Broadcast::Server, true> :public instance<WebIndicator::Broadcast::Server, false>
 {
 public:
-	using tag = web_indicator::broadcast::server;
-	using _Mybase = instance<tag, false>;
+	using tag = WebIndicator::Broadcast::Server;
+	using TMybase = instance<tag, false>;
 private:
-	void handleClient(web_indicator::socket_type clientSocket);
-	void broadcastMessage(const char* message, web_indicator::socket_type sender);
+	void HandleClient(WebIndicator::SocketType clientSocket);
+	void BroadcastMessage(const char* message, WebIndicator::SocketType sender);
 public:
-	instance() :_Mybase(new tag()) {}
-	template<typename... Args>
-	instance(Args&&... args):_Mybase(std::forward<Args>(args)...){}
+	instance() :TMybase(new tag()) {}
+	template<typename... TArgs>
+	instance(TArgs&&... args):TMybase(std::forward<TArgs>(args)...){}
 	instance_move_operator(public)
 	{
 
 	}
-	bool init();
-	void start();
-	void stop();
+	bool Init();
+	void Start();
+	void Stop();
 };
 
 template<>
-class instance<web_indicator::broadcast::client, true> :public instance<web_indicator::broadcast::client, false>
+class instance<WebIndicator::Broadcast::Client, true> :public instance<WebIndicator::Broadcast::Client, false>
 {
 public:
-	using tag = web_indicator::broadcast::client;
-	using _Mybase = instance<tag, false>;
+	using tag = WebIndicator::Broadcast::Client;
+	using TMybase = instance<tag, false>;
 private:
-	void receiveMessages();
+	void ReceiveMessages();
 public:
-	instance() :_Mybase(new tag()) {}
-	template<typename... Args>
-	instance(Args&&... args) : _Mybase(std::forward<Args>(args)...) {}
+	instance() :TMybase(new tag()) {}
+	template<typename... TArgs>
+	instance(TArgs&&... args) : TMybase(std::forward<TArgs>(args)...) {}
 	instance_move_operator(public)
 	{
 
 	}
-	bool init();
-	void start();
-	void stop();
+	bool Init();
+	void Start();
+	void Stop();
 };
 
 
-#endif // __FILE_CONVENTION_WEB_INSTANCE
+#endif // !CONVENTION_KIT_WEB_INSTANCE_H

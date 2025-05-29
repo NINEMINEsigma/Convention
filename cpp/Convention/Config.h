@@ -1,5 +1,6 @@
-﻿#ifndef __FILE_CONFIG
-#define __FILE_CONFIG
+﻿#pragma once
+#ifndef CONVENTION_KIT_CONFIG_H
+#define CONVENTION_KIT_CONFIG_H
 #pragma warning(disable : 4267)
 #pragma warning(disable : 4244)
 #pragma warning(disable : 4996)
@@ -8,7 +9,10 @@
 #define abstract =0
 #endif
 
-#define disable_symbol
+#define DISABLE_SYMBOL
+#define IF_EXISTS __if_exists
+#define IF_NOT_EXISTS __if_not_exists
+#define MAKE_STRING(str) StringIndicator::tag(CNTEXT(str))
 
 #pragma region __if(_not)_exists
 
@@ -18,15 +22,15 @@
 
 #pragma endregion
 
-struct decltype_any_unit
+struct DecltypeAnyUnit
 {
-	template<typename value_type>
-	constexpr operator value_type() const noexcept;
+	template<typename valueType>
+	constexpr operator valueType() const noexcept;
 };
-namespace convention_kit
+namespace ConventionKit
 {
 	template<typename _Test>
-	struct void_t
+	struct VoidT
 	{
 		using tag = void;
 		constexpr static bool value = true;
@@ -151,20 +155,20 @@ namespace convention_kit
 #include <filesystem>
 
 #define NOMINMAX
-constexpr size_t constexpr_strlen(const char* source)
+constexpr size_t ConstexprStrlen(const char* source)
 {
 	size_t length = 0;
 	while (source[length] == '\0')
 		length++;
 	return length;
 }
-constexpr bool constexpr_streql(
+constexpr bool ConstexprStrEqual(
 	const char* source,
 	const char* target
 )
 {
-	size_t length = constexpr_strlen(source);
-	size_t tlength = constexpr_strlen(target);
+	size_t length = ConstexprStrlen(source);
+	size_t tlength = ConstexprStrlen(target);
 	if (length == tlength)
 	{
 		for (auto i = 0; i != length; i++)
@@ -174,13 +178,13 @@ constexpr bool constexpr_streql(
 	}
 	return false;
 }
-constexpr int constexpr_strcmp(
+constexpr int ConstexprStrCompare(
 	const char* source,
 	const char* target
 )
 {
-	int length = constexpr_strlen(source);
-	int tlength = constexpr_strlen(target);
+	int length = ConstexprStrlen(source);
+	int tlength = ConstexprStrlen(target);
 	if (length == tlength)
 	{
 		for (auto i = 0; i != length; i++)
@@ -203,7 +207,7 @@ constexpr int constexpr_strcmp(
 #define PLATFORM_EXTENSION ""
 #endif // PLATFORM_EXTENSION
 
-struct platform_indicator
+struct PlatformIndicator
 {
 	using tag = void;
 #ifdef _DEBUG
@@ -257,9 +261,9 @@ struct platform_indicator
 #endif // __GNUC__
 
 
-	static std::string generate_platform_message() noexcept;
+	static std::string GeneratePlatformMessage() noexcept;
 	// not lock current thread, if input is exist will return it otherwise return -1
-	static int keyboard_input() noexcept;
+	static int KeyboardInput() noexcept;
 };
 
 #pragma endregion
@@ -1007,14 +1011,14 @@ public:
 
 //Variadic
 //__declspec(align(#))
-#define AlignStruct(size_move) __declspec(align(1<<size_move)) struct 
+#define AlignStruct(size_move) __declspec(align(1<<size_move)) struct
 
 //Variadic
-//__declspec(align(#)) 
+//__declspec(align(#))
 #define RealignClass(_T,size_move,_NewClass) typedef __declspec(align(1 << size_move)) class _T _NewClass;
 
 //Variadic
-//__declspec(align(#)) 
+//__declspec(align(#))
 #define RealignStruct(_T,size_move,_NewClass) typedef __declspec(align(1 << size_move)) struct _T _NewClass;
 
 #endif // __USE_ALIGNOF
@@ -1071,11 +1075,11 @@ public:
 
 //Variadic
 //__vectorcall
-#define vectorcall __vectorcall 
+#define vectorcall __vectorcall
 
 //Variadic
 //__vectorcall
-#define vector_call __vectorcall 
+#define vector_call __vectorcall
 
 #endif // __TEST_MICROSOFT_IMPLEMENTATION
 
@@ -1272,7 +1276,7 @@ namespace std
 	}
 }
 
-struct char_indicator
+struct CharIndicator
 {
 #if defined(UNICODE)
 	using tag = wchar_t;
@@ -1282,40 +1286,40 @@ struct char_indicator
 	static constexpr bool value = false;
 #endif // _UNICODE
 };
-struct string_indicator
+struct StringIndicator
 {
-	using tag = std::basic_string<char_indicator::tag>;
-	static constexpr bool value = char_indicator::value;
+	using tag = std::basic_string<CharIndicator::tag>;
+	static constexpr bool value = CharIndicator::value;
 
-	using Traits = std::char_traits<char_indicator::tag>;
+	using Traits = std::char_traits<CharIndicator::tag>;
 
-	static size_t strlen(const char_indicator::tag* str);
-	static char_indicator::tag* strcpy(
-		char_indicator::tag* dest,
-		const char_indicator::tag* source
+	static size_t Strlen(const CharIndicator::tag* str);
+	static CharIndicator::tag* Strcpy(
+		CharIndicator::tag* dest,
+		const CharIndicator::tag* source
 	);
-	static char_indicator::tag* strcpy_s(
-		char_indicator::tag* dest,
-		const char_indicator::tag* source,
+	static CharIndicator::tag* StrcpyS(
+		CharIndicator::tag* dest,
+		const CharIndicator::tag* source,
 		const size_t size
 	);
 
-	static size_t c_strlen(const char* str);
-	static char* c_strcpy(
+	static size_t CStrlen(const char* str);
+	static char* CStrcpy(
 		char* dest,
 		const char* source
 	);
-	static int c_strcpy_s(
+	static int CStrcpyS(
 		char* dest,
 		const char* source,
 		const size_t size
 	);
 
 	template<typename T>
-	static tag to_string(const T& value);
+	static tag ToString(const T& value);
 };
 template<typename T>
-string_indicator::tag string_indicator::to_string(const T& value)
+StringIndicator::tag StringIndicator::ToString(const T& value)
 {
 #ifdef UNICODE
 	return std::to_wstring(value);
@@ -1333,7 +1337,7 @@ string_indicator::tag string_indicator::to_string(const T& value)
 #define __CNTEXT(str) u8##str
 #define CNTEXT(str) __CNTEXT(str)
 #endif
-#define make_string(str) string_indicator::tag(CNTEXT(str))
+#define make_string(str) StringIndicator::tag(CNTEXT(str))
 
 // convert memory to string, if unit_size set 0,
 // will compress source data to result string
@@ -1352,7 +1356,7 @@ std::basic_string<result_char_type> convert_xstring(
 	result_type result;
 	if constexpr (unit_size == sizeof(result_char_type))
 	{
-		result.reserve((end - start) * unit_size / sizeof(result_char_type) 
+		result.reserve((end - start) * unit_size / sizeof(result_char_type)
 			+ (unit_size % sizeof(result_char_type) ? 1 : 0));
 		for (const result_char_type* head = reinterpret_cast<const result_char_type*>(start),
 			tail = reinterpret_cast<const result_char_type*>(end); head + 1 <= tail; head++)
@@ -1596,7 +1600,7 @@ _Notnull_ _T* no_warning_6387(_T* from)
 extern std::tuple <
 	std::map<std::string, std::string>,
 	std::vector<std::pair<std::string, std::string>>
-> make_config(int argc, char** argv);
+> MakeConfig(int argc, char** argv);
 
 template<typename _Type>
 struct descriptive_indicator
@@ -1660,4 +1664,4 @@ struct is_specialization<Template<Args...>, Template> : std::true_type
 #pragma endregion
 
 
-#endif // !__FILE_CONFIG
+#endif // !CONVENTION_KIT_CONFIG_H

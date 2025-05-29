@@ -1,6 +1,7 @@
-#include"Convention.h"
+#include "Convention.h"
 
 using namespace std;
+using namespace ConventionKit;
 
 int main(int argc, char** argv)
 {

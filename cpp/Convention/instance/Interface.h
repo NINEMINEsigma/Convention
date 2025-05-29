@@ -1,48 +1,48 @@
-#ifndef __FILE_INCLUDE_INTERNAL
-#define __FILE_INCLUDE_INTERNAL
+#ifndef CONVENTION_KIT_INTERFACE_H
+#define CONVENTION_KIT_INTERFACE_H
 
 #include "Convention/Internal.h"
 
 // define _shared to control real behaviour
-template<typename _Type>
-using _shared_ptr = std::shared_ptr<_Type>;
+template<typename TType>
+using _shared_ptr = std::shared_ptr<TType>;
 
 template<
-    typename _Type,
-	bool _Extension = true
+    typename TType,
+    bool TExtension = true
 >
-class instance : public any_class, public _shared_ptr<_Type>
+class instance : public any_class, public _shared_ptr<TType>
 {
 private:
-    using _Mybase = _shared_ptr<_Type>;
+    using _Mybase = _shared_ptr<TType>;
 public:
-    using _shared = _shared_ptr<_Type>;
-    using _MyType = _Type;
-	using _MyAlloc = std::allocator<_Type>;
-    static constexpr bool _is_extension = _Extension;
+    using _shared = _shared_ptr<TType>;
+    using _MyType = TType;
+    using _MyAlloc = std::allocator<TType>;
+    static constexpr bool _is_extension = TExtension;
 private:
     void* operator new(size_t t) { return ::operator new(t); }
 public:
     constexpr instance() :_Mybase() {}
     constexpr instance(nullptr_t) : _Mybase(nullptr) {}
-    explicit instance(_Type* ptr) : _Mybase(ptr) {}
+    explicit instance(TType* ptr) : _Mybase(ptr) {}
     explicit instance(_shared& rv) noexcept :_Mybase(rv) {}
     explicit instance(_shared&& rv) noexcept :_Mybase(std::move(rv)) {}
     explicit instance(instance&& other) noexcept :_Mybase(std::move(other)) {}
-    template<typename... _Args>
-    instance(_Args&&... args) : _Mybase(std::forward<_Args>(args)...) {}
+    template<typename... TArgs>
+    instance(TArgs&&... args) : _Mybase(std::forward<TArgs>(args)...) {}
     virtual ~instance() {}
 
-    operator _Type& () const
+    operator TType& () const
     {
         return *this->get();
     }
-    operator _Type* () const noexcept
+    operator TType* () const noexcept
     {
         return this->get();
     }
 
-    bool is_empty() const noexcept
+    bool IsEmpty() const noexcept
     {
         return this->get() != nullptr;
     }
@@ -52,10 +52,10 @@ public:
         _Mybase::operator=(other);
         return *this;
     }
-    template<typename... _Args>
-    instance& operator=(_Args&&... args)
+    template<typename... TArgs>
+    instance& operator=(TArgs&&... args)
     {
-        _Mybase::operator=(std::forward<_Args>(args)...);
+        _Mybase::operator=(std::forward<TArgs>(args)...);
         return *this;
     }
 
@@ -71,12 +71,12 @@ public:
         front = front.substr(0,
             std::distance(front.begin(), std::find(front.begin(), front.end(), '<'))
         );
-        return front + "<" + typename2classname(typeid(_Type).name()) + ">";
+        return front + "<" + typename2classname(typeid(TType).name()) + ">";
     }
 };
 
-template<typename _OS,typename _Type>
-_OS& operator<<(_OS& os, const instance<_Type, false>& ins)
+template<typename TOutputStream, typename TType>
+TOutputStream& operator<<(TOutputStream& os, const instance<TType, false>& ins)
 {
     os << *ins;
     return os;
@@ -98,34 +98,34 @@ void move(instance&& other) noexcept
 
 namespace internal
 {
-    template<typename _Type>
-    constexpr bool is_number_v = 
-        std::is_floating_point_v<_Type> ||
-        std::is_integral_v<_Type>;
-    template<typename _Type>
-    constexpr bool is_stream_v = std::is_base_of_v<std::ios_base, _Type>;
-    template<typename _Type>
-    constexpr bool is_string_v = 
-			std::is_same_v<std::decay_t<std::remove_reference_t<std::remove_cv_t<_Type>>>, std::string>||
-			std::is_same_v<std::decay_t<std::remove_reference_t<std::remove_cv_t<_Type>>>, char*>;
+    template<typename TType>
+    constexpr bool IsNumberV =
+        std::is_floating_point_v<TType> ||
+        std::is_integral_v<TType>;
+    template<typename TType>
+    constexpr bool IsStreamV = std::is_base_of_v<std::ios_base, TType>;
+    template<typename TType>
+    constexpr bool IsStringV =
+            std::is_same_v<std::decay_t<std::remove_reference_t<std::remove_cv_t<TType>>>, std::string>||
+            std::is_same_v<std::decay_t<std::remove_reference_t<std::remove_cv_t<TType>>>, char*>;
     namespace
     {
-        template<typename _Type>
-        struct is_instance :public std::false_type {};
-        template<typename _Ty>
-        struct is_instance<instance<_Ty, true>> :public std::true_type {};
-        template<typename _Ty>
-        struct is_instance<instance<_Ty, false>> :public std::true_type {};
+        template<typename TType>
+        struct IsInstance :public std::false_type {};
+        template<typename TValue>
+        struct IsInstance<instance<TValue, true>> :public std::true_type {};
+        template<typename TValue>
+        struct IsInstance<instance<TValue, false>> :public std::true_type {};
     }
-    template<typename _Type>
-    constexpr bool is_instance_v = is_instance<std::remove_reference_t<_Type>>();
+    template<typename TType>
+    constexpr bool IsInstanceV = IsInstance<std::remove_reference_t<TType>>();
 }
 
-template<typename _Type, class _Elem, class _Traits, class _Ty>
-std::basic_ostream<_Elem, _Traits>& operator<<(std::basic_ostream<_Elem, _Traits>& _Out, const instance<_Type, true>& tc)
+template<typename TType, class TElement, class TTraits, class TValue>
+std::basic_ostream<TElement, TTraits>& operator<<(std::basic_ostream<TElement, TTraits>& out, const instance<TType, true>& tc)
 {
-    _Out << tc.ToString();
-    return _Out;
+    out << tc.ToString();
+    return out;
 }
 
-#endif // !__FILE_INCLUDE_INTERNAL
+#endif // !CONVENTION_KIT_INTERFACE_H

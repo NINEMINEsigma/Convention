@@ -1,5 +1,5 @@
-#ifndef __FILE_CONVENTION_VOID_INSTANCE
-#define __FILE_CONVENTION_VOID_INSTANCE
+#ifndef CONVENTION_KIT_ANY_CLASS_INSTANCE_H
+#define CONVENTION_KIT_ANY_CLASS_INSTANCE_H
 
 #include "Convention/instance/Interface.h"
 
@@ -7,14 +7,14 @@ template<>
 class instance<any_class, true> :public instance<any_class, false>
 {
 private:
-	using _Mybase = instance<any_class, false>;
-	using _Ptr = any_class*;
-	std::function<void(_Ptr)> destructor;
+	using TMybase = instance<any_class, false>;
+	using TPtr = any_class*;
+	std::function<void(TPtr)> destructor;
 public:
-	const type_info& constructor_ptr_typen;
-	const type_info& constructor_ins_typen;
+	const type_info& constructorPtrTypen;
+	const type_info& constructorInsTypen;
 
-	auto& release() noexcept
+	auto& Release() noexcept
 	{
 		this->destructor(this->get());
 		this->reset();
@@ -23,44 +23,44 @@ public:
 
 	// no destructor and ptr is nullptr
 	explicit instance(nullptr_t)
-		:_Mybase(nullptr), destructor([](_Ptr) {}),
-		constructor_ptr_typen(typeid(_Ptr)), constructor_ins_typen(typeid(any_class)) {}
+		:TMybase(nullptr), destructor([](TPtr) {}),
+		constructorPtrTypen(typeid(TPtr)), constructorInsTypen(typeid(any_class)) {}
 	// no destructor and ptr must not nullptr
-	template<typename _RealType>
-	instance(_In_ _RealType* ptr)
-		: _Mybase(ptr), destructor([](_Ptr) {}),
-		constructor_ptr_typen(typeid(_RealType*)), constructor_ins_typen(typeid(*ptr)) {}
+	template<typename TRealType>
+	instance(_In_ TRealType* ptr)
+		: TMybase(ptr), destructor([](TPtr) {}),
+		constructorPtrTypen(typeid(TRealType*)), constructorInsTypen(typeid(*ptr)) {}
 
 	// has destructor and ptr is must not nullptr
-	template<typename _RealType>
-	instance(_In_ _RealType* ptr, std::function<void(_Ptr)> destructor)
-		: _Mybase(ptr), __init(destructor),
-		constructor_ptr_typen(typeid(_RealType*)), constructor_ins_typen(typeid(*ptr)) {}
+	template<typename TRealType>
+	instance(_In_ TRealType* ptr, std::function<void(TPtr)> destructor)
+		: TMybase(ptr), destructor(destructor),
+		constructorPtrTypen(typeid(TRealType*)), constructorInsTypen(typeid(*ptr)) {}
 	// has destructor and ptr is must not nullptr
-	template<typename _RealType>
-	instance(_In_ _RealType* ptr, std::function<void(_RealType*)> destructor)
-		: _Mybase(ptr), destructor([destructor](_Ptr ptr)
+	template<typename TRealType>
+	instance(_In_ TRealType* ptr, std::function<void(TRealType*)> destructor)
+		: TMybase(ptr), destructor([destructor](TPtr ptr)
 			{
-				destructor(static_cast<_RealType*>(ptr));
-			}), constructor_ptr_typen(typeid(_RealType*)), constructor_ins_typen(typeid(*ptr)) {}
+				destructor(static_cast<TRealType*>(ptr));
+			}), constructorPtrTypen(typeid(TRealType*)), constructorInsTypen(typeid(*ptr)) {}
 
 	// has destructor and ptr is nullptr
-	instance(nullptr_t, std::function<void(_Ptr)> destructor)
-		: instance(nullptr) 
+	instance(nullptr_t, std::function<void(TPtr)> destructor)
+		: instance(nullptr)
 	{
 		this->destructor = destructor;
 	}
 	// has destructor and ptr is nullptr
-	template<typename _RealType>
-	instance(nullptr_t, std::function<void(_RealType*)> destructor)
-		: _Mybase(nullptr), destructor([destructor](_Ptr ptr)
+	template<typename TRealType>
+	instance(nullptr_t, std::function<void(TRealType*)> destructor)
+		: TMybase(nullptr), destructor([destructor](TPtr ptr)
 			{
-				destructor(reinterpret_cast<_RealType*>(ptr));
-			}), constructor_ptr_typen(typeid(_RealType*)), constructor_ins_typen(typeid(any_class)) {}
+				destructor(reinterpret_cast<TRealType*>(ptr));
+			}), constructorPtrTypen(typeid(TRealType*)), constructorInsTypen(typeid(any_class)) {}
 public:
 	instance(instance&& other) noexcept
-		:_Mybase(std::move(other)), destructor(other.destructor),
-		constructor_ptr_typen(other.constructor_ptr_typen), constructor_ins_typen(other.constructor_ins_typen) {}
+		:TMybase(std::move(other)), destructor(other.destructor),
+		constructorPtrTypen(other.constructorPtrTypen), constructorInsTypen(other.constructorInsTypen) {}
 public:
 	virtual ~instance()
 	{
@@ -68,4 +68,4 @@ public:
 	}
 };
 
-#endif // !__FILE_CONVENTION_VOID_INSTANCE
+#endif // !CONVENTION_KIT_ANY_CLASS_INSTANCE_H

@@ -1,43 +1,43 @@
 #include "Convention.h"
 
 using namespace std;
-using namespace convention_kit;
+using namespace ConventionKit;
 using std::filesystem::path;
 wchar_t buffer[256] = { 0 };
 
-void add_to_music_list(vector<path>& ml, wstring path_);
-vector<path> make_list(instance<config_indicator::tag>& config);
+void AddToMusicList(vector<path>& musicList, wstring path);
+vector<path> CreateMusicList(instance<ConfigIndicator::tag>& config);
 
 int main(int argv, char** argc)
 {
 	srand(time(0));
 
-	auto config = make_instance<config_indicator::tag>(argv, argc);
-	vector<path> musiclist = make_list(config);
+	auto config = CreateInstance<ConfigIndicator::tag>(argv, argc);
+	vector<path> musicList = CreateMusicList(config);
 
 	try
 	{
 		// main loop
-		int next_song = config.contains("sl") ? 2 : (config.contains("ll") ? 1 : 0);
-		vector<function<size_t(size_t)>> next_song_funcs = {
+		int nextSong = config.contains("sl") ? 2 : (config.contains("ll") ? 1 : 0);
+		vector<function<size_t(size_t)>> nextSongFunctions = {
 			// random
-			[&musiclist](size_t) {return rand() % musiclist.size(); },
+			[&musicList](size_t) {return rand() % musicList.size(); },
 			// list loop
-			[&musiclist](size_t index) {return (index + 1) % musiclist.size(); },
+			[&musicList](size_t index) {return (index + 1) % musicList.size(); },
 			// single loop
 			[](size_t index) {return index; }
 		};
-		auto player = make_instance<ffmpeg_indicator>(
+		auto player = CreateInstance<FfmpegIndicator>(
 			config.contains("ff") != 0
-			? make_string("-autoexit ") + string_indicator::to_string(config.string_value("ff"))
-			: make_string("-autoexit -v info -vn -showmode 0")
+			? CreateString("-autoexit ") + StringIndicator::to_string(config.string_value("ff"))
+			: CreateString("-autoexit -v info -vn -showmode 0")
 		);
-		size_t index = rand() % musiclist.size(), last_index = 0;
-		while (index < musiclist.size())
+		size_t index = rand() % musicList.size(), lastIndex = 0;
+		while (index < musicList.size())
 		{
 			int ch = -1;
-			SetConsoleTitle(string_indicator::tag(musiclist[index].filename()).c_str());
-			player.ffplay(musiclist[index]);
+			SetConsoleTitle(string_indicator::tag(musicList[index].filename()).c_str());
+			player.ffplay(musicList[index]);
 			player.until(
 				[&ch]() {return (ch = platform_indicator::keyboard_input()) < 0; },
 				[]() {Sleep(10); }
@@ -49,11 +49,11 @@ int main(int argv, char** argc)
 			{
 				system("cls");
 				cout << "commandline mode:" << endl;
-				try { cout << "\tprevious(-p)\t\tGo back to the previous song<" << musiclist[last_index].filename(); }
+				try { cout << "\tprevious(-p)\t\tGo back to the previous song<" << musicList[lastIndex].filename(); }
 				catch (...) {} cout << ">" << endl;
-				try { cout << "\tback(-b)\t\tTo song<" << musiclist[(index - 1) % musiclist.size()].filename(); }
+				try { cout << "\tback(-b)\t\tTo song<" << musicList[(index - 1) % musicList.size()].filename(); }
 				catch (...) {} cout << ">" << endl;
-				try { cout << "\tnext(-n)\t\tTo song<" << musiclist[(index + 1) % musiclist.size()].filename(); }
+				try { cout << "\tnext(-n)\t\tTo song<" << musicList[(index + 1) % musicList.size()].filename(); }
 				catch (...) {} cout << ">" << endl;
 				cout << "\t{song name}\t\tenter song name and prefix matching it" << endl;
 				cout << "\trandom-mode(-rl)\t\tenter song name and prefix matching it" << endl;
@@ -65,49 +65,49 @@ int main(int argv, char** argc)
 				wstring mode(buffer);
 				if (mode == L"previous" || mode == L"-p")
 				{
-					std::swap(index, last_index);
+					std::swap(index, lastIndex);
 					continue;
 				}
 				else if (mode == L"back" || mode == L"-b")
 				{
-					last_index = index;
-					index = (index - 1) % musiclist.size();
+					lastIndex = index;
+					index = (index - 1) % musicList.size();
 				}
 				else if (mode == L"next" || mode == L"-n")
 				{
-					last_index = index;
-					index = (index + 1) % musiclist.size();
+					lastIndex = index;
+					index = (index + 1) % musicList.size();
 				}
 				else if (mode == L"random-mode" || mode == L"-rl")
 				{
-					next_song = 0;
+					nextSong = 0;
 				}
 				else if (mode == L"list-mode" || mode == L"-ll")
 				{
-					next_song = 1;
+					nextSong = 1;
 				}
 				else if (mode == L"single-mode" || mode == L"-sl")
 				{
-					next_song = 2;
+					nextSong = 2;
 				}
 				else
 				{
-					map<int, vector<decltype(musiclist.begin())>> edit_distances;
-					for (auto i = musiclist.begin(), e = musiclist.end();
+					map<int, vector<decltype(musicList.begin())>> editDistances;
+					for (auto i = musicList.begin(), e = musicList.end();
 						i != e; i++)
 					{
 						try
 						{
 							auto filename = make_instance(i->filename().wstring());
 							int dis = filename.contains(mode) ? 0 : filename.edit_distance(mode);
-							edit_distances[dis].push_back(i);
+							editDistances[dis].push_back(i);
 						}
 						catch (...) {}
 					}
-					last_index = index;
+					lastIndex = index;
 					size_t size = 0;
 					bool stats = true;
-					for (auto&& [dis, list] : edit_distances)
+					for (auto&& [dis, list] : editDistances)
 					{
 						if (stats == false)break;
 						for (auto&& iter : list)
@@ -121,7 +121,7 @@ int main(int argv, char** argc)
 								if (ch.empty() == false && (ch[0] == 'y' || ch[0] == 'Y'))
 								{
 									stats = false;
-									index = distance(musiclist.begin(), iter);
+									index = distance(musicList.begin(), iter);
 									break;
 								}
 							}
@@ -136,8 +136,8 @@ int main(int argv, char** argc)
 			break;
 			default:
 			{
-				last_index = index;
-				index = next_song_funcs[next_song](index);
+				lastIndex = index;
+				index = nextSongFunctions[nextSong](index);
 			}
 			break;
 			}
@@ -156,19 +156,19 @@ int main(int argv, char** argc)
 	return 0;
 }
 
-void add_to_music_list(vector<path>& ml, wstring path_)
+void AddToMusicList(vector<path>& musicList, wstring path)
 {
-	if (path_.size() == 0)return;
-	while (path_.back() == L'\n')
-		path_.erase(path_.end() - 1);
-	if (filesystem::is_directory(path_) == false)
-		ml.push_back(path_);
-	else for (auto&& file : filesystem::directory_iterator(path_))
+	if (path.size() == 0)return;
+	while (path.back() == L'\n')
+		path.erase(path.end() - 1);
+	if (filesystem::is_directory(path) == false)
+		musicList.push_back(path);
+	else for (auto&& file : filesystem::directory_iterator(path))
 		if (filesystem::is_directory(file) == false)
-			ml.push_back(file.path());
+			musicList.push_back(file.path());
 }
 
-vector<path> make_list(instance<config_indicator::tag>& config)
+vector<path> CreateMusicList(instance<ConfigIndicator::tag>& config)
 {
 	vector<path> result;
 	if (config.vec().size() == 1)
@@ -177,7 +177,7 @@ vector<path> make_list(instance<config_indicator::tag>& config)
 		if (file.exist())
 		{
 			for (auto&& path_ : unpack_lines_from_file(file->c_str(), ios::in, buffer, 256))
-				add_to_music_list(result, path_);
+				AddToMusicList(result, path_);
 			return result;
 		}
 	}
@@ -189,7 +189,7 @@ vector<path> make_list(instance<config_indicator::tag>& config)
 			if (file.get_filename().extension() == ".txt")
 			{
 				for (auto&& path_ : unpack_lines_from_file(file->c_str(), ios::in, buffer, 256))
-					add_to_music_list(result, path_);
+					AddToMusicList(result, path_);
 				return result;
 			}
 			else
@@ -217,7 +217,7 @@ vector<path> make_list(instance<config_indicator::tag>& config)
 	{
 		auto file = make_instance<path>(config.string_value("l"));
 		for (auto&& path_ : unpack_lines_from_file(file->c_str(), ios::in, buffer, 256))
-			add_to_music_list(result, path_);
+			AddToMusicList(result, path_);
 	}
 	else
 	{

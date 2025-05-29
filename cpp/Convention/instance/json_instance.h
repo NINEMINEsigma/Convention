@@ -1,29 +1,29 @@
-﻿#ifndef __FILE_CONVENTION_JSON_INSTANCE
-#define __FILE_CONVENTION_JSON_INSTANCE
+﻿#ifndef CONVENTION_KIT_JSON_INSTANCE_H
+#define CONVENTION_KIT_JSON_INSTANCE_H
 
 #include "Convention/instance/nlohmann/json.hpp"
 using namespace nlohmann::literals;
 
 // 使用json_indicator<_Ty, true>继承json_indicator<_Ty, false>
 // 以实现功能
-template<typename _Ty, bool is_extension = false>
+template<typename TType, bool TExtension = false>
 struct json_indicator
 {
-	using tag = _Ty;
+	using tag = TType;
 	using object_reference = std::conditional_t<
-		std::is_same_v<_Ty, void>, std::any, _Ty
+		std::is_same_v<TType, void>, std::any, TType
 	>&;
 	using json = nlohmann::json;
-	constexpr static bool value = !std::is_same_v<_Ty, void>;
+	constexpr static bool value = !std::is_same_v<TType, void>;
 
-	template<typename _Input>
-	static json parse(const _Input& data);
+	template<typename TInput>
+	static json Parse(const TInput& data);
 
-	static json parse_from_str(const std::string& str);
+	static json ParseFromStr(const std::string& str);
 
-	static json parse_from_file(const std::istream& stream);
+	static json ParseFromFile(const std::istream& stream);
 
-	static std::string dump(const json& data, bool isPretty);
+	static std::string Dump(const json& data, bool isPretty);
 
 	virtual void Serialize(json& data, const object_reference object)
 	{
@@ -33,18 +33,18 @@ struct json_indicator
 		>)
 		{
 			const auto& type = object.type();
-			if (convention_kit::is_floating_type(type))
+			if (ConventionKit::IsFloatingType(type))
 			{
 				cell = std::any_cast<long double>(object);
 			}
-			else if (convention_kit::is_integral_type(type))
+			else if (ConventionKit::IsIntegralType(type))
 			{
-				if (convention_kit::is_unsigned_integral_type(type))
+				if (ConventionKit::IsUnsignedIntegralType(type))
 					cell = std::any_cast<unsigned long long>(object);
 				else
 					cell = std::any_cast<long long>(object);
 			}
-			else if (convention_kit::is_string_type(type))
+			else if (ConventionKit::IsStringType(type))
 			{
 				if (type == typeid(std::string))
 					cell = std::any_cast<std::string>(object);
@@ -84,7 +84,7 @@ struct json_indicator
 				);
 			}
 		}
-		else if constexpr (!std::is_same_v<_Ty, void>)
+		else if constexpr (!std::is_same_v<TType, void>)
 			cell = object;
 	}
 
@@ -95,31 +95,30 @@ struct json_indicator
 	}
 };
 
-template<typename _Ty, bool is_extension>
-template<typename _Input>
-typename json_indicator<_Ty, is_extension>::json 
-json_indicator<_Ty, is_extension>::parse(const _Input& data)
+template<typename TType, bool TExtension>
+template<typename TInput>
+typename json_indicator<TType, TExtension>::json
+json_indicator<TType, TExtension>::Parse(const TInput& data)
 {
 	return json::parse(data);
 }
 
-template<typename _Ty, bool is_extension>
-typename json_indicator<_Ty, is_extension>::json  
-json_indicator<_Ty, is_extension>::parse_from_str(const std::string& str)
+template<typename TType, bool TExtension>
+typename json_indicator<TType, TExtension>::json
+json_indicator<TType, TExtension>::ParseFromStr(const std::string& str)
 {
 	return json::parse(str);
 }
 
-template<typename _Ty, bool is_extension>
-typename json_indicator<_Ty, is_extension>::json
-json_indicator<_Ty, is_extension>::parse_from_file(const std::istream& stream)
+template<typename TType, bool TExtension>
+typename json_indicator<TType, TExtension>::json
+json_indicator<TType, TExtension>::ParseFromFile(const std::istream& stream)
 {
-	//return json::parse(stream);
 	throw std::runtime_error("not support");
 }
 
-template<typename _Ty, bool is_extension>
-std::string json_indicator<_Ty, is_extension>::dump(const json& data, bool isPretty)
+template<typename TType, bool TExtension>
+std::string json_indicator<TType, TExtension>::Dump(const json& data, bool isPretty)
 {
 	if (isPretty)
 		return data.dump();
@@ -129,32 +128,32 @@ std::string json_indicator<_Ty, is_extension>::dump(const json& data, bool isPre
 
 // 使用json_indicator<_Ty, true>继承json_indicator<_Ty, false>
 // 以实现功能
-template<typename _Ty>
-class instance<json_indicator<_Ty, true>, true> 
-	: public instance<typename json_indicator<_Ty, true>::json, false>
+template<typename TType>
+class instance<json_indicator<TType, true>, true>
+	: public instance<typename json_indicator<TType, true>::json, false>
 {
 public:
-	using _MyIndictaor = json_indicator<_Ty, true>;
-	using json = typename _MyIndictaor::json;
-	using _MyInside = typename _MyIndictaor::json;
-	using _Mybase = instance<json, false>;
-	using tag = _Ty;
+	using TIndicator = json_indicator<TType, true>;
+	using json = typename TIndicator::json;
+	using TInside = typename TIndicator::json;
+	using TMybase = instance<json, false>;
+	using tag = TType;
 
-	constexpr const _MyIndictaor& GetIndicator() const
+	constexpr const TIndicator& GetIndicator() const
 	{
-		static _MyIndictaor indicator;
+		static TIndicator indicator;
 		return indicator;
 	}
 
-	instance(const std::string& data, bool is_raw_string = false) :
-		_Mybase(new json(is_raw_string
-			? _MyIndictaor::parse_from_str(data)
-			: _MyIndictaor::parse_from_file(std::ifstream(data))
+	instance(const std::string& data, bool isRawString = false) :
+		TMybase(new json(isRawString
+			? TIndicator::ParseFromStr(data)
+			: TIndicator::ParseFromFile(std::ifstream(data))
 		)) {}
-	instance(const std::istream& stream) : _Mybase(new json(json::parse(stream))) {}
-	instance(const tool_file& file) : _Mybase(new json(json::parse(file.get_stream(std::ios_base::in)))) {}
-	instance(const json& data) noexcept : _Mybase(new json(data)) {}
-	instance(json&& data) noexcept : _Mybase(new json(std::move(data))) {}
+	instance(const std::istream& stream) : TMybase(new json(json::parse(stream))) {}
+	instance(const tool_file& file) : TMybase(new json(json::parse(file.GetStream(std::ios_base::in)))) {}
+	instance(const json& data) noexcept : TMybase(new json(data)) {}
+	instance(json&& data) noexcept : TMybase(new json(std::move(data))) {}
 	instance& operator=(const json& data) noexcept
 	{
 		**this = data;
@@ -162,34 +161,34 @@ public:
 	}
 	instance& operator=(json&& data) noexcept
 	{
-		**this = std::move(data);	
+		**this = std::move(data);
 		return *this;
 	}
 	instance_move_operator(public) {}
 	virtual ~instance() {}
 
-	template<typename _ObjTy>
-	std::string Serialize(const typename _MyIndictaor::object_reference data)
+	template<typename TObjType>
+	std::string Serialize(const typename TIndicator::object_reference data)
 	{
 		GetIndicator().Serialize(**this, data);
-		return _MyIndictaor::dump(**this, true);
+		return TIndicator::Dump(**this, true);
 	}
 
-	template<typename _ObjTy>
+	template<typename TObjType>
 	std::string Serialize(const std::string& key,
-		const typename _MyIndictaor::object_reference data
+		const typename TIndicator::object_reference data
 	)
 	{
 		GetIndicator().Serialize(**this[key], data);
-		return _MyIndictaor::dump(**this, true);
+		return TIndicator::Dump(**this, true);
 	}
 
-	void Deserialize(typename _MyIndictaor::object_reference ptr) const
+	void Deserialize(typename TIndicator::object_reference ptr) const
 	{
 		GetIndicator().Deserialize(**this, ptr);
 	}
 
-	void Deserialize(const std::string& key, typename _MyIndictaor::object_reference ptr) const
+	void Deserialize(const std::string& key, typename TIndicator::object_reference ptr) const
 	{
 		GetIndicator().Deserialize((**this)[key], ptr);
 	}
@@ -200,4 +199,4 @@ public:
 	}
 };
 
-#endif // !__FILE_CONVENTION_JSON_INSTANCE
+#endif // !CONVENTION_KIT_JSON_INSTANCE_H

@@ -1,15 +1,15 @@
 #include "Convention.h"
 
 using namespace std;
-using namespace convention_kit;
+using namespace ConventionKit;
 
 #pragma region Algorithm
 
 static double delay = 0.001;
-static bool is_lowstep = false;
-constexpr int constexpr_upboundary = 10;
-constexpr int constexpr_arraysize = 10;
-inline void wait()
+static bool isLowStep = false;
+constexpr int CONSTEXPR_UPBOUNDARY = 10;
+constexpr int CONSTEXPR_ARRAYSIZE = 10;
+inline void Wait()
 {
 	if (delay == 0)
 	{
@@ -26,7 +26,7 @@ inline void wait()
 	}
 }
 
-#define make_algorithm(name, description) std::make_pair(#name, make_descriptive<function<void(void)>>(name,description))
+#define MakeAlgorithm(name, description) std::make_pair(#name, MakeDescriptive<function<void(void)>>(name,description))
 void SelectSort();
 void BubbleSort();
 void InsertSort();
@@ -36,35 +36,35 @@ void CountingSort();
 void GenerateParenthesis();
 void TwoWayPrefixAnd();
 
-static map<string, descriptive_indicator<function<void(void)>>> algorithms = {
-	make_algorithm(SelectSort, "≈≈–Ú/—°‘Ò"),
-	make_algorithm(BubbleSort, "≈≈–Ú/√∞≈›"),
-	make_algorithm(InsertSort, "≈≈–Ú/≤Â»Î"),
-	make_algorithm(InsertSort2, "≈≈–Ú/≤Â»Î-”≈ªØ"),
-	make_algorithm(CountingSort, "≈≈–Ú/º∆ ˝"),
-	make_algorithm(GenerateParenthesis, "ªÿÀ›/…˙≥…¿®∫≈∂‘"),
-	make_algorithm(TwoWayPrefixAnd,"«∞◊∫∫Õ/Ω””ÍÀÆ")
+static map<string, DescriptiveIndicator<function<void(void)>>> algorithms = {
+	MakeAlgorithm(SelectSort, "ÊéíÂ∫è/ÈÄâÊã©"),
+	MakeAlgorithm(BubbleSort, "ÊéíÂ∫è/ÂÜíÊ≥°"),
+	MakeAlgorithm(InsertSort, "ÊéíÂ∫è/ÊèíÂÖ•"),
+	MakeAlgorithm(InsertSort2, "ÊéíÂ∫è/ÊèíÂÖ•-‰ºòÂåñ"),
+	MakeAlgorithm(CountingSort, "ÊéíÂ∫è/ËÆ°Êï∞"),
+	MakeAlgorithm(GenerateParenthesis, "Êã¨Âè∑/ÁîüÊàêÊã¨Âè∑ÂØπ"),
+	MakeAlgorithm(TwoWayPrefixAnd,"ÂâçÁºÄÂíå/‰∏§ÈÅìÈ¢ò")
 };
 
 #pragma endregion
 
-static instance<config_indicator::tag> global_config(0, nullptr);
-void config_make_helper(instance<config_indicator::tag>& config)
+static instance<config_indicator::tag> globalConfig(0, nullptr);
+void ConfigMakeHelper(instance<config_indicator::tag>& config)
 {
-	std::string algorithm_names;
+	std::string algorithmNames;
 	for (auto&& [key, _] : algorithms)
-		algorithm_names += key + ",";
+		algorithmNames += key + ",";
 	cout << config.make_manual(
 		"global arguments:",
-		make_descriptive("-a", Combine("algorithms, foreach or ", algorithm_names).c_str()),
-		make_descriptive("-s", "wait seconds and show step by step, if 0 will wait for keyboard input"),
-		make_descriptive("-lowstep", "show fewer steps to reduce the time consuming of the output")
+		MakeDescriptive("-a", Combine("algorithms, foreach or ", algorithmNames).c_str()),
+		MakeDescriptive("-s", "wait seconds and show step by step, if 0 will wait for keyboard input"),
+		MakeDescriptive("-lowstep", "show fewer steps to reduce the time consuming of the output")
 	) << endl;
 	cout << config.make_manual(
 		"sorting arguments:",
-		make_descriptive("-arraysize", Combine("numbers size, default ", constexpr_arraysize).c_str()),
-		make_descriptive("-fillsize", "the higher the value, the greater the horizontal tabulation width"),
-		make_descriptive("-upboundary", Combine("number up boundary, default ", constexpr_upboundary).c_str())
+		MakeDescriptive("-arraysize", Combine("numbers size, default ", CONSTEXPR_ARRAYSIZE).c_str()),
+		MakeDescriptive("-fillsize", "the higher the value, the greater the horizontal tabulation width"),
+		MakeDescriptive("-upboundary", Combine("number up boundary, default ", CONSTEXPR_UPBOUNDARY).c_str())
 	) << endl;
 	cout << endl;
 	cout << "for alorithms:" << endl;
@@ -73,14 +73,14 @@ void config_make_helper(instance<config_indicator::tag>& config)
 		cout << algorithm << ": " << descriptive.description << endl;
 	}
 }
-void config_checker(instance<config_indicator::tag>& config)
+void ConfigChecker(instance<config_indicator::tag>& config)
 {
 	SetConsoleTitleA("Visual Algorithm");
 	srand(time(0));
-	global_config = config;
+	globalConfig = config;
 	if (config.is_contains_helper_command() || config.vec().size() == 1)
 	{
-		config_make_helper(config);
+		ConfigMakeHelper(config);
 		exit(0);
 	}
 	if (config.is_contains_version_command())
@@ -91,7 +91,7 @@ void config_checker(instance<config_indicator::tag>& config)
 	if constexpr (platform_indicator::is_release)
 	{
 		config("s", delay);
-		is_lowstep = config.contains("lowstep");
+		isLowStep = config.contains("lowstep");
 		for (auto&& a_va : config.list("a"))
 		{
 			system("cls");
@@ -123,27 +123,27 @@ void config_checker(instance<config_indicator::tag>& config)
 		}
 		SetConsoleTitleA("");
 		cout << "\n";
-		for (auto&& [key, name] : global_config.try_get_histroy)
+		for (auto&& [key, name] : globalConfig.try_get_histroy)
 			cout << Combine("-", key, "[", name, "] ");
 		cout << endl;
 	}
 	else
 	{
 		string a_va = "TwoWayPrefixAnd";
-		is_lowstep = true;
+		isLowStep = true;
 		delay = 0.0000000000000001;
 		SetConsoleTitleA(a_va.c_str());
 		system("cls");
 		algorithms[a_va].target();
 	}
 }
-void config_algorithm(instance<config_indicator::tag>& config, function<void(void)> algorithm)
+void ConfigAlgorithm(instance<config_indicator::tag>& config, function<void(void)> algorithm)
 {
 	srand(time(0));
-	global_config = config;
+	globalConfig = config;
 	if (config.is_contains_helper_command())
 	{
-		config_make_helper(config);
+		ConfigMakeHelper(config);
 		exit(0);
 	}
 	if (config.is_contains_version_command())
@@ -152,34 +152,35 @@ void config_algorithm(instance<config_indicator::tag>& config, function<void(voi
 		exit(0);
 	}
 	config("s", delay);
-	is_lowstep = config.contains("lowstep");
+	isLowStep = config.contains("lowstep");
 	system("cls");
 	algorithm();
 	cout << "\n";
-	for (auto&& [key, name] : global_config.try_get_histroy)
+	for (auto&& [key, name] : globalConfig.try_get_histroy)
 		cout << Combine("-", key, "[", name, "] ");
 	cout << endl;
 }
 
 #pragma region Draw
 
-string draw_single_label(
+string DrawSingleLabel(
 	string label,
-	int fill_size,
+	int fillSize,
 	vector<int>& numbers
 )
 {
 	string buffer;
 	buffer += " | ";
 	buffer += GetColorCodeA(ConsoleColor::None) + GetBackgroundColorCodeA(ConsoleBackgroundColor::None);
-	string subs = label.substr(0, fill_size - 1);
+	string subs = label.substr(0, fillSize - 1);
 	buffer += subs;
-	if (label.size() < fill_size)
-		buffer += string(std::max<int>(0, fill_size - subs.size() - 1), ' ');
+	if (label.size() < fillSize)
+		buffer += string(std::max<int>(0, fillSize - subs.size() - 1), ' ');
 	return buffer;
 }
-string draw_single_line(
-	int i, int fill_size,
+
+string DrawSingleLine(
+	int i, int fillSize,
 	vector<int>& numbers,
 	const map<int, ConsoleBackgroundColor>& indexs
 )
@@ -192,74 +193,76 @@ string draw_single_line(
 	else
 		buffer += GetBackgroundColorCodeA(ConsoleBackgroundColor::White);
 	int current = i < numbers.size() ? numbers[i] : 0;
-	int max_number = *max_element(numbers.begin(), numbers.end());
-	if (max_number < fill_size)
+	int maxNumber = *max_element(numbers.begin(), numbers.end());
+	if (maxNumber < fillSize)
 	{
 		buffer += string(current, ' ');
 		buffer += GetColorCodeA(ConsoleColor::None) + GetBackgroundColorCodeA(ConsoleBackgroundColor::None);
-		buffer += string(std::max(0, fill_size - 1 - current), ' ');
+		buffer += string(std::max(0, fillSize - 1 - current), ' ');
 	}
 	else
 	{
 		int numberxx = 0;
 		for (int xx = current; xx; xx /= 10)
 			numberxx++;
-		int front_size = std::max(0, current * fill_size / max_number - numberxx - 1);
+		int frontSize = std::max(0, current * fillSize / maxNumber - numberxx - 1);
 		if (current != 0)
 		{
-			buffer += string(front_size, ' ');
+			buffer += string(frontSize, ' ');
 			buffer += GetColorCodeA(ConsoleColor::Black) + to_string(current);
 		}
 		buffer += GetColorCodeA(ConsoleColor::None) + GetBackgroundColorCodeA(ConsoleBackgroundColor::None);
-		buffer += string(std::max(0, fill_size - front_size - numberxx - 1), ' ');
+		buffer += string(std::max(0, fillSize - frontSize - numberxx - 1), ' ');
 	}
 	return buffer;
 }
-void current_sorting_array_numbers(
+
+void CurrentSortingArrayNumbers(
 	vector<int>& numbers,
 	const map<int, ConsoleBackgroundColor>& indexs
 )
 {
 	string buffer;
 	buffer.reserve(4096);
-	size_t fill_size = global_config.try_int_value("fillsize", *max_element(numbers.begin(), numbers.end()) + 3);
+	size_t fillSize = globalConfig.try_int_value("fillsize", *max_element(numbers.begin(), numbers.end()) + 3);
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), COORD{ 0,0 });
 	for (int i = 0, e = numbers.size(); i < e; i++)
 	{
-		buffer += draw_single_line(i, fill_size, numbers, indexs) + "\n";
+		buffer += DrawSingleLine(i, fillSize, numbers, indexs) + "\n";
 	}
 	cout << buffer << endl;
-	wait();
+	Wait();
 }
-void current_sorting_array_numbers(
-	vector<string> label_list,
-	vector<vector<int>*> numbers_list,
-	vector<map<int, ConsoleBackgroundColor>> indexs_list
+
+void CurrentSortingArrayNumbers(
+	vector<string> labelList,
+	vector<vector<int>*> numbersList,
+	vector<map<int, ConsoleBackgroundColor>> indexsList
 )
 {
 	string buffer;
 	buffer.reserve(4096);
-	size_t fill_size = global_config.try_int_value("fillsize", *max_element(numbers_list[0]->begin(), numbers_list[0]->end()) + 3);
+	size_t fillSize = globalConfig.try_int_value("fillsize", *max_element(numbersList[0]->begin(), numbersList[0]->end()) + 3);
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), COORD{ 0,0 });
-	for (int i = 0, e = label_list.size(); i != e; i++)
-		buffer += draw_single_label(label_list[i], fill_size, *numbers_list[i]);
+	for (int i = 0, e = labelList.size(); i != e; i++)
+		buffer += DrawSingleLabel(labelList[i], fillSize, *numbersList[i]);
 	buffer += "\n";
 	int e = 0;
-	for (auto&& ptr : numbers_list)
+	for (auto&& ptr : numbersList)
 		e = std::max<int>(e, ptr->size());
 	for (int i = 0; i < e; i++)
 	{
 		//numbers
-		for (int j = 0, je = label_list.size(); j != je; j++)
-			buffer += draw_single_line(i, fill_size, *numbers_list[j], indexs_list[j]);
+		for (int j = 0, je = labelList.size(); j != je; j++)
+			buffer += DrawSingleLine(i, fillSize, *numbersList[j], indexsList[j]);
 		buffer += "\n";
 	}
 	cout << buffer << endl;
-	wait();
+	Wait();
 }
 
-string draw_colorful_line(
-	int i, int fill_size,
+string DrawColorfulLine(
+	int i, int fillSize,
 	vector<int>& numbers,
 	const map<int, map<int, ConsoleBackgroundColor>>& indexs
 )
@@ -269,8 +272,8 @@ string draw_colorful_line(
 	buffer += " | ";
 	buffer += GetBackgroundColorCodeA(ConsoleBackgroundColor::White);
 	int current = i < numbers.size() ? numbers[i] : 0;
-	int max_number = *max_element(numbers.begin(), numbers.end());
-	if (max_number < fill_size)
+	int maxNumber = *max_element(numbers.begin(), numbers.end());
+	if (maxNumber < fillSize)
 	{
 		int pos = 0;
 		if(indexs.count(i))
@@ -288,12 +291,12 @@ string draw_colorful_line(
 		buffer += GetBackgroundColorCodeA(ConsoleBackgroundColor::White);
 		buffer += string(std::max(0, current - pos), ' ');
 		buffer += GetColorCodeA(ConsoleColor::None) + GetBackgroundColorCodeA(ConsoleBackgroundColor::None);
-		buffer += string(std::max(0, fill_size - 1 - current), ' ');
+		buffer += string(std::max(0, fillSize - 1 - current), ' ');
 	}
 	else
 	{
 		int numberxx = std::log10(current);
-		int front_size = std::max(0, current * fill_size / max_number - numberxx - 1);
+		int frontSize = std::max(0, current * fillSize / maxNumber - numberxx - 1);
 		if (current != 0)
 		{
 			int pos = 0;
@@ -316,51 +319,53 @@ string draw_colorful_line(
 			buffer += GetColorCodeA(ConsoleColor::Black) + to_string(current);
 		}
 		buffer += GetColorCodeA(ConsoleColor::None) + GetBackgroundColorCodeA(ConsoleBackgroundColor::None);
-		buffer += string(std::max(0, fill_size - front_size - numberxx - 1), ' ');
+		buffer += string(std::max(0, fillSize - frontSize - numberxx - 1), ' ');
 	}
 	return buffer;
 }
-void current_colorful_array_numbers(
+
+void CurrentColorfulArrayNumbers(
 	vector<int>& numbers,
 	const map<int, map<int, ConsoleBackgroundColor>>& indexs
 )
 {
 	string buffer;
 	buffer.reserve(4096);
-	size_t fill_size = global_config.try_int_value("fillsize", *max_element(numbers.begin(), numbers.end()) + 3);
+	size_t fillSize = globalConfig.try_int_value("fillsize", *max_element(numbers.begin(), numbers.end()) + 3);
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), COORD{ 0,0 });
 	for (int i = 0, e = numbers.size(); i < e; i++)
 	{
-		buffer += draw_colorful_line(i, fill_size, numbers, indexs) + "\n";
+		buffer += DrawColorfulLine(i, fillSize, numbers, indexs) + "\n";
 	}
 	cout << buffer << endl;
-	wait();
+	Wait();
 }
-void current_colorful_array_numbers(
-	vector<string> label_list,
-	vector<vector<int>*> numbers_list,
-	vector<map<int, map<int, ConsoleBackgroundColor>>> indexs_list
+
+void CurrentColorfulArrayNumbers(
+	vector<string> labelList,
+	vector<vector<int>*> numbersList,
+	vector<map<int, map<int, ConsoleBackgroundColor>>> indexsList
 )
 {
 	string buffer;
 	buffer.reserve(4096);
-	size_t fill_size = global_config.try_int_value("fillsize", *max_element(numbers_list[0]->begin(), numbers_list[0]->end()) + 3);
+	size_t fillSize = globalConfig.try_int_value("fillsize", *max_element(numbersList[0]->begin(), numbersList[0]->end()) + 3);
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), COORD{ 0,0 });
-	for (int i = 0, e = label_list.size(); i != e; i++)
-		buffer += draw_single_label(label_list[i], fill_size, *numbers_list[i]);
+	for (int i = 0, e = labelList.size(); i != e; i++)
+		buffer += DrawSingleLabel(labelList[i], fillSize, *numbersList[i]);
 	buffer += "\n";
 	int e = 0;
-	for (auto&& ptr : numbers_list)
+	for (auto&& ptr : numbersList)
 		e = std::max<int>(e, ptr->size());
 	for (int i = 0; i < e; i++)
 	{
 		//numbers
-		for (int j = 0, je = label_list.size(); j != je; j++)
-			buffer += draw_colorful_line(i, fill_size, *numbers_list[j], indexs_list[j]);
+		for (int j = 0, je = labelList.size(); j != je; j++)
+			buffer += DrawColorfulLine(i, fillSize, *numbersList[j], indexsList[j]);
 		buffer += "\n";
 	}
 	cout << buffer << endl;
-	wait();
+	Wait();
 }
 
 #pragma endregion
@@ -378,17 +383,17 @@ void current_colorful_array_numbers(
 void SelectSort()
 {
 	vector<int> numbers;
-	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
-	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
+	int upboundary = globalConfig.try_int_value("upboundary", CONSTEXPR_UPBOUNDARY);
+	for (int i = 0, e = globalConfig.try_int_value("arraysize", CONSTEXPR_ARRAYSIZE); i < e; i++)
 		numbers.push_back(rand() % upboundary);
-	current_sorting_array_numbers(numbers, {});
+	CurrentSortingArrayNumbers(numbers, {});
 	for (int i = 0, e = numbers.size(); i < e; i++)
 	{
 		int min_i = i;
 		for (int j = i + 1; j < e; j++)
 		{
-			if (is_lowstep == false)
-				current_sorting_array_numbers(
+			if (isLowStep == false)
+				CurrentSortingArrayNumbers(
 					numbers,
 					{
 						make_pair(i, ConsoleBackgroundColor::Green),
@@ -398,7 +403,7 @@ void SelectSort()
 			if (numbers[j] < numbers[min_i])
 			{
 				min_i = j;
-				current_sorting_array_numbers(
+				CurrentSortingArrayNumbers(
 					numbers,
 					{
 						make_pair(i, ConsoleBackgroundColor::Green),
@@ -406,22 +411,22 @@ void SelectSort()
 					});
 			}
 		}
-		if (is_lowstep == false)
-			current_sorting_array_numbers(
+		if (isLowStep == false)
+			CurrentSortingArrayNumbers(
 				numbers,
 				{
 					make_pair(i, ConsoleBackgroundColor::Green),
 					make_pair(min_i, ConsoleBackgroundColor::Red)
 				});
 		std::swap(numbers[min_i], numbers[i]);
-		current_sorting_array_numbers(
+		CurrentSortingArrayNumbers(
 			numbers,
 			{
 				make_pair(min_i, ConsoleBackgroundColor::Green),
 				make_pair(i, ConsoleBackgroundColor::Red),
 			});
 	}
-	current_sorting_array_numbers(numbers, {});
+	CurrentSortingArrayNumbers(numbers, {});
 	cout << "\n" <<
 		"for (int i = 0, e = numbers.size(); i < e; i++)" <<"\n"<<
 		"{" <<"\n"<<
@@ -434,9 +439,9 @@ void SelectSort()
 }
 void BubbleSort()
 {
-	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
+	int upboundary = globalConfig.try_int_value("upboundary", CONSTEXPR_UPBOUNDARY);
 	vector<int> numbers;
-	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
+	for (int i = 0, e = globalConfig.try_int_value("arraysize", CONSTEXPR_ARRAYSIZE); i < e; i++)
 		numbers.push_back(rand() % upboundary);
 	bool flag = true;
 	while (flag)
@@ -444,8 +449,8 @@ void BubbleSort()
 		flag = false;
 		for (int i = 1, e = numbers.size(); i < e; ++i)
 		{
-			if (is_lowstep == false)
-				current_sorting_array_numbers(numbers,
+			if (isLowStep == false)
+				CurrentSortingArrayNumbers(numbers,
 					{
 						make_pair(i - 1,ConsoleBackgroundColor::Yellow)
 					});
@@ -453,7 +458,7 @@ void BubbleSort()
 			{
 				flag = true;
 				std::swap(numbers[i], numbers[i - 1]);
-				current_sorting_array_numbers(numbers,
+				CurrentSortingArrayNumbers(numbers,
 					{
 						make_pair(i - 1,ConsoleBackgroundColor::Green),
 						make_pair(i,ConsoleBackgroundColor::Red)
@@ -461,7 +466,7 @@ void BubbleSort()
 			}
 		}
 	}
-	current_sorting_array_numbers(numbers, {});
+	CurrentSortingArrayNumbers(numbers, {});
 	cout << "\n" <<
 		"bool flag = true;" << "\n" <<
 		"while (flag)" << "\n" <<
@@ -479,9 +484,9 @@ void BubbleSort()
 }
 void InsertSort()
 {
-	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
+	int upboundary = globalConfig.try_int_value("upboundary", CONSTEXPR_UPBOUNDARY);
 	vector<int> numbers;
-	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
+	for (int i = 0, e = globalConfig.try_int_value("arraysize", CONSTEXPR_ARRAYSIZE); i < e; i++)
 		numbers.push_back(rand() % upboundary);
 	for (int i = 1,e= numbers.size(); i < e; ++i)
 	{
@@ -490,8 +495,8 @@ void InsertSort()
 		while (j >= 0 && numbers[j] > key)
 		{
 			numbers[j + 1] = numbers[j];
-			if (is_lowstep == false)
-				current_sorting_array_numbers(numbers,
+			if (isLowStep == false)
+				CurrentSortingArrayNumbers(numbers,
 					{
 						make_pair(i,ConsoleBackgroundColor::Green),
 						make_pair(j + 1,ConsoleBackgroundColor::Yellow)
@@ -499,13 +504,13 @@ void InsertSort()
 			j--;
 		}
 		numbers[j + 1] = key;
-		current_sorting_array_numbers(numbers,
+		CurrentSortingArrayNumbers(numbers,
 			{
 				make_pair(i,ConsoleBackgroundColor::Green),
 				make_pair(j + 1,ConsoleBackgroundColor::Red)
 			});
 	}
-	current_sorting_array_numbers(numbers, {});
+	CurrentSortingArrayNumbers(numbers, {});
 	cout << "\n" <<
 		"for (int i = 1, e = numbers.size(); i < e; ++i)" << "\n" <<
 		"{" << "\n" <<
@@ -519,29 +524,29 @@ void InsertSort()
 		"	numbers[j + 1] = key;" << "\n" <<
 		"}" << endl;
 }
-void InsertSort2() 
+void InsertSort2()
 {
 	vector<int> numbers;
-	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
-	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
+	int upboundary = globalConfig.try_int_value("upboundary", CONSTEXPR_UPBOUNDARY);
+	for (int i = 0, e = globalConfig.try_int_value("arraysize", CONSTEXPR_ARRAYSIZE); i < e; i++)
 		numbers.push_back(rand() % upboundary);
-	for (int i = 1,e=numbers.size(); i != e; ++i) 
+	for (int i = 1,e=numbers.size(); i != e; ++i)
 	{
 		int key = numbers[i];
 		auto index = distance(numbers.begin(), upper_bound(numbers.begin(), numbers.begin() + i, key));
-		if (is_lowstep == false)
-			current_sorting_array_numbers(numbers,
+		if (isLowStep == false)
+			CurrentSortingArrayNumbers(numbers,
 				{
 					make_pair(i,ConsoleBackgroundColor::Green)
 				});
 		memmove(numbers.data() + index + 1, numbers.data() + index, (i - index) * sizeof(int));
 		numbers[index] = key;
-		current_sorting_array_numbers(numbers,
+		CurrentSortingArrayNumbers(numbers,
 			{
 				make_pair(i,ConsoleBackgroundColor::Green)
 			});
 	}
-	current_sorting_array_numbers(numbers, {});
+	CurrentSortingArrayNumbers(numbers, {});
 	cout << "\n" <<
 		"for (int i = 1, e = numbers.size(); i != e; ++i)" << "\n" <<
 		"{" << "\n" <<
@@ -554,17 +559,17 @@ void InsertSort2()
 void CountingSort()
 {
 	vector<int> numbers;
-	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
-	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
+	int upboundary = globalConfig.try_int_value("upboundary", CONSTEXPR_UPBOUNDARY);
+	for (int i = 0, e = globalConfig.try_int_value("arraysize", CONSTEXPR_ARRAYSIZE); i < e; i++)
 		numbers.push_back(rand() % upboundary);
 	int w = *max_element(numbers.begin(), numbers.end())+1;
 	vector<int> cnt(w, 0);
 	vector<int> results(numbers.size(), 0);
-	current_sorting_array_numbers(numbers, {});
+	CurrentSortingArrayNumbers(numbers, {});
 	for (int i = 0, e = numbers.size(); i < e; ++i)
 	{
 		++cnt[numbers[i]];
-		current_sorting_array_numbers(
+		CurrentSortingArrayNumbers(
 			{ "numbers" ,"cnt" },
 			{ &numbers,&cnt },
 			{
@@ -574,8 +579,8 @@ void CountingSort()
 	}
 	for (int i = 0; i < w-1; ++i)
 	{
-		if (is_lowstep == false)
-			current_sorting_array_numbers(
+		if (isLowStep == false)
+			CurrentSortingArrayNumbers(
 				{ "numbers","cnt" },
 				{ &numbers,&cnt },
 			{
@@ -586,7 +591,7 @@ void CountingSort()
 				}
 			});
 		cnt[i + 1] += cnt[i];
-		current_sorting_array_numbers(
+		CurrentSortingArrayNumbers(
 			{ "numbers","cnt" },
 			{ &numbers,&cnt },
 			{
@@ -599,8 +604,8 @@ void CountingSort()
 	}
 	for (int i = numbers.size() - 1; i >= 0; --i)
 	{
-		if (is_lowstep == false)
-			current_sorting_array_numbers(
+		if (isLowStep == false)
+			CurrentSortingArrayNumbers(
 				{ "numbers" ,"cnt","result" },
 				{ &numbers ,&cnt,&results },
 			{
@@ -609,7 +614,7 @@ void CountingSort()
 				{ make_pair(cnt[numbers[i]],ConsoleBackgroundColor::Green)}
 			});
 		results[cnt[numbers[i]]---1] = numbers[i];
-		current_sorting_array_numbers(
+		CurrentSortingArrayNumbers(
 			{ "numbers" ,"cnt","result" },
 			{ &numbers ,&cnt,&results },
 			{
@@ -618,7 +623,7 @@ void CountingSort()
 				{ make_pair(cnt[numbers[i]],ConsoleBackgroundColor::Green)}
 			});
 	}
-	current_sorting_array_numbers(
+	CurrentSortingArrayNumbers(
 		{ "numbers" ,"cnt","result" },
 		{ &numbers ,&cnt,&results },
 		{
@@ -640,9 +645,9 @@ void __generateParenthesis(int left, int right, int depth, string str, vector<in
 	drawbuffer[0] = left;
 	drawbuffer[1] = right;
 	drawbuffer[2] = depth;
-	if (is_lowstep)
+	if (isLowStep)
 	{
-		current_sorting_array_numbers(drawbuffer,
+		CurrentSortingArrayNumbers(drawbuffer,
 			{
 				make_pair(0, ConsoleBackgroundColor::Green),
 				make_pair(1, ConsoleBackgroundColor::Red)
@@ -655,7 +660,7 @@ void __generateParenthesis(int left, int right, int depth, string str, vector<in
 		__generateParenthesis(left, right - 1, depth - 1, str + ')', drawbuffer);
 	if (left + right == 0)
 	{
-		current_sorting_array_numbers(drawbuffer,
+		CurrentSortingArrayNumbers(drawbuffer,
 			{
 				make_pair(0, ConsoleBackgroundColor::Green),
 				make_pair(1, ConsoleBackgroundColor::Red)
@@ -665,7 +670,7 @@ void __generateParenthesis(int left, int right, int depth, string str, vector<in
 }
 void GenerateParenthesis()
 {
-	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
+	int upboundary = globalConfig.try_int_value("upboundary", CONSTEXPR_UPBOUNDARY);
 	if (upboundary > 8)
 	{
 		upboundary = 8;
@@ -687,53 +692,53 @@ void GenerateParenthesis()
 void TwoWayPrefixAnd()
 {
 	vector<int> height;
-	int upboundary = global_config.try_int_value("upboundary", constexpr_upboundary);
-	for (int i = 0, e = global_config.try_int_value("arraysize", constexpr_arraysize); i < e; i++)
+	int upboundary = globalConfig.try_int_value("upboundary", CONSTEXPR_UPBOUNDARY);
+	for (int i = 0, e = globalConfig.try_int_value("arraysize", CONSTEXPR_ARRAYSIZE); i < e; i++)
 	{
 		double x = (rand() % upboundary / (double)upboundary);
 		height.push_back((x * x) * upboundary);
 	}
 	int n = height.size();
 	vector<int> left(n, 0), right(n, 0);
-	vector<int> draw_array(n, 0);
-	map<int, map<int, ConsoleBackgroundColor>> draw_colors;
-	if (is_lowstep)
+	vector<int> drawArray(n, 0);
+	map<int, map<int, ConsoleBackgroundColor>> drawColors;
+	if (isLowStep)
 	{
 		for (int i = 1; i != n; i++)
 		{
-			draw_colors[i][height[i]] = ConsoleBackgroundColor::Yellow;
-			draw_array[i] = height[i];
+			drawColors[i][height[i]] = ConsoleBackgroundColor::Yellow;
+			drawArray[i] = height[i];
 		}
-		draw_colors[0][*draw_array.begin() = *left.begin() = *height.begin()] = ConsoleBackgroundColor::Green;
-		for (int left_i = 1; left_i != n; left_i++)
+		drawColors[0][*drawArray.begin() = *left.begin() = *height.begin()] = ConsoleBackgroundColor::Green;
+		for (int leftI = 1; leftI != n; leftI++)
 		{
-			draw_colors[left_i][left[left_i] = std::max(left[left_i - 1], height[left_i])] = ConsoleBackgroundColor::Green;
-			draw_array[left_i] = std::max(draw_array[left_i], left[left_i]);
-			auto linecolor = make_pair(left_i, map<int, ConsoleBackgroundColor>{make_pair(draw_array[left_i], ConsoleBackgroundColor::Yellow)});
-			current_colorful_array_numbers(
+			drawColors[leftI][left[leftI] = std::max(left[leftI - 1], height[leftI])] = ConsoleBackgroundColor::Green;
+			drawArray[leftI] = std::max(drawArray[leftI], left[leftI]);
+			auto lineColor = make_pair(leftI, map<int, ConsoleBackgroundColor>{make_pair(drawArray[leftI], ConsoleBackgroundColor::Yellow)});
+			CurrentColorfulArrayNumbers(
 				{ "graph","left","right","height" },
-				{ &draw_array, &left, &right, &height },
-				{ draw_colors, {linecolor}, {linecolor}, {linecolor} });
+				{ &drawArray, &left, &right, &height },
+				{ drawColors, {lineColor}, {lineColor}, {lineColor} });
 		}
-		draw_colors[n - 1][*draw_array.rbegin() = *right.rbegin() = *height.rbegin()] = ConsoleBackgroundColor::Red;
-		for (int right_i = n - 2; right_i != -1; right_i--)
+		drawColors[n - 1][*drawArray.rbegin() = *right.rbegin() = *height.rbegin()] = ConsoleBackgroundColor::Red;
+		for (int rightI = n - 2; rightI != -1; rightI--)
 		{
-			draw_colors[right_i][right[right_i] = std::max(right[right_i + 1], height[right_i + 1])] = ConsoleBackgroundColor::Red;
-			draw_array[right_i] = std::max(draw_array[right_i], right[right_i]);
-			auto linecolor = make_pair(right_i, map<int, ConsoleBackgroundColor>{make_pair(draw_array[right_i], ConsoleBackgroundColor::Yellow)});
-			current_colorful_array_numbers(
+			drawColors[rightI][right[rightI] = std::max(right[rightI + 1], height[rightI + 1])] = ConsoleBackgroundColor::Red;
+			drawArray[rightI] = std::max(drawArray[rightI], right[rightI]);
+			auto lineColor = make_pair(rightI, map<int, ConsoleBackgroundColor>{make_pair(drawArray[rightI], ConsoleBackgroundColor::Yellow)});
+			CurrentColorfulArrayNumbers(
 				{ "graph","left","right","height" },
-				{ &draw_array, &left, &right, &height },
-				{ draw_colors, {linecolor}, {linecolor}, {linecolor} });
+				{ &drawArray, &left, &right, &height },
+				{ drawColors, {lineColor}, {lineColor}, {lineColor} });
 		}
 		int result = 0;
-		wait(), wait(), wait(), wait(), wait();
-		map<int, map<int, ConsoleBackgroundColor>> draw_colors2;
-		map<int, map<int, ConsoleBackgroundColor>> water_color;
+		Wait(), Wait(), Wait(), Wait(), Wait();
+		map<int, map<int, ConsoleBackgroundColor>> drawColors2;
+		map<int, map<int, ConsoleBackgroundColor>> waterColor;
 		vector<int> height2 = height;
 		for (int i = 0; i != n; i++)
 		{
-			water_color[i][height[i]] = draw_colors2[i][height[i]] = ConsoleBackgroundColor::Yellow;
+			waterColor[i][height[i]] = drawColors2[i][height[i]] = ConsoleBackgroundColor::Yellow;
 		}
 		for (int i = 0; i != n; i++)
 		{
@@ -741,47 +746,47 @@ void TwoWayPrefixAnd()
 			int cur = std::max(0, cheight - height[i]);
 			if (cur > 0)
 			{
-				draw_colors[i][cheight] = ConsoleBackgroundColor::Blue;
-				draw_colors2[i][cheight] = ConsoleBackgroundColor::Blue;
+				drawColors[i][cheight] = ConsoleBackgroundColor::Blue;
+				drawColors2[i][cheight] = ConsoleBackgroundColor::Blue;
 				height2[i] = std::max(height2[i], cheight);
 				result += cur;
-				water_color[i][cheight] = ConsoleBackgroundColor::Blue;
-				auto linecolor = make_pair(i, map<int, ConsoleBackgroundColor>{make_pair(cheight, ConsoleBackgroundColor::Yellow)});
-				current_colorful_array_numbers(
+				waterColor[i][cheight] = ConsoleBackgroundColor::Blue;
+				auto lineColor = make_pair(i, map<int, ConsoleBackgroundColor>{make_pair(cheight, ConsoleBackgroundColor::Yellow)});
+				CurrentColorfulArrayNumbers(
 					{ "graph","left","right","height&water" },
-					{ &draw_array, &left, &right, &height2 },
-					{ draw_colors2, {linecolor}, {linecolor}, {water_color} });
-				wait(), wait();
-				current_colorful_array_numbers(
+					{ &drawArray, &left, &right, &height2 },
+					{ drawColors2, {lineColor}, {lineColor}, {waterColor} });
+				Wait(), Wait();
+				CurrentColorfulArrayNumbers(
 					{ "graph","left","right","height&water" },
-					{ &draw_array, &left, &right, &height2 },
-					{ draw_colors, {linecolor}, {linecolor}, {water_color} });
-				wait(), wait();
-				current_colorful_array_numbers(
+					{ &drawArray, &left, &right, &height2 },
+					{ drawColors, {lineColor}, {lineColor}, {waterColor} });
+				Wait(), Wait();
+				CurrentColorfulArrayNumbers(
 					{ "graph","left","right","height&water" },
-					{ &draw_array, &left, &right, &height2 },
-					{ draw_colors2, {linecolor}, {linecolor}, {water_color} });
+					{ &drawArray, &left, &right, &height2 },
+					{ drawColors2, {lineColor}, {lineColor}, {waterColor} });
 			}
 		}
 	}
 	else
 	{
-		draw_colors[0][*draw_array.begin() = *left.begin() = *height.begin()] = ConsoleBackgroundColor::Green;
-		draw_colors[n - 1][*draw_array.rbegin() = *right.rbegin() = *height.rbegin()] = ConsoleBackgroundColor::Red;
+		drawColors[0][*drawArray.begin() = *left.begin() = *height.begin()] = ConsoleBackgroundColor::Green;
+		drawColors[n - 1][*drawArray.rbegin() = *right.rbegin() = *height.rbegin()] = ConsoleBackgroundColor::Red;
 		for (int i = 1; i != n; i++)
 		{
-			int left_i = i, right_i = n - i - 1;
-			draw_colors[left_i][left[left_i] = std::max(left[left_i - 1], height[left_i])] = ConsoleBackgroundColor::Green;
-			draw_colors[right_i][right[right_i] = std::max(right[right_i + 1], height[right_i + 1])] = ConsoleBackgroundColor::Red;
-			draw_colors[left_i][height[left_i]] = ConsoleBackgroundColor::Yellow;
-			draw_colors[right_i][height[right_i]] = ConsoleBackgroundColor::Yellow;
+			int leftI = i, rightI = n - i - 1;
+			drawColors[leftI][left[leftI] = std::max(left[leftI - 1], height[leftI])] = ConsoleBackgroundColor::Green;
+			drawColors[rightI][right[rightI] = std::max(right[rightI + 1], height[rightI + 1])] = ConsoleBackgroundColor::Red;
+			drawColors[leftI][height[leftI]] = ConsoleBackgroundColor::Yellow;
+			drawColors[rightI][height[rightI]] = ConsoleBackgroundColor::Yellow;
 
-			draw_array[left_i] = std::max(draw_array[left_i], left[left_i]);
-			draw_array[right_i] = std::max(draw_array[right_i], right[right_i]);
-			current_colorful_array_numbers(
+			drawArray[leftI] = std::max(drawArray[leftI], left[leftI]);
+			drawArray[rightI] = std::max(drawArray[rightI], right[rightI]);
+			CurrentColorfulArrayNumbers(
 				{ "graph","left","right","height" },
-				{ &draw_array, &left, &right, &height },
-				{ draw_colors,{}, {}, {} });
+				{ &drawArray, &left, &right, &height },
+				{ drawColors,{}, {}, {} });
 		}
 		int result = 0;
 		for (int i = 0; i != n; i++)
@@ -790,19 +795,19 @@ void TwoWayPrefixAnd()
 			int cur = std::max(0, cheight - height[i]);
 			if (cur > 0)
 			{
-				draw_colors[i][cheight] = ConsoleBackgroundColor::Blue;
+				drawColors[i][cheight] = ConsoleBackgroundColor::Blue;
 				result += cur;
-				current_colorful_array_numbers(
+				CurrentColorfulArrayNumbers(
 					{ "graph","left","right","height" },
-					{ &draw_array, &left, &right, &height },
-					{ draw_colors,{}, {}, {} });
+					{ &drawArray, &left, &right, &height },
+					{ drawColors,{}, {}, {} });
 			}
 		}
 	}
-	current_colorful_array_numbers(
+	CurrentColorfulArrayNumbers(
 		{ "graph","left","right","height" },
-		{ &draw_array, &left, &right, &height },
-		{ draw_colors,{}, {}, {} });
+		{ &drawArray, &left, &right, &height },
+		{ drawColors,{}, {}, {} });
 	cout << "\n" <<
 		"int n = height.size();" << "\n" <<
 		"vector<int> left(n, 0), right(n, 0);" << "\n" <<
