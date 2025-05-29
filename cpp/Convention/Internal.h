@@ -177,27 +177,4 @@ namespace ConventionKit
 	bool IsUnsignedIntegralType(const type_info& type);
 }
 
-template<typename T>
-class ICompare
-{
-public:
-	virtual ~ICompare() {}
-	virtual int Compare(T left, T right) const noexcept abstract;
-};
-
-template<>
-class ICompare<void>
-{
-public:
-	template<typename T>
-	int Compare(const T& left, const T& right) const noexcept
-	{
-		if (left < right)
-			return -1;
-		else if (right < left)
-			return 1;
-		return 0;
-	}
-};
-
 #endif // !CONVENTION_KIT_INTERNAL_H

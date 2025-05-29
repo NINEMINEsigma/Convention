@@ -10,32 +10,14 @@
 #endif
 
 #define DISABLE_SYMBOL
-#define IF_EXISTS __if_exists
-#define IF_NOT_EXISTS __if_not_exists
-#define MAKE_STRING(str) StringIndicator::tag(CNTEXT(str))
-
-#pragma region __if(_not)_exists
-
-#define If_Exists __if_exists
-
-#define If_Not_Exists __if_not_exists
-
-#pragma endregion
+#define if_exists __if_exists
+#define if_not_exists __if_not_exists
 
 struct DecltypeAnyUnit
 {
 	template<typename valueType>
 	constexpr operator valueType() const noexcept;
 };
-namespace ConventionKit
-{
-	template<typename _Test>
-	struct VoidT
-	{
-		using tag = void;
-		constexpr static bool value = true;
-	};
-}
 
 #pragma region bits/stdc++
 
@@ -162,6 +144,30 @@ constexpr size_t ConstexprStrlen(const char* source)
 		length++;
 	return length;
 }
+
+template<typename T>
+class ICompare
+{
+public:
+	virtual ~ICompare() {}
+	virtual int Compare(T left, T right) const noexcept abstract;
+};
+
+template<>
+class ICompare<void>
+{
+public:
+	template<typename T>
+	int Compare(const T& left, const T& right) const noexcept
+	{
+		if (left < right)
+			return -1;
+		else if (right < left)
+			return 1;
+		return 0;
+	}
+};
+
 constexpr bool ConstexprStrEqual(
 	const char* source,
 	const char* target
@@ -211,59 +217,76 @@ struct PlatformIndicator
 {
 	using tag = void;
 #ifdef _DEBUG
-	constexpr static bool is_release = false;
+	constexpr static bool IsRelease = false;
 #else
-	constexpr static bool is_release = true;
+	constexpr static bool IsRelease = true;
 #endif
-	constexpr static bool value = is_release;
+	constexpr static bool value = IsRelease;
 #if defined(_WIN64)||defined(_WIN32)
-	constexpr static bool is_platform_windows = true;
+	constexpr static bool IsPlatformWindows = true;
 #else
-	constexpr static bool is_platform_windows = false;
+	constexpr static bool IsPlatformWindows = false;
 #endif
 #if defined(__linux__)
-	constexpr static bool is_platform_linux = true;
+	constexpr static bool IsPlatformLinux = true;
 #else
-	constexpr static bool is_platform_linux = false;
+	constexpr static bool IsPlatformLinux = false;
 #endif
 #if defined(__unix__)
-	constexpr static bool is_platform_unix = true;
+	constexpr static bool IsPlatformUnix = true;
 #else
-	constexpr static bool is_platform_unix = false;
+	constexpr static bool IsPlatformUnix = false;
 #endif
 #if defined(__APPLE__)||defined(__MACH__)
-	constexpr static bool is_platform_apple = true;
+	constexpr static bool IsPlatformApple = true;
 #else
-	constexpr static bool is_platform_apple = false;
+	constexpr static bool IsPlatformApple = false;
 #endif
 #if defined(__ANDROID__)
-	constexpr static bool is_platform_android = true;
+	constexpr static bool IsPlatformAndroid = true;
 #else
-	constexpr static bool is_platform_android = false;
+	constexpr static bool IsPlatformAndroid = false;
 #endif
 #if defined(_POSIX_VERSION)
-	constexpr static bool is_platform_posix = true;
+	constexpr static bool IsPlatformPosix = true;
 #else
-	constexpr static bool is_platform_posix = false;
+	constexpr static bool IsPlatformPosix = false;
 #endif
 #if defined(_WIN64)||(__WORDSIZE==64)
-	constexpr static bool is_platform_x64 = true;
+	constexpr static bool IsPlatformx64 = true;
 #endif
 #ifdef _MSC_VER
-	constexpr static bool is_mscv = true;
+	constexpr static bool IsMSVC = true;
 #else
-	constexpr static bool is_mscv = false;
+	constexpr static bool IsMSVC = false;
 #endif
 #ifdef __GNUC__
-	constexpr static bool is_gnuc = true;
+	constexpr static bool IsGNUC = true;
 #else
-	constexpr static bool is_gnuc = false;
+	constexpr static bool IsGNUC = false;
 #endif // __GNUC__
 
 
-	static std::string GeneratePlatformMessage() noexcept;
+	constexpr static const char* PlatformInfomation = "Platform: " __PLATFORM_NAME "-" __PLATFORM_VERSION  "-"  __PLATFORM_EXTENSION;
 	// not lock current thread, if input is exist will return it otherwise return -1
-	static int KeyboardInput() noexcept;
+	static int KeyboardInput() noexcept
+	{
+#ifdef _WINDOWS
+		if (_kbhit())
+			return _getch();
+#else
+		fd_set rfds;
+		struct timeval tv;
+
+		FD_ZERO(&rfds);
+		FD_SET(0, &rfds);
+		tv.tv_sec = 0;
+		tv.tv_usec = 1;
+		if (select(1, &rfds, NULL, NULL, &tv) > 0)
+			return getchar();
+#endif // _WINDOWS
+		return -1;
+	}
 };
 
 #pragma endregion
@@ -892,7 +915,7 @@ Enable warning C4005 to find the forbidden define.
 
 #pragma region __TEST_MICROSOFT_IMPLEMENTATION
 
-#if defined(__USE__) || defined(_DEBUG) || defined(_USE_Non_Portable_Features)
+#if defined(__USE__) || (defined(_DEBUG)&&0) || defined(_USE_Non_Portable_Features)
 
 //Variadic
 //__declspec(align(#))
@@ -908,7 +931,7 @@ Enable warning C4005 to find the forbidden define.
 
 #pragma region __based
 
-#if defined(__USE_BASE_PTR) || defined(_DEBUG) || defined(_USE_Non_Portable_Features)
+#if defined(__USE_BASE_PTR) || (defined(_DEBUG)&&0) || defined(_USE_Non_Portable_Features)
 
 //class
 //__based
@@ -926,13 +949,13 @@ public:
 
 //Variadic
 //__based
-#define Typedef_T__Based(_T,_Ptr_Name,_Ptr_Org,_P)			\
+#define DefineBasePtr(_T,_Ptr_Name,_Ptr_Org,_P)				\
 	_T*	_Ptr_Name = &_Ptr_Org[0];							\
 	typedef _T __based(_Ptr_Name)* _P;						\
 
 //Variadic
 //__based
-#define Transfrom_T__Based(_Ptr_Name,_Ptr_Org)				\
+#define TransfromBasePtr(_Ptr_Name,_Ptr_Org)				\
 	_Ptr_Name = &_Ptr_Org[0]								\
 
 #endif // __USE_BASE_PTR
@@ -941,27 +964,11 @@ public:
 
 #pragma region __inheritance
 
-#if defined(__USE_INHERITANCE) || defined(_DEBUG) || defined(_USE_Non_Portable_Features)
+#if defined(__USE_INHERITANCE) || (defined(_DEBUG)&&0) || defined(_USE_Non_Portable_Features)
 
 //Variadic
 //__single_inheritance
-#define Single_Inheritance __single_inheritance
-
-//Variadic
-//__single_inheritance
-#define BaseClass class __single_inheritance
-
-//Variadic
-//__single_inheritance
-#define InheritancedClass class __single_inheritance
-
-//Variadic
-//__single_inheritance
-#define InterfaceClass class __single_inheritance
-
-//Variadic
-//virtual public
-#define Virtual public virtual
+#define single_inheritance __single_inheritance
 
 #endif // __USE_INHERITANCE
 
@@ -969,13 +976,13 @@ public:
 
 #pragma region alignof
 
-#if defined(__USE_ALIGNOF) || defined(_DEBUG) || defined(_USE_Non_Portable_Features)
+#if defined(__USE_ALIGNOF) || (defined(_DEBUG)&&0) || defined(_USE_Non_Portable_Features)
 
 template<class _T>
-class align_info final
+class AlignInfo final
 {
 public:
-	align_info() :type(typeid(_T)), align_size(alignof(_T)), memory_size(sizeof(_T))
+	AlignInfo() :type(typeid(_T)), align_size(alignof(_T)), memory_size(sizeof(_T))
 	{
 	}
 
@@ -984,22 +991,22 @@ public:
 	const size_t memory_size;
 
 	template<typename _P>
-	bool operator==(const align_info<_P>& _Right)
+	bool operator==(const AlignInfo<_P>& _Right)
 	{
 		return this->align_size == _Right.align_size;
 	}
 	template<typename _P>
-	bool operator!=(const align_info<_P>& _Right)
+	bool operator!=(const AlignInfo<_P>& _Right)
 	{
 		return this->align_size != _Right.align_size;
 	}
 	template<>
-	bool operator==(const align_info<_T>& _Right)
+	bool operator==(const AlignInfo<_T>& _Right)
 	{
 		return true;
 	}
 	template<>
-	bool operator!=(const align_info<_T>& _Right)
+	bool operator!=(const AlignInfo<_T>& _Right)
 	{
 		return false;
 	}
@@ -1007,19 +1014,11 @@ public:
 
 //Variadic
 //__declspec(align(#))
-#define AlignClass(size_move) __declspec(align(1<<size_move)) class
+#define DeclspecAlign(size_move) __declspec(align(1<<size_move))
 
 //Variadic
 //__declspec(align(#))
-#define AlignStruct(size_move) __declspec(align(1<<size_move)) struct
-
-//Variadic
-//__declspec(align(#))
-#define RealignClass(_T,size_move,_NewClass) typedef __declspec(align(1 << size_move)) class _T _NewClass;
-
-//Variadic
-//__declspec(align(#))
-#define RealignStruct(_T,size_move,_NewClass) typedef __declspec(align(1 << size_move)) struct _T _NewClass;
+#define Realign(_T,size_move) typedef __declspec(align(1 << size_move)) class _T
 
 #endif // __USE_ALIGNOF
 
@@ -1027,7 +1026,7 @@ public:
 
 #pragma region __assert
 
-#if defined(__USE_ASSERT) || defined(_DEBUG) || defined(_USE_Non_Portable_Features)
+#if defined(__USE_ASSERT) || (defined(_DEBUG)&&1) || defined(_USE_Non_Portable_Features)
 
 //Variadic
 //__assert
@@ -1043,7 +1042,7 @@ public:
 
 #pragma region restrict
 
-#if defined(__USE_RESTRICT) || defined(_DEBUG) || defined(_USE_Non_Portable_Features)
+#if defined(__USE_RESTRICT) || (defined(_DEBUG)&&0) || defined(_USE_Non_Portable_Features)
 
 //Variadic
 //__declspec(restrict)
@@ -1055,15 +1054,11 @@ public:
 
 #pragma region __super
 
-#if defined(__USE_SUPER) || defined(_DEBUG) || defined(_USE_Non_Portable_Features)
+#if defined(__USE_SUPER) || (defined(_DEBUG)&&0) || defined(_USE_Non_Portable_Features)
 
 //Variadic
 //__super
-#define FindBase __super::
-
-//Variadic
-//__super
-#define BaseSpace __super
+#define super __super::
 
 #endif // __super
 
@@ -1071,7 +1066,7 @@ public:
 
 #pragma region __vector
 
-#if defined(__USE_VECTORCALL) || defined(_DEBUG) || defined(_USE_Non_Portable_Features)
+#if defined(__USE_VECTORCALL) || (defined(_DEBUG)&&0) || defined(_USE_Non_Portable_Features)
 
 //Variadic
 //__vectorcall
@@ -1291,43 +1286,118 @@ struct StringIndicator
 	using tag = std::basic_string<CharIndicator::tag>;
 	static constexpr bool value = CharIndicator::value;
 
-	using Traits = std::char_traits<CharIndicator::tag>;
+	using traits = std::char_traits<CharIndicator::tag>;
 
-	static size_t Strlen(const CharIndicator::tag* str);
-	static CharIndicator::tag* Strcpy(
+	static size_t strlen(const CharIndicator::tag* str)
+	{
+		return traits::length(str);
+	}
+	static CharIndicator::tag* strcpy(
 		CharIndicator::tag* dest,
 		const CharIndicator::tag* source
-	);
-	static CharIndicator::tag* StrcpyS(
+	)
+	{
+		return traits::copy(dest, source, strlen(source));
+	}
+	static CharIndicator::tag* strcpy_s(
 		CharIndicator::tag* dest,
 		const CharIndicator::tag* source,
 		const size_t size
-	);
+	)
+	{
+		return traits::copy(dest, source, std::min(size, strlen(source)));
+	}
 
-	static size_t CStrlen(const char* str);
-	static char* CStrcpy(
+	static size_t c_strlen(const char* str)
+	{
+		return ::strlen(str);
+	}
+	static char* c_strcpy(
 		char* dest,
 		const char* source
-	);
-	static int CStrcpyS(
+	)
+	{
+		return ::strcpy(dest, source);
+	}
+	static int c_strcpy_s(
 		char* dest,
 		const char* source,
 		const size_t size
-	);
+	)
+	{
+		return ::strcpy_s(dest, std::min(size, c_strlen(source)), source);
+	}
 
-	template<typename T>
-	static tag ToString(const T& value);
+	template<typename str, typename T>
+	static str ToString(const T& value)
+	{
+		if constexpr (std::is_same_v<str, std::wstring>)
+			return std::to_wstring(value);
+		else
+			return std::to_string(value);
+	}
+
+	template<typename str, typename _T>
+	static str Combine(const _T& first)
+	{
+		return ToString<str>(first);
+	}
+	template<typename str, typename _First, typename _LeftT>
+	static str Combine(const _First& first, const _LeftT& arg)
+	{
+		return ToString<str>(first) + ToString<str>(arg);
+	}
+	template<typename str, typename _First, typename... Args>
+	static str Combine(const _First& first, const Args&...args)
+	{
+		return ToString<str>(first) + Combine<str>(args...);
+	}
+
+	// trim whitespace from the beginning and end of a string
+	template<typename str>
+	str Trim(const str& input, const str& chs, bool isLeft = true, bool isRight = true)
+	{
+		size_t start = 0;
+		size_t end = input.size();
+
+		if (isLeft)
+		{
+			bool stats = true;
+			while (start < end && stats)
+			{
+				stats = false;
+				for (auto&& ch : chs)
+				{
+					if (ch == input[start])
+					{
+						start++;
+						stats = true;
+						break;
+					}
+				}
+			}
+		}
+		if (isRight)
+		{
+			bool stats = true;
+			while (start < end && stats)
+			{
+				stats = false;
+				for (auto&& ch : chs)
+				{
+					if (ch == input[end-1])
+					{
+						end--;
+						stats = true;
+						break;
+					}
+				}
+			}
+		}
+		return input.substr(start, end - start);
+	}
 };
-template<typename T>
-StringIndicator::tag StringIndicator::ToString(const T& value)
-{
-#ifdef UNICODE
-	return std::to_wstring(value);
-#else
-	return std::to_string(value);
-#endif // UNICODE
 
-}
 #ifdef UNICODE
 #define COUT std::wcout
 #define __CNTEXT(str) L##str
@@ -1338,155 +1408,6 @@ StringIndicator::tag StringIndicator::ToString(const T& value)
 #define CNTEXT(str) __CNTEXT(str)
 #endif
 #define make_string(str) StringIndicator::tag(CNTEXT(str))
-
-// convert memory to string, if unit_size set 0,
-// will compress source data to result string
-template<
-	typename result_char_type,
-	typename memory_type,
-	size_t unit_size = sizeof(memory_type)
->
-std::basic_string<result_char_type> convert_xstring(
-	const memory_type* start,
-	const memory_type* end
-)
-{
-	constexpr bool is_compress = unit_size == 0;
-	using result_type = std::basic_string<result_char_type>;
-	result_type result;
-	if constexpr (unit_size == sizeof(result_char_type))
-	{
-		result.reserve((end - start) * unit_size / sizeof(result_char_type)
-			+ (unit_size % sizeof(result_char_type) ? 1 : 0));
-		for (const result_char_type* head = reinterpret_cast<const result_char_type*>(start),
-			tail = reinterpret_cast<const result_char_type*>(end); head + 1 <= tail; head++)
-		{
-			result.push_back(*head);
-		}
-		return result;
-	}
-	if constexpr (is_compress)
-	{
-		result.reserve((end - start) * unit_size / sizeof(result_char_type)
-			+ (unit_size % sizeof(result_char_type) ? 1 : 0));
-		for (const result_char_type* head = reinterpret_cast<const result_char_type*>(start),
-			*tail = reinterpret_cast<const result_char_type*>(end); head + 1 <= tail; head++)
-		{
-			result.push_back(*head);
-		}
-	}
-	else
-	{
-		if constexpr (unit_size < sizeof(result_char_type))
-		{
-			result.reserve(end - start);
-			result_char_type buffer = 0;
-			for (const memory_type* head = start, *tail = end; head != tail; head++)
-			{
-				memmove(&buffer, head, sizeof(result_char_type));
-				result.push_back(buffer);
-				buffer = 0;
-			}
-		}
-		else
-		{
-			result.reserve((end - start) * unit_size / sizeof(result_char_type)
-				+ (unit_size % sizeof(result_char_type) ? 1 : 0));
-			char buffer[sizeof(result_char_type) + 1] = { 0 };
-			buffer[sizeof(result_char_type)] = 0;
-			memset(buffer, 0, sizeof(result_char_type));
-			size_t offset = 0;
-			for (const memory_type* head = start, *tail = end; head != tail; head++)
-			{
-				for (const void* curhead = head, *curend = head + 1; curhead != curend;
-					curhead = reinterpret_cast<const void*>(reinterpret_cast<size_t>(curhead) + 1))
-				{
-					memmove(&buffer[offset], head, 1);
-					offset++;
-					if (offset == sizeof(result_char_type))
-					{
-						result.push_back(*reinterpret_cast<result_char_type*>(&buffer));
-						memset(buffer, 0, sizeof(result_char_type));
-						offset = 0;
-					}
-				}
-			}
-			if (offset)
-			{
-				result.push_back(*reinterpret_cast<result_char_type*>(&buffer));
-				memset(buffer, 0, sizeof(result_char_type));
-				offset = 0;
-			}
-		}
-	}
-	return result;
-}
-
-template<typename _T>
-inline std::string Combine(const _T& first)
-{
-	return std::to_string(first);
-}
-template<typename _First,typename _LeftT>
-inline std::string Combine(const _First& first, const _LeftT& arg)
-{
-	return std::to_string(first) + std::to_string(arg);
-}
-template<typename _First, typename... Args>
-inline std::string Combine(const _First& first, const Args&...args)
-{
-	return std::to_string(first) + Combine(args...);
-}
-
-template<typename _ReTy>
-inline decltype(auto) convert_xvalue(const std::string& str)
-{
-	if constexpr (std::is_floating_point_v<_ReTy>)
-		return static_cast<_ReTy>(std::atof(str.c_str()));
-	else if constexpr (std::is_integral_v<_ReTy>)
-		return static_cast<_ReTy>(std::atoi(str.c_str()));
-	else if constexpr (std::is_same_v<const char*, _ReTy>)
-		return str.c_str();
-	else if constexpr (std::is_same_v<std::string, _ReTy>)
-		return str;
-	else if constexpr (std::is_same_v<std::filesystem::path, _ReTy>)
-		return std::filesystem::path(str);
-	else if constexpr (std::is_same_v<bool, _ReTy>)
-	{
-		if (str == "true")
-			return true;
-		else if (str == "false")
-			return false;
-		else
-			throw std::bad_cast();
-	}
-	else
-	{
-		static_assert(std::is_same_v<_ReTy, void > == true, "not support for this type");
-		return _ReTy{};
-	}
-}
-
-// trim whitespace from the beginning and end of a string
-template<
-	typename _Str,
-	typename _CharFirst,
-	int left_right_flag = 3
->
-_Str trim(const _Str& str, _CharFirst ch)
-{
-	size_t start = 0;
-	size_t end = str.size();
-	while (left_right_flag & 1 < 0 && start < end && ch == str[start])
-	{
-		start += 1;
-	}
-	while (left_right_flag & 1 < 1 && end > start && ch == str[end - 1])
-	{
-		end -= 1;
-	}
-	return str.substr(start, end - start);
-}
 
 #pragma endregion
 

@@ -1,4 +1,4 @@
-#include "Convention/Convention.h"
+﻿#include "Convention/Convention.h"
 #ifdef _WINDOWS
 #include <conio.h>
 #include<Windows.h>
@@ -10,68 +10,6 @@
 
 using namespace std;
 
-std::string platform_indicator::GeneratePlatformMessage() noexcept
-{
-	return std::string("Platform: ") + __PLATFORM_NAME + "-" + __PLATFORM_VERSION + "-" + __PLATFORM_EXTENSION;
-}
-int platform_indicator::KeyboardInput() noexcept
-{
-#ifdef _WINDOWS
-	if (_kbhit())
-		return _getch();
-#else
-	fd_set rfds;
-	struct timeval tv;
-
-	FD_ZERO(&rfds);
-	FD_SET(0, &rfds);
-	tv.tv_sec = 0;
-	tv.tv_usec = 1; //���õȴ���ʱʱ��
-	if (select(1, &rfds, NULL, NULL, &tv) > 0)
-		return getchar();
-#endif // _WINDOWS
-	return -1;
-}
-
-size_t string_indicator::strlen(const char_indicator::tag* str)
-{
-	return string_indicator::Traits::length(str);
-}
-char_indicator::tag* string_indicator::strcpy(
-	char_indicator::tag* dest,
-	const char_indicator::tag* source
-)
-{
-	return string_indicator::Traits::copy(dest, source, strlen(source));
-}
-char_indicator::tag* string_indicator::strcpy_s(
-	char_indicator::tag* dest,
-	const char_indicator::tag* source,
-	const size_t size
-)
-{
-	return string_indicator::Traits::copy(dest, source, std::min(size, strlen(source)));
-}
-
-size_t string_indicator::c_strlen(const char* str)
-{
-	return ::strlen(str);
-}
-char* string_indicator::c_strcpy(
-	char* dest,
-	const char* source
-)
-{
-	return ::strcpy(dest, source);
-}
-errno_t string_indicator::c_strcpy_s(
-	char* dest,
-	const char* source,
-	const size_t size
-)
-{
-	return ::strcpy_s(dest, std::min(size, c_strlen(source)), source);
-}
 
 std::string typename2classname(const std::string& str) noexcept
 {
