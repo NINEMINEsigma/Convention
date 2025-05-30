@@ -1,15 +1,16 @@
 #if defined(_WIN64)||defined(_WIN32)
 
-#include "Convention/instance/web_instance.h"
+#include "Convention/instance/WebInstance.h"
 
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
 
+using namespace std;
+using namespace Convention;
 
-
-void instance<web_indicator::broadcast::server, true>::handleClient(web_indicator::socket_type clientSocket)
+void instance<WebIndicator::Broadcast::Server, true>::HandleClient(WebIndicator::SocketType clientSocket)
 {
     char buffer[1024];
     while (this->get()->running) 
@@ -34,7 +35,7 @@ void instance<web_indicator::broadcast::server, true>::handleClient(web_indicato
     }
     closesocket(clientSocket);
 }
-void instance<web_indicator::broadcast::server, true>::broadcastMessage(const char* message, web_indicator::socket_type sender)
+void instance<WebIndicator::Broadcast::Server, true>::broadcastMessage(const char* message, WebIndicator::SocketType sender)
 {
     std::lock_guard<std::mutex> lock(this->get()->clientsMutex);
     for (SOCKET client : this->get()->clientSockets) 
@@ -46,7 +47,7 @@ void instance<web_indicator::broadcast::server, true>::broadcastMessage(const ch
     }
 }
 
-bool instance<web_indicator::broadcast::server, true>::init() 
+bool instance<WebIndicator::Broadcast::Server, true>::init()
 {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) 
@@ -86,7 +87,7 @@ bool instance<web_indicator::broadcast::server, true>::init()
 
     return true;
 }
-void instance<web_indicator::broadcast::server, true>::start() 
+void instance<WebIndicator::Broadcast::Server, true>::start()
 {
     this->get()->running = true;
     std::cout << "Server start，listen in " << this->get()->PORT << std::endl;
@@ -110,7 +111,7 @@ void instance<web_indicator::broadcast::server, true>::start()
         std::cout << "new client link" << std::endl;
     }
 }
-void instance<web_indicator::broadcast::server, true>::stop() 
+void instance<WebIndicator::Broadcast::Server, true>::stop()
 {
     this->get()->running = false;
     closesocket(this->get()->serverSocket);
@@ -127,7 +128,7 @@ void instance<web_indicator::broadcast::server, true>::stop()
     WSACleanup();
 }
 
-void instance<web_indicator::broadcast::client, true>::receiveMessages() 
+void instance<WebIndicator::Broadcast::client, true>::receiveMessages()
 {
     char buffer[1024];
     while (this->get()->running) 
@@ -135,7 +136,7 @@ void instance<web_indicator::broadcast::client, true>::receiveMessages()
         int bytesReceived = recv(this->get()->clientSocket, buffer, sizeof(buffer), 0);
         if (bytesReceived <= 0) 
         {
-            std::cout << "The connection to the server has been dropped" << std::endl;
+            std::cout << "The connection to the Server has been dropped" << std::endl;
             this->get()->running = false;
             break;
         }
@@ -144,7 +145,7 @@ void instance<web_indicator::broadcast::client, true>::receiveMessages()
     }
 }
 
-bool instance<web_indicator::broadcast::client, true>::init() 
+bool instance<WebIndicator::Broadcast::client, true>::init()
 {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
@@ -179,10 +180,10 @@ bool instance<web_indicator::broadcast::client, true>::init()
 
     return true;
 }
-void instance<web_indicator::broadcast::client, true>::start() 
+void instance<WebIndicator::Broadcast::client, true>::start()
 {
     this->get()->running = true;
-    std::cout << "Link to server" << std::endl;
+    std::cout << "Link to Server" << std::endl;
 
     // 启动接收消息的线程
     std::thread receiveThread(&instance::receiveMessages, this);
@@ -206,7 +207,7 @@ void instance<web_indicator::broadcast::client, true>::start()
 
     stop();
 }
-void instance<web_indicator::broadcast::client, true>::stop() 
+void instance<WebIndicator::Broadcast::client, true>::stop()
 {
     this->get()->running = false;
     closesocket(this->get()->clientSocket);
