@@ -68,7 +68,7 @@ public:
 			this->nDeviceID(), MCI_PLAY,
 			MCI_NOTIFY, (DWORD_PTR)(static_cast<LPVOID>(&mciPP)));
 	}
-	bool pause()noexcept
+	bool Pause()noexcept
 	{
 		MCI_GENERIC_PARMS mciGP{};
 
@@ -104,7 +104,7 @@ public:
 			MCI_STATUS_ITEM, (DWORD_PTR)(static_cast<LPVOID>(&mciSP)));
 		return static_cast<DWORD>(mciSP.dwReturn);
 	}
-	size_t get_end_time()noexcept
+	size_t GetEndTime()noexcept
 	{
 		MCI_STATUS_PARMS mciSP{};
 
@@ -127,7 +127,7 @@ public:
 	}
 	bool set_start_time(size_t start_time)noexcept
 	{
-		DWORD end_time = this->get_end_time();
+		DWORD end_time = this->GetEndTime();
 
 		if (start_time > end_time)
 			return (this->is_succeed = false);

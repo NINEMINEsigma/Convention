@@ -17,7 +17,7 @@ public:
 	auto& Release() noexcept
 	{
 		this->destructor(this->get());
-		this->reset();
+		this->Reset();
 		return *this;
 	}
 

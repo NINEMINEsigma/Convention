@@ -117,7 +117,7 @@ void ConfigChecker(instance<config_indicator::tag>& config)
 				{
 					cout << a_va << " is not found" << endl;
 				}
-				cout << "pause to continue" << endl;
+				cout << "Pause to continue" << endl;
 				while (platform_indicator::keyboard_input() == -1);
 			}
 		}
