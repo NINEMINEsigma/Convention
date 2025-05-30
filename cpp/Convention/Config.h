@@ -269,24 +269,7 @@ struct PlatformIndicator
 
 	constexpr static const char* PlatformInfomation = "Platform: " __PLATFORM_NAME "-" __PLATFORM_VERSION  "-"  __PLATFORM_EXTENSION;
 	// not lock current thread, if input is exist will return it otherwise return -1
-	static int KeyboardInput() noexcept
-	{
-#ifdef _WINDOWS
-		if (_kbhit())
-			return _getch();
-#else
-		fd_set rfds;
-		struct timeval tv;
-
-		FD_ZERO(&rfds);
-		FD_SET(0, &rfds);
-		tv.tv_sec = 0;
-		tv.tv_usec = 1;
-		if (select(1, &rfds, NULL, NULL, &tv) > 0)
-			return getchar();
-#endif // _WINDOWS
-		return -1;
-	}
+	static int KeyboardInput() noexcept;
 };
 
 #pragma endregion
@@ -1413,47 +1396,9 @@ struct StringIndicator
 
 #pragma region Kit
 
-template<typename _T>
-_T Clamp01(const _T& t)
-{
-	if (t > 1)return 1;
-	else if (t < 0)return 0;
-	else return t;
-}
-
-template<typename _T>
-_T Clamp0E(const _T& t, const _T& max)
-{
-	if (t > max)return 1;
-	else if (t < 0)return 0;
-	else return t;
-}
-
-template<typename _T>
-_T Clamp(const _T& t, const _T& min, const _T& max)
-{
-	if (t > max)return 1;
-	else if (t < min)return 0;
-	else return t;
-}
-
-#pragma endregion
-
-#pragma region Kit
-
-#define sync_with_stdio_false(name)			\
-auto name = []()							\
-{											\
-	std::cin.tie(0);						\
-	std::cout.tie(0);						\
-	std::ios::sync_with_stdio(false);		\
-	return 0;								\
-}											\
-
 #ifndef __init
 #define __init(member) member(member)
 #endif // !__init
-
 
 #pragma endregion
 
@@ -1479,34 +1424,26 @@ constexpr bool is_clang_env()
 
 #pragma endregion
 
-#pragma region bit kit
+#pragma region Kit
 
-#define bit_opt_and(left,right)		(left&right)
-#define bit_opt_or(left,right)		(left|right)
-#define bit_opt_not(left)			(~left)
-#define bit_opt_nand(left,right)	(bit_opt_not(bit_opt_and(left,right)))
-#define bit_opt_nor(left,right)		(bit_opt_not(bit_opt_or(left,right)))
-#define bit_opt_xor(left,right)		(bit_opt_and(bit_opt_not(left),right)+bit_opt_and(left,bit_opt_not(right)))
-#define bit_opt_xnor(left,right)	(bit_opt_not(bit_opt_xor(left,right)))
-#define bit_detect(value,pos)		(bit_opt_and(value,(1<<pos)))
-
-#pragma endregion
-
-#pragma region Internal Kit
-
-template<typename Tag>
-Tag* tool_destructor(Tag*& instance_ptr)
+namespace ConventionKit
 {
-	instance_ptr->~Tag();
-	Tag* result = instance_ptr;
-	instance_ptr = nullptr;
-	return result;
+	template<typename T, typename... Args>
+	void Construct(_In_ T* ptr, Args&&... args)
+	{
+		new(ptr) T(std::forward<Args>(args)...);
+	}
+	template<typename T>
+	void Destruct(_In_ T* ptr)
+	{
+		ptr->~T();
+	}
 }
 
 #pragma endregion
 
 template<typename _T>
-_Notnull_ _T* no_warning_6387(_T* from)
+_Notnull_ _T* no_warning_6387(_In_opt_ _T* from)
 {
 	if (from == nullptr)
 	{
@@ -1515,72 +1452,121 @@ _Notnull_ _T* no_warning_6387(_T* from)
 	return from;
 }
 
-// first module name will in pair: "execute":path
-// other key will remove front '-' charactor
-// if a string that is not prefixed with the character '-' does not follow a key, it becomes a key
-extern std::tuple <
-	std::map<std::string, std::string>,
-	std::vector<std::pair<std::string, std::string>>
-> MakeConfig(int argc, char** argv);
+namespace ConventionKit
+{
+	// first module name will in pair: "execute":path
+	// other key will remove front '-' charactor
+	// if a string that is not prefixed with the character '-' does not follow a key, it becomes a key
+	class CommandLineReader
+	{
+		std::map<std::string, std::string> KeyValuePair;
+		std::vector<std::pair<std::string, std::string>> KeyVector;
+		CommandLineReader(int argc, char** argv)
+		{
+			std::map<std::string, std::string>& first = KeyValuePair;
+			std::vector<std::pair<std::string, std::string>>& second = KeyVector;
+			std::string key;
+			std::string value;
+			bool isKey = true;
+			if (argc > 0)
+			{
+				first["execute"] = argv[0];
+				second.push_back({ argv[0],"" });
+			}
+			for (int i = 1; i < argc; i++)
+			{
+				if (second.size() != 0 &&
+					second.back().first.front() == '-' &&
+					second.back().second.size() == 0 &&
+					argv[i][0] != '-'
+					)
+					second.back().second = argv[i];
+				else
+					second.push_back({ argv[i],"" });
 
-template<typename _Type>
-struct descriptive_indicator
-{
-	using tag = _Type;
-	constexpr static bool value = true;
-	const char* description;
-	tag target;
-};
-template<>
-struct descriptive_indicator<void>
-{
-	using tag = void;
-	constexpr static bool value = false;
-	const char* description;
-};
-template<typename _Type>
-auto make_descriptive(_Type val, const char* description)
-{
-	return descriptive_indicator<_Type>{ description, val };
-}
-inline auto make_descriptive(const char* val, const char* description)
-{
-	descriptive_indicator<const char*> result;
-	result.target = val;
-	result.description = description;
-	return result;
-}
-inline auto make_descriptive(const char* description)
-{
-	return descriptive_indicator<void>{ description };
-}
+				if (argv[i][0] == '-')
+				{
+					if (isKey)
+						key = argv[i];
+					else
+						first[key] = value;
+					isKey = false;
+					key = argv[i];
+					while (key.front() == '-')
+					{
+						key.erase(key.begin());
+						if (key.size() == 0)
+						{
+							isKey = true;
+							break;
+						}
+					}
+				}
+				else if (isKey == false)
+				{
+					first[key] = argv[i];
+					isKey = true;
+				}
+				else
+				{
+					first[argv[i]] = "";
+					isKey = true;
+				}
+			}
+			if (isKey == false)
+			{
+				first[key] = "";
+				second.push_back({ key,"" });
+			}
+		}
+	};
 
-#include <type_traits>
+	template<typename _Type>
+	struct DescriptiveIndicator
+	{
+		using tag = _Type;
+		constexpr static bool value = true;
+		const char* description;
+		tag target;
+		DescriptiveIndicator(const char* description, tag target) noexcept :
+			__init(description), __init(target) {
+		}
+	};
+	template<>
+	struct DescriptiveIndicator<void>
+	{
+		using tag = void;
+		constexpr static bool value = false;
+		const char* description;
+		DescriptiveIndicator(const char* description) noexcept :
+			__init(description) {
+		}
+	};
 
 #pragma region is_specialization
 
-// 基础模板
-template<typename T, template<typename...> class Template>
-struct is_specialization : std::false_type {};
+	// 基础模板
+	template<typename T, template<typename...> class Template>
+	struct is_specialization : std::false_type {};
 
-// 特化模板
-template<template<typename...> class Template, typename... Args>
-struct is_specialization<Template<Args...>, Template> : std::true_type
-{
-	using tags = std::tuple<Args...>;
-};
+	// 特化模板
+	template<template<typename...> class Template, typename... Args>
+	struct is_specialization<Template<Args...>, Template> : std::true_type
+	{
+		using tags = std::tuple<Args...>;
+	};
 
 #pragma endregion
 
-#pragma region Reflection
+}
+
+#pragma region __PRETTY_FUNCTION__
 
 #if !defined(__PRETTY_FUNCTION__) && !defined(__GNUC__)
 #define __PRETTY_FUNCTION__ __FUNCSIG__
 #endif
 
 #define PrettyFunctionName() __PRETTY_FUNCTION__
-
-
 
 #pragma endregion
 
