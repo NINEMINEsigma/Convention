@@ -205,7 +205,7 @@ namespace Convention
         /**
          * @brief 默认构造函数
          */
-        instance() :_Mybase(new _TimePoint(_Clock::now())) {};
+        instance() :_Mybase(make_shared<>(), new (GetStaticMyAllocator().allocate(sizeof(_Mybase::_MyType))) _Mybase::_MyType(_Clock::now())) {};
 
         /**
          * @brief 拷贝构造函数

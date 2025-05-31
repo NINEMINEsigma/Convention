@@ -6,6 +6,13 @@
 
 namespace Convention
 {
+
+	/**
+	 * @brief 数值类型实体, 使用std::unique_ptr
+	 * @tparam _NumberType 内置数值类型, 满足TypeFlag::Arithmetic
+	 * @tparam Allocator 内存分配器
+	 * @tparam _Dx 用于std::unique_ptr的_Dx
+	 */
 	template<typename _NumberType, template<typename...> class Allocator, typename _Dx>
 	class instance<
 		_NumberType,
@@ -27,14 +34,20 @@ namespace Convention
 			std::unique_ptr,
 			_Dx >;
 	public:
+		// 赋值构造
 		instance(_NumberType value = 0)
 			: _Mybase(new(GetStaticMyAllocator().allocate(sizeof(_NumberType))) _NumberType(value)) {}
+		// 表达式构造
 		instance(decltype(eval_init::create_real_eval<_NumberType>()) evaler, const std::string exp)
 			: instance(evaler.evaluate(eval_init::create_real_eval<_NumberType>().parse(exp))) {}
+		// 表达式字符串构造
+		// exp = "1+1"
 		instance(const std::string& exp)
 			: instance(eval_init::create_real_eval<_NumberType>(), exp) {}
+		// 拷贝构造
 		instance(const instance& ins) noexcept
 			: _Mybase(new _NumberType(ins.ReadConstValue())) {}
+		// 移动构造
 		instance(instance&& ins) noexcept
 			: _Mybase(std::move(ins)) {}
 		virtual ~instance() {}
@@ -96,6 +109,23 @@ namespace Convention
 			return std::gcd(this->ReadConstValue(), right);
 		}*/
 	};
+
+	/**
+	 * @brief 数值类型实体
+	 * @tparam _NumberType 内置数值类型, 满足TypeFlag::Arithmetic
+	 * @tparam Allocator 内存分配器
+	 * @tparam _Dx 用于std::unique_ptr的_Dx
+	 */
+	template<
+		typename _NumberType, 
+		template<typename...> class Allocator = std::allocator, 
+		typename _Dx = Convention::DefaultDelete<_NumberType, Allocator>>
+	using number_instance = instance<
+		_NumberType,
+		true,
+		Allocator,
+		std::unique_ptr,
+		_Dx>;
 
 	struct NumberStructure
 	{
@@ -450,8 +480,23 @@ namespace Convention
 		return NumberStructure::parse(str);
 	}
 
-	template<>
-	class instance<NumberStructure, true> :instance<NumberStructure, false>
+	/**
+	 * @brief 有符号有理数类型实体, 使用std::unique_ptr
+	 * @tparam Allocator 内存分配器
+	 * @tparam _Dx 用于std::unique_ptr的_Dx
+	 */
+	template<template<typename...> class Allocator, typename _Dx>
+	class instance<
+		NumberStructure,
+		true,
+		Allocator,
+		std::unique_ptr,
+		_Dx> :instance<
+		NumberStructure,
+		false,
+		Allocator,
+		std::unique_ptr,
+		_Dx>
 	{
 	public:
 		using _NumberType = NumberStructure;
@@ -604,6 +649,10 @@ namespace Convention
 		};
 	}
 
+	void __TestNumberInstance()
+	{
+		number_instance<int> a();
+	}
 #ifdef __REF_BOOST
 #if __REF_BOOST
 #include <boost/math_fwd.hpp>

@@ -5,7 +5,33 @@
 
 namespace Convention
 {
+    // default deleter for unique_ptr
+    template <class _Ty, template<typename> class _Alloc>
+    struct DefaultDelete
+    {
+        constexpr DefaultDelete() noexcept = default;
 
+        template <class _Ty2, enable_if_t<std::is_convertible_v<_Ty2*, _Ty*>, int> = 0>
+        _CONSTEXPR23 DefaultDelete(const DefaultDelete<_Ty2, _Alloc>&) noexcept {}
+
+        _CONSTEXPR23 void operator()(_Ty* _Ptr) const noexcept /* strengthened */
+        {
+            // delete a pointer
+            static_assert(0 < sizeof(_Ty), "can't delete an incomplete type");
+            static _Alloc<_Ty> alloc;
+            alloc.destroy(_Ptr);
+            alloc.deallocate(_Ptr, 1);
+        }
+    };
+
+    /**
+     * @brief 支持内存控制的实体
+     * @tparam T 目标类型, 不支持数组
+     * @tparam _is_extension 是否为扩展实体
+     * @tparam Allocator 内存管理器
+     * @tparam PtrType 智能指针类型
+     * @tparam ExtensionPtrArgs 智能指针扩展模板参数包
+     */
     template<
         typename T,
         bool _is_extension = true,
@@ -20,6 +46,7 @@ namespace Convention
     public:
         using _MyType = T;
         using _MyAlloc = Allocator<T>;
+        using _RootMetaBase = PtrType<T, ExtensionPtrArgs...>;
 
         static _MyAlloc& GetStaticMyAllocator()
         {
@@ -75,12 +102,13 @@ namespace Convention
     template<
         typename TOutputStream,
         typename T,
-        template<typename...> class PtrType = std::shared_ptr,
+        template<typename...> class Allocator,
+        template<typename...> class PtrType,
         typename... ExtensionPtrArgs
     >
     TOutputStream& operator<<(
         TOutputStream& os,
-        const instance<T, false, PtrType, ExtensionPtrArgs...>& ins
+        const instance<T, false, Allocator, PtrType, ExtensionPtrArgs...>& ins
         )
     {
         os << *ins;
@@ -88,12 +116,13 @@ namespace Convention
     }template<
         typename TOutputStream,
         typename T,
-        template<typename...> class PtrType = std::shared_ptr,
+        template<typename...> class Allocator,
+        template<typename...> class PtrType,
         typename... ExtensionPtrArgs
     >
         TOutputStream& operator<<(
             TOutputStream& os,
-            const instance<T, true, PtrType, ExtensionPtrArgs...>& ins
+            const instance<T, true, Allocator, PtrType, ExtensionPtrArgs...>& ins
             )
     {
         os << ins.ToString();
