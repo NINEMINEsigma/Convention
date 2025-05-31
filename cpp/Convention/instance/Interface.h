@@ -5,6 +5,9 @@
 
 namespace Convention
 {
+    template<typename T>
+    using SharedPtr = std::shared_ptr<T>;
+
     // default deleter for unique_ptr
     template <class _Ty, template<typename> class _Alloc>
     struct DefaultDelete
@@ -24,6 +27,9 @@ namespace Convention
         }
     };
 
+    template<typename T, typename Deleter = DefaultDelete<T, std::allocator>>
+    using UniquePtr = std::unique_ptr<T, Deleter>;
+
     /**
      * @brief 支持内存控制的实体
      * @tparam T 目标类型, 不支持数组
@@ -36,46 +42,74 @@ namespace Convention
         typename T,
         bool _is_extension = true,
         template<typename...> class Allocator = std::allocator,
-        template<typename...> class PtrType = std::shared_ptr,
+        template<typename...> class PtrType = SharedPtr,
         typename... ExtensionPtrArgs
     >
     class instance : public AnyClass, public PtrType<T, ExtensionPtrArgs...>
     {
     private:
         using _Mybase = PtrType<T, ExtensionPtrArgs...>;
+        void* operator new(size_t t) { return ::operator new(t); }
     public:
         using _MyType = T;
         using _MyAlloc = Allocator<T>;
+        constexpr static bool _MyExtension = _is_extension;
         using _RootMetaBase = PtrType<T, ExtensionPtrArgs...>;
-
+    protected:
+        /**
+        * @brief 获取内存管理器
+        */
         static _MyAlloc& GetStaticMyAllocator()
         {
             static _MyAlloc alloc;
             return alloc;
         }
-
-        static constexpr bool is_extension = _is_extension;
-    private:
-        void* operator new(size_t t) { return ::operator new(t); }
+        template<typename... Args>
+        static T* _BuildMyPtr(Args&&... args)
+        {
+            T* ptr = GetStaticMyAllocator().allocate(1);
+            GetStaticMyAllocator().construct(ptr, std::forward<Args>(args)...);
+            return ptr
+        }
+        static void _DestoryMyPtr(_In_ T* ptr)
+        {
+            GetStaticMyAllocator().destroy(ptr);
+            GetStaticMyAllocator().deallocate(ptr, 1);
+        }
     public:
+        /**
+        * @brief 任意匹配的构造函数
+        */
         template<typename... Args>
         instance(Args&&... args) : _Mybase(std::forward<Args>(args)...) {}
         virtual ~instance() {}
 
+        /**
+        * @brief 是否为空指针
+        */
         bool IsEmpty() const noexcept
         {
             return this->get() != nullptr;
         }
 
+        /**
+        * @brief 读取值(引用方式)
+        */
         T& ReadValue()
         {
             return *(this->get());
         }
+        /**
+        * @brief 读取const值(引用方式)
+        */
         const T& ReadConstValue() const
         {
             return *(this->get());
         }
 
+        /**
+        * @brief 匹配任意赋值函数
+        */
         template<typename... Args>
         instance& operator=(Args&&... args)
         {

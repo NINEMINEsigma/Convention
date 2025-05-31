@@ -139,6 +139,15 @@ public:
 		}
 		return TypeFlag::Unknown;
 	}
+	template<typename T>
+	static constexpr TypeFlag TypeFlagMask(TypeFlag Expect)
+	{
+		return static_cast<TypeFlag>(static_cast<size_t>(Expect) & static_cast<size_t>(GetTypeFlag<T>()));
+	}
+	static TypeFlag TypeFlagMask(const type_info& type, TypeFlag Expect)
+	{
+		return static_cast<TypeFlag>(static_cast<size_t>(Expect) & static_cast<size_t>(GetTypeFlag(type)));
+	}
 
 	virtual type GetType() const noexcept
 	{

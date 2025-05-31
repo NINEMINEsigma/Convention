@@ -8,35 +8,22 @@ namespace Convention
 {
 
 	/**
-	 * @brief 数值类型实体, 使用std::unique_ptr
+	 * @brief 数值类型实体, 使用UniquePtr
 	 * @tparam _NumberType 内置数值类型, 满足TypeFlag::Arithmetic
 	 * @tparam Allocator 内存分配器
-	 * @tparam _Dx 用于std::unique_ptr的_Dx
+	 * @tparam _Dx 用于UniquePtr的_Dx
 	 */
 	template<typename _NumberType, template<typename...> class Allocator, typename _Dx>
-	class instance<
-		_NumberType,
-		true,
-		Allocator,
-		std::unique_ptr,
-		_Dx> : public instance<
-		std::enable_if_t<static_cast<size_t>(TypeClass::GetTypeFlag<_NumberType>())& static_cast<size_t>(TypeFlag::Arithmetic), _NumberType>,
-		false,
-		Allocator,
-		std::unique_ptr,
-		_Dx >
+	class instance<_NumberType, true, Allocator, UniquePtr, _Dx>
+		: public instance<std::enable_if_t<!!(size_t)TypeClass::TypeFlagMask<_NumberType>(TypeFlag::Arithmetic), _NumberType>, false, Allocator, UniquePtr, _Dx >
 	{
 	private:
-		using _Mybase = instance<
-			std::enable_if_t<static_cast<size_t>(TypeClass::GetTypeFlag<_NumberType>()) & static_cast<size_t>(TypeFlag::Arithmetic), _NumberType>,
-			false,
-			Allocator,
-			std::unique_ptr,
-			_Dx >;
+		using _Mybase = 
+			instance<std::enable_if_t<!!(size_t)TypeClass::TypeFlagMask<_NumberType>(TypeFlag::Arithmetic), _NumberType>, false, Allocator, UniquePtr, _Dx >;
 	public:
 		// 赋值构造
 		instance(_NumberType value = 0)
-			: _Mybase(new(GetStaticMyAllocator().allocate(sizeof(_NumberType))) _NumberType(value)) {}
+			: _Mybase(_BuildMyPtr(value)) {}
 		// 表达式构造
 		instance(decltype(eval_init::create_real_eval<_NumberType>()) evaler, const std::string exp)
 			: instance(evaler.evaluate(eval_init::create_real_eval<_NumberType>().parse(exp))) {}
@@ -46,7 +33,7 @@ namespace Convention
 			: instance(eval_init::create_real_eval<_NumberType>(), exp) {}
 		// 拷贝构造
 		instance(const instance& ins) noexcept
-			: _Mybase(new _NumberType(ins.ReadConstValue())) {}
+			: instance(ins.ReadConstValue()) {}
 		// 移动构造
 		instance(instance&& ins) noexcept
 			: _Mybase(std::move(ins)) {}
@@ -116,20 +103,12 @@ namespace Convention
 	 * @tparam Allocator 内存分配器
 	 * @tparam _Dx 用于std::unique_ptr的_Dx
 	 */
-	template<
-		typename _NumberType, 
-		template<typename...> class Allocator = std::allocator, 
-		typename _Dx = Convention::DefaultDelete<_NumberType, Allocator>>
-	using number_instance = instance<
-		_NumberType,
-		true,
-		Allocator,
-		std::unique_ptr,
-		_Dx>;
+	template<typename _NumberType, template<typename...> class Allocator = std::allocator>
+	using default_number_instance = instance<_NumberType, true, Allocator, UniquePtr, Convention::DefaultDelete<_NumberType, Allocator>>;
 
 	struct NumberStructure
 	{
-		NumberStructure() noexcept : molecule(0), denominator(1), sign(false) {}
+		NumberStructure() noexcept : molecule(0), denominator(1), negative(false) {}
 		//新增一个构造函数，接受浮点数与精度并处理为分数
 		template<typename _Float>
 		NumberStructure(_Float value) noexcept
@@ -139,7 +118,7 @@ namespace Convention
 			{
 				molecule = 0;
 				denominator = 1;
-				sign = false;
+				negative = false;
 				return;
 			}
 
@@ -180,7 +159,7 @@ namespace Convention
 			_Float abs_value = std::fabs(value);
 			molecule = static_cast<size_t>(abs_value * precision + 0.5); // +0.5用于四舍五入
 			denominator = precision;
-			sign = (value < 0);
+			negative = (value < 0);
 
 			// 计算最大公约数进行约分
 			size_t gcd_val = std::gcd(molecule, denominator);
@@ -197,7 +176,7 @@ namespace Convention
 			{
 				molecule = 0;
 				denominator = 1;
-				sign = false;
+				negative = false;
 				return;
 			}
 
@@ -205,7 +184,7 @@ namespace Convention
 			_Float abs_value = std::fabs(value);
 			molecule = static_cast<size_t>(abs_value * precision + 0.5); // +0.5用于四舍五入
 			denominator = precision;
-			sign = (value < 0);
+			negative = (value < 0);
 
 			// 计算最大公约数进行约分
 			size_t gcd_val = std::gcd(molecule, denominator);
@@ -214,16 +193,16 @@ namespace Convention
 		}
 
 		NumberStructure(size_t mol, size_t den, bool is_negative = false) noexcept
-			: molecule(mol), denominator(den), sign(is_negative) {
+			: molecule(mol), denominator(den), negative(is_negative) {
 		}
 		NumberStructure(const NumberStructure& other) noexcept
-			: molecule(other.molecule), denominator(other.denominator), sign(other.sign) {
+			: molecule(other.molecule), denominator(other.denominator), negative(other.negative) {
 		}
 		NumberStructure& operator=(const NumberStructure& other) noexcept
 		{
 			this->molecule = other.molecule;
 			this->denominator = other.denominator;
-			this->sign = other.sign;
+			this->negative = other.negative;
 			return *this;
 		}
 
@@ -231,7 +210,7 @@ namespace Convention
 		_NumberType value() const
 		{
 			_MidType result = static_cast<_MidType>(molecule) / static_cast<_MidType>(denominator);
-			return static_cast<_NumberType>(sign ? -result : result);
+			return static_cast<_NumberType>(negative ? -result : result);
 		}
 
 		template<typename _NumberType>
@@ -243,12 +222,12 @@ namespace Convention
 		// 符号相关的辅助函数
 		bool is_negative() const noexcept
 		{
-			return sign && molecule != 0;
+			return negative && molecule != 0;
 		}
 
 		bool is_positive() const noexcept
 		{
-			return !sign && molecule != 0;
+			return !negative && molecule != 0;
 		}
 
 		bool is_zero() const noexcept
@@ -262,7 +241,7 @@ namespace Convention
 			if (molecule == 0) return NumberStructure(0, 1, false);
 
 			size_t g = std::gcd(molecule, denominator);
-			return NumberStructure(molecule / g, denominator / g, sign);
+			return NumberStructure(molecule / g, denominator / g, negative);
 		}
 
 		inline NumberStructure& let_simplify() noexcept
@@ -286,14 +265,14 @@ namespace Convention
 			size_t b_mol = other.molecule * (lcm / other.denominator);
 
 			// 考虑符号进行加法运算
-			if (sign == other.sign)
+			if (negative == other.negative)
 			{
-				return NumberStructure(a_mol + b_mol, lcm, sign).simplify();
+				return NumberStructure(a_mol + b_mol, lcm, negative).simplify();
 			}
 			else
 			{
 				bool stats = a_mol >= b_mol;
-				return NumberStructure(stats ? (a_mol - b_mol) : (b_mol - a_mol), lcm, stats ? sign : other.sign).simplify();
+				return NumberStructure(stats ? (a_mol - b_mol) : (b_mol - a_mol), lcm, stats ? negative : other.negative).simplify();
 			}
 		}
 
@@ -308,21 +287,21 @@ namespace Convention
 			size_t b_mol = other.molecule * (lcm / other.denominator);
 
 			// 考虑符号进行减法运算
-			if (sign != other.sign)
+			if (negative != other.negative)
 			{
-				return NumberStructure(a_mol + b_mol, lcm, sign).simplify();
+				return NumberStructure(a_mol + b_mol, lcm, negative).simplify();
 			}
 			else
 			{
 				bool stats = a_mol >= b_mol;
-				return NumberStructure(stats ? (a_mol - b_mol) : (b_mol - a_mol), lcm, stats ? sign : !sign).simplify();
+				return NumberStructure(stats ? (a_mol - b_mol) : (b_mol - a_mol), lcm, stats ? negative : !negative).simplify();
 			}
 		}
 
 		// 乘法运算符
 		NumberStructure operator*(const NumberStructure& other) const noexcept
 		{
-			return NumberStructure(molecule * other.molecule, denominator * other.denominator, sign == other.sign).simplify();
+			return NumberStructure(molecule * other.molecule, denominator * other.denominator, negative == other.negative).simplify();
 		}
 
 		template<typename _NumberTy>
@@ -330,7 +309,7 @@ namespace Convention
 		{
 			if constexpr (std::is_integral_v<_NumberTy>)
 			{
-				return NumberStructure(molecule * other, denominator, sign == (other > 0)).simplify();
+				return NumberStructure(molecule * other, denominator, negative == (other > 0)).simplify();
 			}
 			else
 			{
@@ -346,7 +325,7 @@ namespace Convention
 				throw std::runtime_error("The divisor cannot be zero");
 			}
 
-			return NumberStructure(molecule * other.denominator, denominator * other.molecule, sign == other.sign).simplify();
+			return NumberStructure(molecule * other.denominator, denominator * other.molecule, negative == other.negative).simplify();
 		}
 
 		template<typename _NumberTy>
@@ -389,9 +368,9 @@ namespace Convention
 
 		int compare(const NumberStructure& other) const noexcept
 		{
-			if (sign != other.sign)
+			if (negative != other.negative)
 			{
-				return sign ? -1.0 : 1.0;
+				return negative ? -1.0 : 1.0;
 			}
 
 			size_t a_compare = molecule * other.denominator;
@@ -449,18 +428,18 @@ namespace Convention
 		// 一元运算符
 		NumberStructure operator-() const noexcept
 		{
-			return NumberStructure(molecule, denominator, !sign);
+			return NumberStructure(molecule, denominator, !negative);
 		}
 
 		// 字符串表示
 		std::string ToString() const noexcept
 		{
-			return (sign ? "-" : "") + std::to_string(molecule) + "/" + std::to_string(denominator);
+			return (negative ? "-" : "") + std::to_string(molecule) + "/" + std::to_string(denominator);
 		}
 
 		size_t molecule = 0;
 		size_t denominator = 1;
-		bool sign = false; // false表示正数，true表示负数
+		bool negative = false; // false表示正数，true表示负数
 	};
 
 	NumberStructure NumberStructure::parse(const std::string& str)
@@ -486,29 +465,33 @@ namespace Convention
 	 * @tparam _Dx 用于std::unique_ptr的_Dx
 	 */
 	template<template<typename...> class Allocator, typename _Dx>
-	class instance<
-		NumberStructure,
-		true,
-		Allocator,
-		std::unique_ptr,
-		_Dx> :instance<
-		NumberStructure,
-		false,
-		Allocator,
-		std::unique_ptr,
-		_Dx>
+	class instance<NumberStructure, true, Allocator, UniquePtr, _Dx> :
+		public instance<NumberStructure, false, Allocator, UniquePtr, _Dx>
 	{
-	public:
+	private:
 		using _NumberType = NumberStructure;
-		using _Mybase = instance<_NumberType, false>;
-		instance() : _Mybase(new _NumberType()) {}
-		instance(_NumberType* ptr) :_Mybase(ptr) {}
-		instance(_NumberType value) :_Mybase(new _NumberType(value)) {}
-		instance(const std::string& str) : _Mybase(new _NumberType(_NumberType::parse(str))) {}
+		using _Mybase = instance<NumberStructure, false, Allocator, UniquePtr, _Dx>;
+	public:
+		// 赋值构造
+		instance(size_t molecule, size_t denominator, bool negative)
+			: _Mybase(_BuildMyPtr(molecule, denominator, negative)) {
+		}
+		// 赋值构造
+		instance(const NumberStructure& value)
+			: _Mybase(_BuildMyPtr(value.molecule, value.denominator, value.negative)) {
+		}
+		// 拷贝构造
+		instance(const instance& ins) noexcept
+			: instance(ins.ReadConstValue()) {
+		}
+		// 移动构造
+		instance(instance&& ins) noexcept
+			: _Mybase(std::move(ins)) {
+		}
 		virtual ~instance() {}
 
 		template<typename _Ret, typename _MidType = long double>
-		_Ret value() const
+		_Ret ReadSingleValue() const
 		{
 			return this->get()->value<_Ret, _MidType>();
 		}
@@ -651,7 +634,7 @@ namespace Convention
 
 	void __TestNumberInstance()
 	{
-		number_instance<int> a();
+		default_number_instance<int> a();
 	}
 #ifdef __REF_BOOST
 #if __REF_BOOST
