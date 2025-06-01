@@ -645,9 +645,10 @@ namespace Convention
 
 	void __TestNumberInstance()
 	{
-		number_instance<int> a(0);
+		number_instance<int> a(0), c(1);
 		number_instance<NumberStructure> b(0, 1, false);
 		a.WriteValue(b.ReadSingleValue<int>());
+		a = c.ReadConstValue();
 	}
 
 #ifdef __REF_BOOST

@@ -40,18 +40,20 @@ namespace Convention
         std::string date_time_separator = " "; ///< 日期和时间之间的分隔符
     };
 
+    using ClockInstanceClock = std::chrono::high_resolution_clock;
+
     /**
      * @brief 时间实例类
      * 基于高精度时钟的时间点实例,提供时间测量、格式化和计时器功能
      */
     template<template<typename...> class Allocator>
-    class instance<std::chrono::time_point<std::chrono::high_resolution_clock>, true, Allocator, true>
-        :public instance <std::chrono::time_point<std::chrono::high_resolution_clock>, false, Allocator, true>
+    class instance<std::chrono::time_point<ClockInstanceClock>, true, Allocator, true>
+        : public instance <std::chrono::time_point<ClockInstanceClock>, false, Allocator, true>
     {
     private:
-        using _Mybase = instance <std::chrono::time_point<std::chrono::high_resolution_clock>, false, Allocator, true>;
+        using _Mybase = instance <std::chrono::time_point<ClockInstanceClock>, false, Allocator, true>;
     public:
-        using _Clock = std::chrono::high_resolution_clock;
+        using _Clock = ClockInstanceClock;
         using _TimePoint = std::chrono::time_point<_Clock>;
     private:
         _TimePoint m_begin;              ///< 开始时间点

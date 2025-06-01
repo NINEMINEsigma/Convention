@@ -116,14 +116,37 @@ namespace Convention
         }
 
         /**
-        * @brief 匹配任意赋值函数
+        * @brief 拷贝赋值函数
         */
-        template<typename... Args>
-        instance& operator=(Args&&... args)
+        virtual instance& operator=(const instance& value) noexcept
         {
-            _Mybase::operator=(std::forward<Args>(args)...);
+            if constexpr (_is_unique)
+            {
+                this->WriteValue(value.ReadConstValue());
+            }
+            else
+            {
+                _Mybase::operator=(value);
+            }
             return *this;
         }
+        /**
+        * @brief 移动赋值函数
+        */
+        virtual instance& operator=(instance&& value) noexcept
+        {
+            _Mybase::operator=(std::move(value));
+            return *this;
+        }
+        ///**
+        //* @brief 匹配任意赋值函数
+        //*/
+        //template<typename... Args>
+        //instance& operator=(Args&&... args)
+        //{
+        //    _Mybase::operator=(std::forward<Args>(args)...);
+        //    return *this;
+        //}
 
         virtual std::string ToString() const noexcept override
         {
