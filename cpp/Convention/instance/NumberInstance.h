@@ -13,16 +13,15 @@ namespace Convention
 	 * @tparam Allocator 内存分配器
 	 * @tparam _Dx 用于UniquePtr的_Dx
 	 */
-	template<typename _NumberType, template<typename...> class Allocator, typename _Dx>
-	class instance<_NumberType, true, Allocator, UniquePtr, _Dx>
-		: public instance<std::enable_if_t<!!(size_t)TypeClass::TypeFlagMask<_NumberType>(TypeFlag::Arithmetic), _NumberType>, false, Allocator, UniquePtr, _Dx >
+	template<typename _NumberType, template<typename...> class Allocator, std::enable_if_t<!!(size_t)TypeClass::TypeFlagMask<_NumberType>(TypeFlag::Arithmetic), bool> IsUnique>
+	class instance<_NumberType, true, Allocator, IsUnique>
+		: public instance<_NumberType, false, Allocator, IsUnique>
 	{
 	private:
-		using _Mybase = 
-			instance<std::enable_if_t<!!(size_t)TypeClass::TypeFlagMask<_NumberType>(TypeFlag::Arithmetic), _NumberType>, false, Allocator, UniquePtr, _Dx >;
+		using _Mybase = instance<_NumberType, false, Allocator, IsUnique>;
 	public:
 		// 赋值构造
-		instance(_NumberType value = 0)
+		instance(_NumberType value)
 			: _Mybase(_BuildMyPtr(value)) {}
 		// 表达式构造
 		instance(decltype(eval_init::create_real_eval<_NumberType>()) evaler, const std::string exp)
@@ -39,14 +38,11 @@ namespace Convention
 			: _Mybase(std::move(ins)) {}
 		virtual ~instance() {}
 
-#define operator_core(name)																	\
-	template<typename _R>																	\
-	auto operator name (_R&& value) const													\
-	{																						\
-		if constexpr (internal::is_instance_v<_R>)											\
-			return (**this) name static_cast<_NumberType>(*std::forward<_R>(value).get());	\
-		else																				\
-			return (**this) name static_cast<_NumberType>(std::forward<_R>(value));			\
+#define operator_core(name)																	 \
+	template<typename _R>																	 \
+	auto operator name (_R&& value) const													 \
+	{																						 \
+		return this->ReadConstValue() name static_cast<_NumberType>(std::forward<_R>(value));\
 	}
 
 		operator_core(+);
@@ -67,16 +63,12 @@ namespace Convention
 		{
 			return static_cast<const _Mybase*>(this)->operator*();
 		}
-#define operator_core(name)\
-	template<typename _R>\
-	auto operator name (_R&& value)\
-	{\
-		if constexpr (internal::is_instance_v<_R>)\
-			**this name static_cast<_NumberType>(*std::forward<_R>(value).get());\
-		else\
-			**this name static_cast<_NumberType>(std::forward<_R>(value));\
-		return **this;\
-	}\
+#define operator_core(name)																					  \
+	template<typename _R>																					  \
+	auto operator name (_R&& value)																			  \
+	{																										  \
+		return this->WriteValue(this->ReadConstValue() name static_cast<_NumberType>(std::forward<_R>(value));\
+	}
 
 
 		operator_core(+= );
@@ -96,15 +88,6 @@ namespace Convention
 			return std::gcd(this->ReadConstValue(), right);
 		}*/
 	};
-
-	/**
-	 * @brief 数值类型实体
-	 * @tparam _NumberType 内置数值类型, 满足TypeFlag::Arithmetic
-	 * @tparam Allocator 内存分配器
-	 * @tparam _Dx 用于std::unique_ptr的_Dx
-	 */
-	template<typename _NumberType, template<typename...> class Allocator = std::allocator>
-	using default_number_instance = instance<_NumberType, true, Allocator, UniquePtr, Convention::DefaultDelete<_NumberType, Allocator>>;
 
 	struct NumberStructure
 	{
@@ -464,13 +447,13 @@ namespace Convention
 	 * @tparam Allocator 内存分配器
 	 * @tparam _Dx 用于std::unique_ptr的_Dx
 	 */
-	template<template<typename...> class Allocator, typename _Dx>
-	class instance<NumberStructure, true, Allocator, UniquePtr, _Dx> :
-		public instance<NumberStructure, false, Allocator, UniquePtr, _Dx>
+	template<template<typename...> class Allocator, bool IsUnique>
+	class instance<NumberStructure, true, Allocator, IsUnique> :
+		public instance<NumberStructure, false, Allocator, IsUnique>
 	{
 	private:
 		using _NumberType = NumberStructure;
-		using _Mybase = instance<NumberStructure, false, Allocator, UniquePtr, _Dx>;
+		using _Mybase = instance<NumberStructure, false, Allocator, IsUnique>;
 	public:
 		// 赋值构造
 		instance(size_t molecule, size_t denominator, bool negative)
@@ -490,107 +473,135 @@ namespace Convention
 		}
 		virtual ~instance() {}
 
+		decltype(auto) molecule()
+		{
+			return this->ReadValue().molecule;
+		}
+		auto molecule() const -> const decltype(this->ReadConstValue().molecule)
+		{
+			return this->ReadConstValue().molecule;
+		}
+		decltype(auto) denominator()
+		{
+			return this->ReadValue().denominator;
+		}
+		auto denominator() const -> const decltype(this->ReadConstValue().denominator)
+		{
+			return this->ReadConstValue().denominator;
+		}
+		decltype(auto) negative()
+		{
+			return this->ReadValue().negative;
+		}
+		auto negative() const -> const decltype(this->ReadConstValue().negative)
+		{
+			return this->ReadConstValue().negative;
+		}
+
 		template<typename _Ret, typename _MidType = long double>
 		_Ret ReadSingleValue() const
 		{
-			return this->get()->value<_Ret, _MidType>();
-		}
-
-		template<typename _Ret>
-		operator _Ret() const
-		{
-			return this->value<_Ret, double>();
+			return this->ReadConstValue().value<_Ret, _MidType>();
 		}
 
 		// 通过使用NumberStructure内部的操作符进行转发
 		instance operator+(const instance& other) const
 		{
-			return instance(*this->get() + *other.get());
+			return instance(this->ReadConstValue() + other.ReadConstValue());
 		}
 
 		instance operator-(const instance& other) const
 		{
-			return instance(*this->get() - *other.get());
+			return instance(this->ReadConstValue() - other.ReadConstValue());
 		}
 
 		instance operator*(const instance& other) const
 		{
-			return instance(*this->get() * *other.get());
+			return instance(this->ReadConstValue() * other.ReadConstValue());
 		}
 
 		instance operator/(const instance& other) const
 		{
-			return instance(*this->get() / *other.get());
+			return instance(this->ReadConstValue() / other.ReadConstValue());
 		}
 
 		// 复合赋值运算符
 		instance& operator+=(const instance& other)
 		{
-			**this += *other.get();
+			this->WriteValue(this->ReadConstValue() + other.ReadConstValue());
 			return *this;
 		}
 
 		instance& operator-=(const instance& other)
 		{
-			**this -= *other.get();
+			this->WriteValue(this->ReadConstValue() - other.ReadConstValue());
 			return *this;
 		}
 
 		instance& operator*=(const instance& other)
 		{
-			**this *= *other.get();
+			this->WriteValue(this->ReadConstValue() * other.ReadConstValue());
 			return *this;
 		}
 
 		instance& operator/=(const instance& other)
 		{
-			**this /= *other.get();
+			this->WriteValue(this->ReadConstValue() / other.ReadConstValue());
 			return *this;
 		}
 
 		// 比较运算符
 		bool operator==(const instance& other) const
 		{
-			return **this == *other.get();
+			return this->ReadConstValue() == *other.get();
 		}
 
 		bool operator!=(const instance& other) const
 		{
-			return **this != *other.get();
+			return this->ReadConstValue() != *other.get();
 		}
 
 		bool operator<(const instance& other) const
 		{
-			return **this < *other.get();
+			return this->ReadConstValue() < other.ReadConstValue();
 		}
 
 		bool operator>(const instance& other) const
 		{
-			return **this > *other.get();
+			return this->ReadConstValue() > other.ReadConstValue();
 		}
 
 		bool operator<=(const instance& other) const
 		{
-			return **this <= *other.get();
+			return this->ReadConstValue() <= other.ReadConstValue();
 		}
 
 		bool operator>=(const instance& other) const
 		{
-			return **this >= *other.get();
+			return this->ReadConstValue() >= other.ReadConstValue();
 		}
 
 		// 一元运算符
 		instance operator-() const
 		{
-			return instance(-(**this));
+			return instance(-this->ReadConstValue());
 		}
 
 		// 字符串表示
 		virtual std::string ToString() const noexcept override
 		{
-			return this->get()->ToString();
+			return this->ReadConstValue().ToString();
 		}
 	};
+
+	/**
+	 * @brief 数值类型实体
+	 * @tparam _NumberType 内置数值类型, 满足TypeFlag::Arithmetic
+	 * @tparam Allocator 内存分配器
+	 * @tparam _Dx 用于std::unique_ptr的_Dx
+	 */
+	template<typename _NumberType, template<typename...> class Allocator = std::allocator, bool IsUnqiue = true>
+	using number_instance = instance<_NumberType, true, Allocator, IsUnqiue>;
 
 	namespace internal
 	{
@@ -634,8 +645,11 @@ namespace Convention
 
 	void __TestNumberInstance()
 	{
-		default_number_instance<int> a();
+		number_instance<int> a(0);
+		number_instance<NumberStructure> b(0, 1, false);
+		a.WriteValue(b.ReadSingleValue<int>());
 	}
+
 #ifdef __REF_BOOST
 #if __REF_BOOST
 #include <boost/math_fwd.hpp>

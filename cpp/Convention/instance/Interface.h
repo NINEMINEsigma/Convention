@@ -1,4 +1,4 @@
-#ifndef CONVENTION_KIT_INTERFACE_H
+ï»¿#ifndef CONVENTION_KIT_INTERFACE_H
 #define CONVENTION_KIT_INTERFACE_H
 
 #include "Convention/Internal.h"
@@ -31,33 +31,31 @@ namespace Convention
     using UniquePtr = std::unique_ptr<T, Deleter>;
 
     /**
-     * @brief Ö§³ÖÄÚ´æ¿ØÖÆµÄÊµÌå
-     * @tparam T Ä¿±êÀàĞÍ, ²»Ö§³ÖÊı×é
-     * @tparam _is_extension ÊÇ·ñÎªÀ©Õ¹ÊµÌå
-     * @tparam Allocator ÄÚ´æ¹ÜÀíÆ÷
-     * @tparam PtrType ÖÇÄÜÖ¸ÕëÀàĞÍ
-     * @tparam ExtensionPtrArgs ÖÇÄÜÖ¸ÕëÀ©Õ¹Ä£°å²ÎÊı°ü
+     * @brief æ”¯æŒå†…å­˜æ§åˆ¶çš„å®ä½“
+     * @tparam T ç›®æ ‡ç±»å‹, ä¸æ”¯æŒæ•°ç»„
+     * @tparam _is_extension æ˜¯å¦ä¸ºæ‰©å±•å®ä½“
+     * @tparam Allocator å†…å­˜ç®¡ç†å™¨
+     * @tparam _is_unique æŒ‡ç¤ºæ™ºèƒ½æŒ‡é’ˆç±»å‹
      */
     template<
         typename T,
         bool _is_extension = true,
         template<typename...> class Allocator = std::allocator,
-        template<typename...> class PtrType = SharedPtr,
-        typename... ExtensionPtrArgs
+        bool _is_unique = false
     >
-    class instance : public AnyClass, public PtrType<T, ExtensionPtrArgs...>
+    class instance : public AnyClass, public std::conditional_t<_is_unique, UniquePtr<T, DefaultDelete<T, Allocator>>, SharedPtr<T>>
     {
     private:
-        using _Mybase = PtrType<T, ExtensionPtrArgs...>;
+        using _Mybase = std::conditional_t<_is_unique, UniquePtr<T, DefaultDelete<T, Allocator>>, SharedPtr<T>>;
         void* operator new(size_t t) { return ::operator new(t); }
     public:
         using _MyType = T;
         using _MyAlloc = Allocator<T>;
         constexpr static bool _MyExtension = _is_extension;
-        using _RootMetaBase = PtrType<T, ExtensionPtrArgs...>;
+        using _RootMetaBase = _Mybase;
     protected:
         /**
-        * @brief »ñÈ¡ÄÚ´æ¹ÜÀíÆ÷
+        * @brief è·å–å†…å­˜ç®¡ç†å™¨
         */
         static _MyAlloc& GetStaticMyAllocator()
         {
@@ -78,14 +76,14 @@ namespace Convention
         }
     public:
         /**
-        * @brief ÈÎÒâÆ¥ÅäµÄ¹¹Ôìº¯Êı
+        * @brief ä»»æ„åŒ¹é…çš„æ„é€ å‡½æ•°
         */
         template<typename... Args>
-        instance(Args&&... args) : _Mybase(std::forward<Args>(args)...) {}
+        instance(Args&&... args) : _Mybase(UniquePtr<T, DefaultDelete<T, Allocator>>(std::forward<Args>(args)...)) {}
         virtual ~instance() {}
 
         /**
-        * @brief ÊÇ·ñÎª¿ÕÖ¸Õë
+        * @brief æ˜¯å¦ä¸ºç©ºæŒ‡é’ˆ
         */
         bool IsEmpty() const noexcept
         {
@@ -93,14 +91,24 @@ namespace Convention
         }
 
         /**
-        * @brief ¶ÁÈ¡Öµ(ÒıÓÃ·½Ê½)
+        * @brief è¯»å–å€¼(å¼•ç”¨æ–¹å¼)
         */
         T& ReadValue()
         {
             return *(this->get());
         }
         /**
-        * @brief ¶ÁÈ¡constÖµ(ÒıÓÃ·½Ê½)
+        * @brief è®¾ç½®å€¼(å¼•ç”¨æ–¹å¼)
+        * @tparam Arg ä¼ é€’å€¼
+        */
+        template<typename Arg>
+        T& WriteValue(Arg&& value)
+        {
+            *(this->get()) = std::forward<Arg>(value);
+            return value;
+        }
+        /**
+        * @brief è¯»å–constå€¼(å¼•ç”¨æ–¹å¼)
         */
         const T& ReadConstValue() const
         {
@@ -108,7 +116,7 @@ namespace Convention
         }
 
         /**
-        * @brief Æ¥ÅäÈÎÒâ¸³Öµº¯Êı
+        * @brief åŒ¹é…ä»»æ„èµ‹å€¼å‡½æ•°
         */
         template<typename... Args>
         instance& operator=(Args&&... args)
@@ -137,12 +145,11 @@ namespace Convention
         typename TOutputStream,
         typename T,
         template<typename...> class Allocator,
-        template<typename...> class PtrType,
-        typename... ExtensionPtrArgs
+        bool _is_unique
     >
     TOutputStream& operator<<(
         TOutputStream& os,
-        const instance<T, false, Allocator, PtrType, ExtensionPtrArgs...>& ins
+        const instance<T, false, Allocator, _is_unique>& ins
         )
     {
         os << *ins;
@@ -151,12 +158,11 @@ namespace Convention
         typename TOutputStream,
         typename T,
         template<typename...> class Allocator,
-        template<typename...> class PtrType,
-        typename... ExtensionPtrArgs
+        bool _is_unique
     >
         TOutputStream& operator<<(
             TOutputStream& os,
-            const instance<T, true, Allocator, PtrType, ExtensionPtrArgs...>& ins
+            const instance<T, true, Allocator, _is_unique>& ins
             )
     {
         os << ins.ToString();

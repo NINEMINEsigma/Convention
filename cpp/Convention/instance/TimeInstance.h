@@ -44,29 +44,15 @@ namespace Convention
      * @brief 时间实例类
      * 基于高精度时钟的时间点实例,提供时间测量、格式化和计时器功能
      */
-    template<template<typename...> class Allocator, typename _Dx>
-    class instance<
-        std::chrono::time_point<std::chrono::high_resolution_clock>,
-        true,
-        Allocator,
-        std::shared_ptr,
-        _Dx> :public instance <
-        std::chrono::time_point<std::chrono::high_resolution_clock>,
-        false,
-        Allocator,
-        std::shared_ptr,
-        _Dx>
+    template<template<typename...> class Allocator>
+    class instance<std::chrono::time_point<std::chrono::high_resolution_clock>, true, Allocator, true>
+        :public instance <std::chrono::time_point<std::chrono::high_resolution_clock>, false, Allocator, true>
     {
+    private:
+        using _Mybase = instance <std::chrono::time_point<std::chrono::high_resolution_clock>, false, Allocator, true>;
     public:
         using _Clock = std::chrono::high_resolution_clock;
         using _TimePoint = std::chrono::time_point<_Clock>;
-        using _Mybase = instance <
-            std::chrono::time_point<std::chrono::high_resolution_clock>,
-            false,
-            Allocator,
-            std::shared_ptr,
-            _Dx>;
-
     private:
         _TimePoint m_begin;              ///< 开始时间点
         _TimePoint m_end;                ///< 结束时间点
