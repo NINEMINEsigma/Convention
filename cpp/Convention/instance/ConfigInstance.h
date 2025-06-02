@@ -5,86 +5,65 @@
 namespace Convention
 {
 
-	struct config_indicator
-	{
-		using tag = std::decay_t<decltype(make_config(0, nullptr))>;
-		constexpr static bool value = true;
-	};
-	template<>
-	class instance<config_indicator::tag, true> :public instance<config_indicator::tag, false>
+	template<template<typename...> class Allocator>
+	class instance<CommandLineReader, true, Allocator, true>
+		: public instance<CommandLineReader, false, Allocator, true>
 	{
 	private:
-		using _Mybase = instance<config_indicator::tag, false>;
+		using _Mybase = instance<CommandLineReader, false, Allocator, true>;
 	public:
-		explicit instance(int argc, char** argv) :_Mybase(
-			new config_indicator::tag(make_config(argc, argv))
-		) {
-		}
-		instance(const _shared& data) noexcept :_Mybase(data) {}
-		instance& operator=(const _shared& data) noexcept
+		instance(int argc, char** argv) :_Mybase(BuildMyPtr(argc, argv)) {}
+		instance(const instance& other) noexcept :_Mybase(other) {}
+		instance(instance&& other) noexcept : _Mybase(std::move(other)) {}
+		instance& operator=(const instance& data) noexcept
 		{
 			_Mybase::operator=(data);
 			return *this;
 		}
+		instance& operator=(instance&& data) noexcept
+		{
+			_Mybase::operator=(std::move(data));
+			return *this;
+		}
 		virtual ~instance() {}
 
-		const auto& dict() const
+		const decltype(std::declval<CommandLineReader>().KeyValuePair)& ReadDictionary() const
 		{
-			return std::get<0>(**this);
+			return this->ReadConstValue().KeyValuePair;
 		}
-		const auto& vec() const
+		const decltype(std::declval<CommandLineReader>().KeyVector)& ReadVector() const
 		{
-			return std::get<1>(**this);
+			return this->ReadConstValue().KeyVector;
 		}
 
 		std::map<std::string, std::string> try_get_histroy;
 
-		std::filesystem::path execute_path() const
+		std::filesystem::path ReadExecutePath() const
 		{
-			auto iter = this->dict().find("execute");
-			if (iter != this->dict().end())
+			auto iter = this->ReadDictionary().find("execute");
+			if (iter != this->ReadDictionary().end())
 				return iter->second;
 			throw std::filesystem::filesystem_error(
 				"commandline is not setting",
 				std::make_error_code(std::errc::not_supported)
 			);
 		}
-		auto contains(const std::string& key) const
+		auto Contains(const std::string& key) const
 		{
-			return this->dict().count(key);
+			return this->ReadDictionary().count(key);
 		}
-		template<typename _Val>
-		_Val value(const std::string& key) const
+		auto GetValue(const std::string& key) const -> decltype(std::declval<instance>().ReadDictionary().find(key)->second)
 		{
-			return convert_xvalue<_Val>(this->dict().find(key)->second);
+			return this->ReadDictionary().find(key)->second;
 		}
-		unsigned int uint_value(const std::string& key) const
+		template<typename Ret>
+		Ret GetValueAs(const std::string& key) const
 		{
-			return value<unsigned int>(key);
+			return StringIndicator::ToValue<Ret>(this->GetValue(key));
 		}
-		size_t size_value(const std::string& key) const
+		std::vector<std::string> GetValueVector(const std::string& key) const
 		{
-			return value<size_t>(key);
-		}
-		int int_value(const std::string& key) const
-		{
-			return value<int>(key);
-		}
-		double float_value(const std::string& key) const
-		{
-			return value<double>(key);
-		}
-		std::string string_value(const std::string& key) const
-		{
-			return value<std::string>(key);
-		}
-		bool bool_value(const std::string& key) const
-		{
-			return value<bool>(key);
-		}
-		std::vector<std::string> list(const std::string& key) const
-		{
-			auto&& vec = this->vec();
+			auto&& vec = this->ReadVector();
 			std::vector<std::string> result;
 
 			auto iter = std::find_if(vec.begin(), vec.end(), [&key](const auto& pair)
@@ -108,54 +87,37 @@ namespace Convention
 		}
 
 		template<typename _Val>
-		_Val try_value(const std::string& key, _Val default_val)
+		bool TryGetValue(const std::string& key, _Inout_ _Val* output) const
 		{
-			try_get_histroy[key] = typename2classname(typeid(_Val).name());
-			auto iter = this->dict().find(key);
-			if (iter != this->dict().end())
-				return convert_xvalue<_Val>(iter->second);
-			return default_val;
-		}
-		unsigned int try_uint_value(const std::string& key, unsigned int default_val)
-		{
-			return try_value<unsigned int>(key, default_val);
-		}
-		size_t try_size_value(const std::string& key, size_t default_val)
-		{
-			return try_value<size_t>(key, default_val);
-		}
-		int try_int_value(const std::string& key, int default_val)
-		{
-			return try_value<int>(key, default_val);
-		}
-		double try_float_value(const std::string& key, double default_val)
-		{
-			return try_value<double>(key, default_val);
-		}
-		std::string try_string_value(const std::string& key, const std::string& default_val)
-		{
-			return try_value<std::string>(key, default_val);
-		}
-		bool try_bool_value(const std::string& key, bool default_val)
-		{
-			return try_value<bool>(key, default_val);
+			if (Contains(key))
+			{
+				*output = StringIndicator::ToValue<_Val>(this->GetValue(key));
+				return true;
+			}
+			return false;
 		}
 
-		bool is_contains_helper_command() const
+		bool IsContainsHelperCommand() const
 		{
-			return this->contains("h") || this->contains("help") || this->contains("?");
+			return this->Contains("h") ||
+				this->Contains("help") ||
+				this->Contains("?") ||
+				this->Contains("manual") ||
+				this->Contains("/?");
 		}
-		bool is_contains_version_command() const
+		bool IsContainsVersionCommand() const
 		{
-			return this->contains("v") || this->contains("version");
+			return this->Contains("v") || this->Contains("version");
 		}
 		std::string version() const
 		{
-			std::string result;
+			static std::string result;
+			if (false == result.empty())
+				return result;
 			result.reserve(1024);
-			result += Combine("build in platform: ", platform_indicator::generate_platform_message(), "\n");
-			result += Combine("where: <", __LINE__, "> at ", __FILE__, "\n");
-			result += Combine("when: ", __DATE__, " ", __TIME__, "\n");
+			result += StringIndicator::Combine<decltype(result)>("build in platform: ", PlatformIndicator::PlatformInfomation, "\n");
+			result += StringIndicator::Combine<decltype(result)>("where: <", __LINE__, "> at ", __FILE__, "\n");
+			result += StringIndicator::Combine<decltype(result)>("when: ", __DATE__, " ", __TIME__, "\n");
 #ifdef CURRENT_COM_NAME
 			result += Combine("who: ", CURRENT_COM_NAME, "\n");
 #endif // CURRENT_COM_NAME
@@ -165,51 +127,48 @@ namespace Convention
 			return result;
 		}
 	private:
-		std::string internal_make_manual_summary(bool is_necessary, const std::string& key) const
+		std::string InternalMakeManualSummary(bool is_necessary, const std::string& key) const
 		{
-			if (is_necessary)
+			if (is_necessary || key.front() == '[')
 				return key;
 			else
 			{
-				if (key.front() == '[')
-					return key;
-				else
-					return Combine("[", key, "]");
+				return StringIndicator::Combine<std::string>("[", key, "]");
 			}
 		}
 		template<typename... _Args>
-		std::string internal_make_manual_summary(bool is_necessary, const std::string& key, const _Args&... args) const
+		std::string InternalMakeManualSummary(bool is_necessary, const std::string& key, const _Args&... args) const
 		{
-			return internal_make_manual_summary(is_necessary, key) + " " + internal_make_manual_summary(args...);
+			return InternalMakeManualSummary(is_necessary, key) + " " + InternalMakeManualSummary(args...);
 		}
 	public:
 		template<typename _Val>
-		std::string make_manual(const descriptive_indicator<_Val>& key)
+		std::string MakeManual(const DescriptiveIndicator<_Val>& key)
 		{
-			return Combine("\t\t[", key.target, "] \t", key.description, "\n");
+			return StringIndicator::Combine<std::string>("\t\t[", key.target, "] \t", key.description, "\n");
 		}
-		std::string make_manual(const descriptive_indicator<void>& layer)
+		std::string MakeManual(const DescriptiveIndicator<void>& layer)
 		{
-			return Combine("\t", layer.description, ":\n");
+			return StringIndicator::Combine<std::string>("\t", layer.description, ":\n");
 		}
-		std::string make_manual(const std::string& top)
+		std::string MakeManual(const std::string& top)
 		{
 			return top + "\n";
 		}
 		template<typename _First, typename _Second>
-		std::string make_manual(_First&& key, _Second&& second)
+		std::string MakeManual(_First&& key, _Second&& second)
 		{
-			return make_manual(std::forward<_First>(key)) + make_manual(std::forward<_Second>(second));
+			return MakeManual(std::forward<_First>(key)) + MakeManual(std::forward<_Second>(second));
 		}
 		template<typename _First, typename _Second, typename... _Args>
-		std::string make_manual(_First&& key, _Second&& second, _Args&&... args)
+		std::string MakeManual(_First&& key, _Second&& second, _Args&&... args)
 		{
-			return make_manual(std::forward<_First>(key)) + make_manual(std::forward<_Second>(second)) + make_manual(std::forward<_Args>(args)...);
+			return MakeManual(std::forward<_First>(key)) + MakeManual(std::forward<_Second>(second)) + MakeManual(std::forward<_Args>(args)...);
 		}
 		template<typename... _Args>
-		std::string make_manual_summary(bool is_necessary, const std::string& key, const _Args&... args) const
+		std::string MakeManualSummary(bool is_necessary, const std::string& key, const _Args&... args) const
 		{
-			return this->execute_path().string() + " " + internal_make_manual_summary(is_necessary, key, args...);
+			return this->GetExecutePath().string() + " " + InternalMakeManualSummary(is_necessary, key, args...);
 		}
 
 		template<typename _Val>
@@ -226,15 +185,15 @@ namespace Convention
 			}
 			else if (necessary)
 			{
-				char buffer[1024];
-				sprintf(buffer, not_found_message_format.c_str(), find_key.c_str());
+				char buffer[1024] = { 0 };
+				snprintf(buffer, 1024, not_found_message_format.c_str(), find_key.c_str());
 				std::cerr << "\n";
 				throw std::bad_exception();
 			}
 			else
 			{
-				char buffer[1024];
-				sprintf(buffer, not_found_message_format.c_str(), find_key.c_str());
+				char buffer[1024] = { 0 };
+				snprintf(buffer, 1024, not_found_message_format.c_str(), find_key.c_str());
 				std::cout << "\n";
 				return false;
 			}
@@ -246,9 +205,9 @@ namespace Convention
 			bool necessary = false,
 			const std::string& not_found_message_format = "the necessary argument has not given: %s is not found") const
 		{
-			if (this->contains(find_key))
+			if (this->Contains(find_key))
 			{
-				target = convert_xvalue<_Val>(this->string_value(find_key));
+				target = StringIndicator::ToValue<_Val>(this->GetValue(find_key));
 				return true;
 			}
 			else if (necessary)

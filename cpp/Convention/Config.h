@@ -267,7 +267,7 @@ struct PlatformIndicator
 #endif // __GNUC__
 
 
-	constexpr static const char* PlatformInfomation = "Platform: " __PLATFORM_NAME "-" __PLATFORM_VERSION  "-"  __PLATFORM_EXTENSION;
+	constexpr static const char* PlatformInfomation = __PLATFORM_NAME "-" __PLATFORM_VERSION  "-"  __PLATFORM_EXTENSION;
 	// not lock current thread, if input is exist will return it otherwise return -1
 	static int KeyboardInput() noexcept;
 };
@@ -1319,6 +1319,37 @@ struct StringIndicator
 		else
 			return std::to_string(value);
 	}
+	template<typename T,typename str>
+	static T ToValue(const str& value)
+	{
+		if constexpr (std::is_floating_point_v<T>)
+			return std::stold(value);
+		else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> == false)
+			return std::stoll(value);
+		else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> == true)
+			return std::stoull(value);
+		else if constexpr (std::is_same_v<T, bool>)
+		{
+			auto temp = std::to_string(value);
+			if (temp == "false")
+				return false;
+			else if (temp == "true")
+				return true;
+			else
+				throw std::runtime_error("Cannot convert string to bool. Expected 'true' or 'false'.");
+		}
+		else if constexpr (std::is_same_v<T, char> || std::is_same_v<T, wchar_t>)
+		{
+			if (value.count() != 1)
+				throw std::runtime_error("Cannot convert string to char. Expected a single character.");
+			static_assert(sizeof(T) < sizeof(decltype(value.front())), "Cannot convert string to a smaller character");
+			return value.front();
+		}
+		else if constexpr (std::is_convertible_v<str, T>)
+			return static_cast<T>(value);
+		else
+			static_assert(std::is_convertible_v<str, T>, "Cannot convert string to the specified type.");
+	}
 
 	template<typename str, typename _T>
 	static str Combine(const _T& first)
@@ -1379,6 +1410,18 @@ struct StringIndicator
 		}
 		return input.substr(start, end - start);
 	}
+
+	/**
+	* brief Formats a string using the provided format and arguments. like use snprintf
+	*/
+	template<typename str, typename... Args>
+	static str Format(size_t size, const std::string& format, const Args&... args)
+	{
+		str result;
+		result.reserve(size);
+		snprintf(result.data(), size, format.c_str(), args...);
+		return result;
+	}
 };
 
 #ifdef UNICODE
@@ -1426,7 +1469,7 @@ constexpr bool is_clang_env()
 
 #pragma region Kit
 
-namespace ConventionKit
+namespace Convention
 {
 	template<typename T, typename... Args>
 	void Construct(_In_ T* ptr, Args&&... args)
@@ -1452,13 +1495,14 @@ _Notnull_ _T* no_warning_6387(_In_opt_ _T* from)
 	return from;
 }
 
-namespace ConventionKit
+namespace Convention
 {
 	// first module name will in pair: "execute":path
 	// other key will remove front '-' charactor
 	// if a string that is not prefixed with the character '-' does not follow a key, it becomes a key
 	class CommandLineReader
 	{
+	public:
 		std::map<std::string, std::string> KeyValuePair;
 		std::vector<std::pair<std::string, std::string>> KeyVector;
 		CommandLineReader(int argc, char** argv)
