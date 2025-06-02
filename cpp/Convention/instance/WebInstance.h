@@ -34,50 +34,34 @@ namespace Convention
 		constexpr static bool value = true;
 	};
 
-	template<template<typename...> class Allocator, typename _Dx>
-	class instance<
-		WebIndicator::Broadcast::Server,
-		true,
-		Allocator,
-		std::unique_ptr,
-		_Dx> :public instance<
-		WebIndicator::Broadcast::Server,
-		false,
-		Allocator,
-		std::unique_ptr,
-		_Dx>
+	template<template<typename...> class Allocator>
+	class instance<WebIndicator::Broadcast::Server, true, Allocator, false>
+		: public instance<WebIndicator::Broadcast::Server, false, Allocator, false>
 	{
 	public:
 		using tag = WebIndicator::Broadcast::Server;
-		using TMybase = instance<tag, false>;
 	private:
+		using _Mybase = instance<WebIndicator::Broadcast::Server, false, Allocator, false>;
 		void HandleClient(WebIndicator::SocketType clientSocket);
 		void BroadcastMessage(const char* message, WebIndicator::SocketType sender);
 	public:
-		instance() :TMybase(new tag()) {}
-		template<typename... TArgs>
-		instance(TArgs&&... args) : TMybase(std::forward<TArgs>(args)...) {}
+		instance() :_Mybase(BuildMyPtr()) {}
 		bool Init();
 		void Start();
 		void Stop();
 	};
 
-	template<>
-	class instance<WebIndicator::Broadcast::Client, true> :public instance<WebIndicator::Broadcast::Client, false>
+	template<template<typename...> class Allocator>
+	class instance<WebIndicator::Broadcast::Client, true, Allocator, false>
+		: public instance<WebIndicator::Broadcast::Client, false, Allocator, false>
 	{
 	public:
 		using tag = WebIndicator::Broadcast::Client;
-		using TMybase = instance<tag, false>;
 	private:
+		using _Mybase = instance<WebIndicator::Broadcast::Client, false, Allocator, false>;
 		void ReceiveMessages();
 	public:
-		instance() :TMybase(new tag()) {}
-		template<typename... TArgs>
-		instance(TArgs&&... args) : TMybase(std::forward<TArgs>(args)...) {}
-		instance_move_operator(public)
-		{
-
-		}
+		instance() :_Mybase(BuildMyPtr()) {}
 		bool Init();
 		void Start();
 		void Stop();

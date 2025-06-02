@@ -56,10 +56,14 @@ namespace Convention
         using _Clock = ClockInstanceClock;
         using _TimePoint = std::chrono::time_point<_Clock>;
     private:
-        _TimePoint m_begin;              ///< 开始时间点
-        _TimePoint m_end;                ///< 结束时间点
-        std::vector<_TimePoint> m_checkpoints;       ///< 检查点时间列表
-        std::vector<std::string> m_checkpoint_labels; ///< 检查点标签列表
+        // 开始时间点
+        _TimePoint m_begin;              
+        // 结束时间点
+        _TimePoint m_end;                
+        //< 检查点时间列表
+        std::vector<_TimePoint, Allocator<_TimePoint>> m_checkpoints;       
+        //< 检查点标签列表
+        std::vector<std::string, Allocator<std::string>> m_checkpoint_labels; 
 
     public:
         /**
@@ -68,20 +72,25 @@ namespace Convention
          */
         class LocalizedClocker :public AnyClass
         {
-            _TimePoint m_begin;                      ///< 计时器开始时间
-            instance<_TimePoint, true>& parent;      ///< 父实例引用
-            bool m_is_paused;                        ///< 暂停状态标志
-            std::chrono::nanoseconds m_accumulated_time; ///< 累计暂停时间
-            _TimePoint m_pause_time;                 ///< 暂停开始时间
+            //< 计时器开始时间
+            _TimePoint m_begin;                      
+            //< 父实例引用
+            instance& parent;               
+            //< 暂停状态标志
+            bool m_is_paused;                        
+            //< 累计暂停时间
+            std::chrono::nanoseconds m_accumulated_time; 
+            //< 暂停开始时间
+            _TimePoint m_pause_time;                 
 
         public:
             /**
              * @brief 构造函数
              * @param parent 父时间实例的引用
              */
-            LocalizedClocker(instance<_TimePoint, true>& parent)
+            LocalizedClocker(instance& parent)
                 : m_begin(_Clock::now()),
-                parent(parent),
+                __init(parent),
                 m_is_paused(false),
                 m_accumulated_time(std::chrono::nanoseconds(0))
             {
@@ -193,25 +202,38 @@ namespace Convention
         /**
          * @brief 默认构造函数
          */
-        instance() :_Mybase(make_shared<>(), new (GetStaticMyAllocator().allocate(sizeof(_Mybase::_MyType))) _Mybase::_MyType(_Clock::now())) {};
+        instance() :_Mybase(BuildMyPtr(_Clock::now())) {};
 
         /**
-         * @brief 拷贝构造函数
-         * @param other 要拷贝的其他实例
+         * @brief 移动构造函数
+         * @param other 其他实例
          */
-        instance(const instance& other) :_Mybase(other)
+        instance(instance&& other) noexcept:_Mybase(std::move(other))
         {
-            this->m_begin = other.m_begin;
-            this->m_end = other.m_end;
-            this->m_checkpoints = other.m_checkpoints;
-            this->m_checkpoint_labels = other.m_checkpoint_labels;
+            this->m_begin = std::move(other.m_begin);
+            this->m_end = std::move(other.m_end);
+            this->m_checkpoints = std::move(other.m_checkpoints);
+            this->m_checkpoint_labels = std::move(other.m_checkpoint_labels);
+        }
+
+        /**
+         * @brief 移动赋值函数
+         * @param other 其他实例
+         */
+        instance& operator=(instance&& other) noexcept
+        {
+            _Mybase::operator=(std::move(other));
+            this->m_begin = std::move(other.m_begin);
+            this->m_end = std::move(other.m_end);
+            this->m_checkpoints = std::move(other.m_checkpoints);
+            this->m_checkpoint_labels = std::move(other.m_checkpoint_labels);
+            return *this;
         }
 
         // 时间点获取方法
-        auto GetCreateTime() const { return **this; }
-        decltype(auto) CreateTime() const { return **this; }
-        auto GetBeginTime() const { return this->m_begin; }
-        auto GetEndTime() const { return this->m_end; }
+        auto ReadCreateTime() const { return **this; }
+        auto ReadBeginTime() const { return this->m_begin; }
+        auto ReadEndTime() const { return this->m_end; }
 
         /**
          * @brief 计算从创建时间开始的持续时间
@@ -221,7 +243,7 @@ namespace Convention
         template<typename _TimeUnit = std::chrono::milliseconds>
         int64_t duration() const
         {
-            return std::chrono::duration_cast<_TimeUnit>(_Clock::now() - **this).count();
+            return std::chrono::duration_cast<_TimeUnit>(_Clock::now() - this->ReadCreateTime()).count();
         }
 
         /**

@@ -63,7 +63,7 @@ namespace Convention
             return alloc;
         }
         template<typename... Args>
-        static T* _BuildMyPtr(Args&&... args)
+        static T* BuildMyPtr(Args&&... args)
         {
             T* ptr = GetStaticMyAllocator().allocate(1);
             GetStaticMyAllocator().construct(ptr, std::forward<Args>(args)...);

@@ -22,7 +22,7 @@ namespace Convention
 	public:
 		// 赋值构造
 		instance(_NumberType value)
-			: _Mybase(_BuildMyPtr(value)) {}
+			: _Mybase(BuildMyPtr(value)) {}
 		// 表达式构造
 		instance(decltype(eval_init::create_real_eval<_NumberType>()) evaler, const std::string exp)
 			: instance(evaler.evaluate(eval_init::create_real_eval<_NumberType>().parse(exp))) {}
@@ -457,11 +457,11 @@ namespace Convention
 	public:
 		// 赋值构造
 		instance(size_t molecule, size_t denominator, bool negative)
-			: _Mybase(_BuildMyPtr(molecule, denominator, negative)) {
+			: _Mybase(BuildMyPtr(molecule, denominator, negative)) {
 		}
 		// 赋值构造
 		instance(const NumberStructure& value)
-			: _Mybase(_BuildMyPtr(value.molecule, value.denominator, value.negative)) {
+			: _Mybase(BuildMyPtr(value.molecule, value.denominator, value.negative)) {
 		}
 		// 拷贝构造
 		instance(const instance& ins) noexcept
