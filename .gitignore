@@ -1,4 +1,10 @@
-
+/cpp/*.meta
+/cpp/*/*.meta
+/cpp/*/*/*.meta
+/cpp/*/*/*/*.meta
+/cpp/*/*/*/*/*.meta
+/cpp/*/*/*/*/*/*.meta
+/cpp/*/*/*/*/*/*/*.meta
 /cpp/.vs
 /cpp/out
 /cpp/.vscode

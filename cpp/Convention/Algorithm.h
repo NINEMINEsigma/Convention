@@ -9,8 +9,38 @@
 
 #include "Convention/Config.h"
 
-namespace ConventionKit
+namespace Convention
 {
+	/**
+	 * @brief 数据结构的类型别名
+	 */
+	namespace DataStructure
+	{
+		template<typename T, template<typename> class Allocator = std::allocator>
+		using List = std::vector<T, Allocator<T>>;
+
+		template<typename Key, typename Value, template<typename> class Comparer = std::less, template<typename> class Allocator = std::allocator>
+		using RedBlackTree = std::multimap<Key, Value, Comparer<Key>, Allocator<std::pair<Key, Value>>>;
+
+		template<typename Key, typename Value, template<typename> class Comparer = std::less, template<typename> class Allocator = std::allocator>
+		using Dictionary = std::map<Key, Value, Comparer<Key>, Allocator<std::pair<Key, Value>>>;
+
+		template<typename Key, typename Value, template<typename> class Hasher = std::hash, template<typename> class Allocator = std::allocator>
+		using HashMap = std::unordered_map<Key, Value, Hasher<Key>, Allocator<std::pair<Key, Value>>>;
+
+		template<typename T, template<typename> class Hasher = std::hash, template<typename> class Allocator = std::allocator>
+		using HashSet = std::unordered_set<T, Hasher<T>, Allocator<T>>;
+
+		template<typename T, class Container = std::vector<T>, template<typename> class Comparer = std::less>
+		using Heap = std::priority_queue<T, Container, Comparer<T>>;
+
+		template<typename T, template<typename,template<typename> class> class Container, template<typename> class Allocator = std::allocator>
+		using MinHeap = Heap<T, Container<T, Allocator<T>>, std::greater>;
+
+		template<typename T, template<typename, template<typename> class> class Container, template<typename> class Allocator = std::allocator>
+		using MaxHeap = Heap<T, Container<T, Allocator<T>>, std::less>;
+	}
+
 	/**
 	 * @namespace Enumerate
 	 * @brief 提供各种枚举算法的实现
