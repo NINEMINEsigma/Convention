@@ -9,6 +9,11 @@
 /cpp/out
 /cpp/.vscode
 *.pyc
+/python/*.meta
+/python/*/*.meta
+/python/*/*/*.meta
+/python/*/*/*/*.meta
+/python/*/*/*/*/*.meta
 /python/dist
 /python/Convention.egg-info
 /python/Convention.egg-info
