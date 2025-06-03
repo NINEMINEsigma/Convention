@@ -2,7 +2,6 @@
 #define CONVENTION_KIT_INSTANCE_H
 
 #include "Convention/instance/AnyClassInstance.h"
-#include "Convention/instance/AppInstance.h"
 #include "Convention/instance/ConfigInstance.h"
 #include "Convention/instance/ConsoleInstance.h"
 #include "Convention/instance/FfmpegInstance.h"

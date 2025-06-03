@@ -284,7 +284,7 @@ struct PlatformIndicator
 	static std::filesystem::path InjectPersistentPath();
 	static const std::filesystem::path& ApplicationPath()
 	{
-		static auto path = std::filesystem::current_path();
+		static auto path = std::filesystem::current_path ();
 		return path;
 	}
 	static const std::filesystem::path& StreamingAssetsPath()
