@@ -201,6 +201,16 @@ constexpr int ConstexprStrCompare(
 	else return length - tlength;
 }
 
+#ifndef CURRENT_COM_NAME
+// set current-com-name to control platform paths
+#define CURRENT_COM_NAME "com.default"
+#endif // !CURRENT_COM_NAME
+
+#ifndef CURRENT_APP_NAME
+// set current-app-name to control platform paths
+#define CURRENT_APP_NAME "unname"
+#endif // CURRENT_PROJECT_NAME
+
 #ifndef __PLATFORM_NAME
 #define __PLATFORM_NAME "Unknown"
 #endif // __PLATFORM_NAME
@@ -270,6 +280,23 @@ struct PlatformIndicator
 	constexpr static const char* PlatformInfomation = __PLATFORM_NAME "-" __PLATFORM_VERSION  "-"  __PLATFORM_EXTENSION;
 	// not lock current thread, if input is exist will return it otherwise return -1
 	static int KeyboardInput() noexcept;
+	//
+	static std::filesystem::path InjectPersistentPath();
+	static const std::filesystem::path& ApplicationPath()
+	{
+		static auto path = std::filesystem::current_path();
+		return path;
+	}
+	static const std::filesystem::path& StreamingAssetsPath()
+	{
+		static auto path = ApplicationPath() / "StreamingAssets/";
+		return path;
+	}
+	static const std::filesystem::path& PersistentPath()
+	{
+		static auto path = InjectPersistentPath();
+		return path;
+	}
 };
 
 #pragma endregion
