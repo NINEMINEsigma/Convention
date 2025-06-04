@@ -32,12 +32,11 @@ namespace Convention
 	public:
 		TStream stream = nullptr;
 
-		instance(const _RootMetaBase& sharedPath, bool isMustExist = true) :_Mybase(sharedPath)
-		{
-			if (isMustExist)
-				this->MustExistPath();
-		}
-		instance(path path_) :_Mybase(new path(path_)) {}
+		/**
+		* @brief 构造函数
+		* @param data 路径
+		*/
+		instance(path data) :_Mybase(BuildMyPtr(data)) {}
 		instance() :instance(".") {}
 		instance(const instance& data) noexcept :_Mybase(data) {}
 		instance& operator=(const instance& data) noexcept
