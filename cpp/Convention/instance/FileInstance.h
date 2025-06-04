@@ -1,4 +1,4 @@
-#ifndef CONVENTION_KIT_FILE_INSTANCE_H
+﻿#ifndef CONVENTION_KIT_FILE_INSTANCE_H
 #define CONVENTION_KIT_FILE_INSTANCE_H
 
 #include "Convention/instance/Interface.h"
@@ -22,47 +22,59 @@ namespace Convention
 	{
 	private:
 		using _Mybase = instance<std::filesystem::path, false, Allocator, false>;
+		using _MyStream = instance<std::ios_base, true, Allocator, >;
 	public:
 		using buffer_type = std::basic_string<size_t>;
 
 		using path = std::filesystem::path;
-		using TStream = instance<std::ios_base, true>;
 
 		using DataType = std::optional<std::any>;
-	public:
-		TStream stream = nullptr;
+
+		_MyStream stream = nullptr;
 
 		/**
-		* @brief ���캯��
-		* @param data ·��
+		* @brief 构造函数
+		* @param data 路径
 		*/
 		instance(path data) :_Mybase(BuildMyPtr(data)) {}
-		instance() :instance(".") {}
+		/**
+		* @brief 使用当前目录构造
+		*/
+		instance() :instance("./") {}
+		/**
+		* @brief 拷贝构造函数, 只拷贝路径
+		*/
 		instance(const instance& data) noexcept :_Mybase(data) {}
+		/**
+		* @brief 拷贝赋值函数, 只拷贝路径
+		*/
 		instance& operator=(const instance& data) noexcept
 		{
 			_Mybase::operator=(data);
-			this->stream = data.stream;
-			if (data.data.has_value())
-			{
-				this->data = data.data.value();
-			}
 			return *this;
 		}
-		instance_move_operator(public)
+		/**
+		* @brief 移动构造函数, 只移动路径
+		*/
+		instance(instance&& data) noexcept : _Mybase(std::move(data)) {}
+		/**
+		* @brief 移动赋值函数, 只移动路径
+		*/
+		instance& operator=(instance&& other) noexcept
 		{
-			this->stream = std::move(other.stream);
-			if (other.data.has_value())
-			{
-				this->data = std::move(other.data.value());
-			}
+			_Mybase::operator=(std::move(other));
+			return *this;
 		}
 		virtual ~instance() {}
 
+		/**
+		* @brief 获取文件名
+		* @param 是否忽略文件扩展名
+		*/
 		path GetFilename(bool isWithoutExtension = false) const
 		{
-			std::string cur = this->get()->filename().string();
-			if (isWithoutExtension && this->get()->has_extension())
+			std::string cur = this->ReadConstValue().filename().string();
+			if (isWithoutExtension && this->ReadConstValue().has_extension())
 			{
 				return cur.substr(0, cur.find_last_of('.'));
 			}
@@ -76,7 +88,7 @@ namespace Convention
 		}
 		virtual std::string SymbolName() const noexcept override
 		{
-			return Combine(
+			return StringIndicator::Combine<std::string>(
 				"file<",
 				this->Exist() ? "e" : "-",
 				this->IsDir() ? "d" : "-",
@@ -86,41 +98,80 @@ namespace Convention
 
 		// get target path's stats
 
+		/**
+		* @brief 是否是目录(文件夹), 若不存在, 则根据路径最后一个字符判断
+		*/
 		bool IsDir() const noexcept
 		{
-			auto endchar = this->get()->string().back();
+			auto endchar = this->ReadConstValue().string().back();
 			if (endchar == '/' || endchar == '\\')
 				return true;
 			return std::filesystem::is_directory(**this);
 		}
+		/**
+		* @brief 是否是文件(实际判断是否为非目录)
+		*/
 		bool IsFile() const noexcept
 		{
 			return !this->IsDir();
 		}
+		/**
+		* @brief 是否是块特殊文件
+		*/
 		bool IsBlockFile() const noexcept
 		{
 			return std::filesystem::is_block_file(**this);
 		}
+		/**
+		* @brief 是否是字符特殊文件
+		*/
 		bool IsCharacterFile() const noexcept
 		{
 			return std::filesystem::is_character_file(**this);
 		}
-		bool IsFileEmpty() const noexcept
+		/**
+		* @brief 是否是空目录或空文件
+		*/
+		bool IsEmpty() const 
 		{
 			return std::filesystem::is_empty(**this);
 		}
+		/**
+		* @brief 是否是空目录
+		*/
+		bool IsDirEmpty() const
+		{
+			return IsDir() && std::filesystem::is_empty(**this);
+		}
+		/**
+		* @brief 是否是空文件
+		*/
+		bool IsFileEmpty() const
+		{
+			return IsFile() && std::filesystem::is_empty(**this);
+		}
+		/**
+		* @brief 猜测是否为二进制文件
+		*/
 		bool IsBinaryFile() const
 		{
-			return ::IsBinaryFile(**this);
+			return Convention::IsBinaryFile(**this);
 		}
 
 		// operators
 
-		instance& Open(path path_)
+		/**
+		* @brief 重新打开
+		* @param data 新的路径
+		*/
+		instance& Open(path data)
 		{
-			**this = std::move(path_);
+			this->WriteValue(std::move(data));
 			return *this;
 		}
+		/**
+		* 
+		*/
 		instance& Open(std::ios::openmode mode)
 		{
 			auto* ptr = new std::fstream(**this, mode);
@@ -379,7 +430,7 @@ namespace Convention
 		template<typename... TArgs>
 		decltype(auto) SetStream(TArgs... args)
 		{
-			this->stream = TStream(std::forward<TArgs>(args)...);
+			this->stream = _MyStream(std::forward<TArgs>(args)...);
 			return *this;
 		}
 
