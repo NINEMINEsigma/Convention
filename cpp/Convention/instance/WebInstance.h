@@ -12,6 +12,9 @@ namespace Convention
 		using SocketType = unsigned long long;
 
 #endif
+		/**
+		* @brief π„≤•¿‡–Õ
+		*/
 		struct Broadcast
 		{
 			struct Server

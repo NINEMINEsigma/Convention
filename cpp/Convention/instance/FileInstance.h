@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <optional>
 #include <any>
-#include "Convention/instance/stream_instance.h"
+#include "Convention/instance/StreamInstance.h"
 
 #include "Convention/instance/nlohmann/json.hpp"
 
@@ -13,9 +13,12 @@ extern bool IsBinaryFile(const std::filesystem::path& path);
 extern std::filesystem::path GetExtensionName(const std::filesystem::path& path);
 extern std::filesystem::path GetBaseFilename(const std::filesystem::path& path);
 
-template<>
-class instance<std::filesystem::path, true> :public instance<std::filesystem::path, false>
+template<template<typename> class Allocator>
+class instance<std::filesystem::path, true, Allocator, false>
+	: public instance<std::filesystem::path, false, Allocator, false>
 {
+private:
+	using _Mybase = instance<std::filesystem::path, false, Allocator, false>;
 public:
 	using buffer_type = std::basic_string<size_t>;
 
@@ -23,8 +26,6 @@ public:
 	using TStream = instance<std::ios_base, true>;
 
 	using DataType = std::optional<std::any>;
-private:
-	using _Mybase = instance<path, false>;
 public:
 	TStream stream = nullptr;
 

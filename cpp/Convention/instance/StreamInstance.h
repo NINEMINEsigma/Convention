@@ -28,18 +28,6 @@ namespace Convention
 		}
 		virtual ~instance()
 		{
-			auto ofptr = dynamic_cast<std::ofstream*>(this->get());
-			if (ofptr != nullptr)
-			{
-				ofptr->close();
-				return;
-			}
-			auto ifptr = dynamic_cast<std::ifstream*>(this->get());
-			if (ifptr != nullptr)
-			{
-				ifptr->close();
-				return;
-			}
 		}
 
 		template<typename Stream>
@@ -52,65 +40,40 @@ namespace Convention
 		{
 			return *dynamic_cast<Stream*>(this->get());
 		}
+
+		template<typename Stream,typename Arg>
+		instance& operator<<(const Arg& value)
+		{
+			this->ReadStreamValue<Stream>() << value;
+			return *this;	
+		}
 	};
 
-	template<template<typename, typename> class TStreamType, typename TElement, template<typename...> class Allocator>
-	class instance<TStreamType<TElement, std::char_traits<TElement>>, true, Allocator, false>
-		: public instance<TStreamType<TElement, std::char_traits<TElement>>, false, Allocator, false >
+	template<typename CharTy, typename CharTrait = std::char_traits<CharTy>>
+	class UnpackLinesFromFile
+		: public AnyClass
 	{
-	public:
-		using TStream = TStreamType<TElement, std::char_traits<TElement>>;
-		using _Mybase = instance<TStream, false>;
-
-		template<typename TString>
-		instance(TString&& path, std::ios::openmode mode) : _Mybase(new TStream(std::forward<TString>(path), mode)) {}
-		template<typename TInstance>
-		instance(std::enable_if_t<std::is_same_v<instance, TInstance>, TInstance>&& other) : _Mybase(std::forward<TInstance>(other)) {}
-		virtual ~instance() {}
-
-		decltype(auto) operator<<(const TElement* str) const noexcept
-		{
-			if constexpr (std::is_base_of_v<std::basic_ostream<TElement, std::char_traits<TElement>>, TStream>)
-				**this << str;
-			else
-				assert("no matched operator<<()");
-			return **this;
-		}
-		decltype(auto) operator>>(TElement* str) const noexcept
-		{
-			if constexpr (std::is_base_of_v<std::basic_istream<TElement, std::char_traits<TElement>>, TStream>)
-				**this >> str;
-			else
-				assert("no matched operator>>()");
-			return **this;
-		}
-		template<typename TRight>
-		decltype(auto) operator<<(const TRight& value) const noexcept
-		{
-			static_assert(std::is_base_of_v<std::basic_ostream<TElement, std::char_traits<TElement>>, TStream>, "no matched operator<<()");
-			**this << value;
-			return **this;
-		}
-		template<typename TRight>
-		decltype(auto) operator>>(TRight& value) const noexcept
-		{
-			static_assert(std::is_base_of_v<std::basic_istream<TElement, std::char_traits<TElement>>, TStream>, "no matched operator>>()");
-			**this >> value;
-			return **this;
-		}
-	};
-	template<typename TElement>
-	class UnpackLinesFromFile :public any_class
-	{
-	public:
-		std::basic_ifstream<TElement> stream;
-		TElement* buffer;
+	private:
+		std::basic_ifstream<CharTy, CharTrait> stream;
+		CharTy* buffer;
 		size_t size;
-
-		UnpackLinesFromFile(const TElement* path, std::ios::openmode mode, TElement* buffer, size_t size) :
-			stream(path, mode), buffer(buffer), size(size) {
+		bool isGenerateBuffer;
+	public:
+		UnpackLinesFromFile(
+			_In_ const CharTy* path,
+			std::ios::openmode mode,
+			_In_opt_ _Readable_elements_(size) CharTy* buffer,
+			size_t size)
+			: isGenerateBuffer(buffer == nullptr), stream(path, mode), buffer(buffer ? buffer : new CharTy[size]), size(size)
+		{
 		}
-		virtual ~UnpackLinesFromFile() {}
+		virtual ~UnpackLinesFromFile()
+		{
+			if (isGenerateBuffer)
+			{
+				delete[] buffer;
+			}
+		}
 
 		struct Iterator
 		{

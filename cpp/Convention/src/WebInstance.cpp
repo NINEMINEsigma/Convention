@@ -1,11 +1,11 @@
-#if defined(_WIN64)||defined(_WIN32)
 
 #include "Convention/instance/WebInstance.h"
 
-
+#if defined(_WIN64)||defined(_WIN32)
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #pragma comment(lib, "ws2_32.lib")
+#endif // _WIN
 
 using namespace std;
 using namespace Convention;
@@ -222,5 +222,3 @@ void instance<WebIndicator::Broadcast::Client, true, Allocator, false>::Stop()
     closesocket(this->ReadValue().clientSocket);
     WSACleanup();
 }
-
-#endif // _WIN

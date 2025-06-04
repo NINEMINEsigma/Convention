@@ -1,12 +1,43 @@
-ï»¿#if defined(_WIN32) || defined(_WIN64)
-#include "Convention/instance/file_instance.h"
+#include<Convention/instance/FileInstance.h>
+#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 #include <shlwapi.h>
 #include <wincrypt.h>
+#endif
 #pragma comment(lib, "crypt32.lib")
 
 using namespace std;
 using namespace std::filesystem;
+using namespace Convention;
+
+bool IsBinaryFile(const std::filesystem::path& path)
+{
+	std::ifstream fs(path, std::ios::in | std::ios::binary);
+	void* buffer = no_warning_6387(malloc(sizeof(char)));
+	void* checker = no_warning_6387(malloc(sizeof(char)));
+	memset(buffer, 0, sizeof(char));
+	memset(checker, 0, sizeof(char));
+	for (int i = 1024; i != 0 && fs; i--)
+	{
+		fs.read((char*)buffer, sizeof(char));
+		if (memcmp(buffer, checker, sizeof(char)))
+			return true;
+	}
+	return false;
+}
+std::filesystem::path GetExtensionName(const std::filesystem::path& path)
+{
+	return path.extension();
+}
+std::filesystem::path GetBaseFilename(const std::filesystem::path& path)
+{
+	return path.filename();
+}
+std::vector<std::string> tool_file::text_readable_file_type = { "txt", "md", "json", "csv", "xml", "xlsx", "xls", "docx", "doc", "svg" };
+std::vector<std::string> tool_file::audio_file_type = { "mp3", "ogg", "wav" };
+std::vector<std::string> tool_file::image_file_type = { "'png", "jpg", "jpeg", "bmp", "svg", "ico" };
+std::string tool_file::temp_tool_file_path_name = "temp.tool_file";
+
 
 instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::compress(const path& output_path, const std::string& format)
 {
@@ -16,7 +47,7 @@ instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::co
         return this->compress(out, format);
     }
 
-    // ä½¿ç”¨Windows Cabinet APIè¿›è¡Œå‹ç¼©
+    // Ê¹ÓÃWindows Cabinet API½øĞĞÑ¹Ëõ
     HANDLE hFile = CreateFile(
         this->get()->c_str(),
         GENERIC_READ,
@@ -32,7 +63,7 @@ instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::co
         throw std::runtime_error("Failed to open source file");
     }
 
-    // åˆ›å»ºå‹ç¼©æ–‡ä»¶
+    // ´´½¨Ñ¹ËõÎÄ¼ş
     HANDLE hCompressed = CreateFile(
         output_path.c_str(),
         GENERIC_WRITE,
@@ -49,7 +80,7 @@ instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::co
         throw std::runtime_error("Failed to create compressed file");
     }
 
-    // è¯»å–æºæ–‡ä»¶å¹¶å†™å…¥å‹ç¼©æ–‡ä»¶
+    // ¶ÁÈ¡Ô´ÎÄ¼ş²¢Ğ´ÈëÑ¹ËõÎÄ¼ş
     char buffer[8192];
     DWORD bytesRead, bytesWritten;
 
@@ -65,32 +96,32 @@ instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::co
 
 instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::decompress(const path& output_path)
 {
-    // ç±»ä¼¼compressçš„å®ç°
+    // ÀàËÆcompressµÄÊµÏÖ
     // TODO
     return *this;
 }
 
-// åŠ å¯†/è§£å¯†åŠŸèƒ½ - ä½¿ç”¨Windows CryptoAPI
+// ¼ÓÃÜ/½âÃÜ¹¦ÄÜ - Ê¹ÓÃWindows CryptoAPI
 instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::encrypt(const std::string& key, const std::string& algorithm)
 {
     HCRYPTPROV hProv;
     HCRYPTHASH hHash;
     HCRYPTKEY hKey;
 
-    // è·å–åŠ å¯†æœåŠ¡æä¾›ç¨‹åºå¥æŸ„
+    // »ñÈ¡¼ÓÃÜ·şÎñÌá¹©³ÌĞò¾ä±ú
     if (!CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_AES, CRYPT_VERIFYCONTEXT))
     {
         throw std::runtime_error("Failed to acquire crypto context");
     }
 
-    // åˆ›å»ºå“ˆå¸Œå¯¹è±¡
+    // ´´½¨¹şÏ£¶ÔÏó
     if (!CryptCreateHash(hProv, CALG_SHA_256, 0, 0, &hHash))
     {
         CryptReleaseContext(hProv, 0);
         throw std::runtime_error("Failed to create hash");
     }
 
-    // æ·»åŠ å¯†é’¥æ•°æ®åˆ°å“ˆå¸Œ
+    // Ìí¼ÓÃÜÔ¿Êı¾İµ½¹şÏ£
     if (!CryptHashData(hHash, (BYTE*)key.c_str(), key.length(), 0))
     {
         CryptDestroyHash(hHash);
@@ -98,7 +129,7 @@ instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::en
         throw std::runtime_error("Failed to hash key data");
     }
 
-    // ä»å“ˆå¸Œç”Ÿæˆå¯†é’¥
+    // ´Ó¹şÏ£Éú³ÉÃÜÔ¿
     if (!CryptDeriveKey(hProv, CALG_AES_128, hHash, 0, &hKey))
     {
         CryptDestroyHash(hHash);
@@ -106,7 +137,7 @@ instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::en
         throw std::runtime_error("Failed to derive key");
     }
 
-    // è¯»å–æ–‡ä»¶å†…å®¹å¹¶åŠ å¯†
+    // ¶ÁÈ¡ÎÄ¼şÄÚÈİ²¢¼ÓÃÜ
     std::ifstream in(this->get()->string(), std::ios::binary);
     std::ofstream out(this->get()->string() + ".encrypted", std::ios::binary);
 
@@ -131,18 +162,18 @@ instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::en
 
 instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::decrypt(const std::string& key, const std::string& algorithm)
 {
-    // ç±»ä¼¼encryptçš„å®ç°ï¼Œä½¿ç”¨CryptDecryptæ›¿ä»£CryptEncrypt
+    // ÀàËÆencryptµÄÊµÏÖ£¬Ê¹ÓÃCryptDecryptÌæ´úCryptEncrypt
     // TODO
     return *this;
 }
 
-// å“ˆå¸Œè®¡ç®— - ä½¿ç”¨Windows CryptoAPI
-std::string instance<std::filesystem::path, true>::calculate_hash(const std::string& algorithm) 
+// ¹şÏ£¼ÆËã - Ê¹ÓÃWindows CryptoAPI
+std::string instance<std::filesystem::path, true>::calculate_hash(const std::string& algorithm)
 {
     HCRYPTPROV hProv;
     HCRYPTHASH hHash;
 
-    if (!CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)) 
+    if (!CryptAcquireContext(&hProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
     {
         throw std::runtime_error("Failed to acquire crypto context");
     }
@@ -151,7 +182,7 @@ std::string instance<std::filesystem::path, true>::calculate_hash(const std::str
     if (algorithm == "sha1") hashAlg = CALG_SHA1;
     else if (algorithm == "sha256") hashAlg = CALG_SHA_256;
 
-    if (!CryptCreateHash(hProv, hashAlg, 0, 0, &hHash)) 
+    if (!CryptCreateHash(hProv, hashAlg, 0, 0, &hHash))
     {
         CryptReleaseContext(hProv, 0);
         throw std::runtime_error("Failed to create hash");
@@ -159,9 +190,9 @@ std::string instance<std::filesystem::path, true>::calculate_hash(const std::str
 
     std::ifstream file(this->get()->string(), std::ios::binary);
     char buffer[8192];
-    while (file.read(buffer, sizeof(buffer))) 
+    while (file.read(buffer, sizeof(buffer)))
     {
-        if (!CryptHashData(hHash, (BYTE*)buffer, file.gcount(), 0)) 
+        if (!CryptHashData(hHash, (BYTE*)buffer, file.gcount(), 0))
         {
             CryptDestroyHash(hHash);
             CryptReleaseContext(hProv, 0);
@@ -177,7 +208,7 @@ std::string instance<std::filesystem::path, true>::calculate_hash(const std::str
     CryptGetHashParam(hHash, HP_HASHVAL, hashValue.data(), &hashLen, 0);
 
     std::stringstream ss;
-    for (DWORD i = 0; i < hashLen; i++) 
+    for (DWORD i = 0; i < hashLen; i++)
     {
         ss << std::hex << std::setw(2) << std::setfill('0') << (int)hashValue[i];
     }
@@ -187,7 +218,7 @@ std::string instance<std::filesystem::path, true>::calculate_hash(const std::str
     return ss.str();
 }
 
-// æ–‡ä»¶ç›‘æ§ - ä½¿ç”¨Windows API
+// ÎÄ¼ş¼à¿Ø - Ê¹ÓÃWindows API
 void instance<std::filesystem::path, true>::start_monitoring(
     monitor_callback callback,
     bool recursive,
@@ -205,60 +236,60 @@ void instance<std::filesystem::path, true>::start_monitoring(
         NULL
     );
 
-    if (hDir == INVALID_HANDLE_VALUE) 
+    if (hDir == INVALID_HANDLE_VALUE)
     {
         throw std::runtime_error("Failed to open directory for monitoring");
     }
 
-    std::thread([this, hDir, callback, recursive, ignore_patterns, ignore_directories]() 
+    std::thread([this, hDir, callback, recursive, ignore_patterns, ignore_directories]()
         {
-        char buffer[4096];
-        DWORD bytesReturned;
-        OVERLAPPED overlapped = { 0 };
-        overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+            char buffer[4096];
+            DWORD bytesReturned;
+            OVERLAPPED overlapped = { 0 };
+            overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-        while (true) {
-            if (ReadDirectoryChangesW(
-                hDir,
-                buffer,
-                sizeof(buffer),
-                recursive,
-                FILE_NOTIFY_CHANGE_FILE_NAME |
-                FILE_NOTIFY_CHANGE_DIR_NAME |
-                FILE_NOTIFY_CHANGE_ATTRIBUTES |
-                FILE_NOTIFY_CHANGE_SIZE |
-                FILE_NOTIFY_CHANGE_LAST_WRITE |
-                FILE_NOTIFY_CHANGE_SECURITY,
-                &bytesReturned,
-                &overlapped,
-                NULL
-            )) {
-                WaitForSingleObject(overlapped.hEvent, INFINITE);
+            while (true) {
+                if (ReadDirectoryChangesW(
+                    hDir,
+                    buffer,
+                    sizeof(buffer),
+                    recursive,
+                    FILE_NOTIFY_CHANGE_FILE_NAME |
+                    FILE_NOTIFY_CHANGE_DIR_NAME |
+                    FILE_NOTIFY_CHANGE_ATTRIBUTES |
+                    FILE_NOTIFY_CHANGE_SIZE |
+                    FILE_NOTIFY_CHANGE_LAST_WRITE |
+                    FILE_NOTIFY_CHANGE_SECURITY,
+                    &bytesReturned,
+                    &overlapped,
+                    NULL
+                )) {
+                    WaitForSingleObject(overlapped.hEvent, INFINITE);
 
-                FILE_NOTIFY_INFORMATION* info = (FILE_NOTIFY_INFORMATION*)buffer;
-                do {
-                    std::wstring filename(info->FileName, info->FileNameLength / sizeof(WCHAR));
-                    std::string action;
+                    FILE_NOTIFY_INFORMATION* info = (FILE_NOTIFY_INFORMATION*)buffer;
+                    do {
+                        std::wstring filename(info->FileName, info->FileNameLength / sizeof(WCHAR));
+                        std::string action;
 
-                    switch (info->Action) {
-                    case FILE_ACTION_ADDED: action = "created"; break;
-                    case FILE_ACTION_REMOVED: action = "deleted"; break;
-                    case FILE_ACTION_MODIFIED: action = "modified"; break;
-                    case FILE_ACTION_RENAMED_OLD_NAME: action = "renamed_from"; break;
-                    case FILE_ACTION_RENAMED_NEW_NAME: action = "renamed_to"; break;
-                    }
+                        switch (info->Action) {
+                        case FILE_ACTION_ADDED: action = "created"; break;
+                        case FILE_ACTION_REMOVED: action = "deleted"; break;
+                        case FILE_ACTION_MODIFIED: action = "modified"; break;
+                        case FILE_ACTION_RENAMED_OLD_NAME: action = "renamed_from"; break;
+                        case FILE_ACTION_RENAMED_NEW_NAME: action = "renamed_to"; break;
+                        }
 
-                    callback(action, this->get()->parent_path() / filename);
+                        callback(action, this->get()->parent_path() / filename);
 
-                    if (info->NextEntryOffset == 0) break;
-                    info = (FILE_NOTIFY_INFORMATION*)((BYTE*)info + info->NextEntryOffset);
-                } while (true);
+                        if (info->NextEntryOffset == 0) break;
+                        info = (FILE_NOTIFY_INFORMATION*)((BYTE*)info + info->NextEntryOffset);
+                    } while (true);
+                }
             }
-        }
         }).detach();
 }
 
-// å¤‡ä»½/æ¢å¤åŠŸèƒ½
+// ±¸·İ/»Ö¸´¹¦ÄÜ
 instance<std::filesystem::path, true> instance<std::filesystem::path, true>::create_backup(
     const path& backup_dir,
     size_t max_backups,
@@ -270,12 +301,12 @@ instance<std::filesystem::path, true> instance<std::filesystem::path, true>::cre
         this->get()->parent_path() / ".backup" :
         backup_dir;
 
-    if (!std::filesystem::exists(backup_path)) 
+    if (!std::filesystem::exists(backup_path))
     {
         std::filesystem::create_directories(backup_path);
     }
 
-    // ä½¿ç”¨æ—¶é—´æˆ³åˆ›å»ºå¤‡ä»½æ–‡ä»¶å
+    // Ê¹ÓÃÊ±¼ä´Á´´½¨±¸·İÎÄ¼şÃû
     SYSTEMTIME st;
     GetLocalTime(&st);
     char timestamp[32];
@@ -285,13 +316,13 @@ instance<std::filesystem::path, true> instance<std::filesystem::path, true>::cre
 
     path backup_file = backup_path / (this->get_filename().string() + "_" + timestamp + "." + backup_format);
 
-    // å¤åˆ¶æ–‡ä»¶
-    if (!CopyFile(this->get()->c_str(), backup_file.c_str(), FALSE)) 
+    // ¸´ÖÆÎÄ¼ş
+    if (!CopyFile(this->get()->c_str(), backup_file.c_str(), FALSE))
     {
         throw std::runtime_error("Failed to create backup");
     }
 
-    if (include_metadata) 
+    if (include_metadata)
     {
         std::ofstream meta(backup_path / (this->get_filename().string() + "_" + timestamp + ".meta"));
         meta << "Original Path: " << this->get()->string() << "\n";
@@ -299,22 +330,22 @@ instance<std::filesystem::path, true> instance<std::filesystem::path, true>::cre
         meta << "Hash: " << this->calculate_hash() << "\n";
     }
 
-    // æ¸…ç†æ—§å¤‡ä»½
-    if (max_backups > 0) 
+    // ÇåÀí¾É±¸·İ
+    if (max_backups > 0)
     {
         std::vector<path> backups;
-        for (const auto& entry : std::filesystem::directory_iterator(backup_path)) 
+        for (const auto& entry : std::filesystem::directory_iterator(backup_path))
         {
-            if (entry.path().extension() == "." + backup_format) 
+            if (entry.path().extension() == "." + backup_format)
             {
                 backups.push_back(entry.path());
             }
         }
 
-        if (backups.size() > max_backups) 
+        if (backups.size() > max_backups)
         {
             std::sort(backups.begin(), backups.end());
-            for (size_t i = 0; i < backups.size() - max_backups; i++) 
+            for (size_t i = 0; i < backups.size() - max_backups; i++)
             {
                 std::filesystem::remove(backups[i]);
             }
@@ -324,7 +355,7 @@ instance<std::filesystem::path, true> instance<std::filesystem::path, true>::cre
     return instance(backup_file);
 }
 
-// æƒé™ç®¡ç† - ä½¿ç”¨Windows API
+// È¨ÏŞ¹ÜÀí - Ê¹ÓÃWindows API
 std::map<std::string, bool> instance<std::filesystem::path, true>::get_permissions()
 {
     DWORD attributes = GetFileAttributes(this->get()->c_str());
@@ -347,13 +378,13 @@ instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::se
 {
     DWORD attributes = GetFileAttributes(this->get()->c_str());
 
-    if (read.has_value() || write.has_value()) 
+    if (read.has_value() || write.has_value())
     {
-        if (*read == false || *write == false) 
+        if (*read == false || *write == false)
         {
             attributes |= FILE_ATTRIBUTE_READONLY;
         }
-        else 
+        else
         {
             attributes &= ~FILE_ATTRIBUTE_READONLY;
         }
@@ -361,18 +392,18 @@ instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::se
 
     SetFileAttributes(this->get()->c_str(), attributes);
 
-    if (recursive && this->is_dir()) 
+    if (recursive && this->is_dir())
     {
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(**this)) 
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(**this))
         {
             DWORD subAttributes = GetFileAttributes(entry.path().c_str());
-            if (read.has_value() || write.has_value()) 
+            if (read.has_value() || write.has_value())
             {
-                if (*read == false || *write == false) 
+                if (*read == false || *write == false)
                 {
                     subAttributes |= FILE_ATTRIBUTE_READONLY;
                 }
-                else 
+                else
                 {
                     subAttributes &= ~FILE_ATTRIBUTE_READONLY;
                 }
@@ -384,4 +415,3 @@ instance<std::filesystem::path, true>& instance<std::filesystem::path, true>::se
     return *this;
 }
 
-#endif
