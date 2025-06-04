@@ -1,5 +1,5 @@
-﻿#include "Convention/Convention.h"
-#ifdef _WINDOWS
+﻿#include "Convention/Config.h"
+#if defined(_WIN64)||defined(_WIN32)
 #include <conio.h>
 #include<Windows.h>
 #include <shlobj.h>

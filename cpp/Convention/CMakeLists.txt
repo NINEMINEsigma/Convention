@@ -4,14 +4,14 @@ BoostRefer()
 
 # 设置CMake版本要求和项目名称
 cmake_minimum_required(VERSION 3.17)
-project(ConventionLibrary VERSION 0.0.2)
+project(ConventionLibrary VERSION 0.1.1)
 
 # 引入GNUInstallDirs以获取标准安装路径
 include(GNUInstallDirs)
 
 file(GLOB Root_Headers *.h)
 message("Root_Headers: ${Root_Headers}")
-aux_source_directory(./include  cpps)
+aux_source_directory(./src cpps)
 add_subdirectory(./instance)
 
 # 创建库
