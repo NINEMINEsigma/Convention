@@ -62,7 +62,7 @@ namespace Convention
 		UnpackLinesFromFile(
 			_In_ const CharTy* path,
 			std::ios::openmode mode,
-			_In_opt_ _Readable_elements_(size) CharTy* buffer,
+			_In_reads_opt_(size) CharTy* buffer,
 			size_t size)
 			: isGenerateBuffer(buffer == nullptr), stream(path, mode), buffer(buffer ? buffer : new CharTy[size]), size(size)
 		{
