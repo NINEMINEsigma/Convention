@@ -14,5 +14,6 @@
 #include "Convention/instance/StdInstance.h"
 #include "Convention/instance/WebInstance.h"
 #include "Convention/instance/JsonInstance.h"
+#include "Convention/instance/TreeInstance.h"
 
 #endif // !CONVENTION_KIT_INSTANCE_H

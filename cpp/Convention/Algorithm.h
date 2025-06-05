@@ -16,8 +16,14 @@ namespace Convention
 	 */
 	namespace DataStructure
 	{
+		template<typename T, size_t size>
+		using Array = std::array<T, size>;
+
 		template<typename T, template<typename> class Allocator = std::allocator>
-		using List = std::vector<T, Allocator<T>>;
+		using Vector = std::vector<T, Allocator<T>>;
+
+		template<typename T, template<typename> class Allocator = std::allocator>
+		using List = std::list<T, Allocator<T>>;
 
 		template<typename Key, typename Value, template<typename> class Comparer = std::less, template<typename> class Allocator = std::allocator>
 		using RedBlackTree = std::multimap<Key, Value, Comparer<Key>, Allocator<std::pair<Key, Value>>>;

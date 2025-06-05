@@ -30,6 +30,9 @@ namespace Convention
     template<typename T, typename Deleter = DefaultDelete<T, std::allocator>>
     using UniquePtr = std::unique_ptr<T, Deleter>;
 
+    template<typename T>
+	using WeakPtr = std::weak_ptr<T>;
+
     /**
      * @brief 支持内存控制的实体
      * @tparam T 目标类型, 不支持数组
