@@ -1641,5 +1641,192 @@ namespace Convention
 
 #pragma endregion
 
+#pragma region Tree
+
+namespace Convention
+{
+	template<typename Element, typename... Elements>
+	class ElementTuple
+	{
+	private:
+		using _MySelf = ElementTuple;
+		using _MyNext = ElementTuple<Elements...>;
+	public:
+		constexpr static size_t size = sizeof(Element) + _MyNext::size;
+		constexpr static size_t _MySize = 1 + _MyNext::_MySize;
+	private:
+		char elements[size];
+	public:
+		template<size_t index>
+		using ElementType = std::conditional_t<index == 0, Element, typename _MyNext::template ElementType<index - 1>>;
+		template<size_t index>
+		constexpr static size_t ElementOffset()
+		{
+			static_assert(index < _MySize, "Index out of bounds for ElementTuple.");
+			if constexpr (index == 0)
+				return sizeof(Element);
+			else
+				return sizeof(Element) + _MyNext::ElementOffset<index - 1>();
+		}
+		template<size_t index>
+		decltype(auto) GetValue() const noexcept
+		{
+			static_assert(index < _MySize, "Index out of bounds for ElementTuple.");
+			return *reinterpret_cast<const ElementType<index>*>(&elements[ElementOffset<index>()]);
+		}
+		template<size_t index>
+		decltype(auto) GetValue() noexcept
+		{
+			static_assert(index < _MySize, "Index out of bounds for ElementTuple.");
+			return *reinterpret_cast<ElementType<index>*>(&elements[ElementOffset<index>()]);
+		}
+		template<size_t index, typename Arg,
+			std::enable_if_t<std::is_convertible_v<Arg, std::remove_reference_t<decltype(GetValue<index>())>>, size_t> = 0>
+		void SetValue(Arg&& value) noexcept
+		{
+			GetValue<index>() = std::forward<Arg>(value);
+		}
+		template<size_t index, typename Arg,
+			std::enable_if_t<std::is_convertible_v<const Arg&, std::remove_reference_t<decltype(GetValue<index>())>>, size_t> = 0>
+		void SetValue(const Arg& value) noexcept
+		{
+			GetValue<index>() = value;
+		}
+	};
+	template<typename Element>
+	class ElementTuple<Element>
+	{
+	public:
+		constexpr static size_t size = sizeof(Element);
+		constexpr static size_t _MySize = 1;
+	private:
+		Element elements;
+	public:
+		template<size_t index>
+		using ElementType = std::enable_if_t<index == 0, Element>;
+		template<size_t index>
+		constexpr static size_t ElementOffset()
+		{
+			static_assert(index == 0, "Index out of bounds for ElementTuple.");
+			return sizeof(Element);
+		}
+		template<size_t index = 0>
+		constexpr const Element& GetValue() const noexcept
+		{
+			static_assert(index == 0, "Index out of bounds for ElementTuple.");
+			return elements;
+		}
+		template<size_t index = 0>
+		constexpr Element& GetValue() noexcept
+		{
+			static_assert(index == 0, "Index out of bounds for ElementTuple.");
+			return elements;
+		}
+		template<size_t index, typename Arg, std::enable_if_t<std::is_convertible_v<Arg, Element>, size_t> = 0>
+		void SetValue(Arg&& value) noexcept
+		{
+			static_assert(index == 0, "Index out of bounds for ElementTuple.");
+			elements = std::forward<Arg>(value);
+		}
+		template<size_t index, typename Arg,
+			std::enable_if_t<std::is_convertible_v<const Arg&, Element>>, size_t> = 0 >
+			void SetValue(const Arg & value) noexcept
+		{
+			static_assert(index == 0, "Index out of bounds for ElementTuple.");
+			GetValue<index>() = value;
+		}
+	};
+	template<typename... Elements>
+	class ElementTuple<void, Elements...> : public ElementTuple<Elements...> {};
+	template<>
+	class ElementTuple<void>
+	{
+	public:
+		constexpr static size_t size = 0;
+		constexpr static size_t _MySize = 0;
+	};
+
+	/**
+	* @brief 树节点结构体
+	* @tparam Element 元素类型
+	* @tparam EnableParent 是否启用父节点指针
+	* @tparam EnableBranchLayer 是否启用同分支兄弟节点指针
+	* @tparam Allocator 内存分配器
+	*/
+	template<
+		typename Element,
+		bool EnableParent = true,
+		bool EnableBranchLayer = true,
+		template<typename> class Allocator = std::allocator
+	>
+	struct TreeNode
+	{
+		using _InsidePtr = instance<TreeNode, true, Allocator, false>;
+		using _PtrContainer = ElementTuple<Element, std::conditional_t<EnableParent, _InsidePtr, void>, std::conditional_t<EnableBranchLayer, _InsidePtr, void>, _InsidePtr>;
+		// Forward Offset
+		constexpr static size_t _ElemenetForwardOffset = std::is_same_v<Element, void> ? 0 : 1;
+		constexpr static size_t _ParentForwardOffset = _ElemenetForwardOffset + (EnableParent ? 1 : 0);
+		constexpr static size_t _NextForwardOffset = _ParentForwardOffset + (EnableBranchLayer ? 1 : 0);
+		constexpr static size_t _ChildForwardOffset = _NextForwardOffset + 1;
+		// Offset
+		constexpr static size_t ElementOffset = std::is_same_v<Element, void> ? -1 : 0;
+		constexpr static size_t ParentOffset = EnableParent ? _ElemenetForwardOffset : -1;
+		constexpr static size_t NextOffset = EnableBranchLayer ? _ParentForwardOffset : -1;
+		constexpr static size_t ChildOffset = _NextForwardOffset;
+		_PtrContainer container;
+	};
+
+	/**
+	* @brief 树节点迭代器
+	* @tparam Element 树节点元素类型
+	* @tparam EnableParent 树节点是否启用父节点指针
+	* @tparam EnableBranchLayer 树节点是否启用同分支兄弟节点指针
+	* @tparam Allocator 树节点内存分配器
+	* @tparam _NextNodePtrOffset 下一个节点应该取的树节点偏移量, 详见TreeNode
+	*/
+	template<
+		typename Element,
+		bool EnableParent = true,
+		bool EnableBranchLayer = true,
+		template<typename> class Allocator = std::allocator,
+		size_t _NextNodePtrOffset = 1
+	>
+	struct TreeNodeIterator
+	{
+		using _MyTreeNode = TreeNode<Element, EnableParent, EnableBranchLayer, Allocator>;
+		using _MyNodeContainer = SharedPtr<_MyTreeNode>;
+
+		_MyNodeContainer current;
+		bool operator==(const TreeNodeIterator& other) const noexcept
+		{
+			return current == other.current;
+		}
+		bool operator!=(const TreeNodeIterator& other) const noexcept
+		{
+			return !(*this == other);
+		}
+		bool IsEmpty() const noexcept(noexcept(std::declval<_MyNodeContainer>()->container.template GetValue<_NextNodePtrOffset>().IsEmpty()))
+		{
+			return current->container.template GetValue<_NextNodePtrOffset>().IsEmpty();
+		}
+		operator bool() const noexcept(noexcept(std::declval<TreeNodeIterator>().IsEmpty()))
+		{
+			return !IsEmpty();
+		}
+
+		constexpr TreeNodeIterator(nullptr_t) noexcept : current(nullptr) {}
+		TreeNodeIterator(_MyNodeContainer node) noexcept : current(std::move(node)) {}
+
+		TreeNodeIterator& operator++()
+		{
+			if (!current->container.template GetValue<_NextNodePtrOffset>().IsEmpty())
+				throw std::out_of_range("TreeNodeIterator cannot be incremented past the end.");
+			current = current->container.template GetValue<_NextNodePtrOffset>();
+			return *this;
+		}
+	};
+}
+
+#pragma endregion
 
 #endif // !CONVENTION_KIT_CONFIG_H

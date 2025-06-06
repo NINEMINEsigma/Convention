@@ -100,15 +100,30 @@ namespace Convention
         {
             return *(this->get());
         }
+        T& WriteValue(std::conditional_t<_is_unique, UniquePtr<T, DefaultDelete<T, Allocator>>&&, SharedPtr<T>> ptr)
+        {
+            if constexpr (_is_unique)
+                *this = std::move(ptr);
+            else
+                *this = ptr;
+            return this->ReadValue();
+        }
         /**
         * @brief 设置值(引用方式)
         * @tparam Arg 传递值
         */
-        template<typename Arg>
+        template<typename Arg, std::enable_if_t<std::is_convertible_v<Arg, T>,size_t> = 0>
         T& WriteValue(Arg&& value)
         {
-            *(this->get()) = std::forward<Arg>(value);
-            return value;
+            if (this->IsEmpty())
+            {
+                *this = BuildMyPtr(std::forward<Arg>(value));
+            }
+            else
+            {
+                *(this->get()) = std::forward<Arg>(value);
+            }
+            return this->ReadValue();
         }
         /**
         * @brief 读取const值(引用方式)

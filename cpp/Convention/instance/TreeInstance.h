@@ -1,116 +1,72 @@
-#ifndef CONVENTION_KIT_TREEINSTANCE_H
+ï»¿#ifndef CONVENTION_KIT_TREEINSTANCE_H
 #define CONVENTION_KIT_TREEINSTANCE_H
 
 #include "Convention/instance/Interface.h"
 
 namespace Convention
 {
-	template<typename Element, bool EnableParent = true, template<typename> class Allocator = std::allocator>
-	class TreeNode
+	struct TreeIndictor
+	{
+		template<
+			typename Element,
+			bool Enable2EndOperator,
+			template<typename> class Allocator = std::allocator
+		>
+		struct ListTrait
+		{
+
+
+			using tag = Element;
+			using Tree = TreeNode <Element, Enable2EndOperator, false, Allocator>;
+			using Iterator = TreeNodeIterator<Element, Enable2EndOperator, false, Allocator, Tree::ChildOffset>;
+			using ReverseIterator = TreeNodeIterator<Element, Enable2EndOperator, false, Allocator, Tree::ParentOffset>;
+		};
+	};
+
+	template<typename Element, template<typename> class TreeAllocator, template<typename> class Allocator>
+	class instance<TreeNode<Element, false, false, TreeAllocator>, true, Allocator, false>
+		: public instance<TreeNode<Element, false, false, TreeAllocator>, false, Allocator, false>
 	{
 	public:
-		using _InsidePtr = SharedPtr<TreeNode>;//UniquePtr<TreeNode, DefaultDelete<TreeNode, Allocator>>;
-		using _SharedOutsidePtr = WeakPtr<TreeNode>;
-		using _PtrContainer = std::conditional_t<EnableParent, std::tuple<_InsidePtr, _InsidePtr, _InsidePtr>, std::tuple<_InsidePtr, _InsidePtr>>;
-		constexpr static size_t _ParentOffset = 0;
-		constexpr static size_t _NextOffset = 1 - (EnableParent ? 1 : 0);
-		constexpr static size_t _ChildOffset = 2 - (EnableParent ? 1 : 0);
+		using Trait = TreeIndictor::ListTrait<Element, false, Allocator>;
+		using Tree = Trait::Tree;
+		using Iterator = Trait::Iterator;
 	private:
-		_PtrContainer container;
-
-		static SetNodeLayerParent(_InsidePtr oldParent, _InsidePtr newParent)
-		{
-
-		}
-
+		using _Mybase = instance<Tree, false, Allocator, false>;
+		SharedPtr<Tree> tail;
 	public:
-		_InsidePtr ReadParentNode() const noexcept
+		Iterator begin() noexcept
 		{
-			if constexpr (EnableParent)
-				return std::get<_ParentOffset>(container);
-			else
-				throw std::logic_error("TreeNode does not support parent node access when EnableParent is false.");
+			return Iterator(*this);
 		}
-		_InsidePtr ReadNextNode() const noexcept
+		constexpr Iterator end() noexcept
 		{
-			return std::get<_NextOffset>(container);
+			return Iterator(nullptr);
 		}
-		_InsidePtr ReadChildNode() const noexcept
+		Iterator cbegin() noexcept
 		{
-			return std::get<_ChildOffset>(container);
+			return Iterator(*this);
+		}
+		constexpr Iterator cend() noexcept
+		{
+			return Iterator(nullptr);
 		}
 
-		Element data;
-
-		/**
-		* @brief ÊÇ·ñÓÐ¸¸½Úµã
-		*/
-		bool HasParent() const noexcept
+		template<typename Arg, std::enable_if_t<std::is_convertible_v<Arg, Element>, size_t> = 0>
+		void push(Arg&& value)
 		{
-			if constexpr (EnableParent)
-				return ReadParentNode() != nullptr;
-			else
-				return false;
-		}
-		/**
-		* @brief ÊÇ·ñÊÇ¸ù½Úµã(ÎÞ¸¸½ÚµãÇÒÎÞÐÖµÜ½Úµã)
-		*/
-		bool IsRoot() const noexcept
-		{
-			return !HasParent() && !HasNext();
-		}
-		/**
-		* @brief »ñÈ¡¸¸½Úµã
-		*/
-		_SharedOutsidePtr GetParent() const noexcept
-		{
-			if constexpr (EnableParent)
-				return ReadParentNode();
-			else
-				return nullptr;
-		}
-		/**
-		* @brief ÉèÖÃ¸¸½Úµã
-		* @return ·µ»ØÔ­¸¸½Úµã
-		*/
-		_InsidePtr SetParent(_InsidePtr&& newParent)
-		{
-			if (IsRoot())
+			SharedPtr<Tree> temp(BuildMyPtr());
+			temp->container.SetValue<Tree::ElementOffset>(std::forward<Arg>(value));
+			if (this->IsEmpty())
 			{
-				_InsidePtr oldParent = std::move(parent);
-				parent = std::move(newParent);
-				return std::move(oldParent);
+				this->WriteValue(std::move(temp));
+				tail = *this;
 			}
-			else if(HasParent())
+			else
 			{
-
+				tail->container.SetValue
 			}
 		}
-		bool HasChild() const noexcept
-		{
-			return child != nullptr;
-		}
-		TreeNode& GetChild() const noexcept
-		{
-			return *child;
-		}
-		bool IsLeaf() const noexcept
-		{
-			return !HasChild();
-		}
-		bool HasNext() const noexcept
-		{
-			return next != nullptr;
-		}
-		bool IsLast() const noexcept
-		{
-			return !HasNext();
-		}
-		TreeNode& GetNext() const noexcept
-		{
-			return *next;
-		}
-
 	};
 }
 
