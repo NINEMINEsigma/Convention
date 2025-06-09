@@ -6,19 +6,6 @@ using console = ::instance<console_indicator, true>;
 
 console::instance() noexcept:_Mybase(new console_indicator::tag())
 {
-	this->get()->hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-	this->get()->hBuffer = CreateConsoleScreenBuffer(
-		GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL,
-		CONSOLE_TEXTMODE_BUFFER,
-		NULL
-	);
-	SetConsoleActiveScreenBuffer(this->get()->hBuffer);
-	SetConsoleCursorInfo(this->get()->hBuffer, &this->get()->cci);
-	SetConsoleMode(this->get()->hBuffer,
-		ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING
-	);
 }
 console::~instance()
 {
@@ -30,15 +17,6 @@ console& console::set_buffer(_In_ char* data, _Out_opt_ char** erase_)
 	if (erase_)
 		*erase_ = this->get()->data;
 	this->get()->data = data;
-	return *this;
-}
-
-console& console::set_cursor(DWORD size, BOOL visible)
-{
-	this->get()->cci.bVisible = visible;
-	this->get()->cci.dwSize = size;
-	SetConsoleCursorInfo(this->get()->hOutput, &this->get()->cci);
-	SetConsoleCursorInfo(this->get()->hBuffer, &this->get()->cci);
 	return *this;
 }
 

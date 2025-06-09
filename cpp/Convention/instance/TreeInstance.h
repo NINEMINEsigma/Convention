@@ -75,7 +75,7 @@ namespace Convention
 		}
 
 		constexpr TreeNodeIterator(nullptr_t) noexcept : current(nullptr) {}
-		TreeNodeIterator(_MyNodeContainer node) noexcept : current(std::move(node)) {}
+		explicit TreeNodeIterator(_MyNodeContainer node) noexcept : current(std::move(node)) {}
 		TreeNodeIterator(const TreeNodeIterator& other) noexcept : current(other.current) {}
 		TreeNodeIterator(TreeNodeIterator&& other) noexcept : current(std::move(other.current)) {}
 
