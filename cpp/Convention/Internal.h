@@ -204,6 +204,17 @@ public:
 		obj = this->As<T>();
 		return *this;
 	}
+
+	template<typename T, typename = Convention::ElementTuple<
+		decltype(declval<T>().GetType()),
+		decltype(declval<T>().ToString()),
+		decltype(declval<T>().SymbolName())
+		>>
+		struct TCLikeTrait :public std::true_type {};
+
+	template<typename T>
+	struct TCLikeTrait<T, void> : public std::false_type {};
+
 protected:
 
 };

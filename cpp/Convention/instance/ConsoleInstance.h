@@ -33,6 +33,7 @@ namespace Convention
 	private:
 		using _Mybase = instance<ConsoleIndicator::tag, false, Allocator, IsUnique>;
 	public:
+#if defined(_WIN64)||defined(_WIN32)
 		instance() : _Mybase(BuildMyPtr())
 		{
 			this->get()->hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -49,23 +50,74 @@ namespace Convention
 				ENABLE_PROCESSED_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING
 			);
 		}
-		virtual ~instance();
-		instance& set_buffer(_In_ char* data, _Out_opt_ char** erase_);
+		virtual ~instance()
+		{
+			CloseHandle(this->get()->hBuffer);
+		}
+		instance& set_buffer(_In_ char* data, _Out_opt_ char** erase_)
+		{
+			if (erase_)
+				*erase_ = this->get()->data;
+			this->get()->data = data;
+			return *this;
+		}
 
 		instance& SetCursor(size_t size = 0, bool visible = true)
 		{
-#if defined(_WIN64)||defined(_WIN32)
 			this->ReadValue().cci.bVisible = visible ? TRUE : FALSE;
 			this->ReadValue().cci.dwSize = size;
 			SetConsoleCursorInfo(this->ReadValue().hOutput, &this->ReadValue().cci);
 			SetConsoleCursorInfo(this->ReadValue().hBuffer, &this->ReadValue().cci);
-#else
-			static_assert(false, "This function is not supported on current platforms.");
-#endif
 			return *this;
 		}
 
-		instance& refresh(size_t size);
+		instance& refresh(size_t size)
+		{
+			constexpr static size_t temp_buffer_size = 1024;
+			static char static_buffer[temp_buffer_size];
+			COORD coord = { 0,0 };
+			if (this->get()->data == nullptr)
+			{
+				if (size > temp_buffer_size)
+					throw std::overflow_error("this console buffer is loss, and current argument<size> is bigger than the global temporary buffer");
+				ReadConsoleOutputCharacterA(
+					this->get()->hOutput,
+					static_buffer,
+					size,
+					coord,
+					&this->get()->bytes
+				);
+				WriteConsoleOutputCharacterA(
+					this->get()->hBuffer,
+					static_buffer,
+					size,
+					coord,
+					&this->get()->bytes
+				);
+			}
+			else
+			{
+				ReadConsoleOutputCharacterA(
+					this->get()->hOutput,
+					this->get()->data,
+					size,
+					coord,
+					&this->get()->bytes
+				);
+				WriteConsoleOutputCharacterA(
+					this->get()->hBuffer,
+					this->get()->data,
+					size,
+					coord,
+					&this->get()->bytes
+				);
+			}
+			SetConsoleCursorPosition(this->get()->hOutput, coord);
+			return *this;
+		}
+#else
+		static_assert(false, "Current platform is not supported");
+#endif
 	};
 
 	enum class ascii_code

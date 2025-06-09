@@ -1341,7 +1341,11 @@ struct StringIndicator
 	template<typename str, typename T>
 	static str ToString(const T& value)
 	{
-		if constexpr (std::is_same_v<str, std::wstring>)
+		if_exists(T::ToString)
+			return value.ToString();
+		if constexpr (std::is_constructible_v<const T&, str>)
+			return value;
+		else if constexpr (std::is_same_v<str, std::wstring>)
 			return std::to_wstring(value);
 		else
 			return std::to_string(value);
